@@ -1,4 +1,5 @@
 import { pathwiseManuals } from "./pathwise-data/catalog.js";
+import { stripLeadingNumber } from "./pathwise-data/helpers.js";
 import type { ManualChapter, ManualItem } from "./manualsData";
 
 const CATEGORY: Record<string, ManualItem["category"]> = {
@@ -129,7 +130,7 @@ function chapterToHearth(ch: Record<string, unknown>, order: number): ManualChap
     id: String(ch.id),
     order,
     slug: String(ch.id),
-    title: String(ch.title || `Chapter ${order}`),
+    title: stripLeadingNumber(String(ch.title || `Chapter ${order}`)),
     subtitle: ch.phase ? String(ch.phase) : undefined,
     estimatedMinutes: Number(ch.minutes) || 20,
     contentMarkdown: parts.join("\n\n"),

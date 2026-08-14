@@ -34,7 +34,7 @@ function loadSaved(): Set<string> {
   }
 }
 
-function BookCover({ book }: { book: LibraryBook }) {
+function BookCover({ book, compact = false }: { book: LibraryBook; compact?: boolean }) {
   const src = gutenbergCoverUrl(book);
   const [broken, setBroken] = useState(!src);
 
@@ -59,25 +59,38 @@ function BookCover({ book }: { book: LibraryBook }) {
       : isFiction
       ? "TECH FICTION"
       : isClassic
-      ? "ENGINEERING CLASSIC"
+      ? "CLASSIC"
       : isLeadership
       ? "LEADERSHIP"
       : book.shelf.toUpperCase();
 
-    return (
-      <div className={`h-full w-[9.5rem] min-h-[13.5rem] rounded-xl bg-gradient-to-b ${bgGradient} text-[#FAF7F2] p-4 flex flex-col justify-between shadow-lg border relative overflow-hidden group-hover:scale-105 transition-transform duration-300`}>
-        <div className="space-y-1.5 z-10">
-          <span className="inline-block text-[9px] font-mono font-bold tracking-wider px-2 py-0.5 rounded-md bg-white/10 text-amber-300 border border-white/15">
+    if (compact) {
+      return (
+        <div className={`h-20 w-14 rounded-lg bg-gradient-to-b ${bgGradient} text-[#FAF7F2] p-2 flex flex-col justify-between shadow-sm border relative overflow-hidden shrink-0`}>
+          <span className="text-[7px] font-mono font-bold tracking-wider px-1 py-0.5 rounded bg-white/10 text-amber-300 truncate">
             {shelfTag}
           </span>
-          <h4 className="font-serif-display font-bold text-xs sm:text-sm leading-snug line-clamp-4 text-white">
+          <h4 className="font-serif-display font-bold text-[10px] leading-tight line-clamp-2 text-white">
+            {book.title}
+          </h4>
+        </div>
+      );
+    }
+
+    return (
+      <div className={`h-48 w-32 rounded-xl bg-gradient-to-b ${bgGradient} text-[#FAF7F2] p-3.5 flex flex-col justify-between shadow-md border relative overflow-hidden group-hover:scale-105 transition-transform duration-300 shrink-0`}>
+        <div className="space-y-1 z-10">
+          <span className="inline-block text-[8px] font-mono font-bold tracking-wider px-1.5 py-0.5 rounded bg-white/10 text-amber-300 border border-white/15">
+            {shelfTag}
+          </span>
+          <h4 className="font-serif-display font-bold text-xs sm:text-sm leading-snug line-clamp-3 text-white">
             {book.title}
           </h4>
         </div>
 
-        <div className="z-10 pt-2 border-t border-white/10">
-          <p className="text-[10px] text-amber-200 font-semibold truncate">{book.author}</p>
-          {book.year && <p className="text-[9px] text-teal-200/80 font-mono">{book.year}</p>}
+        <div className="z-10 pt-1.5 border-t border-white/10">
+          <p className="text-[9px] text-amber-200 font-semibold truncate">{book.author}</p>
+          {book.year && <p className="text-[8px] text-teal-200/80 font-mono">{book.year}</p>}
         </div>
       </div>
     );
@@ -88,7 +101,7 @@ function BookCover({ book }: { book: LibraryBook }) {
       src={src}
       alt=""
       onError={() => setBroken(true)}
-      className="h-full object-cover rounded-xl shadow-lg group-hover:scale-105 transition-transform duration-300 border border-[#E7E0D3]"
+      className={`${compact ? "h-20 w-14" : "h-48 w-32"} object-cover rounded-xl shadow-md group-hover:scale-105 transition-transform duration-300 border border-[#E7E0D3] shrink-0`}
     />
   );
 }
@@ -193,8 +206,8 @@ export default function LibraryPage() {
                   onClick={() => setDetail(b)}
                   className="bg-white border border-[#E7E0D3] rounded-2xl p-4 flex gap-4 items-center text-left cursor-pointer hover:border-[#1C2A26] transition-all shadow-xs"
                 >
-                  <div className="h-20 shrink-0 flex items-center">
-                    <BookCover book={b} />
+                  <div className="h-20 shrink-0 flex items-center overflow-hidden">
+                    <BookCover book={b} compact={true} />
                   </div>
                   <div className="min-w-0 space-y-1">
                     <h4 className="font-serif-display font-bold text-xs text-[#1C2A26] truncate">{b.title}</h4>

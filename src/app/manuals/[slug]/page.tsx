@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import { MANUALS_DATA, findHearthManual, ManualItem, ManualChapter } from "@/lib/manualsData";
 import { PLAYWRIGHT_ROADMAP_PHASES, downloadRoadmapSVG } from "@/lib/roadmapData";
+import { stripLeadingNumber } from "@/lib/pathwise-data/helpers.js";
 import {
   ChevronLeft,
   ChevronRight,
@@ -33,6 +34,14 @@ import {
   X,
   Save,
   FileText,
+  Heading1,
+  Heading2,
+  Heading3,
+  Bold,
+  List,
+  ListOrdered,
+  Quote,
+  Eye,
   Zap,
   Download,
   MapPin,
@@ -98,6 +107,8 @@ export default function ManualDetailPage() {
   const [formChapterContent, setFormChapterContent] = useState<string>("");
   const [formChapterCode, setFormChapterCode] = useState<string>("");
   const [formChapterRank, setFormChapterRank] = useState<number>(1);
+  const [contentView, setContentView] = useState<"write" | "preview">("write");
+  const contentRef = useRef<HTMLTextAreaElement>(null);
 
   // Load saved progress & custom manual edits from localStorage on mount
   useEffect(() => {
@@ -231,6 +242,7 @@ export default function ManualDetailPage() {
     setFormChapterContent("# New Chapter Title\n\nWrite your lesson content here...");
     setFormChapterCode("# Example code snippet\nprint('Hello Playwright!')");
     setFormChapterRank(chapters.length + 1);
+    setContentView("write");
     setIsChapterModalOpen(true);
   };
 
@@ -243,8 +255,43 @@ export default function ManualDetailPage() {
     setFormChapterContent(activeChapter.contentMarkdown || "");
     setFormChapterCode(activeChapter.codeSnippet || "");
     setFormChapterRank(activeChapterIndex + 1);
+    setContentView("write");
     setIsChapterModalOpen(true);
   };
+
+  function applyContentFormat(
+    kind: "h1" | "h2" | "h3" | "bold" | "list" | "num" | "quote" | "code" | "inline"
+  ) {
+    const el = contentRef.current;
+    const value = formChapterContent;
+    const start = el?.selectionStart ?? value.length;
+    const end = el?.selectionEnd ?? value.length;
+    const selected = value.slice(start, end);
+    const map = {
+      h1: { pre: "# ", post: "", ph: "Heading" },
+      h2: { pre: "## ", post: "", ph: "Heading" },
+      h3: { pre: "### ", post: "", ph: "Heading" },
+      bold: { pre: "**", post: "**", ph: "bold" },
+      list: { pre: "- ", post: "", ph: "List item" },
+      num: { pre: "1. ", post: "", ph: "Step" },
+      quote: { pre: "> ", post: "", ph: "Note" },
+      code: { pre: "```\n", post: "\n```", ph: "code here" },
+      inline: { pre: "`", post: "`", ph: "code" },
+    } as const;
+    const { pre, post, ph } = map[kind];
+    const inner = selected || ph;
+    const block = kind !== "bold" && kind !== "inline";
+    const lead = block && start > 0 && value[start - 1] !== "\n" ? "\n" : "";
+    const insert = lead + pre + inner + post;
+    setFormChapterContent(value.slice(0, start) + insert + value.slice(end));
+    requestAnimationFrame(() => {
+      const node = contentRef.current;
+      if (!node) return;
+      node.focus();
+      const innerStart = start + lead.length + pre.length;
+      node.setSelectionRange(innerStart, innerStart + inner.length);
+    });
+  }
 
   // Save Chapter (Add or Edit)
   const handleSaveChapter = () => {
@@ -553,22 +600,14 @@ export default function ManualDetailPage() {
           <div className="lg:col-span-4 space-y-4 sticky top-24 max-h-[82vh] overflow-y-auto pr-1 scrollbar-thin">
             <Card variant="default" hoverable={false} className="p-5 border-[#E7E0D3] bg-[#EEF2F0] space-y-4 shadow-2xs rounded-3xl">
               <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#D8E2DD]">
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsRoadmapModalOpen(true)}
-                    className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full bg-[#1C2A26] text-white hover:bg-[#243530] transition-all"
-                  >
-                    <Compass className="w-3 h-3 text-[#D97706] shrink-0" />
-                    <span>Roadmap</span>
-                  </button>
-                  <span className="text-[11px] font-semibold text-[#52635E] bg-white px-2.5 py-1 rounded-lg border border-[#E7E0D3]">
-                    {totalChapters} Chapters
-                  </span>
-                  <span className="text-[11px] font-semibold text-[#52635E] bg-white px-2.5 py-1 rounded-lg border border-[#E7E0D3]">
-                    {partCount} Parts
-                  </span>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsRoadmapModalOpen(true)}
+                  className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full bg-[#1C2A26] text-white hover:bg-[#243530] transition-all"
+                >
+                  <Compass className="w-3 h-3 text-[#D97706] shrink-0" />
+                  <span>Roadmap</span>
+                </button>
 
                 <Button
                   variant="ghost"
@@ -616,7 +655,9 @@ export default function ManualDetailPage() {
                       const chap = chapters[idx];
                       if (!chap) return null;
                       const isActive = idx === activeChapterIndex;
-                      const displayTitle = chap.title.replace(/^Chapter\s+\d+:\s*/i, "");
+                      const displayTitle = stripLeadingNumber(
+                        chap.title.replace(/^Chapter\s+\d+:\s*/i, "")
+                      );
 
                       return (
                         <div key={chap.id || idx} className="group relative">
@@ -724,7 +765,7 @@ export default function ManualDetailPage() {
               {/* Title & Subtitle */}
               <div className="space-y-3 pb-2">
                 <h1 className="font-serif-display text-2xl sm:text-4xl font-bold text-[#1C2A26] leading-tight">
-                  {activeChapter.title}
+                  {stripLeadingNumber(activeChapter.title.replace(/^Chapter\s+\d+:\s*/i, ""))}
                 </h1>
                 {activeChapter.subtitle && (
                   <p className="font-serif-display text-base sm:text-lg font-bold text-[#D97706]">
@@ -913,7 +954,7 @@ export default function ManualDetailPage() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full space-y-6 shadow-2xl border border-[#E7E0D3] my-8"
+              className="bg-white rounded-3xl p-6 sm:p-8 max-w-3xl w-full space-y-6 shadow-2xl border border-[#E7E0D3] my-8"
             >
               <div className="flex justify-between items-center pb-3 border-b border-[#E7E0D3]">
                 <h3 className="font-serif-display font-bold text-xl text-[#1C2A26] flex items-center gap-2">
@@ -996,13 +1037,78 @@ export default function ManualDetailPage() {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-[#1C2A26] mb-1">Lesson Content</label>
-                  <textarea
-                    rows={8}
-                    value={formChapterContent}
-                    onChange={(e) => setFormChapterContent(e.target.value)}
-                    className="w-full p-3 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] font-sans text-xs focus:outline-none focus:border-[#D97706]"
-                  />
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                    <label className="block font-bold text-[#1C2A26]">Lesson Content</label>
+                    <div className="flex items-center bg-[#FAF7F2] border border-[#E7E0D3] rounded-lg p-0.5 text-[11px]">
+                      <button
+                        type="button"
+                        onClick={() => setContentView("write")}
+                        className={`px-2.5 py-1 rounded-md font-bold ${
+                          contentView === "write" ? "bg-[#1C2A26] text-white" : "text-[#52635E]"
+                        }`}
+                      >
+                        Write
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setContentView("preview")}
+                        className={`px-2.5 py-1 rounded-md font-bold flex items-center gap-1 ${
+                          contentView === "preview" ? "bg-[#1C2A26] text-white" : "text-[#52635E]"
+                        }`}
+                      >
+                        <Eye className="w-3 h-3" />
+                        Preview
+                      </button>
+                    </div>
+                  </div>
+
+                  {contentView === "write" ? (
+                    <>
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {(
+                          [
+                            { kind: "h1", label: "H1", Icon: Heading1 },
+                            { kind: "h2", label: "H2", Icon: Heading2 },
+                            { kind: "h3", label: "H3", Icon: Heading3 },
+                            { kind: "bold", label: "Bold", Icon: Bold },
+                            { kind: "list", label: "List", Icon: List },
+                            { kind: "num", label: "Steps", Icon: ListOrdered },
+                            { kind: "quote", label: "Note", Icon: Quote },
+                            { kind: "code", label: "Code block", Icon: Code },
+                            { kind: "inline", label: "Inline code", Icon: FileText },
+                          ] as const
+                        ).map(({ kind, label, Icon }) => (
+                          <button
+                            key={kind}
+                            type="button"
+                            title={label}
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => applyContentFormat(kind)}
+                            className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg border border-[#E7E0D3] bg-white text-[11px] font-bold text-[#52635E] hover:border-[#D97706] hover:text-[#1C2A26]"
+                          >
+                            <Icon className="w-3.5 h-3.5" />
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                      <textarea
+                        ref={contentRef}
+                        rows={14}
+                        value={formChapterContent}
+                        onChange={(e) => setFormChapterContent(e.target.value)}
+                        placeholder={"# Heading\n\nLesson text…\n\n```\ncode\n```"}
+                        className="w-full p-3 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] font-sans text-xs sm:text-sm leading-relaxed focus:outline-none focus:border-[#D97706]"
+                      />
+                    </>
+                  ) : (
+                    <div className="min-h-[16rem] p-4 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2]">
+                      {formChapterContent.trim()
+                        ? renderFormattedMarkdown(formChapterContent)
+                        : (
+                          <p className="text-xs text-[#8A9B95]">Nothing to preview yet.</p>
+                        )}
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -1017,7 +1123,7 @@ export default function ManualDetailPage() {
               </div>
 
               <div className="flex justify-end gap-3 pt-3 border-t border-[#E7E0D3]">
-                <Button variant="outline" size="sm" onClick={() => setIsEditManualModalOpen(false)}>
+                <Button variant="outline" size="sm" onClick={() => setIsChapterModalOpen(false)}>
                   Cancel
                 </Button>
                 <Button variant="primary" size="sm" onClick={handleSaveChapter} leftIcon={<Save className="w-4 h-4" />}>
