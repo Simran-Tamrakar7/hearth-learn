@@ -95,24 +95,140 @@ export interface CuisineCategory {
   img: string;
 }
 
+export function getDishMatchedImage(dish: DetailedDish): string {
+  const t = dish.title.toLowerCase();
+
+  // 1. Food Hero / Breakfasts
+  if (t.includes("apple spice") || t.includes("oatmeal")) {
+    return "https://images.unsplash.com/photo-1517673400267-0251440c45dc?auto=format&fit=crop&w=600&q=80";
+  }
+  if (t.includes("smoothie") || (t.includes("berry") && t.includes("bowl"))) {
+    return "https://images.unsplash.com/photo-1553530666-ba11a7da3888?auto=format&fit=crop&w=600&q=80";
+  }
+  if (t.includes("avocado") && t.includes("toast")) {
+    return "https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=600&q=80";
+  }
+  if (t.includes("chia") && t.includes("parfait")) {
+    return "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=600&q=80";
+  }
+  if (t.includes("matcha")) {
+    return "https://images.unsplash.com/photo-1536256263959-770b48d82b0a?auto=format&fit=crop&w=600&q=80";
+  }
+
+  // 2. Middle Eastern & Salads
+  if (t.includes("hummus")) {
+    return "https://images.unsplash.com/photo-1577906096429-f73c2c312435?auto=format&fit=crop&w=600&q=80";
+  }
+  if (t.includes("cucumber") && t.includes("salad")) {
+    return "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80";
+  }
+  if (t.includes("falafel")) {
+    return "https://images.unsplash.com/photo-1593001874117-c99c800e3eb7?auto=format&fit=crop&w=600&q=80";
+  }
+  if (t.includes("shakshuka")) {
+    return "https://images.unsplash.com/photo-1590412200988-a436970781fa?auto=format&fit=crop&w=600&q=80";
+  }
+  if (t.includes("shawarma")) {
+    return "https://images.unsplash.com/photo-1561651823-34feb02250e4?auto=format&fit=crop&w=600&q=80";
+  }
+
+  // 3. Nepali Cuisines
+  if (t.includes("momo")) {
+    if (t.includes("jhol")) {
+      return "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&w=600&q=80";
+    }
+    return "https://images.unsplash.com/photo-1625398407796-82650a8c135f?auto=format&fit=crop&w=600&q=80";
+  }
+  if (t.includes("sekuwa")) {
+    return "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80";
+  }
+  if (t.includes("thali") || t.includes("dal bhat")) {
+    return "https://images.unsplash.com/photo-1585937421612-70a008356fbe?auto=format&fit=crop&w=600&q=80";
+  }
+  if (t.includes("sel roti")) {
+    return "https://images.unsplash.com/photo-1624371414361-e670edf4898d?auto=format&fit=crop&w=600&q=80";
+  }
+
+  // 4. Indian Cuisines
+  if (t.includes("biryani")) {
+    return "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=600&q=80";
+  }
+  if (t.includes("butter chicken") || t.includes("tikka masala")) {
+    return "https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?auto=format&fit=crop&w=600&q=80";
+  }
+  if (t.includes("naan") || t.includes("roti")) {
+    return "https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&w=600&q=80";
+  }
+
+  // 5. Asian Cuisines (Ramen, Sushi, Pad Thai, Pho, Dim Sum)
+  if (t.includes("ramen")) {
+    return "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=600&q=80";
+  }
+  if (t.includes("sushi")) {
+    return "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=600&q=80";
+  }
+  if (t.includes("pad thai")) {
+    return "https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=600&q=80";
+  }
+  if (t.includes("pho")) {
+    return "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=600&q=80";
+  }
+  if (t.includes("bibimbap")) {
+    return "https://images.unsplash.com/photo-1553163147-622ab57be1c7?auto=format&fit=crop&w=600&q=80";
+  }
+
+  // 6. Italian & Western (Pizza, Pasta, Tacos, Burgers, Steak)
+  if (t.includes("pizza")) {
+    return "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=600&q=80";
+  }
+  if (t.includes("pasta") || t.includes("spaghetti") || t.includes("fettuccine")) {
+    return "https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=600&q=80";
+  }
+  if (t.includes("tacos") || t.includes("taco")) {
+    return "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=600&q=80";
+  }
+  if (t.includes("burger")) {
+    return "https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=600&q=80";
+  }
+  if (t.includes("steak") || t.includes("ribeye")) {
+    return "https://images.unsplash.com/photo-1558030006-450675393462?auto=format&fit=crop&w=600&q=80";
+  }
+  if (t.includes("salmon")) {
+    return "https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=600&q=80";
+  }
+
+  // 7. Desserts
+  if (t.includes("tiramisu")) {
+    return "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?auto=format&fit=crop&w=600&q=80";
+  }
+  if (t.includes("churros")) {
+    return "https://images.unsplash.com/photo-1624371414361-e670edf4898d?auto=format&fit=crop&w=600&q=80";
+  }
+  if (t.includes("baklava")) {
+    return "https://images.unsplash.com/photo-1519676867240-f03562e64548?auto=format&fit=crop&w=600&q=80";
+  }
+
+  return dish.imageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80";
+}
+
 export function getDishPrepWays(dish: DetailedDish): PrepWay[] {
   if (dish.prepWays && dish.prepWays.length >= 3) {
     return dish.prepWays;
   }
 
-  const t = dish.title;
+  const t = dish.title.toLowerCase();
 
-  // 1. Smoothies, Smoothie Bowls, Parfaits, Lassi & Cold Drinks
-  if (t.includes("Smoothie") || t.includes("Bowl") || t.includes("Parfait") || t.includes("Lassi") || t.includes("Drink")) {
+  // 1. Smoothies, Smoothie Bowls, Shakes & Parfaits
+  if (t.includes("smoothie") || t.includes("shake") || t.includes("parfait") || t.includes("lassi") || t.includes("latte") || t.includes("drink") || t.includes("juice")) {
     return [
-      { id: "w1", title: "Classic Berry Style", description: "Blended thick with almond milk, Greek yogurt & fresh berry drizzle." },
-      { id: "w2", title: "Healthy · Green Power Booster", description: "Extra spinach, chia seeds & plant protein powder; zero added sugar." },
+      { id: "w1", title: "Classic Blended Style", description: "Blended smooth with almond milk, Greek yogurt & fresh berry drizzle." },
+      { id: "w2", title: "Healthy · Low Sugar & Greens Boost", description: "Spinach, chia seeds & plant protein powder; zero added sugar." },
       { id: "w3", title: "Idea · Frozen Sorbet Crunch", description: "Blended ultra-thick with frozen berries, topped with cocoa nibs & coconut flakes." },
     ];
   }
 
-  // 2. Apple Spice Cinnamon Oatmeal (Food Hero Kitchen)
-  if (t.includes("Oatmeal") || t.includes("Apple")) {
+  // 2. Oatmeal, Porridge & Breakfast Bowls
+  if (t.includes("oatmeal") || t.includes("porridge") || t.includes("apple spice")) {
     return [
       { id: "w1", title: "Stovetop classic", description: "Milk or water, apple in the pot, cinnamon finish." },
       { id: "w2", title: "Water + less sugar", description: "Use water, skip most sugar, load cinnamon." },
@@ -120,8 +236,8 @@ export function getDishPrepWays(dish: DetailedDish): PrepWay[] {
     ];
   }
 
-  // 3. Hummus Plate & Dips (Middle Eastern / Mediterranean)
-  if (t.includes("Hummus") || t.includes("Dip") || t.includes("Baba")) {
+  // 3. Hummus & Dips (Middle Eastern / Mediterranean)
+  if (t.includes("hummus") || t.includes("dip") || t.includes("tzatziki") || t.includes("guacamole") || t.includes("baba")) {
     return [
       { id: "w1", title: "With olive oil swirl", description: "Tahini-forward, ice-cold water trick for ultra creamy finish." },
       { id: "w2", title: "Healthy · less oil", description: "Skip top oil; rely on tahini + fresh lemon juice." },
@@ -129,44 +245,53 @@ export function getDishPrepWays(dish: DetailedDish): PrepWay[] {
     ];
   }
 
-  // 4. Thai Cucumber Salad & Salads (Thai / Asian Salads)
-  if (t.includes("Cucumber") || t.includes("Salad") || t.includes("Som Tum")) {
+  // 4. Salads (Thai Cucumber, Caesar, Greek, Som Tum)
+  if (t.includes("salad") || t.includes("cucumber") || t.includes("som tum") || t.includes("slaw")) {
     return [
-      { id: "w1", title: "Ajad-style", description: "Vinegar, sugar, chili, shallot crisp dressing." },
-      { id: "w2", title: "Healthy · less sugar", description: "More lime juice & vinegar, stevia optional." },
-      { id: "w3", title: "Idea · crushed peanut", description: "Crunchy toasted peanuts on top — almost satay-adjacent." },
+      { id: "w1", title: "Ajad-style / Classic Tossed", description: "Vinegar, sugar, chili, shallot crisp dressing." },
+      { id: "w2", title: "Healthy · Less Sugar & Extra Greens", description: "More lime juice & vinegar, stevia optional." },
+      { id: "w3", title: "Idea · Crushed Peanut & Chili Crunch", description: "Crunchy toasted peanuts on top — almost satay-adjacent." },
     ];
   }
 
-  // 5. Bibimbap (Korean)
-  if (t.includes("Bibimbap")) {
+  // 5. Dumplings & Momos (Steamed / Kothey / Fried)
+  if (t.includes("momo") || t.includes("dumpling") || t.includes("gyoza") || t.includes("dim sum") || t.includes("bao") || t.includes("yomari")) {
     return [
-      { id: "w1", title: "With sesame oil + egg", description: "Veg banchan, gochujang, fried sunny egg." },
-      { id: "w2", title: "Healthy · more veg less oil", description: "Steam/sauté with spray oil; turkey or tofu." },
-      { id: "w3", title: "Idea · crispy bottom", description: "Hot stone / oiled skillet for nurungji crunch." },
+      { id: "w1", title: "Authentic Steamed (Bamboo Basket)", description: "Steamed soft in bamboo basket served with tomato-sesame achar." },
+      { id: "w2", title: "Pan-Fried Kothey (Crispy Bottom)", description: "Pan-seared on bottom until golden, then steam-cooked." },
+      { id: "w3", title: "Idea · Crispy Lace Skirt / Jhol Broth", description: "Pan-fried with starch slurry skirt or served submerged in spicy sesame-peanut jhol." },
     ];
   }
 
-  // 6. Tonkotsu & Miso Ramen (Japanese)
-  if (t.includes("Ramen")) {
+  // 6. Biryani, Fried Rice & Grain Bowls
+  if (t.includes("biryani") || t.includes("fried rice") || t.includes("chow mein") || t.includes("thali") || t.includes("quinoa") || t.includes("paella") || t.includes("risotto")) {
     return [
-      { id: "w1", title: "Classic Tonkotsu Broth", description: "Rich pork bone broth, chashu pork belly, ajitama egg." },
-      { id: "w2", title: "Healthy · Low Sodium Miso", description: "Dashi broth, steamed baby bok choy, grilled chicken breast." },
-      { id: "w3", title: "Idea · Spicy Garlic Chili Oil", description: "Sichuan chili tare, extra scallions, fried garlic chips." },
+      { id: "w1", title: "Dum Pukht Sealed / Classic Wok Toss", description: "Slow-cooked under sealed lid with saffron & kewra water or wok-tossed." },
+      { id: "w2", title: "Healthy · Quinoa / Cauliflower Base", description: "Low-GI grain base with extra roasted vegetables & minimal oil." },
+      { id: "w3", title: "Idea · Crispy Tahdig Bottom Crunch", description: "Saffron rice crust scorched at bottom of pot for golden crunch." },
     ];
   }
 
-  // 7. Tacos & Burritos (Mexican)
-  if (t.includes("Tacos") || t.includes("Burrito") || t.includes("Fajitas") || t.includes("Quesadilla")) {
+  // 7. Soups, Broths & Stews
+  if (t.includes("soup") || t.includes("broth") || t.includes("pho") || t.includes("stew") || t.includes("ramen") || t.includes("kwati") || t.includes("jhol")) {
     return [
-      { id: "w1", title: "Street Style · Double Corn", description: "Seared meat, warm double corn tortillas, diced onion & cilantro." },
+      { id: "w1", title: "Slow-Simmered Dutch Oven Broth", description: "Simmered low and slow on stovetop to extract deep aromatic broth flavor." },
+      { id: "w2", title: "Healthy · Low-Sodium Steamed Veg", description: "Light broth with extra baby greens, bok choy, and lean protein." },
+      { id: "w3", title: "Idea · Sizzling Chili Garlic Oil Finish", description: "Finished with a sizzling drizzle of garlic-chili oil and scallions." },
+    ];
+  }
+
+  // 8. Tacos, Burritos, Quesadillas & Wraps
+  if (t.includes("taco") || t.includes("burrito") || t.includes("fajita") || t.includes("quesadilla") || t.includes("wrap") || t.includes("shawarma")) {
+    return [
+      { id: "w1", title: "Street Style · Double Corn Tortilla", description: "Seared meat, warm double corn tortillas, diced onion & cilantro." },
       { id: "w2", title: "Healthy · Lettuce Wrap Bowl", description: "Romaine lettuce boat, extra pico de gallo, low-fat Greek crema." },
       { id: "w3", title: "Idea · Crispy Queso Charred", description: "Melted cheese crust on griddle for crispy queso taco shell." },
     ];
   }
 
-  // 8. Pasta & Risotto (Italian)
-  if (t.includes("Pasta") || t.includes("Spaghetti") || t.includes("Carbonara") || t.includes("Risotto")) {
+  // 9. Pasta & Italian Dishes
+  if (t.includes("pasta") || t.includes("spaghetti") || t.includes("carbonara") || t.includes("lasagna") || t.includes("gnocchi")) {
     return [
       { id: "w1", title: "Classic Italian Style", description: "Al dente pasta, extra virgin olive oil, aged Parmigiano Reggiano." },
       { id: "w2", title: "Healthy · Whole Grain / Zoodles", description: "Whole wheat or zucchini spirals, light olive oil drizzle, fresh herbs." },
@@ -174,8 +299,8 @@ export function getDishPrepWays(dish: DetailedDish): PrepWay[] {
     ];
   }
 
-  // 9. Curry & Tikka Masala (Indian)
-  if (t.includes("Curry") || t.includes("Butter Chicken") || t.includes("Tikka") || t.includes("Masala")) {
+  // 10. Curries, Tikka Masala & Stewed Meats
+  if (t.includes("curry") || t.includes("tikka") || t.includes("masala") || t.includes("butter chicken") || t.includes("vindaloo") || t.includes("korma")) {
     return [
       { id: "w1", title: "Rich Restaurant Style", description: "Heavy cream, butter finish, cashew paste & fenugreek leaves." },
       { id: "w2", title: "Healthy · Coconut Yogurt", description: "Light coconut milk & Greek yogurt base with extra spinach." },
@@ -183,83 +308,29 @@ export function getDishPrepWays(dish: DetailedDish): PrepWay[] {
     ];
   }
 
-  // 10. Biryani & Fried Rice (Indian / Chinese)
-  if (t.includes("Biryani") || t.includes("Fried Rice") || t.includes("Chow Mein")) {
+  // 11. Seared Meats, Steaks, Skewers & Grills
+  if (t.includes("sekuwa") || t.includes("steak") || t.includes("burger") || t.includes("chicken") || t.includes("salmon") || t.includes("grill") || t.includes("skewers") || t.includes("pork") || t.includes("lamb")) {
     return [
-      { id: "w1", title: "Dum Pukht Sealed", description: "Slow-cooked under sealed dough lid with saffron & kewra water." },
-      { id: "w2", title: "Healthy · Quinoa / Cauliflower Rice", description: "Low-GI grain base with extra roasted vegetables." },
-      { id: "w3", title: "Idea · Crispy Tahdig Bottom", description: "Saffron rice crust scorched at bottom of pot for golden crunch." },
+      { id: "w1", title: "Classic Cast Iron Sear & Butter Baste", description: "Seared over high heat in cast iron skillet with garlic butter & rosemary." },
+      { id: "w2", title: "Healthy · Air-Fryer / Steamed Greens", description: "Air-fried with olive oil spray and served over double greens." },
+      { id: "w3", title: "Idea · Charcoal Smoked & Spiced Glaze", description: "Searing at high heat over charcoal grill with smoky glaze finish." },
     ];
   }
 
-  // 11. Momo & Dumplings (Nepali / Chinese)
-  if (t.includes("Momo") || t.includes("Dumplings") || t.includes("Gyoza")) {
+  // 12. Sweets, Desserts & Baked Goods
+  if (t.includes("sweet") || t.includes("dessert") || t.includes("cake") || t.includes("pie") || t.includes("churros") || t.includes("baklava") || t.includes("tiramisu") || t.includes("jamun") || t.includes("sel roti") || t.includes("crepe")) {
     return [
-      { id: "w1", title: "Authentic Steamed (Kothey)", description: "Steamed soft in bamboo basket served with tomato-sesame achar." },
-      { id: "w2", title: "Healthy · Open-Top Crystal", description: "Thin translucent wrapper filled with minced mushrooms & bok choy." },
-      { id: "w3", title: "Idea · Pan-Fried Crispy Skirt", description: "Pan-seared with starch slurry for delicate lace-like skirt crunch." },
+      { id: "w1", title: "Traditional Heritage Recipe", description: "Classic preparation using authentic regional syrup, butter & spices." },
+      { id: "w2", title: "Healthy · Reduced Sugar & Greek Yogurt", description: "Made with monkfruit sweetener & Greek yogurt for 40% fewer calories." },
+      { id: "w3", title: "Idea · Warm Spiced & Pistachio Crunch", description: "Served warm topped with crushed pistachios, cardamom & honey drizzle." },
     ];
   }
 
-  // Default dish-tailored 3 methods (Appliance & Technique relevant)
-  const isSoupOrBroth = t.toLowerCase().includes("soup") || t.toLowerCase().includes("broth") || t.toLowerCase().includes("stew") || t.toLowerCase().includes("jhol");
-  const isBakeOrPizza = t.toLowerCase().includes("pizza") || t.toLowerCase().includes("pie") || t.toLowerCase().includes("bread") || t.toLowerCase().includes("roti") || t.toLowerCase().includes("cake");
-
-  if (isSoupOrBroth) {
-    return [
-      {
-        id: "w1",
-        title: "Traditional Dutch Oven Simmer",
-        description: "Simmered low and slow on stovetop for 45 minutes to extract deep broth flavor.",
-      },
-      {
-        id: "w2",
-        title: "Instant Pot / Pressure Cooker",
-        description: "High-pressure cooked in 15 minutes under 12 PSI for quick weekday dinner.",
-      },
-      {
-        id: "w3",
-        title: "Spicy Chili Oil & Herb Finish",
-        description: "Finished with a sizzling drizzle of garlic-chili oil and fresh green herbs.",
-      },
-    ];
-  } else if (isBakeOrPizza) {
-    return [
-      {
-        id: "w1",
-        title: "Traditional Oven Baked (425°F)",
-        description: "Baked on preheated stone or sheet pan until golden brown and bubbly.",
-      },
-      {
-        id: "w2",
-        title: "Air-Fryer Quick Bake",
-        description: "Air-fried in 8 minutes at 390°F for ultra-crispy crust using minimal energy.",
-      },
-      {
-        id: "w3",
-        title: "Cast Iron Skillet Sear & Broil",
-        description: "Pan-sear bottom on stovetop then high-broil top for blistered wood-fired crust.",
-      },
-    ];
-  }
-
-  // Standard Cooked Dishes / Mains
+  // Default dish-tailored 3 methods
   return [
-    {
-      id: "w1",
-      title: "Classic Stovetop Pan Sear",
-      description: `Sautéed or pan-seared over medium-high heat with olive oil and aromatic herbs.`,
-    },
-    {
-      id: "w2",
-      title: "Air-Fryer Crisp / Bamboo Steamer",
-      description: "Air-fried at 375°F for 12 min or steamed in bamboo basket for oil-free light prep.",
-    },
-    {
-      id: "w3",
-      title: "Cast Iron Sear / Slow Cooker",
-      description: "High-heat cast iron sear for crispy caramelized crust or slow-cooker braise.",
-    },
+    { id: "w1", title: "Classic Traditional Method", description: "Authentic regional preparation with traditional aromatics and spices." },
+    { id: "w2", title: "Healthy · Low Oil & Extra Veg", description: "Air-fried or steamed with spray olive oil; double greens and lean protein." },
+    { id: "w3", title: "Idea · Extra Crisp & Charred Finish", description: "Searing at high heat in cast iron skillet for smoky caramelized texture." }
   ];
 }
 

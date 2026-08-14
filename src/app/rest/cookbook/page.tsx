@@ -14,6 +14,7 @@ import {
   getDishPrepWays,
   getDishPrepWayDetails,
   getDishFDANutrition,
+  getDishMatchedImage,
   getDishVideos,
   PrepWay,
   FDANutrition,
@@ -265,6 +266,7 @@ export default function LuminaCookbookPage() {
           {filteredDishes.map((dish) => {
             const isSaved = savedDishIds.includes(dish.id);
             const prepWays = getDishPrepWays(dish);
+            const matchedImg = getDishMatchedImage(dish);
 
             return (
               <div
@@ -275,7 +277,7 @@ export default function LuminaCookbookPage() {
                 <div>
                   <div className="h-48 relative overflow-hidden bg-[#FAF7F2]">
                     <img
-                      src={dish.imageUrl}
+                      src={matchedImg}
                       alt={dish.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
@@ -360,6 +362,7 @@ export default function LuminaCookbookPage() {
               };
 
               const fda: FDANutrition = getDishFDANutrition(dynamicDish);
+              const modalMatchedImg = getDishMatchedImage(activeDishModal);
 
               return (
                 <div className="bg-white border border-[#E7E0D3] rounded-3xl p-6 sm:p-8 max-w-4xl w-full space-y-6 shadow-2xl relative max-h-[92vh] overflow-y-auto my-6">
@@ -371,7 +374,7 @@ export default function LuminaCookbookPage() {
                   </button>
 
                   <div className="h-64 sm:h-72 rounded-2xl overflow-hidden relative">
-                    <img src={activeDishModal.imageUrl} alt={activeDishModal.title} className="w-full h-full object-cover" />
+                    <img src={modalMatchedImg} alt={activeDishModal.title} className="w-full h-full object-cover" />
                   </div>
 
                   <div className="space-y-2">
