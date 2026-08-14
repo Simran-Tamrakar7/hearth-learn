@@ -97,6 +97,7 @@ export default function ManualDetailPage() {
   const [formChapterMinutes, setFormChapterMinutes] = useState<number>(15);
   const [formChapterContent, setFormChapterContent] = useState<string>("");
   const [formChapterCode, setFormChapterCode] = useState<string>("");
+  const [formChapterRank, setFormChapterRank] = useState<number>(1);
 
   // Load saved progress & custom manual edits from localStorage on mount
   useEffect(() => {
@@ -229,6 +230,7 @@ export default function ManualDetailPage() {
     setFormChapterMinutes(15);
     setFormChapterContent("# New Chapter Title\n\nWrite your lesson content here...");
     setFormChapterCode("# Example code snippet\nprint('Hello Playwright!')");
+    setFormChapterRank(chapters.length + 1);
     setIsChapterModalOpen(true);
   };
 
@@ -240,12 +242,21 @@ export default function ManualDetailPage() {
     setFormChapterMinutes(activeChapter.estimatedMinutes || 15);
     setFormChapterContent(activeChapter.contentMarkdown || "");
     setFormChapterCode(activeChapter.codeSnippet || "");
+    setFormChapterRank(activeChapterIndex + 1);
     setIsChapterModalOpen(true);
   };
 
   // Save Chapter (Add or Edit)
   const handleSaveChapter = () => {
     let updatedChapters: ManualChapter[];
+    const placeAt = (list: ManualChapter[], from: number, rank: number) => {
+      const to = Math.max(0, Math.min(list.length - 1, Math.round(rank) - 1));
+      if (from === to) return { list, to };
+      const next = [...list];
+      const [item] = next.splice(from, 1);
+      next.splice(to, 0, item);
+      return { list: next.map((c, i) => ({ ...c, order: i + 1 })), to };
+    };
 
     if (chapterModalMode === "add") {
       const newChap: ManualChapter = {
@@ -260,8 +271,10 @@ export default function ManualDetailPage() {
         exercises: [],
         resourceLinks: [],
       };
-      updatedChapters = [...chapters, newChap];
-      setActiveChapterIndex(updatedChapters.length - 1);
+      const inserted = [...chapters, newChap];
+      const placed = placeAt(inserted, inserted.length - 1, formChapterRank);
+      updatedChapters = placed.list;
+      setActiveChapterIndex(placed.to);
       toast({ type: "success", title: "Chapter Created", description: `Added ${newChap.title}.` });
     } else {
       updatedChapters = chapters.map((chap, idx) => {
@@ -277,6 +290,9 @@ export default function ManualDetailPage() {
         }
         return chap;
       });
+      const placed = placeAt(updatedChapters, activeChapterIndex, formChapterRank);
+      updatedChapters = placed.list;
+      setActiveChapterIndex(placed.to);
       toast({ type: "success", title: "Chapter Updated", description: "Saved chapter changes." });
     }
 
@@ -929,6 +945,43 @@ export default function ManualDetailPage() {
                       onChange={(e) => setFormChapterMinutes(Number(e.target.value))}
                       className="w-full p-3 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] focus:outline-none focus:border-[#D97706]"
                     />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-[#1C2A26] mb-1">Chapter number</label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="px-3 py-2 rounded-xl border border-[#E7E0D3] bg-white text-[#52635E] disabled:opacity-40"
+                      disabled={formChapterRank <= 1}
+                      onClick={() => setFormChapterRank((n) => Math.max(1, n - 1))}
+                    >
+                      Move up
+                    </button>
+                    <input
+                      type="number"
+                      min={1}
+                      max={chapterModalMode === "add" ? chapters.length + 1 : chapters.length}
+                      value={formChapterRank}
+                      onChange={(e) => setFormChapterRank(Number(e.target.value) || 1)}
+                      className="w-24 p-3 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] focus:outline-none focus:border-[#D97706]"
+                    />
+                    <button
+                      type="button"
+                      className="px-3 py-2 rounded-xl border border-[#E7E0D3] bg-white text-[#52635E] disabled:opacity-40"
+                      disabled={formChapterRank >= (chapterModalMode === "add" ? chapters.length + 1 : chapters.length)}
+                      onClick={() =>
+                        setFormChapterRank((n) =>
+                          Math.min(chapterModalMode === "add" ? chapters.length + 1 : chapters.length, n + 1)
+                        )
+                      }
+                    >
+                      Move down
+                    </button>
+                    <span className="text-[11px] text-[#8A9B95]">
+                      Put this chapter in front of another — e.g. 4 → 3.
+                    </span>
                   </div>
                 </div>
 
