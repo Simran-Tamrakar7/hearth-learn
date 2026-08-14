@@ -100,16 +100,45 @@ export function getDishPrepWays(dish: DetailedDish): PrepWay[] {
     return dish.prepWays;
   }
 
-  // Custom 3 Preparation Methods per Dish
   const t = dish.title;
+
+  // 1. Apple Spice Cinnamon Oatmeal (Food Hero Kitchen)
+  if (t.includes("Oatmeal") || t.includes("Apple")) {
+    return [
+      { id: "w1", title: "Stovetop classic", description: "Milk or water, apple in the pot, cinnamon finish." },
+      { id: "w2", title: "Water + less sugar", description: "Use water, skip most sugar, load cinnamon." },
+      { id: "w3", title: "With nuts + milk", description: "Whole milk vibe + chopped walnuts." },
+    ];
+  }
+
+  // 2. Hummus Plate (Middle Eastern / Mediterranean)
+  if (t.includes("Hummus") || t.includes("Dip") || t.includes("Baba")) {
+    return [
+      { id: "w1", title: "With olive oil swirl", description: "Tahini-forward, ice-cold water trick for ultra creamy finish." },
+      { id: "w2", title: "Healthy · less oil", description: "Skip top oil; rely on tahini + fresh lemon juice." },
+      { id: "w3", title: "Idea · warm spiced oil", description: "Drizzle with warm cumin-chili oil and toasted pine nuts." },
+    ];
+  }
+
+  // 3. Thai Cucumber Salad (Thai / Asian Salads)
+  if (t.includes("Cucumber") || t.includes("Salad") || t.includes("Som Tum")) {
+    return [
+      { id: "w1", title: "Ajad-style", description: "Vinegar, sugar, chili, shallot crisp dressing." },
+      { id: "w2", title: "Healthy · less sugar", description: "More lime juice & vinegar, stevia optional." },
+      { id: "w3", title: "Idea · crushed peanut", description: "Crunchy toasted peanuts on top — almost satay-adjacent." },
+    ];
+  }
+
+  // 4. Bibimbap (Korean)
   if (t.includes("Bibimbap")) {
     return [
-      { id: "w1", title: "With sesame oil + egg", description: "Veg banchan, gochujang, fried egg." },
+      { id: "w1", title: "With sesame oil + egg", description: "Veg banchan, gochujang, fried sunny egg." },
       { id: "w2", title: "Healthy · more veg less oil", description: "Steam/sauté with spray oil; turkey or tofu." },
       { id: "w3", title: "Idea · crispy bottom", description: "Hot stone / oiled skillet for nurungji crunch." },
     ];
   }
 
+  // 5. Tonkotsu & Miso Ramen (Japanese)
   if (t.includes("Ramen")) {
     return [
       { id: "w1", title: "Classic Tonkotsu Broth", description: "Rich pork bone broth, chashu pork belly, ajitama egg." },
@@ -118,7 +147,8 @@ export function getDishPrepWays(dish: DetailedDish): PrepWay[] {
     ];
   }
 
-  if (t.includes("Tacos") || t.includes("Burrito") || t.includes("Fajitas")) {
+  // 6. Tacos & Burritos (Mexican)
+  if (t.includes("Tacos") || t.includes("Burrito") || t.includes("Fajitas") || t.includes("Quesadilla")) {
     return [
       { id: "w1", title: "Street Style · Double Corn", description: "Seared meat, warm double corn tortillas, diced onion & cilantro." },
       { id: "w2", title: "Healthy · Lettuce Wrap Bowl", description: "Romaine lettuce boat, extra pico de gallo, low-fat Greek crema." },
@@ -126,11 +156,39 @@ export function getDishPrepWays(dish: DetailedDish): PrepWay[] {
     ];
   }
 
+  // 7. Pasta & Risotto (Italian)
   if (t.includes("Pasta") || t.includes("Spaghetti") || t.includes("Carbonara") || t.includes("Risotto")) {
     return [
       { id: "w1", title: "Classic Italian Style", description: "Al dente pasta, extra virgin olive oil, aged Parmigiano Reggiano." },
       { id: "w2", title: "Healthy · Whole Grain / Zoodles", description: "Whole wheat or zucchini spirals, light olive oil drizzle, fresh herbs." },
       { id: "w3", title: "Idea · Baked Cheese Crust", description: "Transfer to ramekin, top with mozzarella, broil 4 min until bubbling." },
+    ];
+  }
+
+  // 8. Curry & Tikka Masala (Indian)
+  if (t.includes("Curry") || t.includes("Butter Chicken") || t.includes("Tikka") || t.includes("Masala")) {
+    return [
+      { id: "w1", title: "Rich Restaurant Style", description: "Heavy cream, butter finish, cashew paste & fenugreek leaves." },
+      { id: "w2", title: "Healthy · Coconut Yogurt", description: "Light coconut milk & Greek yogurt base with extra spinach." },
+      { id: "w3", title: "Idea · Charcoal Smoked (Dhungar)", description: "Live coal ghee smoke infusion for authentic tandoori aroma." },
+    ];
+  }
+
+  // 9. Biryani & Fried Rice (Indian / Chinese)
+  if (t.includes("Biryani") || t.includes("Fried Rice") || t.includes("Chow Mein")) {
+    return [
+      { id: "w1", title: "Dum Pukht Sealed", description: "Slow-cooked under sealed dough lid with saffron & kewra water." },
+      { id: "w2", title: "Healthy · Quinoa / Cauliflower Rice", description: "Low-GI grain base with extra roasted vegetables." },
+      { id: "w3", title: "Idea · Crispy Tahdig Bottom", description: "Saffron rice crust scorched at bottom of pot for golden crunch." },
+    ];
+  }
+
+  // 10. Momo & Dumplings (Nepali / Chinese)
+  if (t.includes("Momo") || t.includes("Dumplings") || t.includes("Gyoza")) {
+    return [
+      { id: "w1", title: "Authentic Steamed (Kothey)", description: "Steamed soft in bamboo basket served with tomato-sesame achar." },
+      { id: "w2", title: "Healthy · Open-Top Crystal", description: "Thin translucent wrapper filled with minced mushrooms & bok choy." },
+      { id: "w3", title: "Idea · Pan-Fried Crispy Skirt", description: "Pan-seared with starch slurry for delicate lace-like skirt crunch." },
     ];
   }
 
