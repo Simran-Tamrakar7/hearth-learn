@@ -332,7 +332,7 @@ export default function ManualDetailPage() {
               return (
                 <h2
                   key={lIdx}
-                  className="font-serif-display text-xl sm:text-2xl font-bold text-[#D97706] pt-6 pb-2 mt-5 flex items-center gap-2.5"
+                  className="font-serif-display text-[clamp(1.2rem,2.4vw,1.45rem)] font-bold text-[#1C2A26] pt-6 pb-2 mt-5 flex items-center gap-2.5"
                 >
                   <span className="w-1.5 h-5 bg-[#1C2A26] rounded-full inline-block shrink-0" />
                   {parseInlineFormatting(trimmed.replace("## ", ""))}
@@ -344,7 +344,7 @@ export default function ManualDetailPage() {
               return (
                 <h3
                   key={lIdx}
-                  className="font-serif-display text-base sm:text-lg font-bold text-[#1C2A26] pt-5 pb-1.5 mt-3.5 flex items-center gap-2"
+                  className="font-serif-display text-[1.15rem] font-bold text-[#1C2A26] pt-5 pb-1.5 mt-3.5 flex items-center gap-2"
                 >
                   <span className="w-2 h-2 rounded-full bg-[#D97706] inline-block shrink-0" />
                   {parseInlineFormatting(trimmed.replace("### ", ""))}
@@ -356,7 +356,7 @@ export default function ManualDetailPage() {
               return (
                 <h4
                   key={lIdx}
-                  className="font-sans text-xs sm:text-sm font-bold text-[#2A3B35] pt-4 pb-1 tracking-wide uppercase"
+                  className="font-sans text-[0.95rem] font-bold text-[#2A3B35] pt-4 pb-1 tracking-wide uppercase"
                 >
                   {parseInlineFormatting(trimmed.replace("#### ", ""))}
                 </h4>
@@ -365,7 +365,7 @@ export default function ManualDetailPage() {
 
             if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
               return (
-                <li key={lIdx} className="ml-6 list-disc text-xs sm:text-sm text-[#3E4C47] leading-relaxed pl-1">
+                <li key={lIdx} className="ml-6 list-disc text-[1.05rem] leading-[1.72] text-[#1C2A26] pl-1">
                   {parseInlineFormatting(trimmed.replace(/^[-*]\s+/, ""))}
                 </li>
               );
@@ -373,7 +373,7 @@ export default function ManualDetailPage() {
 
             if (/^\d+\.\s+/.test(trimmed)) {
               return (
-                <div key={lIdx} className="ml-5 text-xs sm:text-sm text-[#3E4C47] leading-relaxed font-semibold flex items-start gap-2.5 my-1">
+                <div key={lIdx} className="ml-5 text-[1.05rem] leading-[1.72] text-[#1C2A26] font-semibold flex items-start gap-2.5 my-1">
                   <span className="text-[#D97706] font-mono shrink-0">{trimmed.match(/^\d+\./)?.[0]}</span>
                   <span>{parseInlineFormatting(trimmed.replace(/^\d+\.\s+/, ""))}</span>
                 </div>
@@ -381,7 +381,7 @@ export default function ManualDetailPage() {
             }
 
             return (
-              <p key={lIdx} className="text-xs sm:text-sm text-[#3E4C47] leading-relaxed sm:leading-loose">
+              <p key={lIdx} className="text-[1.05rem] leading-[1.72] text-[#1C2A26]">
                 {parseInlineFormatting(trimmed)}
               </p>
             );
@@ -574,9 +574,10 @@ export default function ManualDetailPage() {
                 ) : (
                   chapters.map((chap, idx) => {
                     const isActive = idx === activeChapterIndex;
+                    const displayTitle = chap.title.replace(/^Chapter\s+\d+:\s*/i, "");
 
                     return (
-                      <div key={chap.id} className="group relative">
+                      <div key={chap.id || idx} className="group relative">
                         <button
                           onClick={() => setActiveChapterIndex(idx)}
                           className={`w-full text-left px-3 py-2.5 rounded-xl text-xs sm:text-sm transition-all flex items-center justify-between ${
@@ -586,8 +587,8 @@ export default function ManualDetailPage() {
                           }`}
                         >
                           <span className="truncate pr-12">
-                            <span className="font-semibold mr-1">{idx + 1}. </span>
-                            {chap.title}
+                            <span className="font-semibold mr-1.5">{idx + 1}.</span>
+                            {displayTitle}
                           </span>
                         </button>
 
@@ -701,7 +702,7 @@ export default function ManualDetailPage() {
                     <span>AI Key Takeaways & Summary</span>
                   </div>
 
-                  <div className="text-xs sm:text-sm text-[#3E4C47] leading-relaxed font-sans space-y-3">
+                  <div className="text-[1.05rem] leading-[1.72] text-[#1C2A26] font-sans space-y-3">
                     {renderFormattedMarkdown(activeChapter.summaryMarkdown || activeChapter.contentMarkdown)}
                   </div>
                 </motion.div>

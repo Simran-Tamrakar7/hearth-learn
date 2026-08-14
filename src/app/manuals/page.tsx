@@ -71,7 +71,7 @@ export default function ManualsCatalogPage() {
                 Manuals
               </h1>
 
-              <p className="text-sm sm:text-base text-[#52635E] leading-relaxed">
+              <p className="text-[1.05rem] leading-[1.72] text-[#52635E]">
                 Structured, end-to-end skill paths with original chapter lessons, code samples, practice exercises, and curated documentation links.
               </p>
             </div>
