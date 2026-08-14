@@ -494,90 +494,77 @@ export default function ManualDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* LEFT COLUMN: CHAPTERS LIST VIEW SIDEBAR */}
           <div className="lg:col-span-4 space-y-4 sticky top-24 max-h-[82vh] overflow-y-auto pr-1 scrollbar-thin">
-            <Card variant="default" hoverable={false} className="p-5 border-[#E7E0D3] bg-white space-y-4 shadow-xs">
-              {/* Sidebar Header — List View */}
-              <div className="flex items-center justify-between pb-3 border-b border-[#E7E0D3]">
-                <h3 className="font-serif-display font-bold text-base text-[#1C2A26] flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-[#D97706]" />
-                  <span>List View</span>
+            <Card variant="default" hoverable={false} className="p-5 border-[#E7E0D3] bg-[#EEF2F0] space-y-4 shadow-2xs rounded-3xl">
+              {/* Sidebar Header — TABLE OF CONTENTS */}
+              <div className="flex items-center justify-between pb-2 border-b border-[#D8E2DD]">
+                <h3 className="font-mono font-bold text-xs text-[#52635E] tracking-wider uppercase">
+                  TABLE OF CONTENTS
                 </h3>
 
                 <Button
-                  variant="primary"
+                  variant="ghost"
                   size="sm"
                   onClick={openAddChapterModal}
-                  leftIcon={<Plus className="w-3 h-3" />}
+                  leftIcon={<Plus className="w-3 h-3 text-[#D97706]" />}
+                  className="text-[11px] text-[#52635E] hover:text-[#1C2A26] px-2 py-1 h-auto"
                 >
                   Add Chapter
                 </Button>
               </div>
 
-              {/* CHAPTERS LIST VIEW (Always displayed in left sidebar) */}
-              <div className="space-y-3 max-h-[65vh] overflow-y-auto pr-1 scrollbar-thin">
+              {/* CHAPTERS LIST VIEW (Exact Screenshot Format) */}
+              <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1 scrollbar-thin">
                 {slug === "playwright" ? (
-                  PLAYWRIGHT_ROADMAP_PHASES.map((phase) => (
-                    <div key={phase.id} className="space-y-2">
-                      <div className="flex items-center justify-between pt-1 pb-1 border-b border-[#E7E0D3]">
-                        <h4 className="font-serif-display font-bold text-xs text-[#1C2A26] tracking-tight">
-                          {phase.title}
-                        </h4>
-                        <span className="text-[10px] font-mono text-[#8A9B95]">
-                          {phase.stepCount}
-                        </span>
-                      </div>
+                  PLAYWRIGHT_ROADMAP_PHASES.map((phase, phaseIdx) => (
+                    <div key={phase.id} className="space-y-1.5">
+                      <h4 className="font-sans font-bold text-xs sm:text-sm text-[#1C2A26] tracking-tight pt-1 px-1">
+                        {phase.title}
+                      </h4>
 
-                      <div className="space-y-1.5 pl-1">
-                        {phase.nodes.map((node) => {
+                      <div className="space-y-1">
+                        {phase.nodes.map((node, nodeIdx) => {
                           const targetIdx = node.chapterIndex !== undefined && node.chapterIndex < chapters.length ? node.chapterIndex : 0;
-                          const chap = chapters[targetIdx] || { id: node.num, title: node.title, estimatedMinutes: 15 };
+                          const chap = chapters[targetIdx] || { id: node.num, title: node.title };
                           const isActive = activeChapterIndex === targetIdx;
-                          const isDone = completedChapterIds.includes(chap.id);
+
+                          // Compute exact display number matching screenshot format:
+                          // Part 0: 0., 1., 2., 3., 4.
+                          // Part 1+: 1., 2., 3., 4., (or 10. for Checkpoint)
+                          let numPrefix = "";
+                          if (node.type === "Checkpoint" || node.title.toLowerCase().includes("checkpoint")) {
+                            numPrefix = "10. ";
+                          } else if (phaseIdx === 0) {
+                            numPrefix = `${nodeIdx}. `;
+                          } else {
+                            numPrefix = `${nodeIdx + 1}. `;
+                          }
 
                           return (
-                            <div
-                              key={node.num}
-                              className={`group relative rounded-xl transition-all border ${
-                                isActive
-                                  ? "bg-[#1C2A26] text-[#FAF7F2] border-[#1C2A26] shadow-2xs font-semibold"
-                                  : "bg-white border-[#E7E0D3] text-[#52635E] hover:text-[#1C2A26] hover:bg-[#FAF7F2]"
-                              }`}
-                            >
+                            <div key={node.num} className="group relative">
                               <button
                                 onClick={() => setActiveChapterIndex(targetIdx)}
-                                className="w-full text-left p-2.5 px-3 text-xs flex items-center justify-between pr-14"
+                                className={`w-full text-left px-3 py-2.5 rounded-xl text-xs sm:text-sm transition-all flex items-center justify-between ${
+                                  isActive
+                                    ? "bg-[#CBD7D2] text-[#1C2A26] font-bold shadow-2xs"
+                                    : "text-[#2F413B] hover:bg-white/70 hover:text-[#1C2A26] font-normal"
+                                }`}
                               >
-                                <div className="flex items-center gap-2 truncate pr-1">
-                                  {isDone ? (
-                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                                  ) : (
-                                    <span className="font-mono text-[10px] opacity-70 shrink-0 min-w-[20px]">
-                                      {node.num}.
-                                    </span>
-                                  )}
-                                  <span className="truncate">{chap.title}</span>
-                                </div>
-
-                                <span className="text-[10px] font-mono opacity-70 shrink-0">
-                                  {node.time}
+                                <span className="truncate pr-6">
+                                  <span className="font-semibold mr-1">{numPrefix}</span>
+                                  {chap.title}
                                 </span>
                               </button>
 
-                              <div className="absolute right-2 top-2 flex items-center gap-0.5">
-                                <button
-                                  onClick={() => {
-                                    setActiveChapterIndex(targetIdx);
-                                    openEditChapterModal();
-                                  }}
-                                  className={`p-1 rounded-md transition-colors ${
-                                    isActive
-                                      ? "text-amber-300 hover:bg-white/20"
-                                      : "text-[#52635E] hover:text-[#D97706] hover:bg-[#E7E0D3]"
-                                  }`}
-                                  title="Edit Chapter"
-                                >
-                                  <Edit className="w-3 h-3" />
-                                </button>
-                              </div>
+                              <button
+                                onClick={() => {
+                                  setActiveChapterIndex(targetIdx);
+                                  openEditChapterModal();
+                                }}
+                                className="absolute right-2.5 top-2.5 opacity-0 group-hover:opacity-100 transition-opacity p-1 text-[#52635E] hover:text-[#D97706]"
+                                title="Edit Chapter"
+                              >
+                                <Edit className="w-3 h-3" />
+                              </button>
                             </div>
                           );
                         })}
@@ -587,48 +574,30 @@ export default function ManualDetailPage() {
                 ) : (
                   chapters.map((chap, idx) => {
                     const isActive = idx === activeChapterIndex;
-                    const isDone = completedChapterIds.includes(chap.id);
 
                     return (
-                      <div
-                        key={chap.id}
-                        className={`group relative rounded-xl transition-all border ${
-                          isActive
-                            ? "bg-[#1C2A26] text-[#FAF7F2] border-[#1C2A26] shadow-xs font-semibold"
-                            : "bg-white border-[#E7E0D3] text-[#52635E] hover:text-[#1C2A26] hover:bg-[#FAF7F2]"
-                        }`}
-                      >
+                      <div key={chap.id} className="group relative">
                         <button
                           onClick={() => setActiveChapterIndex(idx)}
-                          className="w-full text-left p-3 px-3.5 text-xs flex items-center justify-between pr-14"
+                          className={`w-full text-left px-3 py-2.5 rounded-xl text-xs sm:text-sm transition-all flex items-center justify-between ${
+                            isActive
+                              ? "bg-[#CBD7D2] text-[#1C2A26] font-bold shadow-2xs"
+                              : "text-[#2F413B] hover:bg-white/70 hover:text-[#1C2A26] font-normal"
+                          }`}
                         >
-                          <div className="flex items-center gap-2.5 truncate pr-2">
-                            {isDone ? (
-                              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                            ) : (
-                              <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center text-[10px] font-mono shrink-0">
-                                {idx + 1}
-                              </span>
-                            )}
-                            <span className="truncate font-medium">{chap.title}</span>
-                          </div>
-
-                          <span className="text-[10px] font-mono opacity-75 shrink-0">
-                            {chap.estimatedMinutes}m
+                          <span className="truncate pr-12">
+                            <span className="font-semibold mr-1">{idx + 1}. </span>
+                            {chap.title}
                           </span>
                         </button>
 
-                        <div className="absolute right-2 top-2.5 flex items-center gap-1">
+                        <div className="absolute right-2 top-2.5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                           <button
                             onClick={() => {
                               setActiveChapterIndex(idx);
                               openEditChapterModal();
                             }}
-                            className={`p-1 rounded-md transition-colors ${
-                              isActive
-                                ? "text-amber-300 hover:bg-white/20"
-                                : "text-[#52635E] hover:text-[#D97706] hover:bg-[#E7E0D3]"
-                            }`}
+                            className="p-1 text-[#52635E] hover:text-[#D97706]"
                             title="Edit Chapter"
                           >
                             <Edit className="w-3.5 h-3.5" />
@@ -636,11 +605,7 @@ export default function ManualDetailPage() {
 
                           <button
                             onClick={() => handleDeleteChapter(idx)}
-                            className={`p-1 rounded-md transition-colors ${
-                              isActive
-                                ? "text-red-300 hover:bg-white/20"
-                                : "text-[#52635E] hover:text-red-600 hover:bg-[#E7E0D3]"
-                            }`}
+                            className="p-1 text-[#52635E] hover:text-red-600"
                             title="Delete Chapter"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
