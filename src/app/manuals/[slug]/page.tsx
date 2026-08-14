@@ -418,17 +418,41 @@ export default function ManualDetailPage() {
             </p>
           </div>
 
-          {/* Metadata Footer Row — Compact, Clear, Perfectly Positioned */}
+          {/* Metadata Footer Row — Learning Roadmap, No of Parts, No of Chapters & Total Time */}
           <div className="border-t border-[#E7E0D3] pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2 text-xs font-semibold text-[#52635E] bg-white px-3 py-1.5 rounded-xl border border-[#E7E0D3] shadow-2xs">
-                <BookOpen className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
-                <span>{totalChapters} Chapters</span>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                onClick={() => {
+                  setSidebarTab("roadmap");
+                  toast({
+                    type: "info",
+                    title: "Learning Roadmap Active",
+                    description: "Showing 61 nodes across 14 parts in the left sidebar.",
+                  });
+                }}
+                className={`flex items-center gap-2 text-xs font-bold px-3.5 py-2 rounded-xl border transition-all shadow-2xs ${
+                  sidebarTab === "roadmap"
+                    ? "bg-[#1C2A26] text-white border-[#1C2A26]"
+                    : "bg-white text-[#1C2A26] border-[#E7E0D3] hover:border-[#D97706]"
+                }`}
+              >
+                <Compass className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
+                <span>Learning Roadmap</span>
+              </button>
+
+              <div className="flex items-center gap-2 text-xs font-semibold text-[#52635E] bg-white px-3.5 py-2 rounded-xl border border-[#E7E0D3] shadow-2xs">
+                <Layers className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
+                <span>14 Parts</span>
               </div>
 
-              <div className="flex items-center gap-2 text-xs font-bold text-[#1C2A26] bg-white px-3 py-1.5 rounded-xl border border-[#E7E0D3] shadow-2xs">
+              <div className="flex items-center gap-2 text-xs font-semibold text-[#52635E] bg-white px-3.5 py-2 rounded-xl border border-[#E7E0D3] shadow-2xs">
+                <BookOpen className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
+                <span>61 Chapters</span>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs font-bold text-[#1C2A26] bg-white px-3.5 py-2 rounded-xl border border-[#E7E0D3] shadow-2xs">
                 <Clock className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
-                <span>{manualEstimatedTime} Total</span>
+                <span>8.5 hours Total</span>
               </div>
 
               <Button
