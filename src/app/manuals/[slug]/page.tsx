@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import { MANUALS_DATA, ManualItem, ManualChapter } from "@/lib/manualsData";
+import { PLAYWRIGHT_ROADMAP_PHASES, downloadRoadmapSVG } from "@/lib/roadmapData";
 import {
   ChevronLeft,
   ChevronRight,
@@ -32,6 +33,9 @@ import {
   Save,
   FileText,
   Zap,
+  Download,
+  MapPin,
+  CheckSquare,
 } from "lucide-react";
 
 export default function ManualDetailPage() {
@@ -52,6 +56,10 @@ export default function ManualDetailPage() {
   const [chapters, setChapters] = useState<ManualChapter[]>(initialManual.chapters);
   const [activeChapterIndex, setActiveChapterIndex] = useState<number>(0);
   const [completedChapterIds, setCompletedChapterIds] = useState<string[]>([]);
+
+  // Sidebar view tab: 'roadmap' (61 nodes across 14 phases) vs 'toc' (linear table of contents)
+  const [sidebarTab, setSidebarTab] = useState<"roadmap" | "toc">("roadmap");
+  const [expandedPhases, setExpandedPhases] = useState<string[]>(["p0", "p1", "p2", "p3", "p4"]);
 
   // View Mode State: 'full' (exhaustive content) vs 'summary' (AI quick summary)
   const [viewMode, setViewMode] = useState<"full" | "summary">("full");
@@ -445,91 +453,263 @@ export default function ManualDetailPage() {
 
         {/* 2-COLUMN LAYOUT: TOC SIDEBAR + CHAPTER CONTENT */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* LEFT COLUMN: CHAPTERS TOC SIDEBAR */}
-          <div className="lg:col-span-4 space-y-4 sticky top-24 max-h-[80vh] overflow-y-auto pr-1 scrollbar-thin">
-            <Card variant="default" hoverable={false} className="p-6 border-[#E7E0D3] bg-white space-y-5 shadow-xs">
-              <div className="flex items-center justify-between pb-4 border-b border-[#E7E0D3]">
-                <h3 className="font-serif-display font-bold text-base text-[#1C2A26] flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-[#D97706]" />
-                  <span>Table of Contents</span>
-                </h3>
+          {/* LEFT COLUMN: LEARNING ROADMAP & TOC SIDEBAR */}
+          <div className="lg:col-span-4 space-y-4 sticky top-24 max-h-[82vh] overflow-y-auto pr-1 scrollbar-thin">
+            <Card variant="default" hoverable={false} className="p-5 border-[#E7E0D3] bg-white space-y-5 shadow-xs">
+              {/* Tab Selector Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-[#E7E0D3]">
+                <div className="flex items-center gap-1 bg-[#FAF7F2] p-1 rounded-xl border border-[#E7E0D3]">
+                  <button
+                    onClick={() => setSidebarTab("roadmap")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      sidebarTab === "roadmap"
+                        ? "bg-[#1C2A26] text-white shadow-xs"
+                        : "text-[#52635E] hover:text-[#1C2A26]"
+                    }`}
+                  >
+                    <Compass className="w-3.5 h-3.5 text-[#D97706]" />
+                    <span>Roadmap (61)</span>
+                  </button>
+
+                  <button
+                    onClick={() => setSidebarTab("toc")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      sidebarTab === "toc"
+                        ? "bg-[#1C2A26] text-white shadow-xs"
+                        : "text-[#52635E] hover:text-[#1C2A26]"
+                    }`}
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-[#D97706]" />
+                    <span>List View</span>
+                  </button>
+                </div>
 
                 <Button
                   variant="primary"
                   size="sm"
                   onClick={openAddChapterModal}
-                  leftIcon={<Plus className="w-3.5 h-3.5" />}
+                  leftIcon={<Plus className="w-3 h-3" />}
                 >
-                  Add Chapter
+                  Add
                 </Button>
               </div>
 
-              <div className="space-y-2.5 max-h-[60vh] overflow-y-auto pr-1">
-                {chapters.map((chap, idx) => {
-                  const isActive = idx === activeChapterIndex;
-                  const isDone = completedChapterIds.includes(chap.id);
-
-                  return (
-                    <div
-                      key={chap.id}
-                      className={`group relative rounded-2xl transition-all border ${
-                        isActive
-                          ? "bg-[#1C2A26] text-[#FAF7F2] border-[#1C2A26] shadow-xs"
-                          : "bg-white border-[#E7E0D3] text-[#52635E] hover:text-[#1C2A26] hover:bg-[#FAF7F2]"
-                      }`}
-                    >
-                      <button
-                        onClick={() => setActiveChapterIndex(idx)}
-                        className="w-full text-left p-3.5 px-4 text-xs sm:text-sm flex items-center justify-between pr-16"
-                      >
-                        <div className="flex items-center gap-3 truncate pr-2">
-                          {isDone ? (
-                            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                          ) : (
-                            <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center text-[10px] font-mono shrink-0">
-                              {idx + 1}
-                            </span>
-                          )}
-                          <span className="truncate font-medium">{chap.title}</span>
-                        </div>
-
-                        <span className="text-[10px] font-mono opacity-75 shrink-0">
-                          {chap.estimatedMinutes}m
-                        </span>
-                      </button>
-
-                      <div className="absolute right-2.5 top-3 flex items-center gap-1">
-                        <button
-                          onClick={() => {
-                            setActiveChapterIndex(idx);
-                            openEditChapterModal();
-                          }}
-                          className={`p-1 rounded-md transition-colors ${
-                            isActive
-                              ? "text-amber-300 hover:bg-white/20"
-                              : "text-[#52635E] hover:text-[#D97706] hover:bg-[#E7E0D3]"
-                          }`}
-                          title="Edit Chapter"
-                        >
-                          <Edit className="w-3.5 h-3.5" />
-                        </button>
-
-                        <button
-                          onClick={() => handleDeleteChapter(idx)}
-                          className={`p-1 rounded-md transition-colors ${
-                            isActive
-                              ? "text-red-300 hover:bg-white/20"
-                              : "text-[#52635E] hover:text-red-600 hover:bg-[#E7E0D3]"
-                          }`}
-                          title="Delete Chapter"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+              {/* TAB 1: 61-NODE PLAYWRIGHT LEARNING ROADMAP */}
+              {sidebarTab === "roadmap" && (
+                <div className="space-y-4">
+                  {/* Roadmap Header & SVG Download Button */}
+                  <div className="p-4 rounded-2xl bg-gradient-to-br from-[#1C2A26] via-[#243530] to-[#121C19] text-white space-y-3 shadow-md border border-[#2D3F3A]">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#D97706] text-white">
+                        8.5 hours Total
+                      </span>
+                      <span className="text-[10px] text-teal-200 font-medium">61 Nodes · 14 Phases</span>
                     </div>
-                  );
-                })}
-              </div>
+
+                    <div>
+                      <h4 className="font-serif-display font-bold text-sm text-white">
+                        Playwright Learning Roadmap
+                      </h4>
+                      <p className="text-[11px] text-teal-100/80 leading-tight mt-1">
+                        A progressive route through 61 nodes across 14 phases. Click any node to open the chapter.
+                      </p>
+                    </div>
+
+                    <Button
+                      variant="amber"
+                      size="sm"
+                      onClick={downloadRoadmapSVG}
+                      leftIcon={<Download className="w-3.5 h-3.5" />}
+                      className="w-full justify-center text-[11px] py-1.5"
+                    >
+                      Download playwright-roadmap.svg
+                    </Button>
+                  </div>
+
+                  {/* Difficulty & Node Type Legend */}
+                  <div className="flex flex-wrap items-center justify-between gap-1.5 p-2.5 rounded-xl bg-[#FAF7F2] border border-[#E7E0D3] text-[10px] font-medium text-[#52635E]">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500" /> Beginner
+                      <span className="w-2 h-2 rounded-full bg-amber-500 ml-1" /> Mid
+                      <span className="w-2 h-2 rounded-full bg-purple-500 ml-1" /> Advanced
+                    </div>
+
+                    <div className="flex items-center gap-1 text-[#8A9B95] font-mono">
+                      <span>Chap</span> · <span>Guide</span> · <span>Check</span>
+                    </div>
+                  </div>
+
+                  {/* 14 Collapsible Roadmap Phases */}
+                  <div className="space-y-2.5 max-h-[55vh] overflow-y-auto pr-1 scrollbar-thin">
+                    {PLAYWRIGHT_ROADMAP_PHASES.map((phase) => {
+                      const isExpanded = expandedPhases.includes(phase.id);
+
+                      return (
+                        <div key={phase.id} className="border border-[#E7E0D3] rounded-2xl overflow-hidden bg-white shadow-2xs">
+                          {/* Phase Header Toggle */}
+                          <button
+                            onClick={() => {
+                              if (isExpanded) {
+                                setExpandedPhases((prev) => prev.filter((id) => id !== phase.id));
+                              } else {
+                                setExpandedPhases((prev) => [...prev, phase.id]);
+                              }
+                            }}
+                            className="w-full text-left p-3 bg-[#FAF7F2] hover:bg-[#F5EFE6] transition-colors flex items-center justify-between border-b border-[#E7E0D3]"
+                          >
+                            <div className="flex items-center gap-2 truncate pr-2">
+                              <span className="px-1.5 py-0.5 rounded-md bg-[#1C2A26] text-[#D97706] font-mono font-bold text-[10px]">
+                                {phase.phaseNum}
+                              </span>
+                              <span className="font-serif-display font-bold text-xs text-[#1C2A26] truncate">
+                                {phase.title}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="text-[10px] font-mono text-[#8A9B95]">
+                                {phase.stepCount}
+                              </span>
+                              <ChevronDown className={`w-3.5 h-3.5 text-[#52635E] transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                            </div>
+                          </button>
+
+                          {/* Phase Nodes List */}
+                          <AnimatePresence>
+                            {isExpanded && (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="divide-y divide-[#E7E0D3]/50 p-1"
+                              >
+                                {phase.nodes.map((node) => {
+                                  const targetIdx = node.chapterIndex !== undefined && node.chapterIndex < chapters.length ? node.chapterIndex : 0;
+                                  const isActive = activeChapterIndex === targetIdx;
+                                  const isDone = completedChapterIds.includes(chapters[targetIdx]?.id || "");
+
+                                  return (
+                                    <button
+                                      key={node.num}
+                                      onClick={() => {
+                                        if (targetIdx < chapters.length) {
+                                          setActiveChapterIndex(targetIdx);
+                                          toast({
+                                            type: "info",
+                                            title: `Opened Node ${node.num}`,
+                                            description: node.title,
+                                          });
+                                        }
+                                      }}
+                                      className={`w-full text-left p-2.5 rounded-xl transition-all flex items-center justify-between group text-xs ${
+                                        isActive
+                                          ? "bg-[#1C2A26] text-white shadow-xs font-bold"
+                                          : "hover:bg-[#FAF7F2] text-[#52635E]"
+                                      }`}
+                                    >
+                                      <div className="flex items-center gap-2.5 truncate pr-2">
+                                        <span className={`font-mono text-[10px] shrink-0 ${isActive ? "text-[#D97706]" : "text-[#8A9B95]"}`}>
+                                          {node.num}
+                                        </span>
+
+                                        <span className="truncate">{node.title}</span>
+                                      </div>
+
+                                      <div className="flex items-center gap-1.5 shrink-0">
+                                        <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded-md ${
+                                          node.type === "Checkpoint"
+                                            ? "bg-amber-100 text-amber-800"
+                                            : node.type === "Guide"
+                                            ? "bg-sky-100 text-sky-800"
+                                            : "bg-gray-100 text-gray-700"
+                                        }`}>
+                                          {node.time}
+                                        </span>
+
+                                        {isDone && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: LINEAR CHAPTER TABLE OF CONTENTS */}
+              {sidebarTab === "toc" && (
+                <div className="space-y-2.5 max-h-[60vh] overflow-y-auto pr-1">
+                  {chapters.map((chap, idx) => {
+                    const isActive = idx === activeChapterIndex;
+                    const isDone = completedChapterIds.includes(chap.id);
+
+                    return (
+                      <div
+                        key={chap.id}
+                        className={`group relative rounded-2xl transition-all border ${
+                          isActive
+                            ? "bg-[#1C2A26] text-[#FAF7F2] border-[#1C2A26] shadow-xs"
+                            : "bg-white border-[#E7E0D3] text-[#52635E] hover:text-[#1C2A26] hover:bg-[#FAF7F2]"
+                        }`}
+                      >
+                        <button
+                          onClick={() => setActiveChapterIndex(idx)}
+                          className="w-full text-left p-3.5 px-4 text-xs sm:text-sm flex items-center justify-between pr-16"
+                        >
+                          <div className="flex items-center gap-3 truncate pr-2">
+                            {isDone ? (
+                              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                            ) : (
+                              <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center text-[10px] font-mono shrink-0">
+                                {idx + 1}
+                              </span>
+                            )}
+                            <span className="truncate font-medium">{chap.title}</span>
+                          </div>
+
+                          <span className="text-[10px] font-mono opacity-75 shrink-0">
+                            {chap.estimatedMinutes}m
+                          </span>
+                        </button>
+
+                        <div className="absolute right-2.5 top-3 flex items-center gap-1">
+                          <button
+                            onClick={() => {
+                              setActiveChapterIndex(idx);
+                              openEditChapterModal();
+                            }}
+                            className={`p-1 rounded-md transition-colors ${
+                              isActive
+                                ? "text-amber-300 hover:bg-white/20"
+                                : "text-[#52635E] hover:text-[#D97706] hover:bg-[#E7E0D3]"
+                            }`}
+                            title="Edit Chapter"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteChapter(idx)}
+                            className={`p-1 rounded-md transition-colors ${
+                              isActive
+                                ? "text-red-300 hover:bg-white/20"
+                                : "text-[#52635E] hover:text-red-600 hover:bg-[#E7E0D3]"
+                            }`}
+                            title="Delete Chapter"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </Card>
           </div>
 
