@@ -102,7 +102,16 @@ export function getDishPrepWays(dish: DetailedDish): PrepWay[] {
 
   const t = dish.title;
 
-  // 1. Apple Spice Cinnamon Oatmeal (Food Hero Kitchen)
+  // 1. Smoothies, Smoothie Bowls, Parfaits, Lassi & Cold Drinks
+  if (t.includes("Smoothie") || t.includes("Bowl") || t.includes("Parfait") || t.includes("Lassi") || t.includes("Drink")) {
+    return [
+      { id: "w1", title: "Classic Berry Style", description: "Blended thick with almond milk, Greek yogurt & fresh berry drizzle." },
+      { id: "w2", title: "Healthy · Green Power Booster", description: "Extra spinach, chia seeds & plant protein powder; zero added sugar." },
+      { id: "w3", title: "Idea · Frozen Sorbet Crunch", description: "Blended ultra-thick with frozen berries, topped with cocoa nibs & coconut flakes." },
+    ];
+  }
+
+  // 2. Apple Spice Cinnamon Oatmeal (Food Hero Kitchen)
   if (t.includes("Oatmeal") || t.includes("Apple")) {
     return [
       { id: "w1", title: "Stovetop classic", description: "Milk or water, apple in the pot, cinnamon finish." },
@@ -111,7 +120,7 @@ export function getDishPrepWays(dish: DetailedDish): PrepWay[] {
     ];
   }
 
-  // 2. Hummus Plate (Middle Eastern / Mediterranean)
+  // 3. Hummus Plate & Dips (Middle Eastern / Mediterranean)
   if (t.includes("Hummus") || t.includes("Dip") || t.includes("Baba")) {
     return [
       { id: "w1", title: "With olive oil swirl", description: "Tahini-forward, ice-cold water trick for ultra creamy finish." },
@@ -120,7 +129,7 @@ export function getDishPrepWays(dish: DetailedDish): PrepWay[] {
     ];
   }
 
-  // 3. Thai Cucumber Salad (Thai / Asian Salads)
+  // 4. Thai Cucumber Salad & Salads (Thai / Asian Salads)
   if (t.includes("Cucumber") || t.includes("Salad") || t.includes("Som Tum")) {
     return [
       { id: "w1", title: "Ajad-style", description: "Vinegar, sugar, chili, shallot crisp dressing." },
@@ -129,7 +138,7 @@ export function getDishPrepWays(dish: DetailedDish): PrepWay[] {
     ];
   }
 
-  // 4. Bibimbap (Korean)
+  // 5. Bibimbap (Korean)
   if (t.includes("Bibimbap")) {
     return [
       { id: "w1", title: "With sesame oil + egg", description: "Veg banchan, gochujang, fried sunny egg." },
@@ -138,7 +147,7 @@ export function getDishPrepWays(dish: DetailedDish): PrepWay[] {
     ];
   }
 
-  // 5. Tonkotsu & Miso Ramen (Japanese)
+  // 6. Tonkotsu & Miso Ramen (Japanese)
   if (t.includes("Ramen")) {
     return [
       { id: "w1", title: "Classic Tonkotsu Broth", description: "Rich pork bone broth, chashu pork belly, ajitama egg." },
@@ -147,7 +156,7 @@ export function getDishPrepWays(dish: DetailedDish): PrepWay[] {
     ];
   }
 
-  // 6. Tacos & Burritos (Mexican)
+  // 7. Tacos & Burritos (Mexican)
   if (t.includes("Tacos") || t.includes("Burrito") || t.includes("Fajitas") || t.includes("Quesadilla")) {
     return [
       { id: "w1", title: "Street Style · Double Corn", description: "Seared meat, warm double corn tortillas, diced onion & cilantro." },
@@ -156,7 +165,7 @@ export function getDishPrepWays(dish: DetailedDish): PrepWay[] {
     ];
   }
 
-  // 7. Pasta & Risotto (Italian)
+  // 8. Pasta & Risotto (Italian)
   if (t.includes("Pasta") || t.includes("Spaghetti") || t.includes("Carbonara") || t.includes("Risotto")) {
     return [
       { id: "w1", title: "Classic Italian Style", description: "Al dente pasta, extra virgin olive oil, aged Parmigiano Reggiano." },
@@ -165,7 +174,7 @@ export function getDishPrepWays(dish: DetailedDish): PrepWay[] {
     ];
   }
 
-  // 8. Curry & Tikka Masala (Indian)
+  // 9. Curry & Tikka Masala (Indian)
   if (t.includes("Curry") || t.includes("Butter Chicken") || t.includes("Tikka") || t.includes("Masala")) {
     return [
       { id: "w1", title: "Rich Restaurant Style", description: "Heavy cream, butter finish, cashew paste & fenugreek leaves." },
@@ -174,7 +183,7 @@ export function getDishPrepWays(dish: DetailedDish): PrepWay[] {
     ];
   }
 
-  // 9. Biryani & Fried Rice (Indian / Chinese)
+  // 10. Biryani & Fried Rice (Indian / Chinese)
   if (t.includes("Biryani") || t.includes("Fried Rice") || t.includes("Chow Mein")) {
     return [
       { id: "w1", title: "Dum Pukht Sealed", description: "Slow-cooked under sealed dough lid with saffron & kewra water." },
@@ -183,7 +192,7 @@ export function getDishPrepWays(dish: DetailedDish): PrepWay[] {
     ];
   }
 
-  // 10. Momo & Dumplings (Nepali / Chinese)
+  // 11. Momo & Dumplings (Nepali / Chinese)
   if (t.includes("Momo") || t.includes("Dumplings") || t.includes("Gyoza")) {
     return [
       { id: "w1", title: "Authentic Steamed (Kothey)", description: "Steamed soft in bamboo basket served with tomato-sesame achar." },
@@ -226,6 +235,21 @@ export function getDishPrepWayDetails(dish: DetailedDish, wayId: string): Transf
   const ways = getDishPrepWays(dish);
   const activeWay = ways.find((w) => w.id === wayId) || ways[0];
 
+  const titleLower = dish.title.toLowerCase();
+  const isColdDrink =
+    titleLower.includes("smoothie") ||
+    titleLower.includes("bowl") ||
+    titleLower.includes("parfait") ||
+    titleLower.includes("lassi") ||
+    titleLower.includes("drink");
+
+  const isSaladOrDip =
+    titleLower.includes("salad") ||
+    titleLower.includes("hummus") ||
+    titleLower.includes("dip") ||
+    titleLower.includes("guacamole") ||
+    titleLower.includes("tzatziki");
+
   let ingredients = [...dish.ingredients];
   let steps = [...dish.steps];
   let chefTip = dish.chefTip;
@@ -236,54 +260,112 @@ export function getDishPrepWayDetails(dish: DetailedDish, wayId: string): Transf
   let fiber = parseInt(dish.nutrition.fiber) || 5;
 
   if (wayId === "w2") {
-    // HEALTHY & LIGHT VARIATION
+    // HEALTHY VARIATION (Tailored per food type)
     calories = Math.round(calories * 0.75);
-    fat = Math.max(3, Math.round(fat * 0.5));
+    fat = Math.max(2, Math.round(fat * 0.5));
     fiber = fiber + 4;
 
-    ingredients = ingredients.map((ing) => {
-      if (ing.toLowerCase().includes("butter") || ing.toLowerCase().includes("oil")) {
-        return ing.replace(/butter|oil/gi, "Olive Oil Cooking Spray");
-      }
-      if (ing.toLowerCase().includes("whole milk") || ing.toLowerCase().includes("heavy cream")) {
-        return ing.replace(/whole milk|heavy cream/gi, "Unsweetened Almond Milk & Greek Yogurt");
-      }
-      if (ing.toLowerCase().includes("pork") || ing.toLowerCase().includes("beef")) {
-        return ing.replace(/pork|beef/gi, "Lean Ground Turkey / Organic Tofu");
-      }
-      return ing;
-    });
+    if (isColdDrink) {
+      ingredients = ingredients.map((ing) => {
+        if (ing.toLowerCase().includes("sugar") || ing.toLowerCase().includes("honey") || ing.toLowerCase().includes("syrup")) {
+          return "1 pinch Stevia / Monkfruit (Zero Added Sugar)";
+        }
+        if (ing.toLowerCase().includes("whole milk") || ing.toLowerCase().includes("heavy cream")) {
+          return "1 cup Unsweetened Almond Milk & Low-Fat Greek Yogurt";
+        }
+        return ing;
+      });
+      ingredients.push("1 cup Organic Baby Spinach / Kale Greens", "1 tbsp Organic Chia Seeds (Fiber Boost)");
 
-    ingredients.push("1 cup Organic Baby Spinach / Kale (extra greens)");
+      steps = steps.map((step, idx) => {
+        if (idx === 0) return "Add almond milk, frozen berries, extra baby spinach and chia seeds into high-speed blender container.";
+        if (idx === 1) return "Blend on high speed for 60 seconds until completely smooth and vibrant green-purple color.";
+        return step;
+      });
 
-    steps = steps.map((step, idx) => {
-      if (idx === 0) return step.replace(/fry|sear|boil/gi, "Steam or air-fry");
-      if (idx === 1) return `Air-fry or light-sauté ingredients with olive oil spray at 375°F for reduced calories.`;
-      return step;
-    });
+      chefTip = "Green Power Booster: Adding spinach and chia seeds boosts fiber by 4g and micronutrients with zero added sugar!";
+    } else if (isSaladOrDip) {
+      ingredients = ingredients.map((ing) => {
+        if (ing.toLowerCase().includes("oil") || ing.toLowerCase().includes("mayo")) {
+          return "1 tbsp Fresh Lime Juice & Apple Cider Vinegar (Light Dressing)";
+        }
+        return ing;
+      });
+      ingredients.push("1 cup Chopped Fresh Herbs & Microgreens");
 
-    chefTip = `Healthy Variation: Steaming with olive oil spray cuts down 25% calories and 50% fat while adding 4g extra fiber!`;
+      steps = steps.map((step, idx) => {
+        if (idx === 1) return "Toss ingredients gently with fresh lime juice, vinegar, and sea salt; skip heavy oil toppings.";
+        return step;
+      });
+
+      chefTip = "Light Citrus Variation: Replacing oil toppings with fresh citrus and vinegar cuts down 50% fat calories while adding bright acidity!";
+    } else {
+      // Hot Mains / Cooked Foods
+      ingredients = ingredients.map((ing) => {
+        if (ing.toLowerCase().includes("butter") || ing.toLowerCase().includes("oil")) {
+          return ing.replace(/butter|oil/gi, "Olive Oil Cooking Spray");
+        }
+        if (ing.toLowerCase().includes("pork") || ing.toLowerCase().includes("beef")) {
+          return ing.replace(/pork|beef/gi, "Lean Ground Turkey / Organic Tofu");
+        }
+        return ing;
+      });
+      ingredients.push("1 cup Steamed Baby Greens (extra fiber)");
+
+      steps = steps.map((step, idx) => {
+        if (idx === 0) return step.replace(/fry|sear|boil/gi, "Steam or air-fry");
+        if (idx === 1) return `Air-fry or light-sauté ingredients with olive oil spray at 375°F for reduced calories.`;
+        return step;
+      });
+
+      chefTip = "Healthy Variation: Steaming with olive oil spray cuts down 25% calories and 50% fat while adding 4g extra fiber!";
+    }
   } else if (wayId === "w3") {
-    // CRISPY & EXTRA CHARRED GOURMET VARIATION
+    // GOURMET / IDEA VARIATION (Tailored per food type)
     calories = Math.round(calories * 1.1);
     fat = Math.round(fat * 1.2);
 
-    ingredients = ingredients.map((ing) => {
-      if (ing.toLowerCase().includes("oil")) {
-        return ing + " & 1 tbsp Ghee / Sesame Oil for high-heat sear";
-      }
-      return ing;
-    });
-    ingredients.push("1 pinch Coarse Flaky Sea Salt (for finishing crunch)");
+    if (isColdDrink) {
+      ingredients.push("2 tbsp Toasted Coconut Flakes & Cocoa Nibs", "1 tbsp Raw Honey Drizzle");
 
-    steps = steps.map((step, idx) => {
-      if (idx === steps.length - 1 || idx === steps.length - 2) {
-        return step + " Preheat cast iron skillet to screaming hot; sear final 2 minutes for deep golden crispy charred crust (nurungji style).";
-      }
-      return step;
-    });
+      steps = steps.map((step, idx) => {
+        if (idx === steps.length - 1) {
+          return "Pour ultra-thick smoothie into chilled ceramic bowl; top with crunchy toasted coconut, cocoa nibs, and honey drizzle.";
+        }
+        return step;
+      });
 
-    chefTip = `Crispy Sear Variation: Searing in a preheated cast iron pan creates smoky caramelized edges and irresistible crunch!`;
+      chefTip = "Frozen Sorbet Crunch: Blending with minimal liquid creates a rich sorbet texture topped with cocoa nibs & coconut flakes!";
+    } else if (isSaladOrDip) {
+      ingredients.push("2 tbsp Warm Chili-Cumin Spiced Oil Drizzle", "2 tbsp Toasted Pine Nuts or Peanuts");
+
+      steps = steps.map((step, idx) => {
+        if (idx === steps.length - 1) {
+          return "Drizzle warm spiced chili oil on top and sprinkle toasted nuts just before serving for aromatic crunch.";
+        }
+        return step;
+      });
+
+      chefTip = "Spiced Oil & Nut Crunch: Warm chili-infused oil and toasted nuts create a contrasting warm-cold mouthfeel!";
+    } else {
+      // Hot Mains / Cooked Foods
+      ingredients = ingredients.map((ing) => {
+        if (ing.toLowerCase().includes("oil")) {
+          return ing + " & 1 tbsp Ghee / Sesame Oil for high-heat sear";
+        }
+        return ing;
+      });
+      ingredients.push("1 pinch Coarse Flaky Sea Salt (for finishing crunch)");
+
+      steps = steps.map((step, idx) => {
+        if (idx === steps.length - 1 || idx === steps.length - 2) {
+          return step + " Preheat cast iron skillet to screaming hot; sear final 2 minutes for deep golden crispy charred crust (nurungji style).";
+        }
+        return step;
+      });
+
+      chefTip = "Crispy Sear Variation: Searing in a preheated cast iron pan creates smoky caramelized edges and irresistible crunch!";
+    }
   }
 
   return {
@@ -301,6 +383,8 @@ export function getDishPrepWayDetails(dish: DetailedDish, wayId: string): Transf
     },
   };
 }
+
+
 
 export function getDishFDANutrition(dish: DetailedDish): FDANutrition {
   const calNum = parseInt(dish.nutrition.calories) || 450;
