@@ -73,6 +73,7 @@ export default function ManualDetailPage() {
 
   // Modals State
   const [isEditManualModalOpen, setIsEditManualModalOpen] = useState<boolean>(false);
+  const [isRoadmapModalOpen, setIsRoadmapModalOpen] = useState<boolean>(false);
   const [isChapterModalOpen, setIsChapterModalOpen] = useState<boolean>(false);
   const [chapterModalMode, setChapterModalMode] = useState<"add" | "edit">("add");
 
@@ -418,25 +419,14 @@ export default function ManualDetailPage() {
             </p>
           </div>
 
-          {/* Metadata Footer Row — Dynamic for each manual (Playwright gets Parts & Roadmap toggle, others get clean chapter metadata) */}
+          {/* Metadata Footer Row — Dynamic per manual (Playwright gets Learning Roadmap modal button, 14 Parts, 61 Chapters & 8.5h Total) */}
           <div className="border-t border-[#E7E0D3] pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-2.5">
               {slug === "playwright" && (
                 <>
                   <button
-                    onClick={() => {
-                      setSidebarTab("roadmap");
-                      toast({
-                        type: "info",
-                        title: "Learning Roadmap Active",
-                        description: "Showing 61 nodes across 14 parts in the left sidebar.",
-                      });
-                    }}
-                    className={`flex items-center gap-2 text-xs font-bold px-3.5 py-1.5 rounded-xl border transition-all shadow-2xs ${
-                      sidebarTab === "roadmap"
-                        ? "bg-[#1C2A26] text-white border-[#1C2A26]"
-                        : "bg-white text-[#1C2A26] border-[#E7E0D3] hover:border-[#D97706]"
-                    }`}
+                    onClick={() => setIsRoadmapModalOpen(true)}
+                    className="flex items-center gap-2 text-xs font-bold px-3.5 py-1.5 rounded-xl border border-[#D97706] bg-[#1C2A26] text-white hover:bg-[#243530] transition-all shadow-xs"
                   >
                     <Compass className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
                     <span>Learning Roadmap</span>
@@ -502,457 +492,165 @@ export default function ManualDetailPage() {
 
         {/* 2-COLUMN LAYOUT: TOC SIDEBAR + CHAPTER CONTENT */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* LEFT COLUMN: LEARNING ROADMAP & TOC SIDEBAR */}
+          {/* LEFT COLUMN: CHAPTERS LIST VIEW SIDEBAR */}
           <div className="lg:col-span-4 space-y-4 sticky top-24 max-h-[82vh] overflow-y-auto pr-1 scrollbar-thin">
             <Card variant="default" hoverable={false} className="p-5 border-[#E7E0D3] bg-white space-y-4 shadow-xs">
-              {/* Tab Selector & Action Buttons Header */}
-              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#E7E0D3]">
-                {slug === "playwright" ? (
-                  <div className="flex items-center gap-1 bg-[#FAF7F2] p-1 rounded-xl border border-[#E7E0D3]">
-                    <button
-                      onClick={() => setSidebarTab("roadmap")}
-                      className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                        sidebarTab === "roadmap"
-                          ? "bg-[#1C2A26] text-white shadow-xs"
-                          : "text-[#52635E] hover:text-[#1C2A26]"
-                      }`}
-                    >
-                      <Compass className="w-3.5 h-3.5 text-[#D97706]" />
-                      <span>Roadmap (61)</span>
-                    </button>
+              {/* Sidebar Header — List View */}
+              <div className="flex items-center justify-between pb-3 border-b border-[#E7E0D3]">
+                <h3 className="font-serif-display font-bold text-base text-[#1C2A26] flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-[#D97706]" />
+                  <span>List View</span>
+                </h3>
 
-                    <button
-                      onClick={() => setSidebarTab("toc")}
-                      className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                        sidebarTab === "toc"
-                          ? "bg-[#1C2A26] text-white shadow-xs"
-                          : "text-[#52635E] hover:text-[#1C2A26]"
-                      }`}
-                    >
-                      <BookOpen className="w-3.5 h-3.5 text-[#D97706]" />
-                      <span>List View</span>
-                    </button>
-                  </div>
-                ) : (
-                  <h3 className="font-serif-display font-bold text-base text-[#1C2A26] flex items-center gap-2">
-                    <BookOpen className="w-4 h-4 text-[#D97706]" />
-                    <span>Table of Contents</span>
-                  </h3>
-                )}
-
-                <div className="flex items-center gap-1.5">
-                  {slug === "playwright" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={downloadRoadmapSVG}
-                      leftIcon={<Download className="w-3.5 h-3.5 text-[#D97706]" />}
-                      title="Download playwright-roadmap.svg"
-                    >
-                      SVG
-                    </Button>
-                  )}
-
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={openAddChapterModal}
-                    leftIcon={<Plus className="w-3 h-3" />}
-                  >
-                    Add
-                  </Button>
-                </div>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={openAddChapterModal}
+                  leftIcon={<Plus className="w-3 h-3" />}
+                >
+                  Add Chapter
+                </Button>
               </div>
 
-              {/* TAB 1: 61-NODE PLAYWRIGHT LEARNING ROADMAP (ULTRA-DESIGNED & INTERACTIVE) */}
-              {sidebarTab === "roadmap" && slug === "playwright" && (
-                <div className="space-y-3.5">
-                  {/* Interactive Search & Level Filter Bar */}
-                  <div className="space-y-2">
-                    <div className="relative">
-                      <Search className="w-3.5 h-3.5 text-[#8A9B95] absolute left-3 top-2.5" />
-                      <input
-                        type="text"
-                        placeholder="Search 61 nodes (e.g. locators, docker, pom)..."
-                        value={roadmapSearch}
-                        onChange={(e) => setRoadmapSearch(e.target.value)}
-                        className="w-full pl-8 pr-3 py-1.5 bg-[#FAF7F2] border border-[#E7E0D3] rounded-xl text-xs text-[#1C2A26] placeholder-[#8A9B95] focus:outline-none focus:border-[#D97706] transition-colors"
-                      />
-                      {roadmapSearch && (
-                        <button
-                          onClick={() => setRoadmapSearch("")}
-                          className="absolute right-2.5 top-2 text-[#8A9B95] hover:text-[#1C2A26]"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
+              {/* CHAPTERS LIST VIEW (Always displayed in left sidebar) */}
+              <div className="space-y-3 max-h-[65vh] overflow-y-auto pr-1 scrollbar-thin">
+                {slug === "playwright" ? (
+                  PLAYWRIGHT_ROADMAP_PHASES.map((phase) => (
+                    <div key={phase.id} className="space-y-2">
+                      <div className="flex items-center justify-between pt-1 pb-1 border-b border-[#E7E0D3]">
+                        <h4 className="font-serif-display font-bold text-xs text-[#1C2A26] tracking-tight">
+                          {phase.title}
+                        </h4>
+                        <span className="text-[10px] font-mono text-[#8A9B95]">
+                          {phase.stepCount}
+                        </span>
+                      </div>
 
-                    {/* Level Filter Pills */}
-                    <div className="flex flex-wrap items-center gap-1">
-                      {(["All", "Beginner", "Mid", "Advanced"] as const).map((lvl) => (
-                        <button
-                          key={lvl}
-                          onClick={() => setLevelFilter(lvl)}
-                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
-                            levelFilter === lvl
-                              ? "bg-[#1C2A26] text-white shadow-2xs"
-                              : "bg-[#FAF7F2] text-[#52635E] border border-[#E7E0D3] hover:border-[#D97706]"
-                          }`}
-                        >
-                          {lvl === "All" ? "All Levels" : lvl}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                      <div className="space-y-1.5 pl-1">
+                        {phase.nodes.map((node) => {
+                          const targetIdx = node.chapterIndex !== undefined && node.chapterIndex < chapters.length ? node.chapterIndex : 0;
+                          const chap = chapters[targetIdx] || { id: node.num, title: node.title, estimatedMinutes: 15 };
+                          const isActive = activeChapterIndex === targetIdx;
+                          const isDone = completedChapterIds.includes(chap.id);
 
-                  {/* Interactive Node Inspector Banner */}
-                  <AnimatePresence>
-                    {selectedRoadmapNode && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        className="p-3.5 rounded-2xl bg-[#1C2A26] text-white space-y-2 border border-[#D97706]/40 shadow-sm relative"
+                          return (
+                            <div
+                              key={node.num}
+                              className={`group relative rounded-xl transition-all border ${
+                                isActive
+                                  ? "bg-[#1C2A26] text-[#FAF7F2] border-[#1C2A26] shadow-2xs font-semibold"
+                                  : "bg-white border-[#E7E0D3] text-[#52635E] hover:text-[#1C2A26] hover:bg-[#FAF7F2]"
+                              }`}
+                            >
+                              <button
+                                onClick={() => setActiveChapterIndex(targetIdx)}
+                                className="w-full text-left p-2.5 px-3 text-xs flex items-center justify-between pr-14"
+                              >
+                                <div className="flex items-center gap-2 truncate pr-1">
+                                  {isDone ? (
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                  ) : (
+                                    <span className="font-mono text-[10px] opacity-70 shrink-0 min-w-[20px]">
+                                      {node.num}.
+                                    </span>
+                                  )}
+                                  <span className="truncate">{chap.title}</span>
+                                </div>
+
+                                <span className="text-[10px] font-mono opacity-70 shrink-0">
+                                  {node.time}
+                                </span>
+                              </button>
+
+                              <div className="absolute right-2 top-2 flex items-center gap-0.5">
+                                <button
+                                  onClick={() => {
+                                    setActiveChapterIndex(targetIdx);
+                                    openEditChapterModal();
+                                  }}
+                                  className={`p-1 rounded-md transition-colors ${
+                                    isActive
+                                      ? "text-amber-300 hover:bg-white/20"
+                                      : "text-[#52635E] hover:text-[#D97706] hover:bg-[#E7E0D3]"
+                                  }`}
+                                  title="Edit Chapter"
+                                >
+                                  <Edit className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  chapters.map((chap, idx) => {
+                    const isActive = idx === activeChapterIndex;
+                    const isDone = completedChapterIds.includes(chap.id);
+
+                    return (
+                      <div
+                        key={chap.id}
+                        className={`group relative rounded-xl transition-all border ${
+                          isActive
+                            ? "bg-[#1C2A26] text-[#FAF7F2] border-[#1C2A26] shadow-xs font-semibold"
+                            : "bg-white border-[#E7E0D3] text-[#52635E] hover:text-[#1C2A26] hover:bg-[#FAF7F2]"
+                        }`}
                       >
                         <button
-                          onClick={() => setSelectedRoadmapNode(null)}
-                          className="absolute right-2.5 top-2.5 text-[#8A9B95] hover:text-white p-1"
+                          onClick={() => setActiveChapterIndex(idx)}
+                          className="w-full text-left p-3 px-3.5 text-xs flex items-center justify-between pr-14"
                         >
-                          <X className="w-3.5 h-3.5" />
+                          <div className="flex items-center gap-2.5 truncate pr-2">
+                            {isDone ? (
+                              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                            ) : (
+                              <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center text-[10px] font-mono shrink-0">
+                                {idx + 1}
+                              </span>
+                            )}
+                            <span className="truncate font-medium">{chap.title}</span>
+                          </div>
+
+                          <span className="text-[10px] font-mono opacity-75 shrink-0">
+                            {chap.estimatedMinutes}m
+                          </span>
                         </button>
 
-                        <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 rounded-md bg-[#D97706] text-white font-mono text-[10px] font-bold">
-                            Node {selectedRoadmapNode.num}
-                          </span>
-                          <span className="text-[10px] font-mono text-teal-200">
-                            {selectedRoadmapNode.time}
-                          </span>
-                        </div>
-
-                        <h5 className="font-serif-display font-bold text-xs text-white">
-                          {selectedRoadmapNode.title}
-                        </h5>
-
-                        {selectedRoadmapNode.description && (
-                          <p className="text-[11px] text-teal-100/90 leading-tight">
-                            {selectedRoadmapNode.description}
-                          </p>
-                        )}
-
-                        {selectedRoadmapNode.keyObjective && (
-                          <div className="p-2 rounded-xl bg-[#243530] text-[10px] text-amber-200 flex items-start gap-1.5 border border-[#2D3F3A]">
-                            <Target className="w-3.5 h-3.5 text-[#D97706] shrink-0 mt-0.5" />
-                            <span><strong>Objective:</strong> {selectedRoadmapNode.keyObjective}</span>
-                          </div>
-                        )}
-
-                        <div className="flex items-center gap-2 pt-1">
-                          <Button
-                            variant="amber"
-                            size="sm"
-                            onClick={() => {
-                              const targetIdx = selectedRoadmapNode.chapterIndex !== undefined ? selectedRoadmapNode.chapterIndex : 0;
-                              if (targetIdx < chapters.length) {
-                                setActiveChapterIndex(targetIdx);
-                                toast({
-                                  type: "info",
-                                  title: `Opened Lesson ${selectedRoadmapNode.num}`,
-                                  description: selectedRoadmapNode.title,
-                                });
-                              }
-                            }}
-                            className="flex-1 text-[10px] py-1 justify-center"
-                          >
-                            Jump to Lesson →
-                          </Button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {/* 14 Collapsible Roadmap Phases with Connected Stepper Pipeline */}
-                  <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1 scrollbar-thin">
-                    {PLAYWRIGHT_ROADMAP_PHASES.map((phase) => {
-                      const isExpanded = expandedPhases.includes(phase.id);
-
-                      // Filter nodes by search & level
-                      const matchingNodes = phase.nodes.filter((n) => {
-                        const matchesSearch =
-                          !roadmapSearch ||
-                          n.title.toLowerCase().includes(roadmapSearch.toLowerCase()) ||
-                          n.num.includes(roadmapSearch) ||
-                          (n.description && n.description.toLowerCase().includes(roadmapSearch.toLowerCase()));
-                        const matchesLevel = levelFilter === "All" || n.level === levelFilter;
-                        return matchesSearch && matchesLevel;
-                      });
-
-                      if (matchingNodes.length === 0 && (roadmapSearch || levelFilter !== "All")) {
-                        return null;
-                      }
-
-                      return (
-                        <div key={phase.id} className="border border-[#E7E0D3] rounded-2xl overflow-hidden bg-white shadow-2xs">
-                          {/* Phase Header Toggle */}
+                        <div className="absolute right-2 top-2.5 flex items-center gap-1">
                           <button
                             onClick={() => {
-                              if (isExpanded) {
-                                setExpandedPhases((prev) => prev.filter((id) => id !== phase.id));
-                              } else {
-                                setExpandedPhases((prev) => [...prev, phase.id]);
-                              }
+                              setActiveChapterIndex(idx);
+                              openEditChapterModal();
                             }}
-                            className="w-full text-left p-3 bg-[#FAF7F2] hover:bg-[#F5EFE6] transition-colors flex items-center justify-between border-b border-[#E7E0D3]"
+                            className={`p-1 rounded-md transition-colors ${
+                              isActive
+                                ? "text-amber-300 hover:bg-white/20"
+                                : "text-[#52635E] hover:text-[#D97706] hover:bg-[#E7E0D3]"
+                            }`}
+                            title="Edit Chapter"
                           >
-                            <div className="flex items-center gap-2 truncate pr-2">
-                              <span className="px-2 py-0.5 rounded-lg bg-[#1C2A26] text-[#D97706] font-mono font-bold text-[10px] shadow-2xs">
-                                {phase.phaseNum}
-                              </span>
-                              <span className="font-serif-display font-bold text-xs text-[#1C2A26] truncate">
-                                {phase.title}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-2 shrink-0">
-                              <span className="text-[10px] font-mono text-[#8A9B95] bg-white px-2 py-0.5 rounded-md border border-[#E7E0D3]">
-                                {matchingNodes.length} nodes
-                              </span>
-                              <ChevronDown className={`w-3.5 h-3.5 text-[#52635E] transition-transform ${isExpanded ? "rotate-180" : ""}`} />
-                            </div>
+                            <Edit className="w-3.5 h-3.5" />
                           </button>
 
-                          {/* Phase Nodes Stepper Pipeline */}
-                          <AnimatePresence>
-                            {isExpanded && (
-                              <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                exit={{ opacity: 0, height: 0 }}
-                                className="p-2 space-y-1.5 relative"
-                              >
-                                {/* Vertical Stepper Line Connector */}
-                                <div className="absolute left-[22px] top-4 bottom-4 w-0.5 bg-[#E7E0D3] pointer-events-none" />
-
-                                {matchingNodes.map((node) => {
-                                  const targetIdx = node.chapterIndex !== undefined && node.chapterIndex < chapters.length ? node.chapterIndex : 0;
-                                  const isActive = activeChapterIndex === targetIdx;
-                                  const isDone = completedChapterIds.includes(chapters[targetIdx]?.id || "");
-                                  const isSelected = selectedRoadmapNode?.num === node.num;
-
-                                  return (
-                                    <div
-                                      key={node.num}
-                                      className="relative flex items-center gap-2 group"
-                                    >
-                                      {/* Stepper Dot Badge */}
-                                      <div
-                                        className={`w-6 h-6 rounded-full flex items-center justify-center font-mono text-[10px] font-bold shrink-0 z-10 transition-all ${
-                                          isDone
-                                            ? "bg-emerald-500 text-white shadow-2xs"
-                                            : isActive
-                                            ? "bg-[#D97706] text-white ring-2 ring-[#D97706]/40 shadow-xs"
-                                            : "bg-[#FAF7F2] text-[#52635E] border border-[#E7E0D3]"
-                                        }`}
-                                      >
-                                        {isDone ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : node.num}
-                                      </div>
-
-                                      {/* Node Button Box */}
-                                      <button
-                                        onClick={() => {
-                                          setSelectedRoadmapNode(node);
-                                          if (targetIdx < chapters.length) {
-                                            setActiveChapterIndex(targetIdx);
-                                          }
-                                        }}
-                                        className={`flex-1 text-left p-2.5 rounded-xl transition-all flex items-center justify-between border text-xs ${
-                                          isActive
-                                            ? "bg-[#1C2A26] text-white border-[#1C2A26] shadow-xs font-bold"
-                                            : isSelected
-                                            ? "bg-[#FEF3C7] text-[#1C2A26] border-[#D97706]"
-                                            : "bg-white border-[#E7E0D3] text-[#52635E] hover:border-[#D97706] hover:bg-[#FAF7F2]"
-                                        }`}
-                                      >
-                                        <div className="truncate pr-2">
-                                          <span className="truncate block font-medium">{node.title}</span>
-                                          {node.description && (
-                                            <span className={`text-[10px] truncate block opacity-75 ${isActive ? "text-teal-200" : "text-[#8A9B95]"}`}>
-                                              {node.description}
-                                            </span>
-                                          )}
-                                        </div>
-
-                                        <div className="flex items-center gap-1.5 shrink-0">
-                                          <span
-                                            className={`text-[9px] font-mono px-1.5 py-0.5 rounded-md ${
-                                              node.level === "Beginner"
-                                                ? "bg-emerald-100 text-emerald-800"
-                                                : node.level === "Mid"
-                                                ? "bg-amber-100 text-amber-800"
-                                                : "bg-purple-100 text-purple-800"
-                                            }`}
-                                          >
-                                            {node.level}
-                                          </span>
-
-                                          <Info className={`w-3.5 h-3.5 ${isActive ? "text-amber-300" : "text-[#8A9B95] opacity-60 group-hover:opacity-100"}`} />
-                                        </div>
-                                      </button>
-                                    </div>
-                                  );
-                                })}
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 2 / NON-PLAYWRIGHT MANUALS TABLE OF CONTENTS VIEW */}
-              {(sidebarTab === "toc" || slug !== "playwright") && (
-                <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1 scrollbar-thin">
-                  {slug === "playwright" ? (
-                    PLAYWRIGHT_ROADMAP_PHASES.map((phase) => (
-                      <div key={phase.id} className="space-y-2">
-                        <div className="flex items-center justify-between pt-1 pb-1 border-b border-[#E7E0D3]">
-                          <h4 className="font-serif-display font-bold text-xs text-[#1C2A26] tracking-tight">
-                            {phase.title}
-                          </h4>
-                          <span className="text-[10px] font-mono text-[#8A9B95]">
-                            {phase.stepCount}
-                          </span>
-                        </div>
-
-                        <div className="space-y-1.5 pl-1">
-                          {phase.nodes.map((node) => {
-                            const targetIdx = node.chapterIndex !== undefined && node.chapterIndex < chapters.length ? node.chapterIndex : 0;
-                            const chap = chapters[targetIdx] || { id: node.num, title: node.title, estimatedMinutes: 15 };
-                            const isActive = activeChapterIndex === targetIdx;
-                            const isDone = completedChapterIds.includes(chap.id);
-
-                            return (
-                              <div
-                                key={node.num}
-                                className={`group relative rounded-xl transition-all border ${
-                                  isActive
-                                    ? "bg-[#1C2A26] text-[#FAF7F2] border-[#1C2A26] shadow-2xs font-semibold"
-                                    : "bg-white border-[#E7E0D3] text-[#52635E] hover:text-[#1C2A26] hover:bg-[#FAF7F2]"
-                                }`}
-                              >
-                                <button
-                                  onClick={() => setActiveChapterIndex(targetIdx)}
-                                  className="w-full text-left p-2.5 px-3 text-xs flex items-center justify-between pr-14"
-                                >
-                                  <div className="flex items-center gap-2 truncate pr-1">
-                                    {isDone ? (
-                                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                                    ) : (
-                                      <span className="font-mono text-[10px] opacity-70 shrink-0 min-w-[20px]">
-                                        {node.num}.
-                                      </span>
-                                    )}
-                                    <span className="truncate">{chap.title}</span>
-                                  </div>
-
-                                  <span className="text-[10px] font-mono opacity-70 shrink-0">
-                                    {node.time}
-                                  </span>
-                                </button>
-
-                                <div className="absolute right-2 top-2 flex items-center gap-0.5">
-                                  <button
-                                    onClick={() => {
-                                      setActiveChapterIndex(targetIdx);
-                                      openEditChapterModal();
-                                    }}
-                                    className={`p-1 rounded-md transition-colors ${
-                                      isActive
-                                        ? "text-amber-300 hover:bg-white/20"
-                                        : "text-[#52635E] hover:text-[#D97706] hover:bg-[#E7E0D3]"
-                                    }`}
-                                    title="Edit Chapter"
-                                  >
-                                    <Edit className="w-3 h-3" />
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })}
+                          <button
+                            onClick={() => handleDeleteChapter(idx)}
+                            className={`p-1 rounded-md transition-colors ${
+                              isActive
+                                ? "text-red-300 hover:bg-white/20"
+                                : "text-[#52635E] hover:text-red-600 hover:bg-[#E7E0D3]"
+                            }`}
+                            title="Delete Chapter"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </div>
-                    ))
-                  ) : (
-                    chapters.map((chap, idx) => {
-                      const isActive = idx === activeChapterIndex;
-                      const isDone = completedChapterIds.includes(chap.id);
-
-                      return (
-                        <div
-                          key={chap.id}
-                          className={`group relative rounded-xl transition-all border ${
-                            isActive
-                              ? "bg-[#1C2A26] text-[#FAF7F2] border-[#1C2A26] shadow-xs font-semibold"
-                              : "bg-white border-[#E7E0D3] text-[#52635E] hover:text-[#1C2A26] hover:bg-[#FAF7F2]"
-                          }`}
-                        >
-                          <button
-                            onClick={() => setActiveChapterIndex(idx)}
-                            className="w-full text-left p-3 px-3.5 text-xs flex items-center justify-between pr-14"
-                          >
-                            <div className="flex items-center gap-2.5 truncate pr-2">
-                              {isDone ? (
-                                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                              ) : (
-                                <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center text-[10px] font-mono shrink-0">
-                                  {idx + 1}
-                                </span>
-                              )}
-                              <span className="truncate font-medium">{chap.title}</span>
-                            </div>
-
-                            <span className="text-[10px] font-mono opacity-75 shrink-0">
-                              {chap.estimatedMinutes}m
-                            </span>
-                          </button>
-
-                          <div className="absolute right-2 top-2.5 flex items-center gap-1">
-                            <button
-                              onClick={() => {
-                                setActiveChapterIndex(idx);
-                                openEditChapterModal();
-                              }}
-                              className={`p-1 rounded-md transition-colors ${
-                                isActive
-                                  ? "text-amber-300 hover:bg-white/20"
-                                  : "text-[#52635E] hover:text-[#D97706] hover:bg-[#E7E0D3]"
-                              }`}
-                              title="Edit Chapter"
-                            >
-                              <Edit className="w-3.5 h-3.5" />
-                            </button>
-
-                            <button
-                              onClick={() => handleDeleteChapter(idx)}
-                              className={`p-1 rounded-md transition-colors ${
-                                isActive
-                                  ? "text-red-300 hover:bg-white/20"
-                                  : "text-[#52635E] hover:text-red-600 hover:bg-[#E7E0D3]"
-                              }`}
-                              title="Delete Chapter"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              )}
+                    );
+                  })
+                )}
+              </div>
             </Card>
           </div>
 
@@ -1279,6 +977,298 @@ export default function ManualDetailPage() {
                 <Button variant="primary" size="sm" onClick={handleSaveChapter} leftIcon={<Save className="w-4 h-4" />}>
                   {chapterModalMode === "add" ? "Create Chapter" : "Save Chapter"}
                 </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+        {/* PLAYWRIGHT INTERACTIVE LEARNING ROADMAP MODAL */}
+        {isRoadmapModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-[#1C2A26]/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+            onClick={() => setIsRoadmapModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white border border-[#E7E0D3] rounded-3xl p-6 sm:p-8 max-w-3xl w-full max-h-[88vh] overflow-y-auto space-y-6 shadow-2xl relative"
+            >
+              {/* Modal Header */}
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pb-4 border-b border-[#E7E0D3]">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#D97706] text-white">
+                      8.5 hours Total
+                    </span>
+                    <span className="text-[11px] font-mono font-semibold text-[#52635E]">
+                      61 Nodes across 14 Parts
+                    </span>
+                  </div>
+                  <h3 className="font-serif-display font-bold text-xl text-[#1C2A26] flex items-center gap-2">
+                    <Compass className="w-5 h-5 text-[#D97706]" />
+                    <span>Playwright Learning Roadmap</span>
+                  </h3>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="amber"
+                    size="sm"
+                    onClick={downloadRoadmapSVG}
+                    leftIcon={<Download className="w-4 h-4" />}
+                  >
+                    Download playwright-roadmap.svg
+                  </Button>
+
+                  <button
+                    onClick={() => setIsRoadmapModalOpen(false)}
+                    className="p-2 rounded-xl bg-[#FAF7F2] text-[#52635E] hover:text-[#1C2A26] hover:bg-[#E7E0D3] transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Interactive Search & Level Filter Controls */}
+              <div className="space-y-3">
+                <div className="relative">
+                  <Search className="w-4 h-4 text-[#8A9B95] absolute left-3.5 top-3" />
+                  <input
+                    type="text"
+                    placeholder="Search 61 nodes (e.g. locators, docker, pom)..."
+                    value={roadmapSearch}
+                    onChange={(e) => setRoadmapSearch(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 bg-[#FAF7F2] border border-[#E7E0D3] rounded-2xl text-xs text-[#1C2A26] placeholder-[#8A9B95] focus:outline-none focus:border-[#D97706] transition-colors"
+                  />
+                  {roadmapSearch && (
+                    <button
+                      onClick={() => setRoadmapSearch("")}
+                      className="absolute right-3 top-2.5 text-[#8A9B95] hover:text-[#1C2A26]"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {(["All", "Beginner", "Mid", "Advanced"] as const).map((lvl) => (
+                      <button
+                        key={lvl}
+                        onClick={() => setLevelFilter(lvl)}
+                        className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                          levelFilter === lvl
+                            ? "bg-[#1C2A26] text-white shadow-2xs"
+                            : "bg-[#FAF7F2] text-[#52635E] border border-[#E7E0D3] hover:border-[#D97706]"
+                        }`}
+                      >
+                        {lvl === "All" ? "All Levels" : lvl}
+                      </button>
+                    ))}
+                  </div>
+
+                  <span className="text-[11px] font-mono text-[#8A9B95]">
+                    Click any node to jump directly to chapter
+                  </span>
+                </div>
+              </div>
+
+              {/* Node Detail Inspector Banner */}
+              <AnimatePresence>
+                {selectedRoadmapNode && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    className="p-4 rounded-2xl bg-[#1C2A26] text-white space-y-2 border border-[#D97706]/40 shadow-md relative"
+                  >
+                    <button
+                      onClick={() => setSelectedRoadmapNode(null)}
+                      className="absolute right-3 top-3 text-[#8A9B95] hover:text-white p-1"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-0.5 rounded-md bg-[#D97706] text-white font-mono text-xs font-bold">
+                        Node {selectedRoadmapNode.num}
+                      </span>
+                      <span className="text-xs font-mono text-teal-200">
+                        {selectedRoadmapNode.time}
+                      </span>
+                    </div>
+
+                    <h5 className="font-serif-display font-bold text-sm text-white">
+                      {selectedRoadmapNode.title}
+                    </h5>
+
+                    {selectedRoadmapNode.description && (
+                      <p className="text-xs text-teal-100/90 leading-relaxed">
+                        {selectedRoadmapNode.description}
+                      </p>
+                    )}
+
+                    {selectedRoadmapNode.keyObjective && (
+                      <div className="p-2.5 rounded-xl bg-[#243530] text-xs text-amber-200 flex items-start gap-2 border border-[#2D3F3A]">
+                        <Target className="w-4 h-4 text-[#D97706] shrink-0 mt-0.5" />
+                        <span><strong>Key Objective:</strong> {selectedRoadmapNode.keyObjective}</span>
+                      </div>
+                    )}
+
+                    <div className="pt-1 flex justify-end">
+                      <Button
+                        variant="amber"
+                        size="sm"
+                        onClick={() => {
+                          const targetIdx = selectedRoadmapNode.chapterIndex !== undefined ? selectedRoadmapNode.chapterIndex : 0;
+                          if (targetIdx < chapters.length) {
+                            setActiveChapterIndex(targetIdx);
+                            setIsRoadmapModalOpen(false);
+                            toast({
+                              type: "info",
+                              title: `Opened Node ${selectedRoadmapNode.num}`,
+                              description: selectedRoadmapNode.title,
+                            });
+                          }
+                        }}
+                      >
+                        Open Chapter Lesson →
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* 14 Collapsible Stepper Pipeline Phases */}
+              <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1 scrollbar-thin">
+                {PLAYWRIGHT_ROADMAP_PHASES.map((phase) => {
+                  const isExpanded = expandedPhases.includes(phase.id);
+
+                  const matchingNodes = phase.nodes.filter((n) => {
+                    const matchesSearch =
+                      !roadmapSearch ||
+                      n.title.toLowerCase().includes(roadmapSearch.toLowerCase()) ||
+                      n.num.includes(roadmapSearch) ||
+                      (n.description && n.description.toLowerCase().includes(roadmapSearch.toLowerCase()));
+                    const matchesLevel = levelFilter === "All" || n.level === levelFilter;
+                    return matchesSearch && matchesLevel;
+                  });
+
+                  if (matchingNodes.length === 0 && (roadmapSearch || levelFilter !== "All")) {
+                    return null;
+                  }
+
+                  return (
+                    <div key={phase.id} className="border border-[#E7E0D3] rounded-2xl overflow-hidden bg-white shadow-2xs">
+                      <button
+                        onClick={() => {
+                          if (isExpanded) {
+                            setExpandedPhases((prev) => prev.filter((id) => id !== phase.id));
+                          } else {
+                            setExpandedPhases((prev) => [...prev, phase.id]);
+                          }
+                        }}
+                        className="w-full text-left p-3.5 bg-[#FAF7F2] hover:bg-[#F5EFE6] transition-colors flex items-center justify-between border-b border-[#E7E0D3]"
+                      >
+                        <div className="flex items-center gap-2.5 truncate pr-2">
+                          <span className="px-2 py-0.5 rounded-lg bg-[#1C2A26] text-[#D97706] font-mono font-bold text-xs shadow-2xs">
+                            {phase.phaseNum}
+                          </span>
+                          <span className="font-serif-display font-bold text-sm text-[#1C2A26] truncate">
+                            {phase.title}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-xs font-mono text-[#8A9B95] bg-white px-2.5 py-0.5 rounded-md border border-[#E7E0D3]">
+                            {matchingNodes.length} steps
+                          </span>
+                          <ChevronDown className={`w-4 h-4 text-[#52635E] transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                        </div>
+                      </button>
+
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="p-3 space-y-2 relative"
+                          >
+                            <div className="absolute left-[26px] top-5 bottom-5 w-0.5 bg-[#E7E0D3] pointer-events-none" />
+
+                            {matchingNodes.map((node) => {
+                              const targetIdx = node.chapterIndex !== undefined && node.chapterIndex < chapters.length ? node.chapterIndex : 0;
+                              const isActive = activeChapterIndex === targetIdx;
+                              const isDone = completedChapterIds.includes(chapters[targetIdx]?.id || "");
+
+                              return (
+                                <div key={node.num} className="relative flex items-center gap-3">
+                                  <div
+                                    className={`w-7 h-7 rounded-full flex items-center justify-center font-mono text-xs font-bold shrink-0 z-10 transition-all ${
+                                      isDone
+                                        ? "bg-emerald-500 text-white shadow-2xs"
+                                        : isActive
+                                        ? "bg-[#D97706] text-white ring-2 ring-[#D97706]/40 shadow-xs"
+                                        : "bg-[#FAF7F2] text-[#52635E] border border-[#E7E0D3]"
+                                    }`}
+                                  >
+                                    {isDone ? <Check className="w-4 h-4 stroke-[3]" /> : node.num}
+                                  </div>
+
+                                  <button
+                                    onClick={() => {
+                                      setSelectedRoadmapNode(node);
+                                      if (targetIdx < chapters.length) {
+                                        setActiveChapterIndex(targetIdx);
+                                        setIsRoadmapModalOpen(false);
+                                      }
+                                    }}
+                                    className={`flex-1 text-left p-3 rounded-xl transition-all flex items-center justify-between border text-xs ${
+                                      isActive
+                                        ? "bg-[#1C2A26] text-white border-[#1C2A26] shadow-xs font-bold"
+                                        : "bg-white border-[#E7E0D3] text-[#52635E] hover:border-[#D97706] hover:bg-[#FAF7F2]"
+                                    }`}
+                                  >
+                                    <div className="truncate pr-2">
+                                      <span className="truncate block font-semibold">{node.title}</span>
+                                      {node.description && (
+                                        <span className={`text-[11px] truncate block opacity-75 ${isActive ? "text-teal-200" : "text-[#8A9B95]"}`}>
+                                          {node.description}
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      <span
+                                        className={`text-[10px] font-mono px-2 py-0.5 rounded-md ${
+                                          node.level === "Beginner"
+                                            ? "bg-emerald-100 text-emerald-800"
+                                            : node.level === "Mid"
+                                            ? "bg-amber-100 text-amber-800"
+                                            : "bg-purple-100 text-purple-800"
+                                        }`}
+                                      >
+                                        {node.level}
+                                      </span>
+                                      <span className="text-[10px] font-mono text-[#8A9B95]">
+                                        {node.time}
+                                      </span>
+                                    </div>
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
               </div>
             </motion.div>
           </motion.div>
