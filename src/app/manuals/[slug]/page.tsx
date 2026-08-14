@@ -36,6 +36,10 @@ import {
   Download,
   MapPin,
   CheckSquare,
+  Search,
+  Target,
+  Award,
+  Info,
 } from "lucide-react";
 
 export default function ManualDetailPage() {
@@ -60,6 +64,9 @@ export default function ManualDetailPage() {
   // Sidebar view tab: 'roadmap' (61 nodes across 14 phases) vs 'toc' (linear table of contents)
   const [sidebarTab, setSidebarTab] = useState<"roadmap" | "toc">("roadmap");
   const [expandedPhases, setExpandedPhases] = useState<string[]>(["p0", "p1", "p2", "p3", "p4"]);
+  const [roadmapSearch, setRoadmapSearch] = useState<string>("");
+  const [levelFilter, setLevelFilter] = useState<"All" | "Beginner" | "Mid" | "Advanced">("All");
+  const [selectedRoadmapNode, setSelectedRoadmapNode] = useState<any | null>(null);
 
   // View Mode State: 'full' (exhaustive content) vs 'summary' (AI quick summary)
   const [viewMode, setViewMode] = useState<"full" | "summary">("full");
@@ -494,25 +501,47 @@ export default function ManualDetailPage() {
                 </Button>
               </div>
 
-              {/* TAB 1: 61-NODE PLAYWRIGHT LEARNING ROADMAP */}
+              {/* TAB 1: 61-NODE PLAYWRIGHT LEARNING ROADMAP (ULTRA-DESIGNED & INTERACTIVE) */}
               {sidebarTab === "roadmap" && (
                 <div className="space-y-4">
-                  {/* Roadmap Header & SVG Download Button */}
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-[#1C2A26] via-[#243530] to-[#121C19] text-white space-y-3 shadow-md border border-[#2D3F3A]">
+                  {/* Premium Dark Glass Roadmap Card Header */}
+                  <div className="p-4.5 rounded-2xl bg-gradient-to-br from-[#1C2A26] via-[#243530] to-[#0F1715] text-white space-y-3 shadow-md border border-[#2D3F3A] relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#D97706]/10 rounded-full blur-2xl pointer-events-none" />
+
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#D97706] text-white">
-                        8.5 hours Total
-                      </span>
-                      <span className="text-[10px] text-teal-200 font-medium">61 Nodes · 14 Phases</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#D97706] text-white shadow-xs">
+                          8.5 hours Total
+                        </span>
+                        <span className="text-[10px] text-teal-300 font-mono font-bold">
+                          {completedCount}/61 Mastered
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-teal-200/80 font-medium">14 Phases</span>
                     </div>
 
                     <div>
-                      <h4 className="font-serif-display font-bold text-sm text-white">
-                        Playwright Learning Roadmap
+                      <h4 className="font-serif-display font-bold text-base text-white flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-[#D97706]" />
+                        <span>Playwright Interactive Roadmap</span>
                       </h4>
-                      <p className="text-[11px] text-teal-100/80 leading-tight mt-1">
-                        A progressive route through 61 nodes across 14 phases. Click any node to open the chapter.
+                      <p className="text-[11px] text-teal-100/80 leading-relaxed mt-1">
+                        A progressive route through 61 nodes across 14 phases. Click any node to inspect objectives or open lessons.
                       </p>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="space-y-1 pt-1">
+                      <div className="flex justify-between text-[10px] font-mono text-teal-200">
+                        <span>Roadmap Mastered</span>
+                        <span>{Math.round((completedCount / 61) * 100)}%</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-[#2A3F39] rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-[#D97706] via-amber-400 to-emerald-400 transition-all duration-500 rounded-full"
+                          style={{ width: `${(completedCount / 61) * 100}%` }}
+                        />
+                      </div>
                     </div>
 
                     <Button
@@ -520,29 +549,136 @@ export default function ManualDetailPage() {
                       size="sm"
                       onClick={downloadRoadmapSVG}
                       leftIcon={<Download className="w-3.5 h-3.5" />}
-                      className="w-full justify-center text-[11px] py-1.5"
+                      className="w-full justify-center text-[11px] py-1.5 font-bold shadow-xs"
                     >
                       Download playwright-roadmap.svg
                     </Button>
                   </div>
 
-                  {/* Difficulty & Node Type Legend */}
-                  <div className="flex flex-wrap items-center justify-between gap-1.5 p-2.5 rounded-xl bg-[#FAF7F2] border border-[#E7E0D3] text-[10px] font-medium text-[#52635E]">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500" /> Beginner
-                      <span className="w-2 h-2 rounded-full bg-amber-500 ml-1" /> Mid
-                      <span className="w-2 h-2 rounded-full bg-purple-500 ml-1" /> Advanced
+                  {/* Interactive Search & Level Filter Bar */}
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 text-[#8A9B95] absolute left-3 top-2.5" />
+                      <input
+                        type="text"
+                        placeholder="Search 61 nodes (e.g. locators, docker, pom)..."
+                        value={roadmapSearch}
+                        onChange={(e) => setRoadmapSearch(e.target.value)}
+                        className="w-full pl-8 pr-3 py-1.5 bg-[#FAF7F2] border border-[#E7E0D3] rounded-xl text-xs text-[#1C2A26] placeholder-[#8A9B95] focus:outline-none focus:border-[#D97706] transition-colors"
+                      />
+                      {roadmapSearch && (
+                        <button
+                          onClick={() => setRoadmapSearch("")}
+                          className="absolute right-2.5 top-2 text-[#8A9B95] hover:text-[#1C2A26]"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
 
-                    <div className="flex items-center gap-1 text-[#8A9B95] font-mono">
-                      <span>Chap</span> · <span>Guide</span> · <span>Check</span>
+                    {/* Level Filter Pills */}
+                    <div className="flex flex-wrap items-center gap-1">
+                      {(["All", "Beginner", "Mid", "Advanced"] as const).map((lvl) => (
+                        <button
+                          key={lvl}
+                          onClick={() => setLevelFilter(lvl)}
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                            levelFilter === lvl
+                              ? "bg-[#1C2A26] text-white shadow-2xs"
+                              : "bg-[#FAF7F2] text-[#52635E] border border-[#E7E0D3] hover:border-[#D97706]"
+                          }`}
+                        >
+                          {lvl === "All" ? "All Levels" : lvl}
+                        </button>
+                      ))}
                     </div>
                   </div>
 
-                  {/* 14 Collapsible Roadmap Phases */}
-                  <div className="space-y-2.5 max-h-[55vh] overflow-y-auto pr-1 scrollbar-thin">
+                  {/* Interactive Node Inspector Banner */}
+                  <AnimatePresence>
+                    {selectedRoadmapNode && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        className="p-3.5 rounded-2xl bg-[#1C2A26] text-white space-y-2 border border-[#D97706]/40 shadow-sm relative"
+                      >
+                        <button
+                          onClick={() => setSelectedRoadmapNode(null)}
+                          className="absolute right-2.5 top-2.5 text-[#8A9B95] hover:text-white p-1"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded-md bg-[#D97706] text-white font-mono text-[10px] font-bold">
+                            Node {selectedRoadmapNode.num}
+                          </span>
+                          <span className="text-[10px] font-mono text-teal-200">
+                            {selectedRoadmapNode.time}
+                          </span>
+                        </div>
+
+                        <h5 className="font-serif-display font-bold text-xs text-white">
+                          {selectedRoadmapNode.title}
+                        </h5>
+
+                        {selectedRoadmapNode.description && (
+                          <p className="text-[11px] text-teal-100/90 leading-tight">
+                            {selectedRoadmapNode.description}
+                          </p>
+                        )}
+
+                        {selectedRoadmapNode.keyObjective && (
+                          <div className="p-2 rounded-xl bg-[#243530] text-[10px] text-amber-200 flex items-start gap-1.5 border border-[#2D3F3A]">
+                            <Target className="w-3.5 h-3.5 text-[#D97706] shrink-0 mt-0.5" />
+                            <span><strong>Objective:</strong> {selectedRoadmapNode.keyObjective}</span>
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-2 pt-1">
+                          <Button
+                            variant="amber"
+                            size="sm"
+                            onClick={() => {
+                              const targetIdx = selectedRoadmapNode.chapterIndex !== undefined ? selectedRoadmapNode.chapterIndex : 0;
+                              if (targetIdx < chapters.length) {
+                                setActiveChapterIndex(targetIdx);
+                                toast({
+                                  type: "info",
+                                  title: `Opened Lesson ${selectedRoadmapNode.num}`,
+                                  description: selectedRoadmapNode.title,
+                                });
+                              }
+                            }}
+                            className="flex-1 text-[10px] py-1 justify-center"
+                          >
+                            Jump to Lesson →
+                          </Button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* 14 Collapsible Roadmap Phases with Connected Stepper Pipeline */}
+                  <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1 scrollbar-thin">
                     {PLAYWRIGHT_ROADMAP_PHASES.map((phase) => {
                       const isExpanded = expandedPhases.includes(phase.id);
+
+                      // Filter nodes by search & level
+                      const matchingNodes = phase.nodes.filter((n) => {
+                        const matchesSearch =
+                          !roadmapSearch ||
+                          n.title.toLowerCase().includes(roadmapSearch.toLowerCase()) ||
+                          n.num.includes(roadmapSearch) ||
+                          (n.description && n.description.toLowerCase().includes(roadmapSearch.toLowerCase()));
+                        const matchesLevel = levelFilter === "All" || n.level === levelFilter;
+                        return matchesSearch && matchesLevel;
+                      });
+
+                      if (matchingNodes.length === 0 && (roadmapSearch || levelFilter !== "All")) {
+                        return null;
+                      }
 
                       return (
                         <div key={phase.id} className="border border-[#E7E0D3] rounded-2xl overflow-hidden bg-white shadow-2xs">
@@ -558,7 +694,7 @@ export default function ManualDetailPage() {
                             className="w-full text-left p-3 bg-[#FAF7F2] hover:bg-[#F5EFE6] transition-colors flex items-center justify-between border-b border-[#E7E0D3]"
                           >
                             <div className="flex items-center gap-2 truncate pr-2">
-                              <span className="px-1.5 py-0.5 rounded-md bg-[#1C2A26] text-[#D97706] font-mono font-bold text-[10px]">
+                              <span className="px-2 py-0.5 rounded-lg bg-[#1C2A26] text-[#D97706] font-mono font-bold text-[10px] shadow-2xs">
                                 {phase.phaseNum}
                               </span>
                               <span className="font-serif-display font-bold text-xs text-[#1C2A26] truncate">
@@ -567,68 +703,91 @@ export default function ManualDetailPage() {
                             </div>
 
                             <div className="flex items-center gap-2 shrink-0">
-                              <span className="text-[10px] font-mono text-[#8A9B95]">
-                                {phase.stepCount}
+                              <span className="text-[10px] font-mono text-[#8A9B95] bg-white px-2 py-0.5 rounded-md border border-[#E7E0D3]">
+                                {matchingNodes.length} nodes
                               </span>
                               <ChevronDown className={`w-3.5 h-3.5 text-[#52635E] transition-transform ${isExpanded ? "rotate-180" : ""}`} />
                             </div>
                           </button>
 
-                          {/* Phase Nodes List */}
+                          {/* Phase Nodes Stepper Pipeline */}
                           <AnimatePresence>
                             {isExpanded && (
                               <motion.div
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: "auto" }}
                                 exit={{ opacity: 0, height: 0 }}
-                                className="divide-y divide-[#E7E0D3]/50 p-1"
+                                className="p-2 space-y-1.5 relative"
                               >
-                                {phase.nodes.map((node) => {
+                                {/* Vertical Stepper Line Connector */}
+                                <div className="absolute left-[22px] top-4 bottom-4 w-0.5 bg-[#E7E0D3] pointer-events-none" />
+
+                                {matchingNodes.map((node) => {
                                   const targetIdx = node.chapterIndex !== undefined && node.chapterIndex < chapters.length ? node.chapterIndex : 0;
                                   const isActive = activeChapterIndex === targetIdx;
                                   const isDone = completedChapterIds.includes(chapters[targetIdx]?.id || "");
+                                  const isSelected = selectedRoadmapNode?.num === node.num;
 
                                   return (
-                                    <button
+                                    <div
                                       key={node.num}
-                                      onClick={() => {
-                                        if (targetIdx < chapters.length) {
-                                          setActiveChapterIndex(targetIdx);
-                                          toast({
-                                            type: "info",
-                                            title: `Opened Node ${node.num}`,
-                                            description: node.title,
-                                          });
-                                        }
-                                      }}
-                                      className={`w-full text-left p-2.5 rounded-xl transition-all flex items-center justify-between group text-xs ${
-                                        isActive
-                                          ? "bg-[#1C2A26] text-white shadow-xs font-bold"
-                                          : "hover:bg-[#FAF7F2] text-[#52635E]"
-                                      }`}
+                                      className="relative flex items-center gap-2 group"
                                     >
-                                      <div className="flex items-center gap-2.5 truncate pr-2">
-                                        <span className={`font-mono text-[10px] shrink-0 ${isActive ? "text-[#D97706]" : "text-[#8A9B95]"}`}>
-                                          {node.num}
-                                        </span>
-
-                                        <span className="truncate">{node.title}</span>
+                                      {/* Stepper Dot Badge */}
+                                      <div
+                                        className={`w-6 h-6 rounded-full flex items-center justify-center font-mono text-[10px] font-bold shrink-0 z-10 transition-all ${
+                                          isDone
+                                            ? "bg-emerald-500 text-white shadow-2xs"
+                                            : isActive
+                                            ? "bg-[#D97706] text-white ring-2 ring-[#D97706]/40 shadow-xs"
+                                            : "bg-[#FAF7F2] text-[#52635E] border border-[#E7E0D3]"
+                                        }`}
+                                      >
+                                        {isDone ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : node.num}
                                       </div>
 
-                                      <div className="flex items-center gap-1.5 shrink-0">
-                                        <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded-md ${
-                                          node.type === "Checkpoint"
-                                            ? "bg-amber-100 text-amber-800"
-                                            : node.type === "Guide"
-                                            ? "bg-sky-100 text-sky-800"
-                                            : "bg-gray-100 text-gray-700"
-                                        }`}>
-                                          {node.time}
-                                        </span>
+                                      {/* Node Button Box */}
+                                      <button
+                                        onClick={() => {
+                                          setSelectedRoadmapNode(node);
+                                          if (targetIdx < chapters.length) {
+                                            setActiveChapterIndex(targetIdx);
+                                          }
+                                        }}
+                                        className={`flex-1 text-left p-2.5 rounded-xl transition-all flex items-center justify-between border text-xs ${
+                                          isActive
+                                            ? "bg-[#1C2A26] text-white border-[#1C2A26] shadow-xs font-bold"
+                                            : isSelected
+                                            ? "bg-[#FEF3C7] text-[#1C2A26] border-[#D97706]"
+                                            : "bg-white border-[#E7E0D3] text-[#52635E] hover:border-[#D97706] hover:bg-[#FAF7F2]"
+                                        }`}
+                                      >
+                                        <div className="truncate pr-2">
+                                          <span className="truncate block font-medium">{node.title}</span>
+                                          {node.description && (
+                                            <span className={`text-[10px] truncate block opacity-75 ${isActive ? "text-teal-200" : "text-[#8A9B95]"}`}>
+                                              {node.description}
+                                            </span>
+                                          )}
+                                        </div>
 
-                                        {isDone && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
-                                      </div>
-                                    </button>
+                                        <div className="flex items-center gap-1.5 shrink-0">
+                                          <span
+                                            className={`text-[9px] font-mono px-1.5 py-0.5 rounded-md ${
+                                              node.level === "Beginner"
+                                                ? "bg-emerald-100 text-emerald-800"
+                                                : node.level === "Mid"
+                                                ? "bg-amber-100 text-amber-800"
+                                                : "bg-purple-100 text-purple-800"
+                                            }`}
+                                          >
+                                            {node.level}
+                                          </span>
+
+                                          <Info className={`w-3.5 h-3.5 ${isActive ? "text-amber-300" : "text-[#8A9B95] opacity-60 group-hover:opacity-100"}`} />
+                                        </div>
+                                      </button>
+                                    </div>
                                   );
                                 })}
                               </motion.div>
