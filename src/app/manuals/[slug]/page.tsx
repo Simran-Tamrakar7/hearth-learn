@@ -641,73 +641,78 @@ export default function ManualDetailPage() {
                 </div>
               )}
 
-              {/* TAB 2: LINEAR CHAPTER TABLE OF CONTENTS */}
+              {/* TAB 2: PART-WISE GROUPED CHAPTER TABLE OF CONTENTS */}
               {sidebarTab === "toc" && (
-                <div className="space-y-2.5 max-h-[60vh] overflow-y-auto pr-1">
-                  {chapters.map((chap, idx) => {
-                    const isActive = idx === activeChapterIndex;
-                    const isDone = completedChapterIds.includes(chap.id);
-
-                    return (
-                      <div
-                        key={chap.id}
-                        className={`group relative rounded-2xl transition-all border ${
-                          isActive
-                            ? "bg-[#1C2A26] text-[#FAF7F2] border-[#1C2A26] shadow-xs"
-                            : "bg-white border-[#E7E0D3] text-[#52635E] hover:text-[#1C2A26] hover:bg-[#FAF7F2]"
-                        }`}
-                      >
-                        <button
-                          onClick={() => setActiveChapterIndex(idx)}
-                          className="w-full text-left p-3.5 px-4 text-xs sm:text-sm flex items-center justify-between pr-16"
-                        >
-                          <div className="flex items-center gap-3 truncate pr-2">
-                            {isDone ? (
-                              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                            ) : (
-                              <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center text-[10px] font-mono shrink-0">
-                                {idx + 1}
-                              </span>
-                            )}
-                            <span className="truncate font-medium">{chap.title}</span>
-                          </div>
-
-                          <span className="text-[10px] font-mono opacity-75 shrink-0">
-                            {chap.estimatedMinutes}m
-                          </span>
-                        </button>
-
-                        <div className="absolute right-2.5 top-3 flex items-center gap-1">
-                          <button
-                            onClick={() => {
-                              setActiveChapterIndex(idx);
-                              openEditChapterModal();
-                            }}
-                            className={`p-1 rounded-md transition-colors ${
-                              isActive
-                                ? "text-amber-300 hover:bg-white/20"
-                                : "text-[#52635E] hover:text-[#D97706] hover:bg-[#E7E0D3]"
-                            }`}
-                            title="Edit Chapter"
-                          >
-                            <Edit className="w-3.5 h-3.5" />
-                          </button>
-
-                          <button
-                            onClick={() => handleDeleteChapter(idx)}
-                            className={`p-1 rounded-md transition-colors ${
-                              isActive
-                                ? "text-red-300 hover:bg-white/20"
-                                : "text-[#52635E] hover:text-red-600 hover:bg-[#E7E0D3]"
-                            }`}
-                            title="Delete Chapter"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1 scrollbar-thin">
+                  {PLAYWRIGHT_ROADMAP_PHASES.map((phase) => (
+                    <div key={phase.id} className="space-y-2">
+                      <div className="flex items-center justify-between pt-1 pb-1 border-b border-[#E7E0D3]">
+                        <h4 className="font-serif-display font-bold text-xs text-[#1C2A26] tracking-tight">
+                          {phase.title}
+                        </h4>
+                        <span className="text-[10px] font-mono text-[#8A9B95]">
+                          {phase.stepCount}
+                        </span>
                       </div>
-                    );
-                  })}
+
+                      <div className="space-y-1.5 pl-1">
+                        {phase.nodes.map((node) => {
+                          const targetIdx = node.chapterIndex !== undefined && node.chapterIndex < chapters.length ? node.chapterIndex : 0;
+                          const chap = chapters[targetIdx] || { id: node.num, title: node.title, estimatedMinutes: 15 };
+                          const isActive = activeChapterIndex === targetIdx;
+                          const isDone = completedChapterIds.includes(chap.id);
+
+                          return (
+                            <div
+                              key={node.num}
+                              className={`group relative rounded-xl transition-all border ${
+                                isActive
+                                  ? "bg-[#1C2A26] text-[#FAF7F2] border-[#1C2A26] shadow-2xs font-semibold"
+                                  : "bg-white border-[#E7E0D3] text-[#52635E] hover:text-[#1C2A26] hover:bg-[#FAF7F2]"
+                              }`}
+                            >
+                              <button
+                                onClick={() => setActiveChapterIndex(targetIdx)}
+                                className="w-full text-left p-2.5 px-3 text-xs flex items-center justify-between pr-14"
+                              >
+                                <div className="flex items-center gap-2 truncate pr-1">
+                                  {isDone ? (
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                  ) : (
+                                    <span className="font-mono text-[10px] opacity-70 shrink-0 min-w-[20px]">
+                                      {node.num}.
+                                    </span>
+                                  )}
+                                  <span className="truncate">{chap.title}</span>
+                                </div>
+
+                                <span className="text-[10px] font-mono opacity-70 shrink-0">
+                                  {node.time}
+                                </span>
+                              </button>
+
+                              <div className="absolute right-2 top-2 flex items-center gap-0.5">
+                                <button
+                                  onClick={() => {
+                                    setActiveChapterIndex(targetIdx);
+                                    openEditChapterModal();
+                                  }}
+                                  className={`p-1 rounded-md transition-colors ${
+                                    isActive
+                                      ? "text-amber-300 hover:bg-white/20"
+                                      : "text-[#52635E] hover:text-[#D97706] hover:bg-[#E7E0D3]"
+                                  }`}
+                                  title="Edit Chapter"
+                                >
+                                  <Edit className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </Card>
