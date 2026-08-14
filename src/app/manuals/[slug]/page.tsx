@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
-import { MANUALS_DATA, ManualItem, ManualChapter } from "@/lib/manualsData";
+import { MANUALS_DATA, findHearthManual, ManualItem, ManualChapter } from "@/lib/manualsData";
 import { PLAYWRIGHT_ROADMAP_PHASES, downloadRoadmapSVG } from "@/lib/roadmapData";
 import {
   ChevronLeft,
@@ -27,6 +27,7 @@ import {
   ChevronDown,
   Layers,
   Edit,
+  SquarePen,
   Trash2,
   Plus,
   X,
@@ -48,7 +49,7 @@ export default function ManualDetailPage() {
   const { toast } = useToast();
 
   const slug = params?.slug as string;
-  const initialManual = MANUALS_DATA.find((m) => m.slug === slug) || MANUALS_DATA[0];
+  const initialManual = findHearthManual(slug) || MANUALS_DATA[0];
 
   // State for editable manual details
   const [manualTitle, setManualTitle] = useState<string>(initialManual.title);
@@ -61,9 +62,21 @@ export default function ManualDetailPage() {
   const [activeChapterIndex, setActiveChapterIndex] = useState<number>(0);
   const [completedChapterIds, setCompletedChapterIds] = useState<string[]>([]);
 
-  // Sidebar view tab: 'roadmap' (61 nodes across 14 phases) vs 'toc' (linear table of contents)
-  const [sidebarTab, setSidebarTab] = useState<"roadmap" | "toc">("roadmap");
-  const [expandedPhases, setExpandedPhases] = useState<string[]>(["p0", "p1", "p2", "p3", "p4"]);
+  const isPlaywright = slug === "playwright" || slug === "playwright-test-automation";
+  const [expandedPhases, setExpandedPhases] = useState<string[]>(() => {
+    const seen = new Set<string>();
+    const ids: string[] = [];
+    for (const ch of initialManual.chapters) {
+      const id = ch.subtitle || "Main";
+      if (seen.has(id)) continue;
+      seen.add(id);
+      if (ids.length < 5) ids.push(id);
+    }
+    if (slug === "playwright" || slug === "playwright-test-automation") {
+      ids.push("p0", "p1", "p2", "p3", "p4");
+    }
+    return ids;
+  });
   const [roadmapSearch, setRoadmapSearch] = useState<string>("");
   const [levelFilter, setLevelFilter] = useState<"All" | "Beginner" | "Mid" | "Advanced">("All");
   const [selectedRoadmapNode, setSelectedRoadmapNode] = useState<any | null>(null);
@@ -128,6 +141,33 @@ export default function ManualDetailPage() {
   const totalChapters = chapters.length;
   const completedCount = completedChapterIds.filter((id) => chapters.some((c) => c.id === id)).length;
   const progressPercent = totalChapters > 0 ? Math.round((completedCount / totalChapters) * 100) : 0;
+  const roadmapParts = React.useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        id: string;
+        phaseNum: string;
+        title: string;
+        nodes: { num: string; title: string; chapterIndex: number; time: string; description?: string; level?: string }[];
+      }
+    >();
+    chapters.forEach((ch, idx) => {
+      const title = ch.subtitle || "Main";
+      if (!map.has(title)) {
+        map.set(title, { id: title, phaseNum: `P${map.size}`, title, nodes: [] });
+      }
+      map.get(title)!.nodes.push({
+        num: String(idx + 1),
+        title: ch.title,
+        chapterIndex: idx,
+        time: `${ch.estimatedMinutes} min`,
+        level: "All",
+      });
+    });
+    return [...map.values()].map((p, i) => ({ ...p, phaseNum: `P${i}` }));
+  }, [chapters]);
+  const phasesForRoadmap = isPlaywright ? PLAYWRIGHT_ROADMAP_PHASES : roadmapParts;
+  const partCount = phasesForRoadmap.length;
 
   const toggleMarkComplete = (chapterId: string) => {
     const exists = completedChapterIds.includes(chapterId);
@@ -419,58 +459,41 @@ export default function ManualDetailPage() {
             </p>
           </div>
 
-          {/* Metadata Footer Row — Dynamic per manual (Playwright gets Learning Roadmap modal button, 14 Parts, 61 Chapters & 8.5h Total) */}
+          {/* Metadata Footer Row */}
           <div className="border-t border-[#E7E0D3] pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-2.5">
-              {slug === "playwright" && (
-                <>
-                  <button
-                    onClick={() => setIsRoadmapModalOpen(true)}
-                    className="flex items-center gap-2 text-xs font-bold px-3.5 py-1.5 rounded-xl border border-[#D97706] bg-[#1C2A26] text-white hover:bg-[#243530] transition-all shadow-xs"
-                  >
-                    <Compass className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
-                    <span>Learning Roadmap</span>
-                  </button>
-
-                  <div className="flex items-center gap-2 text-xs font-semibold text-[#52635E] bg-white px-3.5 py-1.5 rounded-xl border border-[#E7E0D3] shadow-2xs">
-                    <Layers className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
-                    <span>14 Parts</span>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-xs font-semibold text-[#52635E] bg-white px-3.5 py-1.5 rounded-xl border border-[#E7E0D3] shadow-2xs">
-                    <BookOpen className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
-                    <span>61 Chapters</span>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-xs font-bold text-[#1C2A26] bg-white px-3.5 py-1.5 rounded-xl border border-[#E7E0D3] shadow-2xs">
-                    <Clock className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
-                    <span>8.5 hours Total</span>
-                  </div>
-                </>
-              )}
-
-              {slug !== "playwright" && (
-                <>
-                  <div className="flex items-center gap-2 text-xs font-semibold text-[#52635E] bg-white px-3.5 py-1.5 rounded-xl border border-[#E7E0D3] shadow-2xs">
-                    <BookOpen className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
-                    <span>{totalChapters} Chapters</span>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-xs font-bold text-[#1C2A26] bg-white px-3.5 py-1.5 rounded-xl border border-[#E7E0D3] shadow-2xs">
-                    <Clock className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
-                    <span>{manualEstimatedTime} Total</span>
-                  </div>
-                </>
-              )}
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEditManualModalOpen(true)}
-                leftIcon={<Edit className="w-3.5 h-3.5 text-[#D97706]" />}
+              <button
+                type="button"
+                onClick={() => setIsRoadmapModalOpen(true)}
+                className="flex items-center gap-2 text-xs font-bold px-4 py-1.5 rounded-full bg-[#1C2A26] text-white hover:bg-[#243530] transition-all shadow-xs"
               >
-                Edit Manual
-              </Button>
+                <Compass className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
+                <span>Learning Roadmap</span>
+              </button>
+
+              <div className="flex items-center gap-2 text-xs font-semibold text-[#52635E] bg-white px-3.5 py-1.5 rounded-xl border border-[#E7E0D3] shadow-2xs">
+                <Layers className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
+                <span>{partCount} Parts</span>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs font-semibold text-[#52635E] bg-white px-3.5 py-1.5 rounded-xl border border-[#E7E0D3] shadow-2xs">
+                <BookOpen className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
+                <span>{totalChapters} Chapters</span>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs font-semibold text-[#52635E] bg-white px-3.5 py-1.5 rounded-xl border border-[#E7E0D3] shadow-2xs">
+                <Clock className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
+                <span>{manualEstimatedTime} Total</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsEditManualModalOpen(true)}
+                className="flex items-center gap-2 text-xs font-semibold text-[#52635E] bg-white px-3.5 py-1.5 rounded-xl border border-[#E7E0D3] hover:text-[#1C2A26] hover:border-[#D4CBBB] transition-all shadow-2xs"
+              >
+                <SquarePen className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
+                <span>Edit Manual</span>
+              </button>
             </div>
 
             <div className="flex items-center gap-3 w-full sm:w-64">
@@ -492,14 +515,26 @@ export default function ManualDetailPage() {
 
         {/* 2-COLUMN LAYOUT: TOC SIDEBAR + CHAPTER CONTENT */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* LEFT COLUMN: CHAPTERS LIST VIEW SIDEBAR */}
+          {/* LEFT COLUMN: ROADMAP + CHAPTERS */}
           <div className="lg:col-span-4 space-y-4 sticky top-24 max-h-[82vh] overflow-y-auto pr-1 scrollbar-thin">
             <Card variant="default" hoverable={false} className="p-5 border-[#E7E0D3] bg-[#EEF2F0] space-y-4 shadow-2xs rounded-3xl">
-              {/* Sidebar Header — TABLE OF CONTENTS */}
-              <div className="flex items-center justify-between pb-2 border-b border-[#D8E2DD]">
-                <h3 className="font-mono font-bold text-xs text-[#52635E] tracking-wider uppercase">
-                  TABLE OF CONTENTS
-                </h3>
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#D8E2DD]">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsRoadmapModalOpen(true)}
+                    className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full bg-[#1C2A26] text-white hover:bg-[#243530] transition-all"
+                  >
+                    <Compass className="w-3 h-3 text-[#D97706] shrink-0" />
+                    <span>Roadmap</span>
+                  </button>
+                  <span className="text-[11px] font-semibold text-[#52635E] bg-white px-2.5 py-1 rounded-lg border border-[#E7E0D3]">
+                    {totalChapters} Chapters
+                  </span>
+                  <span className="text-[11px] font-semibold text-[#52635E] bg-white px-2.5 py-1 rounded-lg border border-[#E7E0D3]">
+                    {partCount} Parts
+                  </span>
+                </div>
 
                 <Button
                   variant="ghost"
@@ -512,110 +547,82 @@ export default function ManualDetailPage() {
                 </Button>
               </div>
 
-              {/* CHAPTERS LIST VIEW (Exact Screenshot Format) */}
-              <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1 scrollbar-thin">
-                {slug === "playwright" ? (
-                  PLAYWRIGHT_ROADMAP_PHASES.map((phase, phaseIdx) => (
-                    <div key={phase.id} className="space-y-1.5">
-                      <h4 className="font-sans font-bold text-xs sm:text-sm text-[#1C2A26] tracking-tight pt-1 px-1">
-                        {phase.title}
-                      </h4>
+              <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-1 scrollbar-thin">
+                {roadmapParts.map((part) => {
+                  const isExpanded = expandedPhases.includes(part.id);
 
-                      <div className="space-y-1">
-                        {phase.nodes.map((node, nodeIdx) => {
-                          const targetIdx = node.chapterIndex !== undefined && node.chapterIndex < chapters.length ? node.chapterIndex : 0;
-                          const chap = chapters[targetIdx] || { id: node.num, title: node.title };
-                          const isActive = activeChapterIndex === targetIdx;
-
-                          // Compute exact display number matching screenshot format:
-                          // Part 0: 0., 1., 2., 3., 4.
-                          // Part 1+: 1., 2., 3., 4., (or 10. for Checkpoint)
-                          let numPrefix = "";
-                          if (node.type === "Checkpoint" || node.title.toLowerCase().includes("checkpoint")) {
-                            numPrefix = "10. ";
-                          } else if (phaseIdx === 0) {
-                            numPrefix = `${nodeIdx}. `;
+                  return (
+                    <div key={part.id} className="space-y-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (expandedPhases.includes(part.id)) {
+                            setExpandedPhases((prev) => prev.filter((id) => id !== part.id));
                           } else {
-                            numPrefix = `${nodeIdx + 1}. `;
+                            setExpandedPhases((prev) => [...prev, part.id]);
                           }
+                        }}
+                        className="w-full flex items-center justify-between gap-2 px-1 py-1 text-left"
+                      >
+                        <span className="font-mono font-bold text-[10px] text-[#52635E] tracking-wider uppercase truncate">
+                          {part.title}
+                        </span>
+                        <span className="flex items-center gap-1 shrink-0">
+                          <span className="text-[10px] font-mono text-[#8A9B95]">{part.nodes.length}</span>
+                          <ChevronDown className={`w-3.5 h-3.5 text-[#52635E] transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                        </span>
+                      </button>
+
+                      {isExpanded &&
+                        part.nodes.map((node) => {
+                          const idx = node.chapterIndex;
+                          const chap = chapters[idx];
+                          if (!chap) return null;
+                          const isActive = idx === activeChapterIndex;
+                          const displayTitle = chap.title.replace(/^Chapter\s+\d+:\s*/i, "");
 
                           return (
-                            <div key={node.num} className="group relative">
+                            <div key={chap.id || idx} className="group relative">
                               <button
-                                onClick={() => setActiveChapterIndex(targetIdx)}
+                                onClick={() => setActiveChapterIndex(idx)}
                                 className={`w-full text-left px-3 py-2.5 rounded-xl text-xs sm:text-sm transition-all flex items-center justify-between ${
                                   isActive
                                     ? "bg-[#CBD7D2] text-[#1C2A26] font-bold shadow-2xs"
                                     : "text-[#2F413B] hover:bg-white/70 hover:text-[#1C2A26] font-normal"
                                 }`}
                               >
-                                <span className="truncate pr-6">
-                                  <span className="font-semibold mr-1">{numPrefix}</span>
-                                  {chap.title}
+                                <span className="truncate pr-12">
+                                  <span className="font-semibold mr-1.5">{idx + 1}.</span>
+                                  {displayTitle}
                                 </span>
                               </button>
 
-                              <button
-                                onClick={() => {
-                                  setActiveChapterIndex(targetIdx);
-                                  openEditChapterModal();
-                                }}
-                                className="absolute right-2.5 top-2.5 opacity-0 group-hover:opacity-100 transition-opacity p-1 text-[#52635E] hover:text-[#D97706]"
-                                title="Edit Chapter"
-                              >
-                                <Edit className="w-3 h-3" />
-                              </button>
+                              <div className="absolute right-2 top-2.5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                                <button
+                                  onClick={() => {
+                                    setActiveChapterIndex(idx);
+                                    openEditChapterModal();
+                                  }}
+                                  className="p-1 text-[#52635E] hover:text-[#D97706]"
+                                  title="Edit Chapter"
+                                >
+                                  <Edit className="w-3.5 h-3.5" />
+                                </button>
+
+                                <button
+                                  onClick={() => handleDeleteChapter(idx)}
+                                  className="p-1 text-[#52635E] hover:text-red-600"
+                                  title="Delete Chapter"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
                             </div>
                           );
                         })}
-                      </div>
                     </div>
-                  ))
-                ) : (
-                  chapters.map((chap, idx) => {
-                    const isActive = idx === activeChapterIndex;
-                    const displayTitle = chap.title.replace(/^Chapter\s+\d+:\s*/i, "");
-
-                    return (
-                      <div key={chap.id || idx} className="group relative">
-                        <button
-                          onClick={() => setActiveChapterIndex(idx)}
-                          className={`w-full text-left px-3 py-2.5 rounded-xl text-xs sm:text-sm transition-all flex items-center justify-between ${
-                            isActive
-                              ? "bg-[#CBD7D2] text-[#1C2A26] font-bold shadow-2xs"
-                              : "text-[#2F413B] hover:bg-white/70 hover:text-[#1C2A26] font-normal"
-                          }`}
-                        >
-                          <span className="truncate pr-12">
-                            <span className="font-semibold mr-1.5">{idx + 1}.</span>
-                            {displayTitle}
-                          </span>
-                        </button>
-
-                        <div className="absolute right-2 top-2.5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                          <button
-                            onClick={() => {
-                              setActiveChapterIndex(idx);
-                              openEditChapterModal();
-                            }}
-                            className="p-1 text-[#52635E] hover:text-[#D97706]"
-                            title="Edit Chapter"
-                          >
-                            <Edit className="w-3.5 h-3.5" />
-                          </button>
-
-                          <button
-                            onClick={() => handleDeleteChapter(idx)}
-                            className="p-1 text-[#52635E] hover:text-red-600"
-                            title="Delete Chapter"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
+                  );
+                })}
               </div>
             </Card>
           </div>
@@ -947,7 +954,7 @@ export default function ManualDetailPage() {
             </motion.div>
           </motion.div>
         )}
-        {/* PLAYWRIGHT INTERACTIVE LEARNING ROADMAP MODAL */}
+        {/* LEARNING ROADMAP MODAL */}
         {isRoadmapModalOpen && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -968,27 +975,29 @@ export default function ManualDetailPage() {
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#D97706] text-white">
-                      8.5 hours Total
+                      {manualEstimatedTime} Total
                     </span>
                     <span className="text-[11px] font-mono font-semibold text-[#52635E]">
-                      61 Nodes across 14 Parts
+                      {totalChapters} Nodes across {partCount} Parts
                     </span>
                   </div>
                   <h3 className="font-serif-display font-bold text-xl text-[#1C2A26] flex items-center gap-2">
                     <Compass className="w-5 h-5 text-[#D97706]" />
-                    <span>Playwright Learning Roadmap</span>
+                    <span>Learning Roadmap</span>
                   </h3>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="amber"
-                    size="sm"
-                    onClick={downloadRoadmapSVG}
-                    leftIcon={<Download className="w-4 h-4" />}
-                  >
-                    Download playwright-roadmap.svg
-                  </Button>
+                  {isPlaywright && (
+                    <Button
+                      variant="amber"
+                      size="sm"
+                      onClick={downloadRoadmapSVG}
+                      leftIcon={<Download className="w-4 h-4" />}
+                    >
+                      Download playwright-roadmap.svg
+                    </Button>
+                  )}
 
                   <button
                     onClick={() => setIsRoadmapModalOpen(false)}
@@ -1005,7 +1014,7 @@ export default function ManualDetailPage() {
                   <Search className="w-4 h-4 text-[#8A9B95] absolute left-3.5 top-3" />
                   <input
                     type="text"
-                    placeholder="Search 61 nodes (e.g. locators, docker, pom)..."
+                    placeholder={`Search ${totalChapters} nodes...`}
                     value={roadmapSearch}
                     onChange={(e) => setRoadmapSearch(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 bg-[#FAF7F2] border border-[#E7E0D3] rounded-2xl text-xs text-[#1C2A26] placeholder-[#8A9B95] focus:outline-none focus:border-[#D97706] transition-colors"
@@ -1021,21 +1030,25 @@ export default function ManualDetailPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {(["All", "Beginner", "Mid", "Advanced"] as const).map((lvl) => (
-                      <button
-                        key={lvl}
-                        onClick={() => setLevelFilter(lvl)}
-                        className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
-                          levelFilter === lvl
-                            ? "bg-[#1C2A26] text-white shadow-2xs"
-                            : "bg-[#FAF7F2] text-[#52635E] border border-[#E7E0D3] hover:border-[#D97706]"
-                        }`}
-                      >
-                        {lvl === "All" ? "All Levels" : lvl}
-                      </button>
-                    ))}
-                  </div>
+                  {isPlaywright ? (
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {(["All", "Beginner", "Mid", "Advanced"] as const).map((lvl) => (
+                        <button
+                          key={lvl}
+                          onClick={() => setLevelFilter(lvl)}
+                          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                            levelFilter === lvl
+                              ? "bg-[#1C2A26] text-white shadow-2xs"
+                              : "bg-[#FAF7F2] text-[#52635E] border border-[#E7E0D3] hover:border-[#D97706]"
+                          }`}
+                        >
+                          {lvl === "All" ? "All Levels" : lvl}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div />
+                  )}
 
                   <span className="text-[11px] font-mono text-[#8A9B95]">
                     Click any node to jump directly to chapter
@@ -1111,7 +1124,7 @@ export default function ManualDetailPage() {
 
               {/* 14 Collapsible Stepper Pipeline Phases */}
               <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1 scrollbar-thin">
-                {PLAYWRIGHT_ROADMAP_PHASES.map((phase) => {
+                {phasesForRoadmap.map((phase) => {
                   const isExpanded = expandedPhases.includes(phase.id);
 
                   const matchingNodes = phase.nodes.filter((n) => {
@@ -1210,17 +1223,19 @@ export default function ManualDetailPage() {
                                     </div>
 
                                     <div className="flex items-center gap-2 shrink-0">
-                                      <span
-                                        className={`text-[10px] font-mono px-2 py-0.5 rounded-md ${
-                                          node.level === "Beginner"
-                                            ? "bg-emerald-100 text-emerald-800"
-                                            : node.level === "Mid"
-                                            ? "bg-amber-100 text-amber-800"
-                                            : "bg-purple-100 text-purple-800"
-                                        }`}
-                                      >
-                                        {node.level}
-                                      </span>
+                                      {node.level && node.level !== "All" && (
+                                        <span
+                                          className={`text-[10px] font-mono px-2 py-0.5 rounded-md ${
+                                            node.level === "Beginner"
+                                              ? "bg-emerald-100 text-emerald-800"
+                                              : node.level === "Mid"
+                                              ? "bg-amber-100 text-amber-800"
+                                              : "bg-purple-100 text-purple-800"
+                                          }`}
+                                        >
+                                          {node.level}
+                                        </span>
+                                      )}
                                       <span className="text-[10px] font-mono text-[#8A9B95]">
                                         {node.time}
                                       </span>
