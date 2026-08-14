@@ -18,6 +18,12 @@ import {
   AlertCircle,
   CheckCircle2,
   Code,
+  Code2,
+  Star,
+  GitFork,
+  Filter,
+  Terminal,
+  Cpu,
 } from "lucide-react";
 
 interface ShowcaseProject {
@@ -26,6 +32,10 @@ interface ShowcaseProject {
   description: string;
   linkUrl: string;
   createdAt: string;
+  language?: string;
+  category?: string;
+  stars?: number;
+  forks?: number;
   trail?: {
     title: string;
     category: string;
@@ -38,6 +48,7 @@ export default function ShowcaseWallPage() {
   const [trailsList, setTrailsList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
+  const [activeCategoryFilter, setActiveCategoryFilter] = useState("All");
 
   // Form states
   const [title, setTitle] = useState("");
@@ -106,7 +117,7 @@ export default function ShowcaseWallPage() {
       toast({
         type: "achievement",
         title: "Project Logged to Wall! 🚀",
-        description: "Your proof of work has been recorded.",
+        description: "Your proof of work has been recorded on the Showcase Wall.",
       });
 
       setTitle("");
@@ -121,32 +132,48 @@ export default function ShowcaseWallPage() {
     }
   };
 
+  const categories = ["All", "QA Automation", "Full Stack & React", "Python / CLI & Tools"];
+
+  const filteredProjects = projects.filter((proj) => {
+    if (activeCategoryFilter === "All") return true;
+    if (activeCategoryFilter === "QA Automation") return proj.category === "QA Automation" || proj.title.toLowerCase().includes("cypress") || proj.title.toLowerCase().includes("selenium");
+    if (activeCategoryFilter === "Full Stack & React") return proj.category === "Full Stack & React" || proj.language?.includes("TypeScript") || proj.language?.includes("React");
+    if (activeCategoryFilter === "Python / CLI & Tools") return proj.language?.includes("Python") || proj.language?.includes("C++") || proj.category?.includes("CLI");
+    return true;
+  });
+
   return (
     <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1C2A26]">
       <Navbar />
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10 w-full space-y-8 flex-1">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-xs font-semibold text-[#D97706] uppercase tracking-wider">
-              <Sparkles className="w-4 h-4" /> Personal Proof of Work
-            </div>
-            <h1 className="font-serif-display text-3xl font-bold text-[#1C2A26]">
-              Showcase Wall (&quot;What You&apos;ve Built&quot;)
-            </h1>
-            <p className="text-xs text-[#52635E]">
-              Log GitHub repos, Figma designs, and live apps completed while mastering your skill trails.
-            </p>
-          </div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-10 w-full space-y-8 flex-1">
+        {/* Header Banner */}
+        <div className="bg-gradient-to-br from-white via-[#FAF7F2] to-[#F5EFE6] border border-[#E7E0D3] rounded-3xl p-6 sm:p-10 space-y-4 shadow-xs relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-6">
+            <div className="space-y-2 w-full">
+              <Badge variant="amber" icon={<Code2 className="w-3.5 h-3.5" />}>
+                GITHUB PROOF OF WORK WALL
+              </Badge>
 
-          <Button
-            variant="amber"
-            onClick={() => setIsCreating(!isCreating)}
-            leftIcon={isCreating ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-          >
-            {isCreating ? "Close Form" : "Log New Project"}
-          </Button>
+              <h1 className="font-serif-display text-3xl sm:text-5xl font-bold text-[#1C2A26] tracking-tight">
+                Simran Tamrakar&apos;s Showcase Wall
+              </h1>
+
+              <p className="text-xs sm:text-base text-[#52635E] leading-relaxed w-full">
+                Extracted directly from GitHub (<a href="https://github.com/Simran-Tamrakar7" target="_blank" rel="noopener noreferrer" className="underline font-bold text-[#D97706]">github.com/Simran-Tamrakar7</a>). Featuring 17 open-source repositories spanning Playwright automation, Cypress POM frameworks, Next.js 16 full-stack apps, and Python tools.
+              </p>
+            </div>
+
+            <Button
+              variant="amber"
+              size="md"
+              onClick={() => setIsCreating(!isCreating)}
+              leftIcon={isCreating ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+              className="shrink-0"
+            >
+              {isCreating ? "Close Form" : "Log New Project"}
+            </Button>
+          </div>
         </div>
 
         {/* Create Form Card */}
@@ -160,7 +187,7 @@ export default function ShowcaseWallPage() {
             >
               <Card variant="default" hoverable={false} className="p-6 sm:p-8 space-y-6 border-[#E7E0D3]">
                 <h3 className="font-serif-display font-bold text-lg text-[#1C2A26]">
-                  Log Built Project / Portfolio Output
+                  Log Custom Built Project to Showcase Wall
                 </h3>
 
                 <form onSubmit={handleCreateProject} className="space-y-4">
@@ -185,7 +212,7 @@ export default function ShowcaseWallPage() {
                       type="url"
                       value={linkUrl}
                       onChange={(e) => setLinkUrl(e.target.value)}
-                      placeholder="https://github.com/username/my-project"
+                      placeholder="https://github.com/Simran-Tamrakar7/my-project"
                       className="w-full h-11 px-4 text-sm bg-[#FAF7F2] border border-[#E7E0D3] rounded-xl focus:outline-none focus:border-[#D97706]"
                     />
                   </div>
@@ -242,60 +269,109 @@ export default function ShowcaseWallPage() {
           )}
         </AnimatePresence>
 
+        {/* Category Filter Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E7E0D3] pb-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-[#8A9B95] uppercase tracking-wider flex items-center gap-1 mr-2">
+              <Filter className="w-3.5 h-3.5" /> Filter Category:
+            </span>
+            {categories.map((cat) => {
+              const count = projCountForCat(projects, cat);
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategoryFilter(cat)}
+                  className={`px-4 py-2 rounded-xl text-xs font-medium transition-all ${
+                    activeCategoryFilter === cat
+                      ? "bg-[#1C2A26] text-white shadow-xs"
+                      : "bg-white text-[#52635E] border border-[#E7E0D3] hover:border-[#D97706]"
+                  }`}
+                >
+                  {cat} <span className="opacity-60 font-mono text-[10px]">({count})</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <a
+            href="https://github.com/Simran-Tamrakar7"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-xs font-semibold text-[#D97706] hover:underline"
+          >
+            <Code2 className="w-4 h-4" /> View Full Profile on GitHub →
+          </a>
+        </div>
+
         {/* Projects Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[1, 2].map((i) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
               <Card key={i} className="h-44 animate-pulse bg-white/50">
-                <div className="text-xs text-transparent">Loading project...</div>
+                <div className="text-xs text-transparent">Loading GitHub repository...</div>
               </Card>
             ))}
           </div>
-        ) : projects.length === 0 ? (
+        ) : filteredProjects.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl border border-[#E7E0D3] p-8 space-y-3">
             <Globe className="w-8 h-8 text-[#8A9B95] mx-auto" />
-            <h3 className="font-serif-display font-semibold text-lg">No projects logged yet</h3>
+            <h3 className="font-serif-display font-semibold text-lg">No projects match filter</h3>
             <p className="text-xs text-[#52635E]">
-              Log a GitHub repo, demo URL, or design file created during your skill trail sessions.
+              Try selecting &quot;All&quot; to view all 17 public GitHub repositories.
             </p>
-            <Button variant="primary" size="sm" onClick={() => setIsCreating(true)}>
-              Log Your First Project
-            </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {projects.map((proj) => (
-              <Card key={proj.id} className="h-full flex flex-col justify-between p-6 space-y-4">
-                <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredProjects.map((proj) => (
+              <Card
+                key={proj.id}
+                hoverable
+                className="h-full flex flex-col justify-between p-6 space-y-4 border-[#E7E0D3] bg-white group hover:border-[#D97706]/60 transition-all"
+              >
+                <div className="space-y-3">
                   <div className="flex justify-between items-start">
-                    {proj.trail ? (
-                      <Badge variant="category">{proj.trail.title}</Badge>
-                    ) : (
-                      <Badge variant="pine">Independent Build</Badge>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <Code2 className="w-4 h-4 text-[#D97706]" />
+                      {proj.language && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#FAF7F2] text-[#52635E] border border-[#E7E0D3]">
+                          {proj.language}
+                        </span>
+                      )}
+                    </div>
                     <a
                       href={proj.linkUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-1.5 rounded-lg bg-[#FAF7F2] text-[#D97706] hover:bg-[#FEF3C7] transition-colors"
+                      className="p-1.5 rounded-xl bg-[#FAF7F2] text-[#D97706] group-hover:bg-[#FEF3C7] transition-colors"
+                      title="View GitHub Repository"
                     >
                       <ExternalLink className="w-4 h-4" />
                     </a>
                   </div>
 
-                  <h3 className="font-serif-display font-bold text-lg text-[#1C2A26]">
+                  <h3 className="font-serif-display font-bold text-lg text-[#1C2A26] group-hover:text-[#D97706] transition-colors">
                     {proj.title}
                   </h3>
-                  <p className="text-xs text-[#52635E] leading-relaxed">
+
+                  <p className="text-xs text-[#52635E] leading-relaxed line-clamp-3">
                     {proj.description || "No description provided."}
                   </p>
                 </div>
 
-                <div className="pt-3 border-t border-[#E7E0D3] flex justify-between items-center text-[11px] text-[#8A9B95]">
-                  <span className="font-mono text-[#D97706] truncate max-w-[240px]">
-                    {proj.linkUrl}
-                  </span>
-                  <span>Logged {new Date(proj.createdAt).toLocaleDateString()}</span>
+                <div className="pt-3 border-t border-[#E7E0D3] flex items-center justify-between text-[11px] text-[#8A9B95]">
+                  <div className="flex items-center gap-3 font-mono text-[10px]">
+                    {proj.stars !== undefined && (
+                      <span className="flex items-center gap-1 text-[#D97706]">
+                        <Star className="w-3 h-3 fill-[#D97706]" /> {proj.stars}
+                      </span>
+                    )}
+                    {proj.forks !== undefined && (
+                      <span className="flex items-center gap-1 text-[#52635E]">
+                        <GitFork className="w-3 h-3" /> {proj.forks}
+                      </span>
+                    )}
+                  </div>
+                  <span className="truncate max-w-[120px]">{new Date(proj.createdAt).toLocaleDateString()}</span>
                 </div>
               </Card>
             ))}
@@ -304,4 +380,12 @@ export default function ShowcaseWallPage() {
       </main>
     </div>
   );
+}
+
+function projCountForCat(projects: ShowcaseProject[], cat: string): number {
+  if (cat === "All") return projects.length;
+  if (cat === "QA Automation") return projects.filter((p) => p.category === "QA Automation" || p.title.toLowerCase().includes("cypress") || p.title.toLowerCase().includes("selenium")).length;
+  if (cat === "Full Stack & React") return projects.filter((p) => p.category === "Full Stack & React" || p.language?.includes("TypeScript") || p.language?.includes("React")).length;
+  if (cat === "Python / CLI & Tools") return projects.filter((p) => p.language?.includes("Python") || p.language?.includes("C++") || p.category?.includes("CLI")).length;
+  return 0;
 }
