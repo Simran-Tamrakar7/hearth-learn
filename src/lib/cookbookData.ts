@@ -201,23 +201,64 @@ export function getDishPrepWays(dish: DetailedDish): PrepWay[] {
     ];
   }
 
-  // Default dish-tailored 3 methods
-  const mainIng = dish.ingredients[0] ? dish.ingredients[0].split("(")[0] : "Main ingredients";
+  // Default dish-tailored 3 methods (Appliance & Technique relevant)
+  const isSoupOrBroth = t.toLowerCase().includes("soup") || t.toLowerCase().includes("broth") || t.toLowerCase().includes("stew") || t.toLowerCase().includes("jhol");
+  const isBakeOrPizza = t.toLowerCase().includes("pizza") || t.toLowerCase().includes("pie") || t.toLowerCase().includes("bread") || t.toLowerCase().includes("roti") || t.toLowerCase().includes("cake");
+
+  if (isSoupOrBroth) {
+    return [
+      {
+        id: "w1",
+        title: "Traditional Dutch Oven Simmer",
+        description: "Simmered low and slow on stovetop for 45 minutes to extract deep broth flavor.",
+      },
+      {
+        id: "w2",
+        title: "Instant Pot / Pressure Cooker",
+        description: "High-pressure cooked in 15 minutes under 12 PSI for quick weekday dinner.",
+      },
+      {
+        id: "w3",
+        title: "Spicy Chili Oil & Herb Finish",
+        description: "Finished with a sizzling drizzle of garlic-chili oil and fresh green herbs.",
+      },
+    ];
+  } else if (isBakeOrPizza) {
+    return [
+      {
+        id: "w1",
+        title: "Traditional Oven Baked (425°F)",
+        description: "Baked on preheated stone or sheet pan until golden brown and bubbly.",
+      },
+      {
+        id: "w2",
+        title: "Air-Fryer Quick Bake",
+        description: "Air-fried in 8 minutes at 390°F for ultra-crispy crust using minimal energy.",
+      },
+      {
+        id: "w3",
+        title: "Cast Iron Skillet Sear & Broil",
+        description: "Pan-sear bottom on stovetop then high-broil top for blistered wood-fired crust.",
+      },
+    ];
+  }
+
+  // Standard Cooked Dishes / Mains
   return [
     {
       id: "w1",
-      title: `Classic ${dish.title.split(" ")[0]} Style`,
-      description: `Traditional preparation using ${mainIng.toLowerCase()} with authentic regional seasoning.`,
+      title: "Classic Stovetop Pan Sear",
+      description: `Sautéed or pan-seared over medium-high heat with olive oil and aromatic herbs.`,
     },
     {
       id: "w2",
-      title: "Healthy · Low Oil & Extra Veg",
-      description: "Air-fried or steamed with spray olive oil; double greens and lean protein.",
+      title: "Air-Fryer Crisp / Bamboo Steamer",
+      description: "Air-fried at 375°F for 12 min or steamed in bamboo basket for oil-free light prep.",
     },
     {
       id: "w3",
-      title: "Idea · Extra Crisp & Charred Finish",
-      description: "Searing at high heat in cast iron skillet for smoky caramelized texture.",
+      title: "Cast Iron Sear / Slow Cooker",
+      description: "High-heat cast iron sear for crispy caramelized crust or slow-cooker braise.",
     },
   ];
 }
@@ -3298,9 +3339,30 @@ function generate500PlusCookbookDishes(): DetailedDish[] {
       const fat = (i % 4) * 4 + 8;
       const fib = (i % 4) * 2 + 4;
 
+      const cuisineImages: Record<string, string> = {
+        "Nepali": "https://images.unsplash.com/photo-1625398407796-82650a8c135f?auto=format&fit=crop&w=600&q=80",
+        "Food Hero kitchen": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80",
+        "Italian": "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=600&q=80",
+        "Indian": "https://images.unsplash.com/photo-1585937421612-70a008356fbe?auto=format&fit=crop&w=600&q=80",
+        "Mexican": "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=600&q=80",
+        "Japanese": "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=600&q=80",
+        "Thai": "https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=600&q=80",
+        "Chinese": "https://images.unsplash.com/photo-1525755662778-989d0524087e?auto=format&fit=crop&w=600&q=80",
+        "Mediterranean": "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80",
+        "French": "https://images.unsplash.com/photo-1528825871115-3581a5387919?auto=format&fit=crop&w=600&q=80",
+        "Korean": "https://images.unsplash.com/photo-1498654896293-37aacf113fd9?auto=format&fit=crop&w=600&q=80",
+        "Middle Eastern": "https://images.unsplash.com/photo-1579631542720-3a87825fff8c?auto=format&fit=crop&w=600&q=80",
+        "American comfort": "https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=600&q=80",
+        "Spanish & Iberian": "https://images.unsplash.com/photo-1534080564583-6be75777b70a?auto=format&fit=crop&w=600&q=80",
+        "Vietnamese": "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=600&q=80",
+        "Greek & Aegean": "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=600&q=80",
+        "Turkish & Balkan": "https://images.unsplash.com/photo-1541518763669-27fef04b14da?auto=format&fit=crop&w=600&q=80",
+        "Caribbean & Latin": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80",
+      };
+
       let title = "";
       let mainIng = "";
-      let image = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80";
+      let image = cuisineImages[c] || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80";
 
       if (c === "Nepali") {
         const nepaliTitles = [
@@ -3331,7 +3393,6 @@ function generate500PlusCookbookDishes(): DetailedDish[] {
         ];
         title = nepaliTitles[(i - 1) % nepaliTitles.length] + (i > nepaliTitles.length ? ` Special #${i}` : "");
         mainIng = "Timmur pepper, ginger, garlic, cilantro & mustard oil";
-        image = "https://images.unsplash.com/photo-1625398407796-82650a8c135f?auto=format&fit=crop&w=600&q=80";
       } else {
         title = `${c} ${meal.charAt(0).toUpperCase() + meal.slice(1)} Masterclass Dish #${i}`;
         mainIng = `Fresh ${c} aromatic herbs, garlic, citrus & regional seasoning`;
