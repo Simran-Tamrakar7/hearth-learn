@@ -38,18 +38,54 @@ function BookCover({ book }: { book: LibraryBook }) {
   const src = gutenbergCoverUrl(book);
   const [broken, setBroken] = useState(!src);
 
-  if (broken) {
+  if (broken || !src) {
+    const isStudy = book.shelf === "study-guides";
+    const isFiction = book.shelf === "tech-fiction";
+    const isClassic = book.shelf === "engineering-classics";
+    const isLeadership = book.shelf === "career-leadership";
+
+    const bgGradient = isStudy
+      ? "from-[#0F172A] via-[#1E293B] to-[#334155] border-amber-500/30"
+      : isFiction
+      ? "from-[#18181B] via-[#27272A] to-[#3F3F46] border-emerald-500/30"
+      : isClassic
+      ? "from-[#1C2A26] via-[#243530] to-[#2D3F3A] border-amber-400/40"
+      : isLeadership
+      ? "from-[#2E1065] via-[#3B0764] to-[#581C87] border-purple-300/30"
+      : "from-[#1C2A26] to-[#2D3E38] border-[#E7E0D3]";
+
+    const shelfTag = isStudy
+      ? "STUDY GUIDE"
+      : isFiction
+      ? "TECH FICTION"
+      : isClassic
+      ? "ENGINEERING CLASSIC"
+      : isLeadership
+      ? "LEADERSHIP"
+      : book.shelf.toUpperCase();
+
     return (
-      <div className="h-full w-[9.5rem] rounded-xl bg-[#1C2A26] text-[#FAF7F2] p-4 flex flex-col justify-between shadow-lg border border-[#E7E0D3]">
-        <span className="font-serif-display font-bold text-sm leading-snug line-clamp-4">{book.title}</span>
-        <span className="text-[10px] text-[#D97706] uppercase tracking-wider">{book.author}</span>
+      <div className={`h-full w-[9.5rem] min-h-[13.5rem] rounded-xl bg-gradient-to-b ${bgGradient} text-[#FAF7F2] p-4 flex flex-col justify-between shadow-lg border relative overflow-hidden group-hover:scale-105 transition-transform duration-300`}>
+        <div className="space-y-1.5 z-10">
+          <span className="inline-block text-[9px] font-mono font-bold tracking-wider px-2 py-0.5 rounded-md bg-white/10 text-amber-300 border border-white/15">
+            {shelfTag}
+          </span>
+          <h4 className="font-serif-display font-bold text-xs sm:text-sm leading-snug line-clamp-4 text-white">
+            {book.title}
+          </h4>
+        </div>
+
+        <div className="z-10 pt-2 border-t border-white/10">
+          <p className="text-[10px] text-amber-200 font-semibold truncate">{book.author}</p>
+          {book.year && <p className="text-[9px] text-teal-200/80 font-mono">{book.year}</p>}
+        </div>
       </div>
     );
   }
 
   return (
     <img
-      src={src!}
+      src={src}
       alt=""
       onError={() => setBroken(true)}
       className="h-full object-cover rounded-xl shadow-lg group-hover:scale-105 transition-transform duration-300 border border-[#E7E0D3]"
@@ -114,7 +150,7 @@ export default function LibraryPage() {
           </h1>
 
           <p className="text-xs sm:text-base text-[#52635E] leading-relaxed max-w-2xl">
-            Shelves of public-domain stories, free tech books, and research hubs. Open a title in a new tab — then come back to a manual.
+            Shelves of tech fiction, DevOps novels, engineering classics, study guides, and public-domain literature. Open a title or blueprint — then return to your course manual.
           </p>
 
           <p className="text-xs font-semibold text-[#8A9B95]">

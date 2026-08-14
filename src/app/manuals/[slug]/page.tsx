@@ -78,6 +78,7 @@ export default function ManualDetailPage() {
     return ids;
   });
   const [roadmapSearch, setRoadmapSearch] = useState<string>("");
+  const [tocQuery, setTocQuery] = useState<string>("");
   const [levelFilter, setLevelFilter] = useState<"All" | "Beginner" | "Mid" | "Advanced">("All");
   const [selectedRoadmapNode, setSelectedRoadmapNode] = useState<any | null>(null);
 
@@ -168,6 +169,23 @@ export default function ManualDetailPage() {
   }, [chapters]);
   const phasesForRoadmap = isPlaywright ? PLAYWRIGHT_ROADMAP_PHASES : roadmapParts;
   const partCount = phasesForRoadmap.length;
+  const tocQueryNorm = tocQuery.trim().toLowerCase();
+  const filteredParts = React.useMemo(() => {
+    if (!tocQueryNorm) return roadmapParts;
+    return roadmapParts
+      .map((part) => {
+        const partHit = part.title.toLowerCase().includes(tocQueryNorm);
+        const nodes = partHit
+          ? part.nodes
+          : part.nodes.filter((n) => {
+              const chap = chapters[n.chapterIndex];
+              const title = (chap?.title || n.title).toLowerCase();
+              return title.includes(tocQueryNorm) || String(n.num).includes(tocQueryNorm);
+            });
+        return { ...part, nodes };
+      })
+      .filter((p) => p.nodes.length > 0);
+  }, [roadmapParts, chapters, tocQueryNorm]);
 
   const toggleMarkComplete = (chapterId: string) => {
     const exists = completedChapterIds.includes(chapterId);
@@ -547,82 +565,84 @@ export default function ManualDetailPage() {
                 </Button>
               </div>
 
-              <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-1 scrollbar-thin">
-                {roadmapParts.map((part) => {
-                  const isExpanded = expandedPhases.includes(part.id);
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-[#8A9B95] absolute left-3 top-2.5 pointer-events-none" />
+                <input
+                  type="search"
+                  value={tocQuery}
+                  onChange={(e) => setTocQuery(e.target.value)}
+                  placeholder="Search parts and chapters…"
+                  className="w-full pl-9 pr-8 py-2 bg-white border border-[#E7E0D3] rounded-xl text-xs text-[#1C2A26] placeholder-[#8A9B95] focus:outline-none focus:border-[#D97706]"
+                />
+                {tocQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setTocQuery("")}
+                    className="absolute right-2.5 top-2 text-[#8A9B95] hover:text-[#1C2A26]"
+                    aria-label="Clear search"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
 
-                  return (
-                    <div key={part.id} className="space-y-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (expandedPhases.includes(part.id)) {
-                            setExpandedPhases((prev) => prev.filter((id) => id !== part.id));
-                          } else {
-                            setExpandedPhases((prev) => [...prev, part.id]);
-                          }
-                        }}
-                        className="w-full flex items-center justify-between gap-2 px-1 py-1 text-left"
-                      >
-                        <span className="font-mono font-bold text-[10px] text-[#52635E] tracking-wider uppercase truncate">
-                          {part.title}
-                        </span>
-                        <span className="flex items-center gap-1 shrink-0">
-                          <span className="text-[10px] font-mono text-[#8A9B95]">{part.nodes.length}</span>
-                          <ChevronDown className={`w-3.5 h-3.5 text-[#52635E] transition-transform ${isExpanded ? "rotate-180" : ""}`} />
-                        </span>
-                      </button>
+              <div className="space-y-4 max-h-[62vh] overflow-y-auto pr-1 scrollbar-thin">
+                {filteredParts.length === 0 && (
+                  <p className="text-xs text-[#8A9B95] px-1">No matching chapters.</p>
+                )}
+                {filteredParts.map((part) => (
+                  <div key={part.id} className="space-y-1">
+                    <p className="px-1 text-[10px] font-bold uppercase tracking-wider text-[#D97706]">
+                      {part.title}
+                    </p>
+                    {part.nodes.map((node) => {
+                      const idx = node.chapterIndex;
+                      const chap = chapters[idx];
+                      if (!chap) return null;
+                      const isActive = idx === activeChapterIndex;
+                      const displayTitle = chap.title.replace(/^Chapter\s+\d+:\s*/i, "");
 
-                      {isExpanded &&
-                        part.nodes.map((node) => {
-                          const idx = node.chapterIndex;
-                          const chap = chapters[idx];
-                          if (!chap) return null;
-                          const isActive = idx === activeChapterIndex;
-                          const displayTitle = chap.title.replace(/^Chapter\s+\d+:\s*/i, "");
+                      return (
+                        <div key={chap.id || idx} className="group relative">
+                          <button
+                            onClick={() => setActiveChapterIndex(idx)}
+                            className={`w-full text-left px-3 py-2.5 rounded-xl text-xs sm:text-sm transition-all ${
+                              isActive
+                                ? "bg-[#CBD7D2] text-[#1C2A26] font-bold shadow-2xs"
+                                : "text-[#2F413B] hover:bg-white/70 hover:text-[#1C2A26] font-normal"
+                            }`}
+                          >
+                            <span className="truncate pr-12 block">
+                              <span className="font-semibold mr-1.5">{idx + 1}.</span>
+                              {displayTitle}
+                            </span>
+                          </button>
 
-                          return (
-                            <div key={chap.id || idx} className="group relative">
-                              <button
-                                onClick={() => setActiveChapterIndex(idx)}
-                                className={`w-full text-left px-3 py-2.5 rounded-xl text-xs sm:text-sm transition-all flex items-center justify-between ${
-                                  isActive
-                                    ? "bg-[#CBD7D2] text-[#1C2A26] font-bold shadow-2xs"
-                                    : "text-[#2F413B] hover:bg-white/70 hover:text-[#1C2A26] font-normal"
-                                }`}
-                              >
-                                <span className="truncate pr-12">
-                                  <span className="font-semibold mr-1.5">{idx + 1}.</span>
-                                  {displayTitle}
-                                </span>
-                              </button>
+                          <div className="absolute right-2 top-2.5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                            <button
+                              onClick={() => {
+                                setActiveChapterIndex(idx);
+                                openEditChapterModal();
+                              }}
+                              className="p-1 text-[#52635E] hover:text-[#D97706]"
+                              title="Edit Chapter"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
 
-                              <div className="absolute right-2 top-2.5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                                <button
-                                  onClick={() => {
-                                    setActiveChapterIndex(idx);
-                                    openEditChapterModal();
-                                  }}
-                                  className="p-1 text-[#52635E] hover:text-[#D97706]"
-                                  title="Edit Chapter"
-                                >
-                                  <Edit className="w-3.5 h-3.5" />
-                                </button>
-
-                                <button
-                                  onClick={() => handleDeleteChapter(idx)}
-                                  className="p-1 text-[#52635E] hover:text-red-600"
-                                  title="Delete Chapter"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                    </div>
-                  );
-                })}
+                            <button
+                              onClick={() => handleDeleteChapter(idx)}
+                              className="p-1 text-[#52635E] hover:text-red-600"
+                              title="Delete Chapter"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
               </div>
             </Card>
           </div>
