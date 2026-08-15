@@ -12,6 +12,7 @@ import { useToast } from "@/components/ui/Toast";
 import { MANUALS_DATA, findHearthManual, ManualItem, ManualChapter } from "@/lib/manualsData";
 import { PLAYWRIGHT_ROADMAP_PHASES, downloadRoadmapSVG } from "@/lib/roadmapData";
 import { stripLeadingNumber } from "@/lib/pathwise-data/helpers.js";
+import { PinButton } from "@/components/ui/PinButton";
 import {
   ChevronLeft,
   ChevronRight,
@@ -527,7 +528,17 @@ export default function ManualDetailPage() {
               </Button>
             </Link>
 
-            <Badge variant="amber">{manualCategory}</Badge>
+            <div className="flex items-center gap-2">
+              <PinButton
+                itemId={`man-${slug}`}
+                itemTitle={manualTitle}
+                itemCategory={manualCategory}
+                itemType="manual"
+                itemUrl={`/manuals/${slug}`}
+                variant="button"
+              />
+              <Badge variant="amber">{manualCategory}</Badge>
+            </div>
           </div>
 
           {/* Title & Description Block */}

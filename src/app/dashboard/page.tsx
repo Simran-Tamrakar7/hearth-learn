@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { COOKBOOK_DISHES } from "@/lib/cookbookData";
 import { ARCADIA_GAMES } from "@/lib/gamesData";
+import { PinButton, getPinnedItems, savePinnedItems, PinnedItemMetadata } from "@/components/ui/PinButton";
 
 interface DashboardData {
   user: {
@@ -180,29 +181,27 @@ export default function DashboardPage() {
   const [streakCount, setStreakCount] = useState(1);
 
   // Pinning System State
-  const [pinnedIds, setPinnedIds] = useState<string[]>([]);
+  const [pinnedItems, setPinnedItems] = useState<PinnedItemMetadata[]>([]);
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
 
   // Zodiac & Thought State
   const [selectedZodiac, setSelectedZodiac] = useState("aries");
   const [thoughtIndex, setThoughtIndex] = useState<number | undefined>(undefined);
+  const [liveQuote, setLiveQuote] = useState<{ quote: string; author: string; source?: string } | null>(null);
 
   useEffect(() => {
     fetchDashboard();
+    fetchLiveQuote();
 
-    // Load Pinned Items from localStorage
+    const loadPins = () => {
+      setPinnedItems(getPinnedItems());
+    };
+
+    loadPins();
+    window.addEventListener("hearth_pins_updated", loadPins);
+
+    // Load Saved Zodiac
     try {
-      const savedPins = localStorage.getItem("hearth_pinned_items");
-      if (savedPins) {
-        setPinnedIds(JSON.parse(savedPins));
-      } else {
-        // Default pinned items (Playwright Manual, Tetris, Himalayan Momo)
-        const defaults = ["man-playwright", "g-tetris", "dish-momo"];
-        setPinnedIds(defaults);
-        localStorage.setItem("hearth_pinned_items", JSON.stringify(defaults));
-      }
-
-      // Load Saved Zodiac
       const savedZodiac = localStorage.getItem("hearth_user_zodiac");
       if (savedZodiac) {
         setSelectedZodiac(savedZodiac);
@@ -210,7 +209,23 @@ export default function DashboardPage() {
     } catch (e) {
       console.error("Local storage load error:", e);
     }
+
+    return () => window.removeEventListener("hearth_pins_updated", loadPins);
   }, []);
+
+  const fetchLiveQuote = async () => {
+    try {
+      const res = await fetch("/api/quote/daily");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.quote) {
+          setLiveQuote(data);
+        }
+      }
+    } catch (err) {
+      console.error("Live quote fetch error:", err);
+    }
+  };
 
   const fetchDashboard = async () => {
     try {
@@ -229,27 +244,6 @@ export default function DashboardPage() {
 
   const getGameId = (g: typeof ARCADIA_GAMES[0]) => {
     return `g-${g.t.toLowerCase().replace(/[^a-z0-9]/g, "")}`;
-  };
-
-  const togglePin = (id: string, name: string) => {
-    let next: string[];
-    let isPinnedNow = false;
-
-    if (pinnedIds.includes(id)) {
-      next = pinnedIds.filter((p) => p !== id);
-    } else {
-      next = [...pinnedIds, id];
-      isPinnedNow = true;
-    }
-
-    setPinnedIds(next);
-    localStorage.setItem("hearth_pinned_items", JSON.stringify(next));
-
-    toast({
-      type: isPinnedNow ? "achievement" : "info",
-      title: isPinnedNow ? "Pinned to Dashboard! 📌" : "Unpinned Item",
-      description: isPinnedNow ? `"${name}" added to quick access shelf.` : `"${name}" removed from pins.`,
-    });
   };
 
   const handleZodiacChange = (newSign: string) => {
@@ -306,11 +300,6 @@ export default function DashboardPage() {
   const horoscope = getDailyHoroscope(selectedZodiac);
   const activeZodiacObj = ZODIAC_SIGNS.find((z) => z.id === selectedZodiac) || ZODIAC_SIGNS[0];
   const currentThought = getDailyThought(thoughtIndex);
-
-  // Resolved Pinned Items
-  const pinnedManuals = PINNABLE_MANUALS.filter((m) => pinnedIds.includes(m.id));
-  const pinnedGames = ARCADIA_GAMES.filter((g) => pinnedIds.includes(getGameId(g)) || pinnedIds.includes("g-tetris"));
-  const pinnedRecipes = COOKBOOK_DISHES.filter((d) => pinnedIds.includes(d.id) || (d.title.includes("Momo") && pinnedIds.includes("dish-momo")));
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1C2A26]">
@@ -414,7 +403,7 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          {/* DYNAMIC THOUGHT OF THE DAY WIDGET */}
+          {/* DYNAMIC THOUGHT OF THE DAY WIDGET (PULLED LIVE FROM API) */}
           <div className="lg:col-span-5">
             <Card variant="default" hoverable={false} className="p-6 sm:p-7 space-y-5 bg-[#1C2A26] text-[#FAF7F2] border-[#2D3F3A] shadow-md relative overflow-hidden h-full flex flex-col justify-between">
               <div className="space-y-4">
@@ -426,28 +415,31 @@ export default function DashboardPage() {
 
                   <button
                     type="button"
-                    onClick={cycleThought}
+                    onClick={() => {
+                      fetchLiveQuote();
+                      cycleThought();
+                    }}
                     className="flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-white/10 text-white/80 hover:bg-white/20 transition-all"
-                    title="Refresh quote"
+                    title="Fetch fresh quote from API"
                   >
                     <RefreshCw className="w-3 h-3 text-[#D97706]" />
-                    <span>Refresh</span>
+                    <span>Fetch New</span>
                   </button>
                 </div>
 
                 <div className="space-y-2 pt-1">
                   <span className="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold tracking-wider bg-[#D97706]/20 text-[#D97706] border border-[#D97706]/30">
-                    {currentThought.tag.toUpperCase()}
+                    {liveQuote?.source ? liveQuote.source.toUpperCase() : currentThought.tag.toUpperCase()}
                   </span>
                   <p className="font-serif-display text-base sm:text-lg leading-snug font-medium text-white/95 italic">
-                    &quot;{currentThought.quote}&quot;
+                    &quot;{liveQuote?.quote || currentThought.quote}&quot;
                   </p>
                 </div>
               </div>
 
               <div className="pt-4 border-t border-white/10 flex items-center justify-between text-xs text-amber-200/90 font-medium">
-                <span>— {currentThought.author}</span>
-                <span className="text-[10px] text-white/40 font-mono">Updated Daily</span>
+                <span>— {liveQuote?.author || currentThought.author}</span>
+                <span className="text-[10px] text-white/40 font-mono">Live Daily API</span>
               </div>
             </Card>
           </div>
@@ -472,126 +464,67 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Pinned Manuals */}
-            {pinnedManuals.map((man) => (
-              <div
-                key={man.id}
-                className="bg-white border border-[#E7E0D3] rounded-2xl p-5 flex items-center justify-between gap-4 shadow-xs hover:border-[#1C2A26] transition-all group"
-              >
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <div className="w-10 h-10 rounded-xl bg-[#FAF7F2] border border-[#E7E0D3] text-xl flex items-center justify-center shrink-0">
-                    {man.icon}
-                  </div>
-                  <div className="min-w-0 space-y-0.5">
-                    <span className="text-[9px] font-bold text-[#D97706] uppercase tracking-wider block">
-                      Manual · {man.category}
-                    </span>
-                    <h4 className="font-serif-display font-bold text-sm text-[#1C2A26] truncate">
-                      {man.title}
-                    </h4>
-                  </div>
+            {pinnedItems.length === 0 ? (
+              <div className="col-span-full bg-white border border-[#E7E0D3] rounded-3xl p-8 text-center space-y-3 shadow-xs">
+                <div className="w-12 h-12 rounded-2xl bg-[#FAF7F2] border border-[#E7E0D3] text-[#D97706] mx-auto flex items-center justify-center text-xl">
+                  📌
                 </div>
-
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <Link href={`/manuals/${man.slug}`}>
-                    <Button variant="outline" size="sm" className="px-3 py-1.5 text-xs h-auto">
-                      Read
-                    </Button>
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => togglePin(man.id, man.title)}
-                    className="p-1.5 text-[#8A9B95] hover:text-[#D97706] transition-colors"
-                    title="Unpin"
-                  >
-                    <Pin className="w-3.5 h-3.5 fill-current text-[#D97706]" />
-                  </button>
-                </div>
+                <h4 className="font-serif-display font-bold text-base text-[#1C2A26]">No Pinned Items Yet</h4>
+                <p className="text-xs text-[#52635E] max-w-md mx-auto leading-relaxed">
+                  Click the 📌 pin button on any Course Manual, Arcadia Game, Cookbook Recipe, or Learning Trail card to keep it here for 1-click quick access!
+                </p>
               </div>
-            ))}
-
-            {/* Pinned Games */}
-            {pinnedGames.map((game) => {
-              const gId = getGameId(game);
-              return (
+            ) : (
+              pinnedItems.map((item) => (
                 <div
-                  key={gId}
+                  key={item.id}
                   className="bg-white border border-[#E7E0D3] rounded-2xl p-5 flex items-center justify-between gap-4 shadow-xs hover:border-[#1C2A26] transition-all group"
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
                     <div className="w-10 h-10 rounded-xl bg-[#FAF7F2] border border-[#E7E0D3] text-xl flex items-center justify-center shrink-0">
-                      {game.e}
+                      {item.icon || (item.type === "game" ? "🎮" : item.type === "recipe" ? "🍳" : item.type === "trail" ? "🏔️" : "📘")}
                     </div>
                     <div className="min-w-0 space-y-0.5">
-                      <span className="text-[9px] font-bold text-[#1C2A26] uppercase tracking-wider block">
-                        Game · {game.genre}
+                      <span className="text-[9px] font-bold text-[#D97706] uppercase tracking-wider block">
+                        {item.type.toUpperCase()} {item.category ? `· ${item.category}` : ""}
                       </span>
                       <h4 className="font-serif-display font-bold text-sm text-[#1C2A26] truncate">
-                        {game.t}
+                        {item.title}
                       </h4>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <Button
-                      variant="amber"
-                      size="sm"
-                      onClick={() => window.open(game.u, "_blank", "noopener,noreferrer")}
-                      className="px-3 py-1.5 text-xs h-auto"
-                      rightIcon={<ExternalLink className="w-3 h-3" />}
-                    >
-                      Play
-                    </Button>
-                    <button
-                      type="button"
-                      onClick={() => togglePin(gId, game.t)}
-                      className="p-1.5 text-[#8A9B95] hover:text-[#D97706] transition-colors"
-                      title="Unpin"
-                    >
-                      <Pin className="w-3.5 h-3.5 fill-current text-[#D97706]" />
-                    </button>
+                    {item.type === "game" ? (
+                      <Button
+                        variant="amber"
+                        size="sm"
+                        onClick={() => window.open(item.url, "_blank", "noopener,noreferrer")}
+                        className="px-3 py-1.5 text-xs h-auto"
+                        rightIcon={<ExternalLink className="w-3 h-3" />}
+                      >
+                        Play
+                      </Button>
+                    ) : (
+                      <Link href={item.url}>
+                        <Button variant="outline" size="sm" className="px-3 py-1.5 text-xs h-auto">
+                          Open
+                        </Button>
+                      </Link>
+                    )}
+                    <PinButton
+                      itemId={item.id}
+                      itemTitle={item.title}
+                      itemCategory={item.category}
+                      itemType={item.type}
+                      itemUrl={item.url}
+                      itemIcon={item.icon}
+                      variant="icon"
+                    />
                   </div>
                 </div>
-              );
-            })}
-
-            {/* Pinned Cookbook Dishes */}
-            {pinnedRecipes.map((dish) => (
-              <div
-                key={dish.id}
-                className="bg-white border border-[#E7E0D3] rounded-2xl p-5 flex items-center justify-between gap-4 shadow-xs hover:border-[#1C2A26] transition-all group"
-              >
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <div className="w-10 h-10 rounded-xl bg-[#FAF7F2] border border-[#E7E0D3] text-xl flex items-center justify-center shrink-0 overflow-hidden">
-                    <img src={dish.imageUrl} alt="" className="w-full h-full object-cover rounded-xl" />
-                  </div>
-                  <div className="min-w-0 space-y-0.5">
-                    <span className="text-[9px] font-bold text-[#D97706] uppercase tracking-wider block">
-                      Cookbook · {dish.cuisine}
-                    </span>
-                    <h4 className="font-serif-display font-bold text-sm text-[#1C2A26] truncate">
-                      {dish.title}
-                    </h4>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <Link href="/rest/cookbook">
-                    <Button variant="secondary" size="sm" className="px-3 py-1.5 text-xs h-auto">
-                      Cook
-                    </Button>
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => togglePin(dish.id, dish.title)}
-                    className="p-1.5 text-[#8A9B95] hover:text-[#D97706] transition-colors"
-                    title="Unpin"
-                  >
-                    <Pin className="w-3.5 h-3.5 fill-current text-[#D97706]" />
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -832,13 +765,11 @@ export default function DashboardPage() {
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {PINNABLE_MANUALS.map((m) => {
-                  const isPinned = pinnedIds.includes(m.id);
+                  const isPinned = pinnedItems.some((p) => p.id === m.id);
                   return (
-                    <button
+                    <div
                       key={m.id}
-                      type="button"
-                      onClick={() => togglePin(m.id, m.title)}
-                      className={`p-3 rounded-xl border text-left flex items-center justify-between transition-all ${
+                      className={`p-3 rounded-xl border flex items-center justify-between transition-all ${
                         isPinned
                           ? "bg-[#FAF7F2] border-[#D97706] font-semibold"
                           : "bg-white border-[#E7E0D3] hover:border-[#1C2A26]"
@@ -851,8 +782,16 @@ export default function DashboardPage() {
                           <span className="text-[10px] text-[#8A9B95]">{m.category}</span>
                         </div>
                       </div>
-                      <Pin className={`w-4 h-4 ${isPinned ? "text-[#D97706] fill-current" : "text-[#8A9B95]"}`} />
-                    </button>
+                      <PinButton
+                        itemId={m.id}
+                        itemTitle={m.title}
+                        itemCategory={m.category}
+                        itemType="manual"
+                        itemUrl={`/manuals/${m.slug}`}
+                        itemIcon={m.icon}
+                        variant="icon"
+                      />
+                    </div>
                   );
                 })}
               </div>
@@ -866,13 +805,11 @@ export default function DashboardPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {ARCADIA_GAMES.slice(0, 8).map((g) => {
                   const gId = getGameId(g);
-                  const isPinned = pinnedIds.includes(gId);
+                  const isPinned = pinnedItems.some((p) => p.id === gId);
                   return (
-                    <button
+                    <div
                       key={gId}
-                      type="button"
-                      onClick={() => togglePin(gId, g.t)}
-                      className={`p-3 rounded-xl border text-left flex items-center justify-between transition-all ${
+                      className={`p-3 rounded-xl border flex items-center justify-between transition-all ${
                         isPinned
                           ? "bg-[#FAF7F2] border-[#D97706] font-semibold"
                           : "bg-white border-[#E7E0D3] hover:border-[#1C2A26]"
@@ -885,8 +822,16 @@ export default function DashboardPage() {
                           <span className="text-[10px] text-[#8A9B95]">{g.genre}</span>
                         </div>
                       </div>
-                      <Pin className={`w-4 h-4 ${isPinned ? "text-[#D97706] fill-current" : "text-[#8A9B95]"}`} />
-                    </button>
+                      <PinButton
+                        itemId={gId}
+                        itemTitle={g.t}
+                        itemCategory={g.genre}
+                        itemType="game"
+                        itemUrl={g.u}
+                        itemIcon={g.e}
+                        variant="icon"
+                      />
+                    </div>
                   );
                 })}
               </div>
@@ -899,13 +844,12 @@ export default function DashboardPage() {
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {COOKBOOK_DISHES.slice(0, 6).map((d) => {
-                  const isPinned = pinnedIds.includes(d.id);
+                  const dId = `dish-${d.id}`;
+                  const isPinned = pinnedItems.some((p) => p.id === dId);
                   return (
-                    <button
+                    <div
                       key={d.id}
-                      type="button"
-                      onClick={() => togglePin(d.id, d.title)}
-                      className={`p-3 rounded-xl border text-left flex items-center justify-between transition-all ${
+                      className={`p-3 rounded-xl border flex items-center justify-between transition-all ${
                         isPinned
                           ? "bg-[#FAF7F2] border-[#D97706] font-semibold"
                           : "bg-white border-[#E7E0D3] hover:border-[#1C2A26]"
@@ -918,8 +862,16 @@ export default function DashboardPage() {
                           <span className="text-[10px] text-[#8A9B95]">{d.cuisine}</span>
                         </div>
                       </div>
-                      <Pin className={`w-4 h-4 ${isPinned ? "text-[#D97706] fill-current" : "text-[#8A9B95]"}`} />
-                    </button>
+                      <PinButton
+                        itemId={dId}
+                        itemTitle={d.title}
+                        itemCategory={d.cuisine}
+                        itemType="recipe"
+                        itemUrl="/rest/cookbook"
+                        itemIcon={d.imageUrl}
+                        variant="icon"
+                      />
+                    </div>
                   );
                 })}
               </div>

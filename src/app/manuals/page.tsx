@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/Badge";
 import { MANUALS_DATA, ManualItem } from "@/lib/manualsData";
 import { genres } from "@/lib/pathwise-data/helpers.js";
 import { Compass, Search, Clock, BookOpen, ArrowRight } from "lucide-react";
+import { PinButton } from "@/components/ui/PinButton";
 
 const GENRE_CATEGORY: Record<string, ManualItem["category"] | "All"> = {
   all: "All",
@@ -44,23 +45,34 @@ const CATALOG_GENRES: GenreRow[] = (genres as { id: string; label: string; blurb
 function ManualCard({ manual }: { manual: ManualItem }) {
   return (
     <motion.div whileHover={{ y: -6, scale: 1.02 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
-      <Link href={`/manuals/${manual.slug}`} className="block h-full">
-        <Card
-          variant="default"
-          hoverable={true}
-          className="h-full border-[#E7E0D3] bg-white rounded-3xl overflow-hidden flex flex-col justify-between shadow-xs hover:shadow-xl transition-all group p-0"
-        >
-          <div>
-            <div className="h-48 relative overflow-hidden bg-[#FAF7F2]">
-              <img
-                src={manual.coverImage}
-                alt={manual.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-              <span className="absolute top-4 left-4 px-3.5 py-1 rounded-full bg-[#1C2A26] text-[#D97706] text-[10px] font-bold uppercase tracking-wider shadow-sm">
-                {manual.category}
-              </span>
-            </div>
+      <div className="relative h-full">
+        <div className="absolute top-4 right-4 z-20">
+          <PinButton
+            itemId={`man-${manual.slug}`}
+            itemTitle={manual.title}
+            itemCategory={manual.category}
+            itemType="manual"
+            itemUrl={`/manuals/${manual.slug}`}
+            variant="icon"
+          />
+        </div>
+        <Link href={`/manuals/${manual.slug}`} className="block h-full">
+          <Card
+            variant="default"
+            hoverable={true}
+            className="h-full border-[#E7E0D3] bg-white rounded-3xl overflow-hidden flex flex-col justify-between shadow-xs hover:shadow-xl transition-all group p-0"
+          >
+            <div>
+              <div className="h-48 relative overflow-hidden bg-[#FAF7F2]">
+                <img
+                  src={manual.coverImage}
+                  alt={manual.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+                <span className="absolute top-4 left-4 px-3.5 py-1 rounded-full bg-[#1C2A26] text-[#D97706] text-[10px] font-bold uppercase tracking-wider shadow-sm">
+                  {manual.category}
+                </span>
+              </div>
             <div className="p-7 space-y-4">
               <div className="flex items-center justify-between text-xs text-[#8A9B95] font-semibold">
                 <span className="flex items-center gap-1.5">
@@ -86,6 +98,7 @@ function ManualCard({ manual }: { manual: ManualItem }) {
           </div>
         </Card>
       </Link>
+    </div>
     </motion.div>
   );
 }

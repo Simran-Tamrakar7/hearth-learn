@@ -23,25 +23,30 @@ import {
 } from "@/lib/cookbookData";
 import {
   Utensils,
+  BookOpen,
+  ChefHat,
+  Search,
+  Sparkles,
+  Flame,
+  Bookmark,
+  Coffee,
+  X,
+  Play,
+  CheckCircle,
+  ExternalLink,
+  ChevronRight,
+  Info,
   ArrowLeft,
   Clock,
-  Sparkles,
-  Coffee,
-  Flame,
   Wand2,
-  Search,
-  Bookmark,
   Check,
-  X,
   Shuffle,
   Gamepad2,
   Activity,
   Flame as BurnIcon,
-  ChefHat,
-  Play,
   Film,
-  Info,
 } from "lucide-react";
+import { PinButton } from "@/components/ui/PinButton";
 import Link from "next/link";
 
 export default function LuminaCookbookPage() {
@@ -282,16 +287,27 @@ export default function LuminaCookbookPage() {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
 
-                    <button
-                      onClick={(e) => toggleBookmark(dish.id, e)}
-                      className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-xs transition-colors ${
-                        isSaved
-                          ? "bg-[#D97706] text-white"
-                          : "bg-black/30 text-white hover:bg-black/50"
-                      }`}
-                    >
-                      <Bookmark className="w-4 h-4 fill-current" />
-                    </button>
+                    <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
+                      <PinButton
+                        itemId={`dish-${dish.id}`}
+                        itemTitle={dish.title}
+                        itemCategory={dish.cuisine}
+                        itemType="recipe"
+                        itemUrl="/rest/cookbook"
+                        itemIcon={matchedImg}
+                        variant="icon"
+                      />
+                      <button
+                        onClick={(e) => toggleBookmark(dish.id, e)}
+                        className={`p-2 rounded-xl backdrop-blur-xs transition-colors ${
+                          isSaved
+                            ? "bg-[#D97706] text-white"
+                            : "bg-black/30 text-white hover:bg-black/50"
+                        }`}
+                      >
+                        <Bookmark className="w-4 h-4 fill-current" />
+                      </button>
+                    </div>
 
                     <span className="absolute bottom-3 left-3 px-3 py-1 rounded-full bg-[#1C2A26]/90 text-[#D97706] text-[10px] font-bold uppercase tracking-wider backdrop-blur-xs">
                       {dish.cuisine}

@@ -12,6 +12,7 @@ import {
   ARCADIA_GENRES,
   ArcadiaGame,
 } from "@/lib/gamesData";
+import { PinButton } from "@/components/ui/PinButton";
 import {
   Gamepad2,
   Search,
@@ -24,6 +25,9 @@ import {
   Layers,
   Utensils,
   Radio,
+  ArrowRight,
+  Flame,
+  Globe,
 } from "lucide-react";
 
 export default function ArcadiaGamesShelfPage() {
@@ -210,11 +214,20 @@ export default function ArcadiaGamesShelfPage() {
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-2xl">{game.e}</span>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1.5">
                             <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#FAF7F2] text-[#8A9B95] border border-[#E7E0D3]">
                               {game.genre}
                             </span>
-                            <ExternalLink className="w-3.5 h-3.5 text-[#8A9B95] group-hover:text-[#D97706] transition-colors" />
+                            <PinButton
+                              itemId={`g-${game.t.toLowerCase().replace(/[^a-z0-9]/g, "")}`}
+                              itemTitle={game.t}
+                              itemCategory={game.genre}
+                              itemType="game"
+                              itemUrl={game.u}
+                              itemIcon={game.e}
+                              variant="icon"
+                            />
+                            <ExternalLink className="w-3.5 h-3.5 text-[#8A9B95] group-hover:text-[#D97706] transition-colors ml-1" />
                           </div>
                         </div>
 
