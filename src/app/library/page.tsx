@@ -147,7 +147,7 @@ export default function LibraryPage() {
     <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1C2A26]">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full space-y-8 flex-1">
+      <main className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-12 py-8 w-full space-y-8 flex-1">
         <div className="bg-gradient-to-br from-white via-[#FAF7F2] to-[#F5EFE6] border border-[#E7E0D3] rounded-3xl p-6 sm:p-10 space-y-4 shadow-sm">
           <div className="flex items-center gap-2">
             <Badge variant="amber" icon={<LibraryIcon className="w-3.5 h-3.5" />}>

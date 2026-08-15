@@ -486,7 +486,7 @@ export default function ManualDetailPage() {
 
             if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
               return (
-                <li key={lIdx} className="ml-6 list-disc text-[1.05rem] leading-[1.72] text-[#1C2A26] pl-1">
+                <li key={lIdx} className="ml-6 list-disc text-[1.05rem] leading-[1.72] text-[#1C2A26] pl-1 text-justify text-left-last">
                   {parseInlineFormatting(trimmed.replace(/^[-*]\s+/, ""))}
                 </li>
               );
@@ -496,13 +496,13 @@ export default function ManualDetailPage() {
               return (
                 <div key={lIdx} className="ml-5 text-[1.05rem] leading-[1.72] text-[#1C2A26] font-semibold flex items-start gap-2.5 my-1">
                   <span className="text-[#D97706] font-mono shrink-0">{trimmed.match(/^\d+\./)?.[0]}</span>
-                  <span>{parseInlineFormatting(trimmed.replace(/^\d+\.\s+/, ""))}</span>
+                  <span className="text-justify text-left-last">{parseInlineFormatting(trimmed.replace(/^\d+\.\s+/, ""))}</span>
                 </div>
               );
             }
 
             return (
-              <p key={lIdx} className="text-[1.05rem] leading-[1.72] text-[#1C2A26]">
+              <p key={lIdx} className="text-[1.05rem] leading-[1.72] text-[#1C2A26] text-justify text-left-last">
                 {parseInlineFormatting(trimmed)}
               </p>
             );
@@ -516,7 +516,7 @@ export default function ManualDetailPage() {
     <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1C2A26]">
       <Navbar />
 
-      <main className="max-w-[1680px] mx-auto px-3 sm:px-5 lg:px-8 py-6 sm:py-8 w-full space-y-8 flex-1">
+      <main className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-12 py-6 sm:py-8 w-full space-y-8 flex-1">
         {/* MANUAL HEADER CARD — TIGHT & PROPORTIONED WITHOUT GAP TRUNCATION */}
         <div className="bg-gradient-to-br from-white via-[#FAF7F2] to-[#F5EFE6] border border-[#E7E0D3] rounded-3xl p-6 sm:p-8 shadow-sm">
           {/* Top Bar Navigation */}

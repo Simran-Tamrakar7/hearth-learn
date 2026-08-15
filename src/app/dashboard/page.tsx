@@ -107,7 +107,7 @@ export default function DashboardPage() {
     <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1C2A26]">
       <Navbar />
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10 w-full space-y-10 flex-1">
+      <main className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-12 py-10 w-full space-y-10 flex-1">
         {/* Header Greeting */}
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
           <div className="space-y-1">

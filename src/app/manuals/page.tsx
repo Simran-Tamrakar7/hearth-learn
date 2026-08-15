@@ -120,7 +120,7 @@ export default function ManualsCatalogPage() {
     <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1C2A26]">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-12 w-full space-y-10 flex-1">
+      <main className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-12 py-10 sm:py-12 w-full space-y-10 flex-1">
         <div className="bg-gradient-to-br from-white via-[#FAF7F2] to-[#F5EFE6] border border-[#E7E0D3] rounded-3xl p-8 sm:p-12 space-y-6 shadow-sm relative overflow-hidden">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
             <div className="space-y-4 w-full">

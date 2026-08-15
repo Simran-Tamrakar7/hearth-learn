@@ -211,7 +211,7 @@ export default function AICoachPage() {
     <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1C2A26]">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full space-y-8 flex-1">
+      <main className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-12 py-8 w-full space-y-8 flex-1">
         {/* Header */}
         <div className="space-y-3 print:hidden">
           <span className="text-[11px] font-bold uppercase tracking-wider text-[#52635E] block">

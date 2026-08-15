@@ -146,7 +146,7 @@ export default function ShowcaseWallPage() {
     <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1C2A26]">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-10 w-full space-y-8 flex-1">
+      <main className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-12 py-10 w-full space-y-8 flex-1">
         {/* Header Banner */}
         <div className="bg-gradient-to-br from-white via-[#FAF7F2] to-[#F5EFE6] border border-[#E7E0D3] rounded-3xl p-6 sm:p-10 space-y-4 shadow-xs relative overflow-hidden">
           <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-6">

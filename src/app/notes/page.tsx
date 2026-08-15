@@ -396,7 +396,7 @@ export default function NotesPage() {
     <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1C2A26]">
       <Navbar />
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10 w-full flex-1">
+      <main className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-12 py-10 w-full flex-1">
         <Suspense fallback={<div className="p-8 text-center text-xs text-[#8A9B95]">Loading notes...</div>}>
           <NotesContent />
         </Suspense>

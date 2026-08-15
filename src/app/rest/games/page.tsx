@@ -63,7 +63,7 @@ export default function ArcadiaGamesShelfPage() {
     <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1C2A26] relative">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full space-y-8 flex-1 pb-24">
+      <main className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-12 py-8 w-full space-y-8 flex-1 pb-24">
         {/* TOP BAR / BREADCRUMB */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">

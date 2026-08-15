@@ -108,7 +108,7 @@ export default function LuminaSettingsPage() {
     <div className="min-h-screen flex flex-col bg-inherit text-inherit">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full space-y-8 flex-1">
+      <main className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-12 py-8 w-full space-y-8 flex-1">
         {/* Header */}
         <div className="space-y-2">
           <h1 className="font-serif-display text-4xl font-bold tracking-tight">
