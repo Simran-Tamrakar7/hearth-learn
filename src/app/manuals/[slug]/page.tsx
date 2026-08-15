@@ -516,7 +516,7 @@ export default function ManualDetailPage() {
     <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1C2A26]">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 w-full space-y-8 flex-1">
+      <main className="max-w-[1680px] mx-auto px-3 sm:px-5 lg:px-8 py-6 sm:py-8 w-full space-y-8 flex-1">
         {/* MANUAL HEADER CARD — TIGHT & PROPORTIONED WITHOUT GAP TRUNCATION */}
         <div className="bg-gradient-to-br from-white via-[#FAF7F2] to-[#F5EFE6] border border-[#E7E0D3] rounded-3xl p-6 sm:p-8 shadow-sm">
           {/* Top Bar Navigation */}
@@ -595,9 +595,9 @@ export default function ManualDetailPage() {
         </div>
 
         {/* 2-COLUMN LAYOUT: TOC SIDEBAR + CHAPTER CONTENT */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* LEFT COLUMN: ROADMAP + CHAPTERS */}
-          <div className="lg:col-span-4 space-y-4 sticky top-24 max-h-[82vh] overflow-y-auto pr-1 scrollbar-thin">
+          <div className="lg:col-span-3 xl:col-span-3 space-y-4 sticky top-24 max-h-[82vh] overflow-y-auto pr-1 scrollbar-thin">
             <Card variant="default" hoverable={false} className="p-5 border-[#E7E0D3] bg-[#FAF7F2] space-y-4 shadow-xs rounded-3xl">
               <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-[#E7E0D3]">
                 <div className="flex items-center gap-2 text-xs font-serif-display font-bold text-[#1C2A26] tracking-wider uppercase">
@@ -703,7 +703,7 @@ export default function ManualDetailPage() {
           </div>
 
           {/* RIGHT COLUMN: CHAPTER CONTENT VIEW */}
-          <div className="lg:col-span-8 space-y-6">
+          <div className="lg:col-span-9 xl:col-span-9 space-y-6">
             <Card variant="default" hoverable={false} className="p-8 sm:p-10 space-y-8 border-[#E7E0D3] bg-white shadow-sm">
               {/* HEADER ROW WITH VIEW MODE TOGGLE BUTTONS */}
               <div className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-[#E7E0D3]">

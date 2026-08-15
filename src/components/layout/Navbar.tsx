@@ -62,7 +62,7 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 bg-[#FAF7F2]/90 backdrop-blur-md border-b border-[#E7E0D3] transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div className="max-w-[1680px] mx-auto px-3 sm:px-5 lg:px-8 h-16 flex items-center justify-between">
         {/* Brand Logo */}
         <Link href="/dashboard" className="flex items-center gap-2.5 group">
           <div className="w-8 h-8 rounded-xl bg-[#1C2A26] flex items-center justify-center text-[#D97706] shadow-xs group-hover:scale-105 transition-transform">
