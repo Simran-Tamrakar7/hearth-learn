@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -45,8 +45,9 @@ import {
   Activity,
   Flame as BurnIcon,
   Film,
+  Pin,
 } from "lucide-react";
-import { PinButton } from "@/components/ui/PinButton";
+import { PinButton, getPinnedItems, PinnedItemMetadata } from "@/components/ui/PinButton";
 import Link from "next/link";
 
 export default function LuminaCookbookPage() {
@@ -60,6 +61,17 @@ export default function LuminaCookbookPage() {
   const [activeDishModal, setActiveDishModal] = useState<DetailedDish | null>(null);
   const [selectedWayId, setSelectedWayId] = useState<string>("w1");
   const [activeVideo, setActiveVideo] = useState<RecipeVideo | null>(null);
+  const [pinnedRecipes, setPinnedRecipes] = useState<PinnedItemMetadata[]>([]);
+
+  useEffect(() => {
+    const updatePins = () => {
+      const allPins = getPinnedItems();
+      setPinnedRecipes(allPins.filter((p) => p.type === "recipe"));
+    };
+    updatePins();
+    window.addEventListener("hearth_pins_updated", updatePins);
+    return () => window.removeEventListener("hearth_pins_updated", updatePins);
+  }, []);
 
   const cuisines = COOKBOOK_CUISINES;
   const allDishes = COOKBOOK_DISHES;
@@ -265,6 +277,65 @@ export default function LuminaCookbookPage() {
             Showing {filteredDishes.length} of {allDishes.length} Recipes
           </span>
         </div>
+
+        {/* 📌 PINNED FAVORITE RECIPES SHELF */}
+        {pinnedRecipes.length > 0 && (
+          <div className="space-y-4 bg-gradient-to-br from-white via-[#FAF7F2] to-[#FEF3C7]/40 border border-[#E7E0D3] rounded-3xl p-6 shadow-xs">
+            <div className="flex items-center justify-between">
+              <h2 className="font-serif-display text-xl font-bold text-[#1C2A26] flex items-center gap-2">
+                <Pin className="w-5 h-5 text-[#D97706]" />
+                <span>Your Pinned Favorite Recipes ({pinnedRecipes.length})</span>
+              </h2>
+              <span className="text-xs text-[#8A9B95] font-semibold">Quick Kitchen Access</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pinnedRecipes.map((recipe) => (
+                <div
+                  key={recipe.id}
+                  className="bg-white border border-[#E7E0D3] rounded-2xl p-4 flex items-center justify-between gap-4 shadow-xs hover:border-[#1C2A26] transition-all group"
+                >
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="w-12 h-12 rounded-xl bg-[#FAF7F2] border border-[#E7E0D3] overflow-hidden shrink-0">
+                      <img src={recipe.icon || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300"} alt="" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="min-w-0 space-y-0.5">
+                      <span className="text-[9px] font-bold text-[#D97706] uppercase tracking-wider block">
+                        {recipe.category || "Cookbook Recipe"}
+                      </span>
+                      <h4 className="font-serif-display font-bold text-sm text-[#1C2A26] truncate">
+                        {recipe.title}
+                      </h4>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Button
+                      variant="amber"
+                      size="sm"
+                      onClick={() => {
+                        const dishObj = allDishes.find((d) => `dish-${d.id}` === recipe.id || d.title === recipe.title);
+                        if (dishObj) openDishModal(dishObj);
+                      }}
+                      className="px-3 py-1.5 text-xs h-auto"
+                    >
+                      Cook
+                    </Button>
+                    <PinButton
+                      itemId={recipe.id}
+                      itemTitle={recipe.title}
+                      itemCategory={recipe.category}
+                      itemType="recipe"
+                      itemUrl="/rest/cookbook"
+                      itemIcon={recipe.icon}
+                      variant="icon"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* RECIPES GRID (STOREFRONT DISH CARDS) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

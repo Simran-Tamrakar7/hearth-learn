@@ -445,88 +445,83 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* 📌 PINNED FAVORITES & QUICK ACCESS SHELF */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-serif-display text-xl font-bold text-[#1C2A26] flex items-center gap-2">
-              <Pin className="w-5 h-5 text-[#D97706]" />
-              Pinned Quick Access Shelf
-            </h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsPinModalOpen(true)}
-              leftIcon={<Plus className="w-3.5 h-3.5 text-[#D97706]" />}
-              className="text-xs text-[#52635E] hover:text-[#1C2A26]"
-            >
-              Manage Pins
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {pinnedItems.length === 0 ? (
-              <div className="col-span-full bg-white border border-[#E7E0D3] rounded-3xl p-8 text-center space-y-3 shadow-xs">
-                <div className="w-12 h-12 rounded-2xl bg-[#FAF7F2] border border-[#E7E0D3] text-[#D97706] mx-auto flex items-center justify-center text-xl">
-                  📌
-                </div>
-                <h4 className="font-serif-display font-bold text-base text-[#1C2A26]">No Pinned Items Yet</h4>
-                <p className="text-xs text-[#52635E] max-w-md mx-auto leading-relaxed">
-                  Click the 📌 pin button on any Course Manual, Arcadia Game, Cookbook Recipe, or Learning Trail card to keep it here for 1-click quick access!
-                </p>
-              </div>
-            ) : (
-              pinnedItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-white border border-[#E7E0D3] rounded-2xl p-5 flex items-center justify-between gap-4 shadow-xs hover:border-[#1C2A26] transition-all group"
+        {/* 📌 PINNED FAVORITES & QUICK ACCESS SHELF (MANUALS & TRAILS ONLY) */}
+        {(() => {
+          const pinnedManualsAndTrails = pinnedItems.filter(
+            (item) => item.type === "manual" || item.type === "trail"
+          );
+          return (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="font-serif-display text-xl font-bold text-[#1C2A26] flex items-center gap-2">
+                  <Pin className="w-5 h-5 text-[#D97706]" />
+                  Pinned Course Manuals & Trails
+                </h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsPinModalOpen(true)}
+                  leftIcon={<Plus className="w-3.5 h-3.5 text-[#D97706]" />}
+                  className="text-xs text-[#52635E] hover:text-[#1C2A26]"
                 >
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-[#FAF7F2] border border-[#E7E0D3] text-xl flex items-center justify-center shrink-0">
-                      {item.icon || (item.type === "game" ? "🎮" : item.type === "recipe" ? "🍳" : item.type === "trail" ? "🏔️" : "📘")}
-                    </div>
-                    <div className="min-w-0 space-y-0.5">
-                      <span className="text-[9px] font-bold text-[#D97706] uppercase tracking-wider block">
-                        {item.type.toUpperCase()} {item.category ? `· ${item.category}` : ""}
-                      </span>
-                      <h4 className="font-serif-display font-bold text-sm text-[#1C2A26] truncate">
-                        {item.title}
-                      </h4>
-                    </div>
-                  </div>
+                  Manage Pins
+                </Button>
+              </div>
 
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {item.type === "game" ? (
-                      <Button
-                        variant="amber"
-                        size="sm"
-                        onClick={() => window.open(item.url, "_blank", "noopener,noreferrer")}
-                        className="px-3 py-1.5 text-xs h-auto"
-                        rightIcon={<ExternalLink className="w-3 h-3" />}
-                      >
-                        Play
-                      </Button>
-                    ) : (
-                      <Link href={item.url}>
-                        <Button variant="outline" size="sm" className="px-3 py-1.5 text-xs h-auto">
-                          Open
-                        </Button>
-                      </Link>
-                    )}
-                    <PinButton
-                      itemId={item.id}
-                      itemTitle={item.title}
-                      itemCategory={item.category}
-                      itemType={item.type}
-                      itemUrl={item.url}
-                      itemIcon={item.icon}
-                      variant="icon"
-                    />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {pinnedManualsAndTrails.length === 0 ? (
+                  <div className="col-span-full bg-white border border-[#E7E0D3] rounded-3xl p-8 text-center space-y-3 shadow-xs">
+                    <div className="w-12 h-12 rounded-2xl bg-[#FAF7F2] border border-[#E7E0D3] text-[#D97706] mx-auto flex items-center justify-center text-xl">
+                      📌
+                    </div>
+                    <h4 className="font-serif-display font-bold text-base text-[#1C2A26]">No Pinned Manuals or Trails Yet</h4>
+                    <p className="text-xs text-[#52635E] max-w-md mx-auto leading-relaxed">
+                      Click the 📌 pin button on any Course Manual or Learning Trail card to keep it here on your main sanctuary shelf!
+                    </p>
                   </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+                ) : (
+                  pinnedManualsAndTrails.map((item) => (
+                    <div
+                      key={item.id}
+                      className="bg-white border border-[#E7E0D3] rounded-2xl p-5 flex items-center justify-between gap-4 shadow-xs hover:border-[#1C2A26] transition-all group"
+                    >
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-[#FAF7F2] border border-[#E7E0D3] text-xl flex items-center justify-center shrink-0">
+                          {item.icon || (item.type === "trail" ? "🏔️" : "📘")}
+                        </div>
+                        <div className="min-w-0 space-y-0.5">
+                          <span className="text-[9px] font-bold text-[#D97706] uppercase tracking-wider block">
+                            {item.type.toUpperCase()} {item.category ? `· ${item.category}` : ""}
+                          </span>
+                          <h4 className="font-serif-display font-bold text-sm text-[#1C2A26] truncate">
+                            {item.title}
+                          </h4>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <Link href={item.url}>
+                          <Button variant="outline" size="sm" className="px-3 py-1.5 text-xs h-auto">
+                            Read
+                          </Button>
+                        </Link>
+                        <PinButton
+                          itemId={item.id}
+                          itemTitle={item.title}
+                          itemCategory={item.category}
+                          itemType={item.type}
+                          itemUrl={item.url}
+                          itemIcon={item.icon}
+                          variant="icon"
+                        />
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Core Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

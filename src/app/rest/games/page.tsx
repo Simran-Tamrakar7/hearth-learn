@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Navbar } from "@/components/layout/Navbar";
@@ -12,7 +12,7 @@ import {
   ARCADIA_GENRES,
   ArcadiaGame,
 } from "@/lib/gamesData";
-import { PinButton } from "@/components/ui/PinButton";
+import { PinButton, getPinnedItems, PinnedItemMetadata } from "@/components/ui/PinButton";
 import {
   Gamepad2,
   Search,
@@ -28,6 +28,7 @@ import {
   ArrowRight,
   Flame,
   Globe,
+  Pin,
 } from "lucide-react";
 
 export default function ArcadiaGamesShelfPage() {
@@ -35,6 +36,17 @@ export default function ArcadiaGamesShelfPage() {
   const [selectedGenre, setSelectedGenre] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [fabDrawerOpen, setFabDrawerOpen] = useState<boolean>(false);
+  const [pinnedGames, setPinnedGames] = useState<PinnedItemMetadata[]>([]);
+
+  useEffect(() => {
+    const updatePins = () => {
+      const allPins = getPinnedItems();
+      setPinnedGames(allPins.filter((p) => p.type === "game"));
+    };
+    updatePins();
+    window.addEventListener("hearth_pins_updated", updatePins);
+    return () => window.removeEventListener("hearth_pins_updated", updatePins);
+  }, []);
 
   const categories = ARCADIA_CATEGORIES;
   const genres = ARCADIA_GENRES;
@@ -138,6 +150,61 @@ export default function ArcadiaGamesShelfPage() {
             </Button>
           </div>
         </div>
+
+        {/* 📌 PINNED FAVORITE GAMES SHELF */}
+        {pinnedGames.length > 0 && (
+          <div className="space-y-4 bg-gradient-to-br from-white via-[#FAF7F2] to-[#FEF3C7]/40 border border-[#E7E0D3] rounded-3xl p-6 shadow-xs">
+            <div className="flex items-center justify-between">
+              <h2 className="font-serif-display text-xl font-bold text-[#1C2A26] flex items-center gap-2">
+                <Pin className="w-5 h-5 text-[#D97706]" />
+                <span>Your Pinned Favorite Games ({pinnedGames.length})</span>
+              </h2>
+              <span className="text-xs text-[#8A9B95] font-semibold">1-Click Launch</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {pinnedGames.map((game) => (
+                <div
+                  key={game.id}
+                  className="bg-white border border-[#E7E0D3] rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-2xs hover:border-[#1C2A26] transition-all group"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl">{game.icon || "🎮"}</span>
+                      <PinButton
+                        itemId={game.id}
+                        itemTitle={game.title}
+                        itemCategory={game.category}
+                        itemType="game"
+                        itemUrl={game.url}
+                        itemIcon={game.icon}
+                        variant="icon"
+                      />
+                    </div>
+                    <h3 className="font-serif-display font-bold text-base text-[#1C2A26] truncate pt-1">
+                      {game.title}
+                    </h3>
+                    {game.category && (
+                      <span className="text-[10px] font-bold text-[#D97706] uppercase tracking-wider block">
+                        {game.category}
+                      </span>
+                    )}
+                  </div>
+
+                  <Button
+                    variant="amber"
+                    size="sm"
+                    onClick={() => window.open(game.url, "_blank", "noopener,noreferrer")}
+                    className="w-full text-xs"
+                    rightIcon={<ExternalLink className="w-3.5 h-3.5" />}
+                  >
+                    Play Game Now
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* TOP HORIZONTAL BAR: 6 MAIN CATEGORIES */}
         <div className="flex flex-wrap items-center gap-2 border-b border-[#E7E0D3] pb-4">
