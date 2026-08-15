@@ -20,12 +20,22 @@ import {
   CheckCircle2,
   Trophy,
   Zap,
-  RotateCcw,
   ListOrdered,
-  Tag,
-  Code,
-  FileText,
+  Pin,
+  Plus,
+  X,
+  Compass,
+  Gamepad2,
+  UtensilsCrossed,
+  Sun,
+  Moon,
+  Quote as QuoteIcon,
+  RefreshCw,
+  ExternalLink,
+  Star,
 } from "lucide-react";
+import { COOKBOOK_DISHES } from "@/lib/cookbookData";
+import { ARCADIA_GAMES } from "@/lib/gamesData";
 
 interface DashboardData {
   user: {
@@ -42,14 +52,164 @@ interface DashboardData {
   continueTrail: any;
 }
 
+// Pinnable Manuals Catalog
+const PINNABLE_MANUALS = [
+  { id: "man-playwright", title: "Playwright Automation", category: "Testing & DevOps", slug: "playwright", icon: "🎭" },
+  { id: "man-git", title: "Pro Git & Version Control", category: "DevOps & SCM", slug: "git", icon: "🐙" },
+  { id: "man-nextjs", title: "Next.js 15 App Router", category: "Full-Stack Web", slug: "nextjs", icon: "⚡" },
+  { id: "man-typescript", title: "TypeScript Mastery", category: "Languages", slug: "typescript", icon: "📘" },
+  { id: "man-python", title: "Python 3 & Data Science", category: "Backend & Data", slug: "python", icon: "🐍" },
+  { id: "man-docker", title: "Docker Containers", category: "Cloud Infrastructure", slug: "docker", icon: "🐳" },
+];
+
+// Zodiac Signs Data
+const ZODIAC_SIGNS = [
+  { id: "aries", name: "Aries", symbol: "♈", dates: "Mar 21 - Apr 19" },
+  { id: "taurus", name: "Taurus", symbol: "♉", dates: "Apr 20 - May 20" },
+  { id: "gemini", name: "Gemini", symbol: "♊", dates: "May 21 - Jun 20" },
+  { id: "cancer", name: "Cancer", symbol: "♋", dates: "Jun 21 - Jul 22" },
+  { id: "leo", name: "Leo", symbol: "♌", dates: "Jul 23 - Aug 22" },
+  { id: "virgo", name: "Virgo", symbol: "♍", dates: "Aug 23 - Sep 22" },
+  { id: "libra", name: "Libra", symbol: "♎", dates: "Sep 23 - Oct 22" },
+  { id: "scorpio", name: "Scorpio", symbol: "♏", dates: "Oct 23 - Nov 21" },
+  { id: "sagittarius", name: "Sagittarius", symbol: "♐", dates: "Nov 22 - Dec 21" },
+  { id: "capricorn", name: "Capricorn", symbol: "♑", dates: "Dec 22 - Jan 19" },
+  { id: "aquarius", name: "Aquarius", symbol: "♒", dates: "Jan 20 - Feb 18" },
+  { id: "pisces", name: "Pisces", symbol: "♓", dates: "Feb 19 - Mar 20" },
+];
+
+function getDailyHoroscope(signId: string) {
+  const today = new Date();
+  const dateStr = today.toISOString().split("T")[0];
+  const seed = dateStr.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) + signId.length * 17;
+
+  const luckyNumbers = [3, 7, 11, 14, 21, 27, 33, 42, 88];
+  const powerColors = ["Amber Gold", "Deep Forest Green", "Royal Crimson", "Sapphire Blue", "Emerald", "Violet Slate"];
+  const luckyTimes = ["9:15 AM", "11:30 AM", "2:45 PM", "4:20 PM", "7:10 PM", "9:00 PM"];
+
+  const horoscopes: Record<string, string[]> = {
+    aries: [
+      "Your natural momentum is surging today. Channel your fierce focus into solving one complex architecture or study milestone before noon.",
+      "Courage is your superpower today. Don't hesitate to refactor complex code or tackle difficult concepts—clarity follows decisive action.",
+    ],
+    taurus: [
+      "Patience and steady craftsmanship bring extraordinary progress today. Focus on foundational study guides and deliberate practice.",
+      "Ground yourself in calm routine. Small, consistent study steps today build undeniable mastery for the long run.",
+    ],
+    gemini: [
+      "Your curious mind is operating at peak speed today. Great time for deep reading, exploring new technical manuals, or connecting ideas.",
+      "Synthesis is your theme today. Bridge insights between different subjects and let your versatile intellect lead the way.",
+    ],
+    cancer: [
+      "Intuition aligns with logic today. Trust your gut when organizing notes, designing workflows, or taking a restorative break.",
+      "Protect your sanctuary and create a peaceful learning environment. Quiet focus will yield your best breakthroughs today.",
+    ],
+    leo: [
+      "Your creative confidence is shining brightly. Share your learning build on the Showcase Wall or inspire a peer today.",
+      "Lead by example today. Your enthusiasm for learning radiates energy to your surrounding environment.",
+    ],
+    virgo: [
+      "Precision and attention to detail are your competitive edge today. Perfect day for code reviews, testing, or refining notes.",
+      "Clarity comes from structure. Systematize your daily schedule and enjoy the satisfaction of clean execution.",
+    ],
+    libra: [
+      "Harmony and balance bring mental flow today. Balance intense technical study with cozy rest and restorative breaks.",
+      "Collaborative ideas flourish today. Seek elegant solutions and balanced perspectives in your study session.",
+    ],
+    scorpio: [
+      "Deep focus and intense determination power your session today. Unravel hard problems and dive straight to core principles.",
+      "Transformative insight is available today. Dig beneath the surface of complex manuals to unlock true understanding.",
+    ],
+    sagittarius: [
+      "Expansive vision and optimism fuel your curiosity today. Explore brand new topics, study guides, or distant horizon goals.",
+      "Embrace the adventure of learning today. Every new concept opens a portal to broader possibilities.",
+    ],
+    capricorn: [
+      "Disciplined focus and master planning yield tangible results today. Stack another day onto your streak with pride.",
+      "Your ambition is matched by your grit today. Methodical progress leads directly to your highest learning peak.",
+    ],
+    aquarius: [
+      "Innovative thinking and original ideas spark today. Experiment with new digital tools, workflows, or creative projects.",
+      "Think outside conventional boxes today. Your unique perspective leads to breakthrough problem-solving.",
+    ],
+    pisces: [
+      "Imaginative clarity and calm flow guide your mind today. Let your intuition rhythmically digest new information.",
+      "Subtle insights surface when you relax into the flow. Combine structured study with peaceful reflection.",
+    ],
+  };
+
+  const signHoroscopes = horoscopes[signId] || horoscopes["aries"];
+  const text = signHoroscopes[seed % signHoroscopes.length];
+  const luckyNum = luckyNumbers[seed % luckyNumbers.length];
+  const powerColor = powerColors[seed % powerColors.length];
+  const luckyTime = luckyTimes[seed % luckyTimes.length];
+
+  return { text, luckyNum, powerColor, luckyTime, dateStr };
+}
+
+const DAILY_THOUGHTS = [
+  { quote: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", author: "Aristotle", tag: "Mastery" },
+  { quote: "The man who moves a mountain begins by carrying away small stones.", author: "Confucius", tag: "Momentum" },
+  { quote: "Simplify, then add lightness.", author: "Colin Chapman", tag: "Design" },
+  { quote: "First, solve the problem. Then, write the code.", author: "John Johnson", tag: "Engineering" },
+  { quote: "Make it work, make it right, make it fast.", author: "Kent Beck", tag: "Craftsmanship" },
+  { quote: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius", tag: "Persistence" },
+  { quote: "The chief cause of failure and unhappiness is trading what you want most for what you want now.", author: "Zig Ziglar", tag: "Focus" },
+  { quote: "Luck is what happens when preparation meets opportunity.", author: "Seneca", tag: "Preparedness" },
+  { quote: "The secret of getting ahead is getting started.", author: "Mark Twain", tag: "Action" },
+  { quote: "Simplicity is prerequisite for reliability.", author: "Edsger W. Dijkstra", tag: "Clarity" },
+  { quote: "Small daily improvements over time lead to stunning results.", author: "Robin Sharma", tag: "Growth" },
+  { quote: "He who has a why to live can bear almost any how.", author: "Friedrich Nietzsche", tag: "Purpose" },
+];
+
+function getDailyThought(customIndex?: number) {
+  if (typeof customIndex === "number") {
+    return DAILY_THOUGHTS[customIndex % DAILY_THOUGHTS.length];
+  }
+
+  const today = new Date();
+  const dateStr = today.toISOString().split("T")[0];
+  const hash = dateStr.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return DAILY_THOUGHTS[hash % DAILY_THOUGHTS.length];
+}
+
 export default function DashboardPage() {
   const { toast } = useToast();
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [streakCount, setStreakCount] = useState(1);
 
+  // Pinning System State
+  const [pinnedIds, setPinnedIds] = useState<string[]>([]);
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+
+  // Zodiac & Thought State
+  const [selectedZodiac, setSelectedZodiac] = useState("aries");
+  const [thoughtIndex, setThoughtIndex] = useState<number | undefined>(undefined);
+
   useEffect(() => {
     fetchDashboard();
+
+    // Load Pinned Items from localStorage
+    try {
+      const savedPins = localStorage.getItem("hearth_pinned_items");
+      if (savedPins) {
+        setPinnedIds(JSON.parse(savedPins));
+      } else {
+        // Default pinned items (Playwright Manual, Tetris, Himalayan Momo)
+        const defaults = ["man-playwright", "g-tetris", "dish-momo"];
+        setPinnedIds(defaults);
+        localStorage.setItem("hearth_pinned_items", JSON.stringify(defaults));
+      }
+
+      // Load Saved Zodiac
+      const savedZodiac = localStorage.getItem("hearth_user_zodiac");
+      if (savedZodiac) {
+        setSelectedZodiac(savedZodiac);
+      }
+    } catch (e) {
+      console.error("Local storage load error:", e);
+    }
   }, []);
 
   const fetchDashboard = async () => {
@@ -65,6 +225,46 @@ export default function DashboardPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const getGameId = (g: typeof ARCADIA_GAMES[0]) => {
+    return `g-${g.t.toLowerCase().replace(/[^a-z0-9]/g, "")}`;
+  };
+
+  const togglePin = (id: string, name: string) => {
+    let next: string[];
+    let isPinnedNow = false;
+
+    if (pinnedIds.includes(id)) {
+      next = pinnedIds.filter((p) => p !== id);
+    } else {
+      next = [...pinnedIds, id];
+      isPinnedNow = true;
+    }
+
+    setPinnedIds(next);
+    localStorage.setItem("hearth_pinned_items", JSON.stringify(next));
+
+    toast({
+      type: isPinnedNow ? "achievement" : "info",
+      title: isPinnedNow ? "Pinned to Dashboard! 📌" : "Unpinned Item",
+      description: isPinnedNow ? `"${name}" added to quick access shelf.` : `"${name}" removed from pins.`,
+    });
+  };
+
+  const handleZodiacChange = (newSign: string) => {
+    setSelectedZodiac(newSign);
+    localStorage.setItem("hearth_user_zodiac", newSign);
+    toast({
+      type: "info",
+      title: `Daily Horoscope Updated 🔮`,
+      description: `Viewing horoscope for ${ZODIAC_SIGNS.find((z) => z.id === newSign)?.name}.`,
+    });
+  };
+
+  const cycleThought = () => {
+    const nextIdx = (thoughtIndex ?? 0) + 1;
+    setThoughtIndex(nextIdx);
   };
 
   const triggerStreakCelebration = () => {
@@ -103,6 +303,15 @@ export default function DashboardPage() {
   const continueTrail = data?.continueTrail;
   const activeTrails = data?.activeTrails || [];
 
+  const horoscope = getDailyHoroscope(selectedZodiac);
+  const activeZodiacObj = ZODIAC_SIGNS.find((z) => z.id === selectedZodiac) || ZODIAC_SIGNS[0];
+  const currentThought = getDailyThought(thoughtIndex);
+
+  // Resolved Pinned Items
+  const pinnedManuals = PINNABLE_MANUALS.filter((m) => pinnedIds.includes(m.id));
+  const pinnedGames = ARCADIA_GAMES.filter((g) => pinnedIds.includes(getGameId(g)) || pinnedIds.includes("g-tetris"));
+  const pinnedRecipes = COOKBOOK_DISHES.filter((d) => pinnedIds.includes(d.id) || (d.title.includes("Momo") && pinnedIds.includes("dish-momo")));
+
   return (
     <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1C2A26]">
       <Navbar />
@@ -123,16 +332,266 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsPinModalOpen(true)}
+              leftIcon={<Pin className="w-3.5 h-3.5 text-[#D97706]" />}
+            >
+              Pin Favorites
+            </Button>
+
             <Link href="/rest">
               <Button variant="secondary" size="sm" leftIcon={<Coffee className="w-4 h-4" />}>
-                Take a Breather
+                Break Room
               </Button>
             </Link>
-            <Link href="/trails">
+            <Link href="/manuals">
               <Button variant="primary" size="sm" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                Browse All Trails
+                Browse Manuals
               </Button>
             </Link>
+          </div>
+        </div>
+
+        {/* DYNAMIC WIDGETS ROW: HOROSCOPE OF THE DAY + THOUGHT OF THE DAY */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* DAILY HOROSCOPE WIDGET */}
+          <div className="lg:col-span-7">
+            <Card variant="default" hoverable={false} className="p-6 sm:p-7 space-y-5 bg-gradient-to-br from-white via-[#FAF7F2] to-[#F5EFE6] border-[#E7E0D3] shadow-sm relative overflow-hidden h-full flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#D97706]">
+                    <Sparkles className="w-4 h-4" />
+                    <span>Daily Horoscope</span>
+                    <span className="text-[10px] text-[#8A9B95] font-mono">({horoscope.dateStr})</span>
+                  </div>
+
+                  {/* Zodiac Selector Dropdown */}
+                  <select
+                    value={selectedZodiac}
+                    onChange={(e) => handleZodiacChange(e.target.value)}
+                    className="px-3 py-1.5 rounded-xl bg-white border border-[#E7E0D3] text-xs font-bold text-[#1C2A26] focus:outline-none focus:border-[#D97706] shadow-2xs cursor-pointer"
+                  >
+                    {ZODIAC_SIGNS.map((z) => (
+                      <option key={z.id} value={z.id}>
+                        {z.symbol} {z.name} ({z.dates})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-start gap-4 pt-1">
+                  <div className="w-12 h-12 rounded-2xl bg-[#1C2A26] text-[#D97706] text-2xl flex items-center justify-center shrink-0 shadow-md">
+                    {activeZodiacObj.symbol}
+                  </div>
+                  <div className="space-y-1 min-w-0">
+                    <h3 className="font-serif-display font-bold text-lg text-[#1C2A26]">
+                      {activeZodiacObj.name} Daily Guidance
+                    </h3>
+                    <p className="text-xs text-[#52635E] leading-relaxed italic">
+                      &quot;{horoscope.text}&quot;
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Horoscope Lucky Stats */}
+              <div className="pt-4 border-t border-[#E7E0D3] grid grid-cols-3 gap-3 text-center">
+                <div className="bg-white/80 p-2.5 rounded-xl border border-[#E7E0D3]">
+                  <span className="text-[10px] font-bold text-[#8A9B95] uppercase block">Lucky Number</span>
+                  <span className="font-serif-display font-bold text-sm text-[#D97706]">{horoscope.luckyNum}</span>
+                </div>
+                <div className="bg-white/80 p-2.5 rounded-xl border border-[#E7E0D3]">
+                  <span className="text-[10px] font-bold text-[#8A9B95] uppercase block">Power Color</span>
+                  <span className="font-serif-display font-bold text-xs text-[#1C2A26] truncate block">{horoscope.powerColor}</span>
+                </div>
+                <div className="bg-white/80 p-2.5 rounded-xl border border-[#E7E0D3]">
+                  <span className="text-[10px] font-bold text-[#8A9B95] uppercase block">Peak Energy Window</span>
+                  <span className="font-serif-display font-bold text-xs text-[#1C2A26]">{horoscope.luckyTime}</span>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* DYNAMIC THOUGHT OF THE DAY WIDGET */}
+          <div className="lg:col-span-5">
+            <Card variant="default" hoverable={false} className="p-6 sm:p-7 space-y-5 bg-[#1C2A26] text-[#FAF7F2] border-[#2D3F3A] shadow-md relative overflow-hidden h-full flex flex-col justify-between">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#D97706]">
+                    <QuoteIcon className="w-4 h-4" />
+                    <span>Thought of the Day</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={cycleThought}
+                    className="flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-white/10 text-white/80 hover:bg-white/20 transition-all"
+                    title="Refresh quote"
+                  >
+                    <RefreshCw className="w-3 h-3 text-[#D97706]" />
+                    <span>Refresh</span>
+                  </button>
+                </div>
+
+                <div className="space-y-2 pt-1">
+                  <span className="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold tracking-wider bg-[#D97706]/20 text-[#D97706] border border-[#D97706]/30">
+                    {currentThought.tag.toUpperCase()}
+                  </span>
+                  <p className="font-serif-display text-base sm:text-lg leading-snug font-medium text-white/95 italic">
+                    &quot;{currentThought.quote}&quot;
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-white/10 flex items-center justify-between text-xs text-amber-200/90 font-medium">
+                <span>— {currentThought.author}</span>
+                <span className="text-[10px] text-white/40 font-mono">Updated Daily</span>
+              </div>
+            </Card>
+          </div>
+        </div>
+
+        {/* 📌 PINNED FAVORITES & QUICK ACCESS SHELF */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-serif-display text-xl font-bold text-[#1C2A26] flex items-center gap-2">
+              <Pin className="w-5 h-5 text-[#D97706]" />
+              Pinned Quick Access Shelf
+            </h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsPinModalOpen(true)}
+              leftIcon={<Plus className="w-3.5 h-3.5 text-[#D97706]" />}
+              className="text-xs text-[#52635E] hover:text-[#1C2A26]"
+            >
+              Manage Pins
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Pinned Manuals */}
+            {pinnedManuals.map((man) => (
+              <div
+                key={man.id}
+                className="bg-white border border-[#E7E0D3] rounded-2xl p-5 flex items-center justify-between gap-4 shadow-xs hover:border-[#1C2A26] transition-all group"
+              >
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-[#FAF7F2] border border-[#E7E0D3] text-xl flex items-center justify-center shrink-0">
+                    {man.icon}
+                  </div>
+                  <div className="min-w-0 space-y-0.5">
+                    <span className="text-[9px] font-bold text-[#D97706] uppercase tracking-wider block">
+                      Manual · {man.category}
+                    </span>
+                    <h4 className="font-serif-display font-bold text-sm text-[#1C2A26] truncate">
+                      {man.title}
+                    </h4>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Link href={`/manuals/${man.slug}`}>
+                    <Button variant="outline" size="sm" className="px-3 py-1.5 text-xs h-auto">
+                      Read
+                    </Button>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => togglePin(man.id, man.title)}
+                    className="p-1.5 text-[#8A9B95] hover:text-[#D97706] transition-colors"
+                    title="Unpin"
+                  >
+                    <Pin className="w-3.5 h-3.5 fill-current text-[#D97706]" />
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            {/* Pinned Games */}
+            {pinnedGames.map((game) => {
+              const gId = getGameId(game);
+              return (
+                <div
+                  key={gId}
+                  className="bg-white border border-[#E7E0D3] rounded-2xl p-5 flex items-center justify-between gap-4 shadow-xs hover:border-[#1C2A26] transition-all group"
+                >
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-[#FAF7F2] border border-[#E7E0D3] text-xl flex items-center justify-center shrink-0">
+                      {game.e}
+                    </div>
+                    <div className="min-w-0 space-y-0.5">
+                      <span className="text-[9px] font-bold text-[#1C2A26] uppercase tracking-wider block">
+                        Game · {game.genre}
+                      </span>
+                      <h4 className="font-serif-display font-bold text-sm text-[#1C2A26] truncate">
+                        {game.t}
+                      </h4>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Button
+                      variant="amber"
+                      size="sm"
+                      onClick={() => window.open(game.u, "_blank", "noopener,noreferrer")}
+                      className="px-3 py-1.5 text-xs h-auto"
+                      rightIcon={<ExternalLink className="w-3 h-3" />}
+                    >
+                      Play
+                    </Button>
+                    <button
+                      type="button"
+                      onClick={() => togglePin(gId, game.t)}
+                      className="p-1.5 text-[#8A9B95] hover:text-[#D97706] transition-colors"
+                      title="Unpin"
+                    >
+                      <Pin className="w-3.5 h-3.5 fill-current text-[#D97706]" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Pinned Cookbook Dishes */}
+            {pinnedRecipes.map((dish) => (
+              <div
+                key={dish.id}
+                className="bg-white border border-[#E7E0D3] rounded-2xl p-5 flex items-center justify-between gap-4 shadow-xs hover:border-[#1C2A26] transition-all group"
+              >
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-[#FAF7F2] border border-[#E7E0D3] text-xl flex items-center justify-center shrink-0 overflow-hidden">
+                    <img src={dish.imageUrl} alt="" className="w-full h-full object-cover rounded-xl" />
+                  </div>
+                  <div className="min-w-0 space-y-0.5">
+                    <span className="text-[9px] font-bold text-[#D97706] uppercase tracking-wider block">
+                      Cookbook · {dish.cuisine}
+                    </span>
+                    <h4 className="font-serif-display font-bold text-sm text-[#1C2A26] truncate">
+                      {dish.title}
+                    </h4>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Link href="/rest/cookbook">
+                    <Button variant="secondary" size="sm" className="px-3 py-1.5 text-xs h-auto">
+                      Cook
+                    </Button>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => togglePin(dish.id, dish.title)}
+                    className="p-1.5 text-[#8A9B95] hover:text-[#D97706] transition-colors"
+                    title="Unpin"
+                  >
+                    <Pin className="w-3.5 h-3.5 fill-current text-[#D97706]" />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -226,7 +685,7 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Continue Where You Left Off Card (With Idle Breathing Glow) */}
+        {/* Continue Where You Left Off Card */}
         {continueTrail && (
           <div className="space-y-4">
             <h2 className="font-serif-display text-xl font-bold text-[#1C2A26] flex items-center gap-2">
@@ -273,7 +732,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Feature #20: "Jump Back In" Smart List */}
+        {/* "Jump Back In" Smart List */}
         <div className="space-y-4">
           <h2 className="font-serif-display text-xl font-bold text-[#1C2A26] flex items-center gap-2">
             <ListOrdered className="w-5 h-5 text-[#D97706]" />
@@ -345,6 +804,135 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
+
+      {/* MANAGE PINNED FAVORITES MODAL */}
+      {isPinModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1C2A26]/40 backdrop-blur-xs">
+          <div className="bg-white border border-[#E7E0D3] rounded-3xl p-6 sm:p-8 max-w-2xl w-full space-y-6 shadow-2xl relative max-h-[85vh] overflow-y-auto">
+            <div className="flex justify-between items-center pb-4 border-b border-[#E7E0D3]">
+              <div className="flex items-center gap-2">
+                <Pin className="w-5 h-5 text-[#D97706]" />
+                <h3 className="font-serif-display font-bold text-xl text-[#1C2A26]">
+                  Manage Pinned Quick Access Favorites
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsPinModalOpen(false)}
+                className="text-[#8A9B95] hover:text-[#1C2A26]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Manuals Section */}
+            <div className="space-y-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#D97706] block">
+                Course Manuals
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {PINNABLE_MANUALS.map((m) => {
+                  const isPinned = pinnedIds.includes(m.id);
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => togglePin(m.id, m.title)}
+                      className={`p-3 rounded-xl border text-left flex items-center justify-between transition-all ${
+                        isPinned
+                          ? "bg-[#FAF7F2] border-[#D97706] font-semibold"
+                          : "bg-white border-[#E7E0D3] hover:border-[#1C2A26]"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="text-lg">{m.icon}</span>
+                        <div className="min-w-0">
+                          <h4 className="text-xs text-[#1C2A26] truncate">{m.title}</h4>
+                          <span className="text-[10px] text-[#8A9B95]">{m.category}</span>
+                        </div>
+                      </div>
+                      <Pin className={`w-4 h-4 ${isPinned ? "text-[#D97706] fill-current" : "text-[#8A9B95]"}`} />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Games Section */}
+            <div className="space-y-3 pt-3 border-t border-[#E7E0D3]">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#1C2A26] block">
+                Arcadia Games
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {ARCADIA_GAMES.slice(0, 8).map((g) => {
+                  const gId = getGameId(g);
+                  const isPinned = pinnedIds.includes(gId);
+                  return (
+                    <button
+                      key={gId}
+                      type="button"
+                      onClick={() => togglePin(gId, g.t)}
+                      className={`p-3 rounded-xl border text-left flex items-center justify-between transition-all ${
+                        isPinned
+                          ? "bg-[#FAF7F2] border-[#D97706] font-semibold"
+                          : "bg-white border-[#E7E0D3] hover:border-[#1C2A26]"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="text-lg">{g.e}</span>
+                        <div className="min-w-0">
+                          <h4 className="text-xs text-[#1C2A26] truncate">{g.t}</h4>
+                          <span className="text-[10px] text-[#8A9B95]">{g.genre}</span>
+                        </div>
+                      </div>
+                      <Pin className={`w-4 h-4 ${isPinned ? "text-[#D97706] fill-current" : "text-[#8A9B95]"}`} />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Cookbook Dishes Section */}
+            <div className="space-y-3 pt-3 border-t border-[#E7E0D3]">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#D97706] block">
+                Cabin Cookbook Recipes
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {COOKBOOK_DISHES.slice(0, 6).map((d) => {
+                  const isPinned = pinnedIds.includes(d.id);
+                  return (
+                    <button
+                      key={d.id}
+                      type="button"
+                      onClick={() => togglePin(d.id, d.title)}
+                      className={`p-3 rounded-xl border text-left flex items-center justify-between transition-all ${
+                        isPinned
+                          ? "bg-[#FAF7F2] border-[#D97706] font-semibold"
+                          : "bg-white border-[#E7E0D3] hover:border-[#1C2A26]"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <img src={d.imageUrl} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0" />
+                        <div className="min-w-0">
+                          <h4 className="text-xs text-[#1C2A26] truncate">{d.title}</h4>
+                          <span className="text-[10px] text-[#8A9B95]">{d.cuisine}</span>
+                        </div>
+                      </div>
+                      <Pin className={`w-4 h-4 ${isPinned ? "text-[#D97706] fill-current" : "text-[#8A9B95]"}`} />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-[#E7E0D3] flex justify-end">
+              <Button variant="primary" size="sm" onClick={() => setIsPinModalOpen(false)}>
+                Done Managing Pins
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -46,7 +46,6 @@ export function Navbar() {
   const allNavLinks = [
     { href: "/manuals", label: "Manuals", icon: Compass, featureKey: null },
     { href: "/library", label: "Library", icon: Book, featureKey: "library" as const },
-    { href: "/dashboard", label: "Today", icon: LayoutDashboard, featureKey: null },
     { href: "/life-simulator", label: "Life Lab", icon: BrainCircuit, featureKey: "lifeLab" as const },
     { href: "/notes", label: "Notes", icon: BookOpen, featureKey: "notes" as const },
     { href: "/ai", label: "AI", icon: Sparkles, featureKey: "aiCoach" as const },
