@@ -598,42 +598,38 @@ export default function ManualDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* LEFT COLUMN: ROADMAP + CHAPTERS */}
           <div className="lg:col-span-4 space-y-4 sticky top-24 max-h-[82vh] overflow-y-auto pr-1 scrollbar-thin">
-            <Card variant="default" hoverable={false} className="p-5 border-[#E7E0D3] bg-[#EEF2F0] space-y-4 shadow-2xs rounded-3xl">
-              <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#D8E2DD]">
-                <button
-                  type="button"
-                  onClick={() => setIsRoadmapModalOpen(true)}
-                  className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full bg-[#1C2A26] text-white hover:bg-[#243530] transition-all"
-                >
-                  <Compass className="w-3 h-3 text-[#D97706] shrink-0" />
-                  <span>Roadmap</span>
-                </button>
+            <Card variant="default" hoverable={false} className="p-5 border-[#E7E0D3] bg-[#FAF7F2] space-y-4 shadow-xs rounded-3xl">
+              <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-[#E7E0D3]">
+                <div className="flex items-center gap-2 text-xs font-serif-display font-bold text-[#1C2A26] tracking-wider uppercase">
+                  <BookOpen className="w-4 h-4 text-[#D97706]" />
+                  <span>Table of Contents</span>
+                </div>
 
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={openAddChapterModal}
-                  leftIcon={<Plus className="w-3 h-3 text-[#D97706]" />}
-                  className="text-[11px] text-[#52635E] hover:text-[#1C2A26] px-2 py-1 h-auto"
+                  leftIcon={<Plus className="w-3.5 h-3.5 text-[#D97706]" />}
+                  className="text-[11px] font-bold text-[#52635E] hover:text-[#1C2A26] px-2 py-1 h-auto"
                 >
                   Add Chapter
                 </Button>
               </div>
 
               <div className="relative">
-                <Search className="w-3.5 h-3.5 text-[#8A9B95] absolute left-3 top-2.5 pointer-events-none" />
+                <Search className="w-3.5 h-3.5 text-[#8A9B95] absolute left-3.5 top-3 pointer-events-none" />
                 <input
                   type="search"
                   value={tocQuery}
                   onChange={(e) => setTocQuery(e.target.value)}
                   placeholder="Search parts and chapters…"
-                  className="w-full pl-9 pr-8 py-2 bg-white border border-[#E7E0D3] rounded-xl text-xs text-[#1C2A26] placeholder-[#8A9B95] focus:outline-none focus:border-[#D97706]"
+                  className="w-full pl-9 pr-8 py-2.5 bg-white border border-[#E7E0D3] rounded-xl text-xs text-[#1C2A26] placeholder-[#8A9B95] focus:outline-none focus:border-[#D97706] shadow-2xs"
                 />
                 {tocQuery && (
                   <button
                     type="button"
                     onClick={() => setTocQuery("")}
-                    className="absolute right-2.5 top-2 text-[#8A9B95] hover:text-[#1C2A26]"
+                    className="absolute right-2.5 top-2.5 text-[#8A9B95] hover:text-[#1C2A26]"
                     aria-label="Clear search"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -641,13 +637,13 @@ export default function ManualDetailPage() {
                 )}
               </div>
 
-              <div className="space-y-4 max-h-[62vh] overflow-y-auto pr-1 scrollbar-thin">
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1 scrollbar-thin">
                 {filteredParts.length === 0 && (
                   <p className="text-xs text-[#8A9B95] px-1">No matching chapters.</p>
                 )}
                 {filteredParts.map((part) => (
-                  <div key={part.id} className="space-y-1">
-                    <p className="px-1 text-[10px] font-bold uppercase tracking-wider text-[#D97706]">
+                  <div key={part.id} className="space-y-1.5">
+                    <p className="px-1 pt-1 text-[10px] font-bold uppercase tracking-wider text-[#D97706]">
                       {part.title}
                     </p>
                     {part.nodes.map((node) => {
@@ -663,14 +659,16 @@ export default function ManualDetailPage() {
                         <div key={chap.id || idx} className="group relative">
                           <button
                             onClick={() => setActiveChapterIndex(idx)}
-                            className={`w-full text-left px-3 py-2.5 rounded-xl text-xs sm:text-sm transition-all ${
+                            className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs sm:text-sm transition-all flex items-start gap-2.5 ${
                               isActive
-                                ? "bg-[#CBD7D2] text-[#1C2A26] font-bold shadow-2xs"
-                                : "text-[#2F413B] hover:bg-white/70 hover:text-[#1C2A26] font-normal"
+                                ? "bg-[#1C2A26] text-[#FAF7F2] font-semibold shadow-xs"
+                                : "text-[#3D4D47] hover:bg-[#F3EDE2] hover:text-[#1C2A26] font-normal"
                             }`}
                           >
-                            <span className="truncate pr-12 block">
-                              <span className="font-semibold mr-1.5">{idx + 1}.</span>
+                            <span className={`font-mono text-xs font-bold shrink-0 mt-0.5 ${isActive ? "text-[#D97706]" : "text-[#8A9B95]"}`}>
+                              {idx + 1}.
+                            </span>
+                            <span className="leading-snug pr-6 flex-1 line-clamp-2">
                               {displayTitle}
                             </span>
                           </button>
@@ -681,7 +679,7 @@ export default function ManualDetailPage() {
                                 setActiveChapterIndex(idx);
                                 openEditChapterModal();
                               }}
-                              className="p-1 text-[#52635E] hover:text-[#D97706]"
+                              className={`p-1 transition-colors ${isActive ? "text-white/80 hover:text-amber-300" : "text-[#52635E] hover:text-[#D97706]"}`}
                               title="Edit Chapter"
                             >
                               <Edit className="w-3.5 h-3.5" />
@@ -689,7 +687,7 @@ export default function ManualDetailPage() {
 
                             <button
                               onClick={() => handleDeleteChapter(idx)}
-                              className="p-1 text-[#52635E] hover:text-red-600"
+                              className={`p-1 transition-colors ${isActive ? "text-white/80 hover:text-red-300" : "text-[#52635E] hover:text-red-600"}`}
                               title="Delete Chapter"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
