@@ -596,8 +596,8 @@ export default function ManualDetailPage() {
 
         {/* 2-COLUMN LAYOUT: TOC SIDEBAR + CHAPTER CONTENT */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* LEFT COLUMN: ROADMAP + CHAPTERS */}
-          <div className="lg:col-span-3 xl:col-span-3 space-y-4 sticky top-24 max-h-[82vh] overflow-y-auto pr-1 scrollbar-thin">
+          {/* LEFT COLUMN: TABLE OF CONTENTS SIDEBAR */}
+          <div className="lg:col-span-4 xl:col-span-4 space-y-4 sticky top-24 max-h-[82vh] overflow-y-auto pr-1 scrollbar-thin">
             <Card variant="default" hoverable={false} className="p-5 border-[#E7E0D3] bg-[#FAF7F2] space-y-4 shadow-xs rounded-3xl">
               <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-[#E7E0D3]">
                 <div className="flex items-center gap-2 text-xs font-serif-display font-bold text-[#1C2A26] tracking-wider uppercase">
@@ -656,30 +656,31 @@ export default function ManualDetailPage() {
                       );
 
                       return (
-                        <div key={chap.id || idx} className="group relative">
+                        <div key={chap.id || idx} className="group relative flex items-center">
                           <button
                             onClick={() => setActiveChapterIndex(idx)}
-                            className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs sm:text-sm transition-all flex items-start gap-2.5 ${
+                            className={`w-full text-left pl-3.5 pr-14 py-2.5 rounded-xl text-xs sm:text-sm transition-all flex items-center gap-2.5 min-w-0 ${
                               isActive
                                 ? "bg-[#1C2A26] text-[#FAF7F2] font-semibold shadow-xs"
                                 : "text-[#3D4D47] hover:bg-[#F3EDE2] hover:text-[#1C2A26] font-normal"
                             }`}
+                            title={displayTitle}
                           >
-                            <span className={`font-mono text-xs font-bold shrink-0 mt-0.5 ${isActive ? "text-[#D97706]" : "text-[#8A9B95]"}`}>
+                            <span className={`font-mono text-xs font-bold shrink-0 ${isActive ? "text-[#D97706]" : "text-[#8A9B95]"}`}>
                               {idx + 1}.
                             </span>
-                            <span className="leading-snug pr-6 flex-1 line-clamp-2">
+                            <span className="truncate whitespace-nowrap flex-1 min-w-0">
                               {displayTitle}
                             </span>
                           </button>
 
-                          <div className="absolute right-2 top-2.5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 bg-inherit px-1 rounded-md">
                             <button
                               onClick={() => {
                                 setActiveChapterIndex(idx);
                                 openEditChapterModal();
                               }}
-                              className={`p-1 transition-colors ${isActive ? "text-white/80 hover:text-amber-300" : "text-[#52635E] hover:text-[#D97706]"}`}
+                              className={`p-1 transition-colors ${isActive ? "text-amber-400 hover:text-white" : "text-[#52635E] hover:text-[#D97706]"}`}
                               title="Edit Chapter"
                             >
                               <Edit className="w-3.5 h-3.5" />
@@ -687,7 +688,7 @@ export default function ManualDetailPage() {
 
                             <button
                               onClick={() => handleDeleteChapter(idx)}
-                              className={`p-1 transition-colors ${isActive ? "text-white/80 hover:text-red-300" : "text-[#52635E] hover:text-red-600"}`}
+                              className={`p-1 transition-colors ${isActive ? "text-amber-400 hover:text-red-400" : "text-[#52635E] hover:text-red-600"}`}
                               title="Delete Chapter"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -703,7 +704,7 @@ export default function ManualDetailPage() {
           </div>
 
           {/* RIGHT COLUMN: CHAPTER CONTENT VIEW */}
-          <div className="lg:col-span-9 xl:col-span-9 space-y-6">
+          <div className="lg:col-span-8 xl:col-span-8 space-y-6">
             <Card variant="default" hoverable={false} className="p-8 sm:p-10 space-y-8 border-[#E7E0D3] bg-white shadow-sm">
               {/* HEADER ROW WITH VIEW MODE TOGGLE BUTTONS */}
               <div className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-[#E7E0D3]">
