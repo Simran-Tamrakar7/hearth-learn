@@ -641,7 +641,7 @@ export default function ManualDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* LEFT COLUMN: TABLE OF CONTENTS SIDEBAR */}
           <div className="lg:col-span-4 xl:col-span-4 space-y-4 sticky top-24 max-h-[82vh] overflow-y-auto pr-1 scrollbar-thin">
-            <Card variant="default" hoverable={false} className="p-5 border-[#E7E0D3] bg-[#FAF7F2] space-y-4 shadow-xs rounded-3xl">
+            <div className="rounded-3xl border border-[#E7E0D3] bg-[#FAF7F2] px-3 py-3 space-y-3 shadow-xs">
               <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-[#E7E0D3]">
                 <div className="flex items-center gap-2 text-xs font-serif-display font-bold text-[#1C2A26] tracking-wider uppercase">
                   <BookOpen className="w-4 h-4 text-[#D97706]" />
@@ -743,7 +743,7 @@ export default function ManualDetailPage() {
                   </div>
                 ))}
               </div>
-            </Card>
+            </div>
           </div>
 
           {/* RIGHT COLUMN: CHAPTER CONTENT VIEW */}
