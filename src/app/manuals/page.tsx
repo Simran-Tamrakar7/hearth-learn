@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Navbar } from "@/components/layout/Navbar";
@@ -8,8 +8,8 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { MANUALS_DATA, ManualItem } from "@/lib/manualsData";
 import { genres } from "@/lib/pathwise-data/helpers.js";
-import { Compass, Search, Clock, BookOpen, ArrowRight } from "lucide-react";
-import { PinButton } from "@/components/ui/PinButton";
+import { Compass, Search, Clock, BookOpen, ArrowRight, Pin, ExternalLink, Code2 } from "lucide-react";
+import { PinButton, getPinnedItems, PinnedItemMetadata } from "@/components/ui/PinButton";
 
 const GENRE_CATEGORY: Record<string, ManualItem["category"] | "All"> = {
   all: "All",
@@ -106,6 +106,19 @@ function ManualCard({ manual }: { manual: ManualItem }) {
 export default function ManualsCatalogPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [pinnedManuals, setPinnedManuals] = useState<PinnedItemMetadata[]>([]);
+  const [pinnedShowcase, setPinnedShowcase] = useState<PinnedItemMetadata[]>([]);
+
+  useEffect(() => {
+    const updatePins = () => {
+      const allPins = getPinnedItems();
+      setPinnedManuals(allPins.filter((p) => p.type === "manual"));
+      setPinnedShowcase(allPins.filter((p) => p.type === "showcase"));
+    };
+    updatePins();
+    window.addEventListener("hearth_pins_updated", updatePins);
+    return () => window.removeEventListener("hearth_pins_updated", updatePins);
+  }, []);
 
   const filteredManuals = MANUALS_DATA.filter((manual) => {
     const matchesCategory = selectedCategory === "All" || manual.category === selectedCategory;
@@ -169,6 +182,115 @@ export default function ManualsCatalogPage() {
             </div>
           </div>
         </div>
+
+        {pinnedManuals.length > 0 && (
+          <div className="space-y-4 bg-gradient-to-br from-white via-[#FAF7F2] to-[#FEF3C7]/40 border border-[#E7E0D3] rounded-3xl p-6 shadow-xs">
+            <div className="flex items-center justify-between">
+              <h2 className="font-serif-display text-xl font-bold text-[#1C2A26] flex items-center gap-2">
+                <Pin className="w-5 h-5 text-[#D97706]" />
+                <span>Your Pinned Manuals ({pinnedManuals.length})</span>
+              </h2>
+              <span className="text-xs text-[#8A9B95] font-semibold">Open the course</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {pinnedManuals.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white border border-[#E7E0D3] rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-2xs hover:border-[#1C2A26] transition-all"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <BookOpen className="w-4 h-4 text-[#D97706]" />
+                      <PinButton
+                        itemId={item.id}
+                        itemTitle={item.title}
+                        itemCategory={item.category}
+                        itemType="manual"
+                        itemUrl={item.url}
+                        itemIcon={item.icon}
+                        variant="icon"
+                      />
+                    </div>
+                    <h3 className="font-serif-display font-bold text-base text-[#1C2A26] truncate pt-1">
+                      {item.title}
+                    </h3>
+                    {item.category && (
+                      <span className="text-[10px] font-bold text-[#D97706] uppercase tracking-wider block">
+                        {item.category}
+                      </span>
+                    )}
+                  </div>
+
+                  <Link
+                    href={item.url}
+                    className="inline-flex items-center justify-center gap-1.5 w-full h-9 px-3 rounded-xl bg-[#1C2A26] text-white text-xs font-semibold hover:bg-[#243530] transition-colors"
+                  >
+                    Open Manual
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {pinnedShowcase.length > 0 && (
+          <div className="space-y-4 bg-gradient-to-br from-white via-[#FAF7F2] to-[#FEF3C7]/40 border border-[#E7E0D3] rounded-3xl p-6 shadow-xs">
+            <div className="flex items-center justify-between">
+              <h2 className="font-serif-display text-xl font-bold text-[#1C2A26] flex items-center gap-2">
+                <Pin className="w-5 h-5 text-[#D97706]" />
+                <span>Pinned Showcase Links ({pinnedShowcase.length})</span>
+              </h2>
+              <span className="text-xs text-[#8A9B95] font-semibold">Opens in a new tab</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {pinnedShowcase.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white border border-[#E7E0D3] rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-2xs hover:border-[#1C2A26] transition-all"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <Code2 className="w-4 h-4 text-[#D97706]" />
+                      <PinButton
+                        itemId={item.id}
+                        itemTitle={item.title}
+                        itemCategory={item.category}
+                        itemType="showcase"
+                        itemUrl={item.url}
+                        itemIcon={item.icon}
+                        variant="icon"
+                      />
+                    </div>
+                    <h3 className="font-serif-display font-bold text-base text-[#1C2A26] truncate pt-1">
+                      {item.title}
+                    </h3>
+                    {item.category && (
+                      <span className="text-[10px] font-bold text-[#D97706] uppercase tracking-wider block">
+                        {item.category}
+                      </span>
+                    )}
+                    <p className="text-[11px] font-semibold text-[#D97706] truncate">
+                      {item.url.replace(/^https?:\/\//, "")}
+                    </p>
+                  </div>
+
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-1.5 w-full h-9 px-3 rounded-xl bg-[#D97706] text-white text-xs font-semibold hover:bg-[#b45309] transition-colors"
+                  >
+                    Open Link
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-wrap items-center gap-2.5 border-b border-[#E7E0D3] pb-6 overflow-x-auto" role="tablist" aria-label="Genres">
           {CATALOG_GENRES.map((cat) => (
