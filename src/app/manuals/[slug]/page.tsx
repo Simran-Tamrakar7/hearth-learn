@@ -12,7 +12,7 @@ import { useToast } from "@/components/ui/Toast";
 import { MANUALS_DATA, findHearthManual, ManualItem, ManualChapter } from "@/lib/manualsData";
 import { PLAYWRIGHT_ROADMAP_PHASES, downloadRoadmapSVG } from "@/lib/roadmapData";
 import { stripLeadingNumber } from "@/lib/pathwise-data/helpers.js";
-import { PinButton } from "@/components/ui/PinButton";
+import { PinButton, getPinnedItems, PinnedItemMetadata } from "@/components/ui/PinButton";
 import {
   ChevronLeft,
   ChevronRight,
@@ -51,6 +51,7 @@ import {
   Target,
   Award,
   Info,
+  Pin,
 } from "lucide-react";
 
 export default function ManualDetailPage() {
@@ -110,6 +111,16 @@ export default function ManualDetailPage() {
   const [formChapterRank, setFormChapterRank] = useState<number>(1);
   const [contentView, setContentView] = useState<"write" | "preview">("write");
   const contentRef = useRef<HTMLTextAreaElement>(null);
+  const [pinnedShowcase, setPinnedShowcase] = useState<PinnedItemMetadata[]>([]);
+
+  useEffect(() => {
+    const updatePins = () => {
+      setPinnedShowcase(getPinnedItems().filter((p) => p.type === "showcase"));
+    };
+    updatePins();
+    window.addEventListener("hearth_pins_updated", updatePins);
+    return () => window.removeEventListener("hearth_pins_updated", updatePins);
+  }, []);
 
   // Load saved progress & custom manual edits from localStorage on mount
   useEffect(() => {
@@ -605,11 +616,32 @@ export default function ManualDetailPage() {
           </div>
         </div>
 
+        {pinnedShowcase.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 bg-white border border-[#E7E0D3] rounded-2xl px-4 py-3">
+            <span className="text-xs font-bold text-[#8A9B95] uppercase tracking-wider flex items-center gap-1.5 mr-1">
+              <Pin className="w-3.5 h-3.5 text-[#D97706]" />
+              Pinned showcase
+            </span>
+            {pinnedShowcase.map((item) => (
+              <a
+                key={item.id}
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FAF7F2] border border-[#E7E0D3] text-xs font-semibold text-[#1C2A26] hover:border-[#D97706] hover:text-[#D97706] transition-colors"
+              >
+                <span className="truncate max-w-[180px]">{item.title}</span>
+                <ExternalLink className="w-3 h-3 shrink-0" />
+              </a>
+            ))}
+          </div>
+        )}
+
         {/* 2-COLUMN LAYOUT: TOC SIDEBAR + CHAPTER CONTENT */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* LEFT COLUMN: TABLE OF CONTENTS SIDEBAR */}
           <div className="lg:col-span-4 xl:col-span-4 space-y-4 sticky top-24 max-h-[82vh] overflow-y-auto pr-1 scrollbar-thin">
-            <Card variant="default" hoverable={false} className="p-5 border-[#E7E0D3] bg-[#FAF7F2] space-y-4 shadow-xs rounded-3xl">
+            <div className="rounded-3xl border border-[#E7E0D3] bg-[#FAF7F2] px-3 py-3 space-y-3 shadow-xs">
               <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-[#E7E0D3]">
                 <div className="flex items-center gap-2 text-xs font-serif-display font-bold text-[#1C2A26] tracking-wider uppercase">
                   <BookOpen className="w-4 h-4 text-[#D97706]" />
@@ -711,7 +743,7 @@ export default function ManualDetailPage() {
                   </div>
                 ))}
               </div>
-            </Card>
+            </div>
           </div>
 
           {/* RIGHT COLUMN: CHAPTER CONTENT VIEW */}

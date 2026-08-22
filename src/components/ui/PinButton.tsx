@@ -8,7 +8,7 @@ interface PinButtonProps {
   itemId: string;
   itemTitle: string;
   itemCategory?: string;
-  itemType: "manual" | "game" | "recipe" | "trail";
+  itemType: "manual" | "game" | "recipe" | "trail" | "showcase";
   itemUrl: string;
   itemIcon?: string;
   className?: string;
@@ -19,7 +19,7 @@ export interface PinnedItemMetadata {
   id: string;
   title: string;
   category?: string;
-  type: "manual" | "game" | "recipe" | "trail";
+  type: "manual" | "game" | "recipe" | "trail" | "showcase";
   url: string;
   icon?: string;
   pinnedAt: number;
