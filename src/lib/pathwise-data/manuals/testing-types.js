@@ -1654,7 +1654,580 @@ export const testingTypesManual = {
         r('guide', 'Nielsen Norman Group — Usability 101', 'https://nngroup.com', 'EN'),
       ],
     }),
+
+    ch({
+      id: 'tt-performance-testing',
+      kind: 'guide',
+      phase: 'Part 4 · Non-Functional',
+      level: 'intermediate',
+      title: 'Performance Testing',
+      minutes: 25,
+      durationLabel: 'Chapter 13',
+      overviewText:
+        'Performance testing measures how fast and efficiently an application responds under normal conditions — page load time, server response time, time to first byte, rendering speed — establishing whether the software is fast enough for real users, independent of whether its features are functionally correct.',
+      why:
+        'A feature that works perfectly but takes eight seconds to load might as well not work at all — users abandon slow pages, slow APIs cascade into slow user experiences across an entire application, and poor performance directly costs conversions, productivity, and trust. Performance problems are also often invisible in functional testing, since a slow response and a fast one can return the exact same correct data.',
+      when:
+        'Early and continuously — as soon as key pages or endpoints exist, and again after any change likely to affect speed (new dependencies, added images, database query changes). It should also be checked before every major release, since performance regressions creep in gradually and are easy to miss without deliberate measurement.',
+      practical: {
+        app: 'HRMS Employee List Page',
+        scenario:
+          'The Employee List page, which loads all 47 employees plus their photos, is measured before and after adding lazy-loading for images below the fold.',
+        pass: 'LCP drops to 1.6s — only the visible employees\' photos load immediately, with the rest deferred until scrolled into view.',
+        fail: 'Largest Contentful Paint of 4.8s, all 47 photos loading immediately regardless of scroll position.',
+      },
+      advantages: [
+        'Free, instant, and requires zero setup — just a URL',
+        'Combines controlled lab testing with real-world field data from actual users',
+        'Directly reports Core Web Vitals, the same metrics that affect search ranking',
+        'Gives specific, actionable fixes rather than just a score',
+      ],
+      limitations: [
+        'Field data requires enough real Chrome traffic to exist — new or low-traffic pages only get lab data',
+        'Single-page focused — not designed for testing full user journeys or authenticated flows',
+        'Scores can vary run to run due to network conditions during the test itself',
+        'Doesn\'t test backend/API performance directly, only what\'s observable from the browser',
+      ],
+      tools: [
+        {
+          name: 'PageSpeed Insights',
+          sub: 'Google Lighthouse & Core Web Vitals',
+          url: 'https://pagespeed.web.dev',
+          desc: 'Google\'s own performance auditing tool, built on Lighthouse, that scores a page on both lab data (a controlled simulated load) and real-world field data pulled from actual Chrome users (via the Chrome UX Report), then lists specific, prioritized fixes.',
+          adv: [
+            'Free, instant, and requires zero setup — just a URL',
+            'Combines controlled lab testing with real-world field data from actual users',
+            'Directly reports Core Web Vitals, the same metrics that affect search ranking',
+            'Gives specific, actionable fixes rather than just a score',
+          ],
+          lim: [
+            'Field data requires enough real Chrome traffic to exist',
+            'Single-page focused — not designed for multi-step journeys',
+            'Scores can vary run to run based on network conditions',
+            'Doesn\'t test backend/API performance directly',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Enter page URL at pagespeed.web.dev',
+              p: 'Enter your staging or production page URL without account setup.',
+              c: 'Target: https://hrms-app.com/employees',
+            },
+            {
+              t: 'Step 2 — Review Mobile & Desktop scores separately',
+              p: 'Mobile uses a throttled 4G CPU profile and is typically the stricter target.',
+              c: 'Mobile Performance Score: 64/100 (Needs Improvement)\nDesktop Performance Score: 92/100 (Good)',
+            },
+            {
+              t: 'Step 3 — Inspect Core Web Vitals thresholds',
+              p: 'Verify Largest Contentful Paint (LCP < 2.5s), Interaction to Next Paint (INP < 200ms), and CLS (< 0.1).',
+              c: 'Metrics:\n- LCP: 4.8s (FAIL - Poor)\n- INP: 85ms (PASS - Good)\n- CLS: 0.02 (PASS - Good)',
+            },
+            {
+              t: 'Step 4 — Execute prioritized Opportunities list',
+              p: 'Implement high-impact optimizations suggested by Lighthouse.',
+              c: 'Opportunities:\n1. Defer offscreen images (Estimated savings: 2.4s)\n2. Eliminate render-blocking resources (Savings: 0.8s)',
+            },
+            {
+              t: 'Step 5 — Compare Lab Data vs Field Data (CrUX)',
+              p: 'Identify if real Chrome users on slower networks experience larger latency gaps.',
+              c: 'CrUX 75th Percentile: 3.2s LCP across 12,000 real-world page views',
+            },
+            {
+              t: 'Step 6 — Re-audit after optimization deployment',
+              p: 'Verify improved performance scores on the latest build.',
+              c: 'Post-Optimization Mobile Score: 94/100 (LCP: 1.6s - PASS)',
+            },
+          ],
+        },
+        {
+          name: 'GTmetrix',
+          sub: 'Waterfall Network Breakdown',
+          url: 'https://gtmetrix.com',
+          desc: 'A performance testing tool that runs a page through a real browser from a chosen test location, producing a detailed waterfall chart of every request, a filmstrip of how the page visually rendered over time, and grades across specific performance dimensions.',
+          adv: [
+            'Waterfall view pinpoints exactly which request is the bottleneck, not just an overall score',
+            'Filmstrip shows real visual loading progress, useful for judging perceived speed',
+            'Selectable test locations approximate real users better than a single fixed location',
+            'Free scheduled monitoring catches gradual regressions without manual re-checking',
+          ],
+          lim: [
+            'Free tier limits test locations, browsers, and monitoring frequency',
+            'Single-page and browser-observable only — no backend visibility',
+            'Results can vary between runs due to network conditions',
+            'Advanced features (video comparison, more locations) are paywalled',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Run test from target geographic region',
+              p: 'Select nearest server location (e.g. Singapore, London, or Vancouver).',
+              c: 'Location: Singapore | Browser: Chrome Desktop',
+            },
+            {
+              t: 'Step 2 — Inspect Grade & Speed Visualization',
+              p: 'Review GTmetrix Grade (Structure & Performance indices).',
+              c: 'GTmetrix Grade: B (82%) | TTFB: 240ms | Fully Loaded: 3.4s',
+            },
+            {
+              t: 'Step 3 — Analyze Network Waterfall tab',
+              p: 'Sort requests by size and duration to isolate uncompressed assets.',
+              c: 'Waterfall Bottleneck: GET /static/team-banner.png (2.8 MB, 1.4s download)',
+            },
+            {
+              t: 'Step 4 — Watch Visual Filmstrip playback',
+              p: 'Evaluate perceived speed milestones like First Contentful Paint.',
+              c: 'Filmstrip: Blank white screen until 1.8s -> First visual header at 2.1s',
+            },
+            {
+              t: 'Step 5 — Apply Top Issues recommendations',
+              p: 'Convert large assets to modern WebP/AVIF formats.',
+              c: 'Fix: cwebp -q 80 team-banner.png -o team-banner.webp (Reduced to 180 KB)',
+            },
+            {
+              t: 'Step 6 — Set up recurring scheduled monitor',
+              p: 'Configure daily automated runs to detect speed regressions.',
+              c: 'Schedule: Mon-Fri @ 08:00 AM -> Alert Slack #web-perf if Grade drops below A',
+            },
+          ],
+        },
+        {
+          name: 'WebPageTest',
+          sub: 'Multi-Step & Global Network Simulation',
+          url: 'https://webpagetest.org',
+          desc: 'The most configurable of the three — real browsers on real devices and real network conditions across many global locations, with deep control over connection speed, number of test runs, and scripted multi-step user journeys rather than just a single page load.',
+          adv: [
+            'Deepest configurability of the three — real devices, real networks, real global locations',
+            'Supports scripted multi-step journeys, not just single-page loads',
+            'Side-by-side video comparison makes \'which is actually faster\' visually undeniable',
+            'Has a free API for wiring performance checks into CI/CD',
+          ],
+          lim: [
+            'Steeper learning curve than PageSpeed Insights or GTmetrix',
+            'More setup effort for scripted, multi-step tests',
+            'Free tier queue times can be slower during high-demand periods',
+            'Advanced scripting requires learning WebPageTest syntax',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Configure connection speed and profile',
+              p: 'Select throttled 4G (9 Mbps, 170ms RTT) or custom broadband profile.',
+              c: 'Profile: 4G LTE | Location: Virginia, USA | Runs: 3 (Median selection)',
+            },
+            {
+              t: 'Step 2 — Script multi-step user workflow',
+              p: 'Record multi-step authentication journey using WebPageTest script commands.',
+              c: 'logData 0\nnavigate https://hrms-app.com/login\nsetValue name=email admin@hrms.com\nsetValue name=password Secret123!\nlogData 1\nsubmitForm button[type=submit]',
+            },
+            {
+              t: 'Step 3 — Inspect median run waterfall & visual progression',
+              p: 'Examine detailed connection breakdown: DNS, TLS negotiation, TTFB, and download.',
+              c: 'DNS: 18ms | TLS: 42ms | TTFB: 190ms | Content Download: 420ms',
+            },
+            {
+              t: 'Step 4 — Generate Side-by-Side Video comparison',
+              p: 'Compare performance before vs after optimization side-by-side.',
+              c: 'Comparison: Build v2.3.0 (Old) vs Build v2.4.0 (Optimized)',
+            },
+            {
+              t: 'Step 5 — Automate with WebPageTest CI API',
+              p: 'Trigger performance audits automatically in GitHub Actions.',
+              c: 'npx webpagetest test "https://staging.hrms-app.com" --key $WPT_API_KEY --medianMetric lcp',
+            },
+            {
+              t: 'Step 6 — Set build breaking budgets',
+              p: 'Fail CI pipeline if LCP exceeds 2500ms.',
+              c: 'Result: LCP 1450ms <= 2500ms budget -> CI Status GREEN',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: 'Web Vitals & Performance Benchmarking',
+          body: 'Benchmark Time to First Byte (TTFB), Largest Contentful Paint (LCP), and Interaction to Next Paint (INP).',
+          doThis: 'Audit target URLs with PageSpeed Insights and establish performance budgets.',
+          code: 'npx lighthouse-ci collect --url=https://staging.hrms-app.com',
+        },
+      ],
+      checklist: ['Verified LCP under 2.5s', 'Optimized render-blocking assets', 'Configured automated performance monitoring'],
+      practice: { title: 'Core Web Vitals optimization plan', brief: 'Audit a slow landing page and deliver an LCP reduction strategy.' },
+      resources: [
+        r('tool', 'Google PageSpeed Insights', 'https://pagespeed.web.dev', 'EN'),
+        r('guide', 'web.dev — Core Web Vitals Guide', 'https://web.dev/vitals/', 'EN'),
+      ],
+    }),
+
+    ch({
+      id: 'tt-load-testing',
+      kind: 'guide',
+      phase: 'Part 4 · Non-Functional',
+      level: 'advanced',
+      title: 'Load Testing',
+      minutes: 30,
+      durationLabel: 'Chapter 14',
+      overviewText:
+        'Load testing simulates a realistic, expected number of concurrent users hitting the application at once, to verify it performs acceptably under the traffic it\'s actually expected to handle in production — not a single user\'s speed, but the system\'s behavior under a real crowd.',
+      why:
+        'An application that\'s fast for one user can behave completely differently under 500 concurrent users — database connections get exhausted, response times climb, and requests start queuing or timing out. Load testing answers a concrete business question before launch day: can this system actually handle the traffic we expect, or will it buckle the moment real users show up?',
+      when:
+        'Before any launch or event expected to bring a surge or a sustained new baseline of traffic (a new product launch, a marketing campaign, a payroll deadline where every employee logs in the same morning), and periodically as the user base grows, since \'acceptable load\' from a year ago may no longer reflect today\'s real usage.',
+      practical: {
+        app: 'HRMS Payroll Deadline Morning',
+        scenario:
+          'Every month on payroll day, roughly 300 employees log in within the same 30-minute window to check their payslip. A load test simulates 300 concurrent virtual users hitting login and the payslip endpoint.',
+        pass: '95th percentile response time stays under 2 seconds, zero failed requests at 300 concurrent users.',
+        fail: 'Response times climb past 8 seconds and 12% of requests start timing out past 250 concurrent users — a capacity ceiling discovered in testing, not on the actual payroll morning.',
+      },
+      advantages: [
+        'Free, mature, and widely supported open-source tooling options',
+        'Validates database connection pools and API throughput under realistic peak demand',
+        'Defines concrete SLA thresholds (e.g. 95th percentile under 2s)',
+        'Can be automated in continuous integration for continuous capacity assurance',
+      ],
+      limitations: [
+        'Requires representative test environments and sanitized test datasets',
+        'Generating high concurrency (10,000+ users) requires distributed load generators',
+        'Test scripts need regular maintenance as API signatures evolve',
+      ],
+      tools: [
+        {
+          name: 'Apache JMeter',
+          sub: 'Open-Source Protocol & Thread Simulation',
+          url: 'https://jmeter.apache.org',
+          desc: 'A mature, GUI-based open-source load testing tool that simulates many virtual users executing a sequence of requests (HTTP, but also databases, FTP, and more), with built-in graphical reports showing response times, throughput, and error rates as load increases.',
+          adv: [
+            'Free, mature, and extremely widely used — extensive documentation and plugin ecosystem',
+            'GUI mode makes building and visualizing tests approachable without heavy scripting',
+            'Supports many protocols beyond HTTP (databases, message queues, FTP)',
+            'Detailed built-in reporting on response time, throughput, and error rate under load',
+          ],
+          lim: [
+            'GUI mode consumes significant memory — large runs require CLI execution',
+            'XML test plans are harder to version control cleanly than code scripts',
+            'Steeper learning curve for complex dynamic parameterization',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Download & launch Apache JMeter',
+              p: 'Run jmeter.bat (Windows) or jmeter.sh (macOS/Linux).',
+              c: './bin/jmeter',
+            },
+            {
+              t: 'Step 2 — Create Thread Group for target users',
+              p: 'Configure Number of Threads (Users): 300, Ramp-up period: 60s, Duration: 300s.',
+              c: 'Thread Group Configuration:\n- Number of Threads: 300\n- Ramp-Up: 60 seconds\n- Duration: 300 seconds',
+            },
+            {
+              t: 'Step 3 — Add HTTP Request samplers',
+              p: 'Add POST /api/v1/auth/login and GET /api/v1/payslips/latest.',
+              c: 'Sampler 1: POST https://staging.hrms-app.com/api/v1/auth/login\nSampler 2: GET https://staging.hrms-app.com/api/v1/payslips/latest',
+            },
+            {
+              t: 'Step 4 — Add Response Assertions',
+              p: 'Verify HTTP status code 200 and response body contains valid JSON keys.',
+              c: 'Response Assertion: Response Code = 200 AND Body contains "net_salary"',
+            },
+            {
+              t: 'Step 5 — Add Listeners for live reporting',
+              p: 'Add Summary Report and Aggregate Graph listeners to track p90, p95, and throughput.',
+              c: 'Listeners Added: Summary Report, View Results Tree, Aggregate Report',
+            },
+            {
+              t: 'Step 6 — Execute headlessly via CLI for true benchmarking',
+              p: 'Run in non-GUI mode to prevent client memory consumption.',
+              c: 'jmeter -n -t hrms_payroll_load.jmx -l results.jtl -e -o ./html_report',
+            },
+            {
+              t: 'Step 7 — Validate against SLA metrics',
+              p: 'Inspect generated HTML dashboard for error rate (0%) and 95th percentile response times.',
+              c: 'Report Summary: 300 VUs | Error Rate: 0.00% | 95th Percentile: 1.42s -> PASS',
+            },
+          ],
+        },
+        {
+          name: 'k6',
+          sub: 'Developer-Centric Code-First Load Testing',
+          url: 'https://k6.io',
+          desc: 'A modern, developer-centric, code-first load testing tool where tests are written in JavaScript rather than configured through a GUI, designed specifically to fit into CI/CD pipelines as version-controlled, readable test scripts.',
+          adv: [
+            'Code-based scripts are readable, version-controllable, and fit naturally into CI/CD',
+            'Lightweight — far lower resource usage than JMeter for generating the same load',
+            'Built-in threshold checks let the test itself pass/fail automatically against defined SLAs',
+            'Clean, modern JavaScript API with a shallow learning curve for developers',
+          ],
+          lim: [
+            'Free/open-source tier lacks a built-in GUI',
+            'Distributed load generation across multiple machines requires Cloud tier',
+            'JavaScript-only test scripting',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Install k6 CLI',
+              p: 'Install via brew or direct standalone binary.',
+              c: 'brew install k6',
+            },
+            {
+              t: 'Step 2 — Write load test in JavaScript with stages',
+              p: 'Define ramp-up, steady peak, and ramp-down stages.',
+              c: 'import http from \'k6/http\';\nimport { check, sleep } from \'k6\';\n\nexport const options = {\n  stages: [\n    { duration: \'1m\', target: 300 },\n    { duration: \'3m\', target: 300 },\n    { duration: \'1m\', target: 0 },\n  ],\n  thresholds: {\n    http_req_duration: [\'p(95)<2000\'],\n    http_req_failed: [\'rate<0.01\'],\n  },\n};',
+            },
+            {
+              t: 'Step 3 — Implement authenticated API flow',
+              p: 'Send login request, extract JWT token, and hit payslip endpoint.',
+              c: 'export default function () {\n  const loginRes = http.post(\'https://staging.hrms-app.com/api/login\', {\n    email: \'user@hrms.com\',\n    password: \'password123\',\n  });\n  check(loginRes, { \'status is 200\': (r) => r.status === 200 });\n  const token = loginRes.json(\'token\');\n\n  const res = http.get(\'https://staging.hrms-app.com/api/payslips/latest\', {\n    headers: { Authorization: `Bearer ${token}` },\n  });\n  check(res, { \'payslip status 200\': (r) => r.status === 200 });\n  sleep(1);\n}',
+            },
+            {
+              t: 'Step 4 — Execute test in terminal',
+              p: 'Run test locally and view real-time metrics stream.',
+              c: 'k6 run load-test.js',
+            },
+            {
+              t: 'Step 5 — Evaluate threshold exit code in CI',
+              p: 'k6 automatically returns non-zero exit code if SLA thresholds are breached.',
+              c: 'http_req_duration..............: avg=640ms min=120ms med=480ms max=1820ms p(95)=1.4s ✓\nhttp_req_failed................: 0.00% ✓',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: 'Concurrency Simulation & SLA Verification',
+          body: 'Model peak concurrent user traffic and assert response latency under 2 seconds for the 95th percentile.',
+          doThis: 'Write a k6 script executing 300 virtual users and evaluate connection pool thresholds.',
+          code: 'k6 run --vus 300 --duration 5m load-test.js',
+        },
+      ],
+      checklist: ['Defined peak concurrent user volume', 'Configured automated SLA failure thresholds', 'Monitored backend database connection pools'],
+      practice: { title: '300-user load simulation', brief: 'Create an automated load test validating peak payroll login traffic.' },
+      resources: [
+        r('tool', 'k6 Official Documentation', 'https://k6.io/docs/', 'EN'),
+        r('tool', 'Apache JMeter Official Site', 'https://jmeter.apache.org', 'EN'),
+      ],
+    }),
+
+    ch({
+      id: 'tt-stress-testing',
+      kind: 'guide',
+      phase: 'Part 4 · Non-Functional',
+      level: 'advanced',
+      title: 'Stress Testing',
+      minutes: 25,
+      durationLabel: 'Chapter 15',
+      overviewText:
+        'Stress testing pushes the application beyond its expected normal load — well past the numbers load testing confirmed as acceptable — deliberately looking for the breaking point, and just as importantly, how the system fails and whether it recovers gracefully once the excess load is removed.',
+      why:
+        'Real traffic doesn\'t always stay within expected bounds — a viral moment, a bot attack, a mistaken bulk operation, or simply underestimated growth can push load far past what was planned for. Stress testing answers a different question than load testing: not "does it work at expected load" but "what happens when that\'s exceeded, and does it fail safely or catastrophically."',
+      when:
+        'After load testing has established the normal-capacity baseline, specifically to find the ceiling above it — before launches with unpredictable traffic potential, and periodically to make sure the failure mode (crash vs. graceful degradation vs. queuing) is still what the team expects as the system evolves.',
+      practical: {
+        app: 'HRMS Login Endpoint Under Stress',
+        scenario:
+          'Building on the 300-user load test baseline, a stress test ramps concurrent users continuously past that point to find where the login endpoint actually breaks.',
+        pass: 'At approximately 650 concurrent users, database connection pool is exhausted and new login attempts return 503 errors — existing sessions remain unaffected and app recovers within 30 seconds once load drops below 400.',
+        fail: 'Server memory leak causes kernel panic and persistent database corruption at 500 users, requiring manual container restarts — a catastrophic failure mode caught safely in stress testing.',
+      },
+      advantages: [
+        'Reveals the actual breaking point rather than assuming capacity based on load testing alone',
+        'Exposes failure mode — a system that fails gracefully (clear errors, queuing) is far safer than one that crashes outright',
+        'Confirms whether the system recovers cleanly once excess load is removed',
+        'Gives infrastructure and on-call teams concrete numbers to plan and alert around',
+      ],
+      limitations: [
+        'Deliberately destabilizes the system under test — requires isolated staging environment',
+        'Finding the exact breaking point takes iterative tuning',
+        'Results can be affected by shared infrastructure',
+        'Confirmed ceiling shifts as code and dependencies change',
+      ],
+      tools: [
+        {
+          name: 'Apache JMeter',
+          sub: 'Ramp-Up Stress Simulation',
+          url: 'https://jmeter.apache.org',
+          seeChapter: 14,
+          desc: 'JMeter works identically for stress testing as for load testing (see Chapter 14) — the only difference is intent and configuration: configuring the Thread Group to climb aggressively beyond the 300-user baseline until the server degrades.',
+          adv: [
+            'Reveals the actual breaking point rather than assuming capacity based on load testing alone',
+            'Exposes failure mode — confirms graceful degradation vs catastrophic server crash',
+            'Confirms whether the system recovers cleanly once excess load is removed',
+            'Gives infrastructure teams concrete capacity ceilings to configure autoscaling alerts',
+          ],
+          lim: [
+            'Deliberately destabilizes the environment — requires isolated staging resources',
+            'Iterative calibration required to find the exact inflection point',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Start from load-tested baseline',
+              p: 'Load test verified 300 concurrent users as acceptable baseline.',
+              c: 'Baseline: 300 users @ 1.4s response time',
+            },
+            {
+              t: 'Step 2 — Configure aggressive stepping thread group',
+              p: 'Add 100 virtual users every 60 seconds up to 1000 users.',
+              c: 'Schedule: 300 -> 400 -> 500 -> 600 -> 700 -> 800 -> 900 -> 1000 VUs',
+            },
+            {
+              t: 'Step 3 — Monitor breaking point indicators',
+              p: 'Track point where response times spike (>5s) and 5xx errors begin occurring.',
+              c: 'Breaking Point: At 650 VUs, response times spike to 8.2s and 503 Service Unavailable begins',
+            },
+            {
+              t: 'Step 4 — Evaluate failure mode',
+              p: 'Verify system returns HTTP 503 gracefully without server process crash.',
+              c: 'Failure Mode: 503 (Connection pool exhausted) - Web process remained active',
+            },
+            {
+              t: 'Step 5 — Ramp down load and observe recovery',
+              p: 'Drop load back to 300 VUs and confirm response times recover within 30 seconds.',
+              c: 'Recovery: Response time normalized to 1.3s in 24 seconds -> PASS',
+            },
+          ],
+        },
+        {
+          name: 'k6',
+          sub: 'Spike & Breaking-Point Stages',
+          url: 'https://k6.io',
+          seeChapter: 14,
+          desc: 'Using k6\'s code-driven stages (see Chapter 14), you can define a stress test that continuously increases virtual users until the system hits its threshold.',
+          adv: [
+            'Code-based scripts are readable, version-controllable, and fit naturally into CI/CD',
+            'Lightweight — far lower resource usage than JMeter for generating the same load',
+            'Built-in threshold checks let the test itself pass/fail automatically against defined SLAs',
+            'Clean, modern JavaScript API with a shallow learning curve for developers',
+          ],
+          lim: [
+            'Free tier lacks GUI dashboards without external monitoring stacks',
+            'Large scale tests requires cloud runners',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Configure stress stages in k6 script',
+              p: 'Define progressive multi-stage climb well past normal load capacity.',
+              c: 'export const options = {\n  stages: [\n    { duration: \'2m\', target: 300 },\n    { duration: \'5m\', target: 600 },\n    { duration: \'5m\', target: 900 },\n    { duration: \'2m\', target: 300 },\n    { duration: \'1m\', target: 0 },\n  ],\n};',
+            },
+            {
+              t: 'Step 2 — Execute stress run and pipe metrics',
+              p: 'Run k6 with live terminal charts.',
+              c: 'k6 run --out influxdb=http://localhost:8086/k6 stress-test.js',
+            },
+            {
+              t: 'Step 3 — Document safe operational ceiling',
+              p: 'Establish maximum safe ceiling at 550 VUs with alerts triggered at 500.',
+              c: 'Recommendation: Set autoscaling trigger at 450 VUs; alert at 500 VUs',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: 'Breaking-Point & Recovery Profiling',
+          body: 'Subject infrastructure to extreme traffic spikes and evaluate self-healing and graceful degradation.',
+          doThis: 'Execute an escalating k6 stress test and verify 503 error handling and recovery time.',
+          code: 'k6 run stress-test.js',
+        },
+      ],
+      checklist: ['Identified absolute breaking concurrency point', 'Confirmed absence of permanent data corruption', 'Validated auto-recovery under 30 seconds'],
+      practice: { title: 'Stress test & breaking point audit', brief: 'Discover the exact concurrency ceiling of an authentication API.' },
+      resources: [
+        r('guide', 'AWS Well-Architected — Reliability & Stress Testing', 'https://aws.amazon.com/architecture/well-architected/', 'EN'),
+      ],
+    }),
+
+    ch({
+      id: 'tt-scalability-testing',
+      kind: 'guide',
+      phase: 'Part 4 · Non-Functional',
+      level: 'advanced',
+      title: 'Scalability Testing',
+      minutes: 25,
+      durationLabel: 'Chapter 16',
+      overviewText:
+        'Scalability testing measures how an application\'s performance changes as load increases in stages, specifically to determine whether — and how — adding more resources (servers, database capacity, workers) allows the system to keep pace with growing demand, rather than just finding a single breaking point.',
+      why:
+        'Knowing a system breaks at 650 users (stress testing) is different from knowing whether adding a second application server lets it comfortably handle 1,300. Scalability testing is what informs real infrastructure and cost decisions — whether the application scales roughly linearly with added resources, or whether some bottleneck (a single database, a shared cache, a non-parallelizable process) caps growth no matter how much hardware is thrown at it.',
+      when:
+        'During capacity planning ahead of expected growth, before infrastructure investment decisions, and whenever the architecture changes in ways that could affect how well it scales (moving to microservices, adding caching layers, changing database sharding). It\'s less about a single test and more an ongoing question revisited as both load and architecture evolve.',
+      practical: {
+        app: 'HRMS Application Server Scaling',
+        scenario:
+          'The team tests whether adding application servers behind a load balancer lets the system handle proportionally more concurrent users.',
+        pass: 'Going from 1 to 2 application servers roughly doubles the concurrent users handled at acceptable response times (300 → 580), confirming the application layer scales close to linearly.',
+        fail: 'Going from 2 to 4 servers barely improves capacity (580 → 620) — the database, still a single instance, is now the bottleneck, and no amount of additional application servers will fix it without addressing the database layer itself.',
+      },
+      advantages: [
+        'Directly answers whether adding resources actually solves the capacity problem, not just whether a problem exists',
+        'Produces a real cost/benefit curve for infrastructure decisions rather than guesswork',
+        'Surfaces architectural bottlenecks (a single shared database, for example) that no amount of added compute will fix',
+        'Reusable methodology as the application grows — the same matrix approach applies at every stage',
+      ],
+      limitations: [
+        'Time-consuming — requires running the full test matrix across multiple resource configurations, not a single run',
+        'Needs the ability to actually provision and tear down different resource configurations for testing, which isn\'t always trivial',
+        'Results are specific to the exact architecture tested — a major architecture change invalidates the previous scalability curve',
+        'Doesn\'t by itself identify the root cause of a bottleneck, only that one exists — deeper profiling is needed to pinpoint it',
+      ],
+      tools: [
+        {
+          name: 'Apache JMeter',
+          sub: 'Multi-Node Benchmark Matrix',
+          url: 'https://jmeter.apache.org',
+          seeChapter: 14,
+          desc: 'Apache JMeter is used here (see Chapter 14) across a series of progressively increasing load levels, each measured against a specific resource configuration (1 node, 2 nodes, 4 nodes), to see how the throughput curve responds.',
+          adv: [
+            'Directly answers whether adding resources actually solves the capacity problem',
+            'Produces a real cost/benefit curve for infrastructure decisions rather than guesswork',
+            'Surfaces architectural bottlenecks before large cloud investments',
+            'Reusable matrix methodology as application grows',
+          ],
+          lim: [
+            'Time-consuming — requires running full test matrix across multiple resource configurations',
+            'Needs ability to provision and teardown cloud infrastructure for testing',
+            'Results specific to tested architecture',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Define test matrix of load vs compute configurations',
+              p: 'Matrix: Load levels (100, 300, 600, 1000 users) across Config A (1 server), Config B (2 servers), Config C (4 servers).',
+              c: 'Matrix:\n- Config A: 1 App Server (2 CPU, 4GB RAM)\n- Config B: 2 App Servers + Load Balancer\n- Config C: 4 App Servers + Load Balancer',
+            },
+            {
+              t: 'Step 2 — Execute identical JMeter test plan across each configuration',
+              p: 'Run benchmark suite against Config A, record throughput and p95 latency.',
+              c: 'Run 1 (Config A): 300 VUs -> 1.4s p95, 210 req/sec',
+            },
+            {
+              t: 'Step 3 — Scale application layer to Config B (2 nodes)',
+              p: 'Repeat identical load and scale up to 600 users.',
+              c: 'Run 2 (Config B): 600 VUs -> 1.5s p95, 410 req/sec (Linear Scaling 97%)',
+            },
+            {
+              t: 'Step 4 — Scale to Config C (4 nodes) and test for database bottleneck',
+              p: 'Test 1000 users to verify if database queries become the primary bottleneck.',
+              c: 'Run 3 (Config C): 1000 VUs -> 4.8s p95, 440 req/sec (Bottleneck at Postgres connection limits)',
+            },
+            {
+              t: 'Step 5 — Chart scalability curve and report ROI',
+              p: 'Inform engineering that scaling beyond 2 app servers requires database read replicas or connection pooling (PgBouncer).',
+              c: 'Decision: Introduce PgBouncer and Read Replicas before provisioning additional App instances',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: 'Horizontal & Vertical Scaling Verification',
+          body: 'Measure compute resource throughput scaling efficiency across 1x, 2x, and 4x infrastructure configurations.',
+          doThis: 'Execute JMeter scaling matrix and graph throughput vs replica count.',
+          code: 'jmeter -n -t scalability_matrix.jmx -l scale_results.jtl',
+        },
+      ],
+      checklist: ['Constructed multi-node load test matrix', 'Plotted throughput scaling curve', 'Isolated architectural bottleneck layer'],
+      practice: { title: 'Horizontal scaling efficiency report', brief: 'Model and test linear scaling capacity across a load-balanced cluster.' },
+      resources: [
+        r('guide', 'Cloudflare — Understanding Horizontal vs Vertical Scalability', 'https://www.cloudflare.com/learning/performance/what-is-scalability/', 'EN'),
+      ],
+    }),
   ],
 }
+
 
 
