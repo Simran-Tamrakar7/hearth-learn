@@ -712,7 +712,524 @@ export const TESTING_TYPES_CHAPTERS: TestingChapterData[] = [
       },
     ],
   },
+  {
+    no: "05",
+    title: "Manual Testing",
+    category: "Execution Method",
+    desc: "Manual testing is the practice of executing test cases by hand, without automation scripts — a person walks through the application clicking, typing, and observing exactly the way an end user would, then records whether the actual result matches the expected one.",
+    why: "Not everything can or should be automated. A human notices when a layout looks visually off, when wording is confusing, when a workflow feels clunky, or when something behaves \"correctly\" on paper but wrong in spirit — none of which a scripted assertion catches. Manual testing is also where automation starts: before a flow is scripted, someone has to walk through it by hand to confirm what \"correct\" even looks like.",
+    when: "Constantly, alongside automation rather than instead of it — for exploratory sessions, new features that don't have test scripts yet, one-off verification of a bug fix, and anything involving visual judgment or subjective UX quality. It's the default for early-stage features that change too fast for automation to be worth writing yet.",
+    practical: {
+      app: "HRMS — Multi-Step Employee Onboarding",
+      scenario: "A new multi-step onboarding wizard is released. The automated tests verify all required inputs save to the database, but a manual tester immediately notices the modal cut off on smaller screens and ambiguous date formatting that confuses the HR team.",
+      pass: "Tester verifies all form fields, layout responsiveness, and copy clarity across screen sizes before sign-off.",
+      fail: "Unintuitive button placement causes form submission before review — caught by human observation.",
+    },
+    advantages: [
+      "Catches visual, UX, and 'does this feel right' issues automation structurally can't judge",
+      "No scripting investment needed — testing can start the moment a feature exists",
+      "Flexible — a tester can deviate and explore the moment something looks suspicious",
+      "Cheapest entry point for small teams or early-stage products",
+    ],
+    limitations: [
+      "Slow and doesn't scale — the same regression suite takes minutes automated, hours by hand",
+      "Inconsistent between testers and even between runs by the same tester",
+      "Impractical to repeat frequently enough for continuous delivery",
+      "Human error and fatigue lead to missed steps on long or repetitive test cases",
+    ],
+    tools: [
+      {
+        name: "Manual Testing",
+        sub: "Methodology",
+        url: null,
+        desc: "There's no software here — the 'tool' is a structured way of working: a test case document (steps, expected result), the application itself, and a tester's judgment.",
+        adv: [
+          "Catches visual, UX, and 'does this feel right' issues automation structurally can't judge",
+          "No scripting investment needed — testing can start the moment a feature exists",
+          "Flexible — a tester can deviate and explore the moment something looks suspicious",
+          "Cheapest entry point for small teams or early-stage products",
+        ],
+        lim: [
+          "Slow and doesn't scale — the same regression suite takes minutes automated, hours by hand",
+          "Inconsistent between testers and even between runs by the same tester",
+          "Impractical to repeat frequently enough for continuous delivery",
+          "Human error and fatigue lead to missed steps on long or repetitive test cases",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Write the test case specification",
+            p: "Document preconditions, numbered steps, test data, and expected results.",
+            c: `Test Case ID: TC-MAN-01\nTitle: Verify Employee Onboarding Wizard Validation\nPreconditions: Logged in as HR Admin\nSteps:\n1. Navigate to /employees/new\n2. Leave 'Department' empty and click 'Next'\n3. Observe field validation\nExpected: 'Department is required' red error text appears below field`,
+          },
+          {
+            t: "Step 2 — Set up test data and environment",
+            p: "Ensure test environment has matching database state without dirty leftover records.",
+            c: `Environment: Staging (v2.4.0-rc1)\nUser: hr_admin@hrms.internal / Role: HR_ADMIN\nSeed: Clean department table with 5 active departments`,
+          },
+          {
+            t: "Step 3 — Execute steps exactly as written",
+            p: "Follow each numbered action step without skipping or assuming state.",
+            c: `1. Open Chrome DevTools (Console tab open for unhandled JS exceptions)\n2. Enter: First Name = "Aayush", Last Name = "Shrestha", Email = "aayush@hrms.internal"\n3. Leave 'Department' unselected and click 'Next Step'`,
+          },
+          {
+            t: "Step 4 — Compare actual vs expected result",
+            p: "Evaluate visual rendering, system response time, and exact wording.",
+            c: `Expected: Red outline on Department dropdown with message "Department is required"\nActual: Red outline displayed, focus moved to dropdown, submission blocked`,
+          },
+          {
+            t: "Step 5 — Record Pass/Fail with evidence",
+            p: "Attach full-screen screenshot and console log if any discrepancy occurs.",
+            c: `Result: PASS\nNotes: UI validation is instant, no console errors\nEvidence: screenshot_tc_man_01_pass.png`,
+          },
+          {
+            t: "Step 6 — Log failures in bug tracker",
+            p: "If actual != expected, file ticket with severity, priority, and exact reproduction steps.",
+            c: `Bug ID: HRMS-1042\nSummary: Onboarding wizard modal overlaps navigation bar on 1366x768 resolution\nSeverity: Major / Priority: P2\nSteps to Reproduce: [1..4]`,
+          },
+          {
+            t: "Step 7 — Re-execute after developer fix",
+            p: "Verify fixed build on staging and close ticket after confirming no side regressions.",
+            c: `Retest on Build 2.4.0-rc2: Modal stays within viewport, responsiveness confirmed.\nStatus: VERIFIED & CLOSED`,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    no: "06",
+    title: "Automated Testing",
+    category: "Execution Method",
+    desc: "Automated testing is the practice of writing scripts that execute test steps and check results without a human clicking through them each time — the same suite can run in seconds, on every commit, forever, without getting tired or skipping a step.",
+    why: "As an application grows, the number of things that could break grows with it. Manually re-checking everything before every release becomes physically impossible. Automated tests turn that impossible manual re-check into a suite that runs in minutes, catching regressions the moment they're introduced rather than days or weeks later.",
+    when: "For anything that will be run more than a handful of times — regression suites, critical user paths, and anything gating a release. It's not a replacement for manual testing on new or fast-changing features, but the right investment for stable flows a team relies on not breaking.",
+    practical: {
+      app: "HRMS Regression Suite",
+      scenario: "Before every release, a 40-scenario regression suite (login, employee CRUD, leave requests, payroll processing) runs automatically in CI. A developer's change to the date-picker component accidentally breaks the 'from date' field across every form that uses it.",
+      pass: "All 40 scenarios green — the build is promoted to staging.",
+      fail: "6 of 40 scenarios fail on the same from-date selector — CI blocks the merge before it ever reaches a human tester, and the pattern across failures immediately points at the shared component.",
+    },
+    advantages: [
+      "Executes repetitive regression suites in seconds without human fatigue",
+      "Continuous integration safety net catching breaking bugs on every pull request",
+      "Enables true continuous deployment and faster release cadences",
+      "Reusable test scripts scale seamlessly across environments and browsers",
+    ],
+    limitations: [
+      "Higher upfront time and code investment to write and maintain test frameworks",
+      "Blind to visual glitches, awkward workflows, and UX oddities unless specifically scripted",
+      "Brittle against rapid UI changes if locators are not cleanly decoupled",
+      "False sense of security if test assertions only check status codes rather than data integrity",
+    ],
+    tools: [
+      {
+        name: "Selenium",
+        sub: "WebDriver",
+        url: "https://selenium.dev",
+        desc: "The longest-standing browser automation framework, with WebDriver support across every major browser and a massive existing ecosystem — see Chapter 3 for the full breakdown of its strengths and limitations at the system-test level; the same trade-offs apply here.",
+        adv: [
+          "Broadest browser and language support of any automation tool",
+          "Selenium Grid parallelizes large regression suites across machines",
+          "Deepest CI/CD and test-management tool integration in the industry",
+          "Best fit for teams with existing Java/C#/Python Selenium investment",
+        ],
+        lim: [
+          "No auto-waiting — flaky without disciplined explicit waits",
+          "More verbose to write and maintain than Playwright or Cypress",
+          "Slower feedback loop during local development than Cypress's live reload",
+          "Debugging failures takes more manual digging without a built-in trace tool",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Install Selenium and PyTest",
+            p: "Install selenium bindings and webdriver-manager.",
+            c: `pip install selenium webdriver-manager pytest`,
+          },
+          {
+            t: "Step 2 — Set up headless Chrome driver",
+            p: "Initialize ChromeOptions with headless flags and WebDriverWait.",
+            c: `from selenium import webdriver\nfrom selenium.webdriver.chrome.service import Service\nfrom selenium.webdriver.chrome.options import Options\nfrom webdriver_manager.chrome import ChromeDriverManager\n\noptions = Options()\noptions.add_argument("--headless=new")\noptions.add_argument("--window-size=1920,1080")\ndriver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)`,
+          },
+          {
+            t: "Step 3 — Write regression test with explicit waits",
+            p: "Automate user login and dashboard verification.",
+            c: `from selenium.webdriver.common.by import By\nfrom selenium.webdriver.support.ui import WebDriverWait\nfrom selenium.webdriver.support import expected_conditions as EC\n\ndef test_hrms_login_flow(driver):\n    driver.get("https://staging.hrms-app.com/login")\n    wait = WebDriverWait(driver, 10)\n    \n    wait.until(EC.visibility_of_element_located((By.NAME, "email"))).send_keys("admin@hrms.com")\n    driver.find_element(By.NAME, "password").send_keys("SecurePass123!")\n    driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()\n    \n    header = wait.until(EC.visibility_of_element_located((By.TAG_NAME, "h1")))\n    assert "Dashboard" in header.text`,
+          },
+          {
+            t: "Step 4 — Automate employee creation & assertion",
+            p: "Fill employee form and assert presence in employee table.",
+            c: `def test_create_employee(driver):\n    driver.get("https://staging.hrms-app.com/employees/new")\n    wait = WebDriverWait(driver, 10)\n    \n    wait.until(EC.visibility_of_element_located((By.NAME, "fullName"))).send_keys("Priya Sharma")\n    driver.find_element(By.NAME, "department").send_keys("Engineering")\n    driver.find_element(By.ID, "btn-save").click()\n    \n    toast = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "toast-success")))\n    assert "Employee created" in toast.text`,
+          },
+          {
+            t: "Step 5 — Run headless suite in CI pipeline",
+            p: "Execute parallelized test suite with pytest.",
+            c: `pytest -v -n 4 --html=reports/regression-report.html`,
+          },
+        ],
+      },
+      {
+        name: "Playwright",
+        sub: "Modern Web Automation",
+        url: "https://playwright.dev",
+        desc: "Auto-waiting, multi-browser, single-API automation with the Trace Viewer for fast failure debugging — see Chapter 3 for full detail.",
+        adv: [
+          "Auto-waiting removes most flaky, timing-based failures",
+          "One API for Chromium, Firefox, and WebKit",
+          "Trace Viewer gives a step-by-step replay of any failed run",
+          "Network interception mocks specific states without needing real backend data",
+        ],
+        lim: [
+          "Smaller legacy tooling footprint than Selenium",
+          "A real learning curve for teams migrating existing Selenium suites",
+          "Modern-language-first — weaker fit for older tech stacks",
+          "Traces add storage overhead on large CI runs",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Install Playwright with browsers",
+            p: "Initialize Playwright test suite.",
+            c: `pip install pytest-playwright\nplaywright install --with-deps chromium firefox webkit`,
+          },
+          {
+            t: "Step 2 — Write resilient test with auto-waiting locators",
+            p: "Playwright automatically waits for elements to be actionable before clicking.",
+            c: `from playwright.sync_api import Page, expect\n\ndef test_leave_application(page: Page):\n    page.goto("https://staging.hrms-app.com/login")\n    page.get_by_label("Email").fill("employee@hrms.com")\n    page.get_by_label("Password").fill("Password123!")\n    page.get_by_role("button", { name: "Sign In" }).click()\n    \n    # Navigate to Leave Module\n    page.get_by_role("link", { name: "Leaves" }).click()\n    page.get_by_role("button", { name: "Apply Leave" }).click()\n    \n    page.get_by_label("Leave Type").select_option("Sick Leave")\n    page.get_by_label("Days").fill("2")\n    page.get_by_role("button", { name: "Submit Request" }).click()\n    \n    expect(page.get_by_text("Leave request submitted successfully")).to_be_visible()`,
+          },
+          {
+            t: "Step 3 — Run cross-browser tests simultaneously",
+            p: "Execute against Chromium, Firefox, and WebKit in parallel.",
+            c: `pytest --browser chromium --browser firefox --browser webkit`,
+          },
+          {
+            t: "Step 4 — Record execution trace on test failure",
+            p: "Capture screenshots, DOM snapshots, and network calls for debugging.",
+            c: `pytest --tracing=retain-on-failure`,
+          },
+          {
+            t: "Step 5 — Open interactive Trace Viewer",
+            p: "Inspect exact time-travel replay of the failed test.",
+            c: `playwright show-trace test-results/trace.zip`,
+          },
+        ],
+      },
+      {
+        name: "Cypress",
+        sub: "JavaScript / In-Browser",
+        url: "https://cypress.io",
+        desc: "A JavaScript-native testing tool that runs inside the browser itself rather than driving it remotely, which gives it unusually fast, reliable feedback and a live, time-traveling test runner UI that shows exactly what the app looked like at every step.",
+        adv: [
+          "Runs in-browser, giving very fast and reliable execution with automatic retry-ability",
+          "Time-travel debugger shows a DOM snapshot at every command — excellent failure visibility",
+          "Simple, readable API — a shallow learning curve for JavaScript developers",
+          "Great local developer experience with live reload as tests are written",
+        ],
+        lim: [
+          "JavaScript/TypeScript only — no first-class support for other languages",
+          "Runs only in Chromium-family and Firefox browsers, no native WebKit/Safari support",
+          "Each test is scoped to a single browser tab — can't easily test multi-tab or multi-origin flows without workarounds",
+          "Less suited to true cross-browser regression coverage than Playwright",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Install Cypress",
+            p: "Install Cypress as a dev dependency in your JavaScript project.",
+            c: `npm install cypress --save-dev`,
+          },
+          {
+            t: "Step 2 — Open interactive Cypress test runner",
+            p: "Scaffold folders and launch the Cypress desktop GUI.",
+            c: `npx cypress open`,
+          },
+          {
+            t: "Step 3 — Write your first E2E test spec",
+            p: "Create cypress/e2e/payroll.cy.js with visit, get, click, and type commands.",
+            c: `describe('HRMS Payroll Regression', () => {\n  beforeEach(() => {\n    cy.visit('/login');\n    cy.get('[data-test=email]').type('admin@hrms.com');\n    cy.get('[data-test=password]').type('SecurePass123!');\n    cy.get('[data-test=btn-login]').click();\n    cy.url().should('include', '/dashboard');\n  });\n\n  it('processes monthly payroll batch', () => {\n    cy.get('[data-test=nav-payroll]').click();\n    cy.get('[data-test=select-cycle]').select('August 2025');\n    cy.get('[data-test=btn-process]').click();\n    cy.get('.toast-success').should('be.visible').and('contain', 'Payroll completed for 47 employees');\n  });\n});`,
+          },
+          {
+            t: "Step 4 — Leverage automatic retry-ability",
+            p: "cy.get and .should() automatically retry until assertions pass or timeout.",
+            c: `cy.get('.success-toast').should('be.visible');\ncy.get('[data-test=status-badge]').should('have.text', 'Approved');`,
+          },
+          {
+            t: "Step 5 — Run headlessly in CI pipeline",
+            p: "Execute tests in terminal with video and screenshot artifact generation.",
+            c: `npx cypress run --browser chrome`,
+          },
+          {
+            t: "Step 6 — Review time-travel debugger",
+            p: "Click on any command in the test runner log to view the DOM snapshot at that exact microsecond.",
+            c: `// Command Log hover exposes state before and after each DOM action\ncy.get('[data-test=from-date]').click(); // [SNAPSHOT: DOM before & after click]`,
+          },
+          {
+            t: "Step 7 — Connect Cypress Cloud for analytics",
+            p: "Record runs to detect flaky tests, parallelize execution, and view historical metrics.",
+            c: `npx cypress run --record --key <your-cypress-cloud-project-key>`,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    no: "07",
+    title: "Functional Testing",
+    category: "Functional",
+    desc: "Functional testing verifies that the application does what its requirements say it should do — given a specific input or action, does it produce the correct output or behavior, regardless of how the code is structured internally.",
+    why: "Functional testing is the most direct check against \"does the software actually work.\" A login form technically rendering without crashing means nothing if it lets in the wrong password. Functional testing exists to answer the business question directly: for this input, is this the right output?",
+    when: "Throughout development, on every feature as it's built, and continuously in regression. It's the backbone layer sitting between low-level unit tests and full end-to-end system tests — verifying business rules and workflows at the feature level.",
+    practical: {
+      app: "HRMS Leave Approval Rules",
+      scenario: "A functional test verifies that a leave request exceeding the employee's remaining balance is rejected, while a request within balance is approved and correctly deducted.",
+      pass: "Requesting 2 days with 5 remaining succeeds; requesting 6 days with 5 remaining is rejected with a clear balance message.",
+      fail: "The system approves a 6-day request against a 5-day balance, letting the balance go negative — a business rule violation the functional test exists specifically to catch.",
+    },
+    advantages: [
+      "Directly validates business logic and requirements from user perspective",
+      "Ensures security gates (auth, permissions, validation) behave according to spec",
+      "Bridges technical implementation and business acceptance criteria",
+      "Can be automated across multiple layers (API, UI, component)",
+    ],
+    limitations: [
+      "Does not check performance, load, security vulnerabilities, or infrastructure",
+      "Requires clear and unambiguous requirements documentation to design test cases",
+      "May miss internal edge cases if tests only focus on standard business paths",
+      "Can become redundant if unit, integration, and UI functional tests test the exact same rule",
+    ],
+    tools: [
+      {
+        name: "Selenium",
+        sub: "Feature Verification",
+        url: "https://selenium.dev",
+        desc: "Same tool, same core trade-offs, applied here to verify feature-level business rules through the UI rather than full end-to-end journeys.",
+        adv: [
+          "Broadest browser and language support of any automation tool",
+          "Selenium Grid parallelizes large regression suites across machines",
+          "Deepest CI/CD and test-management tool integration in the industry",
+          "Best fit for teams with existing Java/C#/Python Selenium investment",
+        ],
+        lim: [
+          "No auto-waiting — flaky without disciplined explicit waits",
+          "More verbose to write and maintain than Playwright or Cypress",
+          "Slower feedback loop during local development than Cypress's live reload",
+          "Debugging failures takes more manual digging without a built-in trace tool",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Define functional test specification",
+            p: "Map business requirement rules to test methods.",
+            c: `Requirement BR-401: Leave requests exceeding remaining balance must be rejected.`,
+          },
+          {
+            t: "Step 2 — Implement business logic verification in Selenium",
+            p: "Test boundary input (balance = 5, request = 6).",
+            c: `def test_reject_over_balance_leave(driver):\n    driver.get("https://staging.hrms-app.com/leaves/apply")\n    driver.find_element(By.ID, "days-input").send_keys("6")\n    driver.find_element(By.ID, "submit-btn").click()\n    \n    error_msg = WebDriverWait(driver, 5).until(\n        EC.visibility_of_element_located((By.CLASS_NAME, "alert-error"))\n    )\n    assert "Requested days (6) exceeds available balance (5)" in error_msg.text`,
+          },
+          {
+            t: "Step 3 — Test happy path boundary",
+            p: "Verify valid submission (request = 2) succeeds and decrements displayed balance to 3.",
+            c: `def test_approve_valid_leave(driver):\n    driver.get("https://staging.hrms-app.com/leaves/apply")\n    driver.find_element(By.ID, "days-input").send_keys("2")\n    driver.find_element(By.ID, "submit-btn").click()\n    \n    balance = WebDriverWait(driver, 5).until(\n        EC.visibility_of_element_located((By.ID, "remaining-balance"))\n    )\n    assert balance.text == "3"`,
+          },
+        ],
+      },
+      {
+        name: "Cypress",
+        sub: "Fast Feature Checks",
+        url: "https://cypress.io",
+        desc: "Its fast feedback loop and retry-ability make it a strong fit for feature-level functional checks that run constantly during development, not just at release time.",
+        adv: [
+          "Runs in-browser, giving very fast and reliable execution with automatic retry-ability",
+          "Time-travel debugger shows a DOM snapshot at every command — excellent failure visibility",
+          "Simple, readable API — a shallow learning curve for JavaScript developers",
+          "Great local developer experience with live reload as tests are written",
+        ],
+        lim: [
+          "JavaScript/TypeScript only — no first-class support for other languages",
+          "Runs only in Chromium-family and Firefox browsers, no native WebKit/Safari support",
+          "Each test is scoped to a single browser tab",
+          "Less suited to true cross-browser regression coverage than Playwright",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Create functional spec file",
+            p: "Create cypress/e2e/leave-rules.cy.js.",
+            c: `describe('Leave Policy Functional Tests', () => {\n  it('rejects leave when requested days exceed quota', () => {\n    cy.login('employee@hrms.com', 'Pass123!');\n    cy.visit('/leaves/new');\n    cy.get('[data-test=leave-days]').type('6');\n    cy.get('[data-test=btn-submit]').click();\n    cy.get('[data-test=validation-error]')\n      .should('be.visible')\n      .and('contain', 'Insufficient leave balance');\n  });\n});`,
+          },
+        ],
+      },
+      {
+        name: "BugBug",
+        sub: "No-Code / Low-Code Test Recorder",
+        url: "https://bugbug.io",
+        desc: "A no-code/low-code browser test recorder — testers click through the application once, BugBug records the actions as a reusable test, and it can be edited visually afterward without touching code. Built specifically to make functional testing accessible to QA testers who don't write code.",
+        adv: [
+          "No coding required — QA testers without dev skills can create real automated tests",
+          "Recording is fast — a working test exists minutes after the manual walkthrough",
+          "Visual editing makes maintaining tests approachable for non-engineers",
+          "Built-in cloud scheduling and reporting without separate CI setup",
+        ],
+        lim: [
+          "Less flexible than code-based tools for complex logic or conditional flows",
+          "Free tier has limits on test runs and team size",
+          "Recorded selectors can be brittle if the UI changes structurally",
+          "Less control over test architecture than a hand-written Playwright/Cypress suite",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Install BugBug extension & create account",
+            p: "Install the free BugBug Chrome extension from Chrome Web Store.",
+            c: `Chrome Extension: BugBug Test Recorder\nWebsite: https://bugbug.io (Free Tier: 50 cloud runs/month)`,
+          },
+          {
+            t: "Step 2 — Record browser scenario visually",
+            p: "Click 'Record' and perform the functional scenario in the browser normally.",
+            c: `Action: Navigate to https://staging.hrms-app.com -> Click [Apply Leave] -> Type "2" into [Days] -> Click [Submit]`,
+          },
+          {
+            t: "Step 3 — Inspect recorded step pipeline",
+            p: "BugBug captures each click, input, and navigation as a clean human-readable step.",
+            c: `Step 1: Go to URL https://staging.hrms-app.com/leaves\nStep 2: Click button "Apply Leave"\nStep 3: Type "2" in input #leave-days\nStep 4: Click button "Submit"`,
+          },
+          {
+            t: "Step 4 — Add visual assertions",
+            p: "Click on target element to create assertions like 'Text should contain' or 'Element visible'.",
+            c: `Assertion: Element .toast-success text contains "Request Approved"`,
+          },
+          {
+            t: "Step 5 — Save into functional test suite",
+            p: "Group tests into logical suites: 'Leave Management', 'Employee Profiles', 'Payroll'.",
+            c: `Suite: "HRMS Core Functional Suite" (12 recorded tests)`,
+          },
+          {
+            t: "Step 6 — Run suite on-demand or cloud schedule",
+            p: "Execute tests in BugBug cloud runner or trigger via webhook / GitHub Action.",
+            c: `Trigger: Webhook POST on Staging Deploy -> BugBug Cloud executes 12 tests in parallel`,
+          },
+          {
+            t: "Step 7 — Review visual step-by-step report",
+            p: "View screenshot diffs and step timings to immediately identify failed rules.",
+            c: `Report: 12 Passed, 0 Failed (Execution time: 42s)\nScreenshot evidence attached to each step`,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    no: "08",
+    title: "Smoke Testing",
+    category: "Functional",
+    desc: "Smoke testing is a quick, shallow pass over the most critical functions of an application — login works, the homepage loads, core navigation responds — run immediately after a new build to answer one question: is this build stable enough to test further, or is it broken at the foundation?",
+    why: "Running a full regression suite against a build that can't even log in wastes hours of testing effort on a build that was doomed from the start. Smoke testing is a cheap early filter — a handful of checks that take minutes, not hours, and catch catastrophic breakages before anyone invests real testing time.",
+    when: "Immediately after every new build or deployment, before any deeper testing begins. It's typically the very first stage of CI/CD after a build succeeds — a fast gate that decides whether the pipeline proceeds to fuller test suites.",
+    practical: {
+      app: "HRMS Post-Deployment Check",
+      scenario: "After every deploy to staging, a smoke suite checks: login succeeds, the dashboard loads, the employee list renders, and the payroll module opens.",
+      pass: "All four checks pass in under 90 seconds — the pipeline proceeds to the full regression suite.",
+      fail: "The dashboard fails to load due to a broken build artifact — the pipeline halts immediately, and the team is alerted before anyone wastes time running deeper tests against a build that was never going to work.",
+    },
+    advantages: [
+      "Extremely fast — a broken build is caught in minutes, not after a full test cycle",
+      "Cheap to write and maintain because the scope is deliberately narrow",
+      "Prevents wasted effort running deeper suites against a fundamentally broken build",
+      "Gives immediate, high-confidence signal right after every deployment",
+    ],
+    limitations: [
+      "Shallow by design — it will not catch anything beyond the most critical paths",
+      "A passing smoke test says nothing about edge cases or business logic correctness",
+      "Needs discipline to keep small; scope creep turns it into a slow regression suite",
+      "Still needs a human or a fuller suite behind it — smoke testing alone is never sufficient",
+    ],
+    tools: [
+      {
+        name: "Manual",
+        sub: "Quick Checklist",
+        url: null,
+        desc: "For small teams or infrequent releases, a short manual checklist (log in, load the dashboard, open one core module) is often enough — speed and low setup cost matter more than automation here.",
+        adv: [
+          "Zero tool setup or maintenance required",
+          "Can be performed immediately by any team member",
+          "Takes less than 3 minutes for a 5-step checklist",
+          "Immediately catches catastrophic white-screen or server crash issues",
+        ],
+        lim: [
+          "Requires human availability after every deployment",
+          "Cannot easily run in automated midnight CI/CD pipelines",
+          "Subject to human oversight if done in a rush",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Open deployment landing page",
+            p: "Load https://staging.hrms-app.com and verify HTTP 200 and favicon / title render.",
+            c: `Action: Open browser -> Navigate to URL -> Verify login page displays without console error`,
+          },
+          {
+            t: "Step 2 — Execute sanity login",
+            p: "Enter valid admin credentials and submit.",
+            c: `User: smoke_admin@hrms.com / Pass: TestPass123! -> Click Login`,
+          },
+          {
+            t: "Step 3 — Verify critical modules render",
+            p: "Click through Dashboard, Employees, and Payroll tabs.",
+            c: `Check: Dashboard widgets load -> Employee table displays records -> Payroll cycle selector opens`,
+          },
+          {
+            t: "Step 4 — Decision gate",
+            p: "If any step fails, abort testing and ping on-call developer. If all pass, green-light regression.",
+            c: `Verdict: PASS (1 min 45s) -> Ready for QA Deep Testing`,
+          },
+        ],
+      },
+      {
+        name: "Selenium",
+        sub: "Automated Smoke Gate",
+        url: "https://selenium.dev",
+        desc: "For frequent builds, a small Selenium script automates the same handful of critical checks so smoke testing runs unattended on every deploy.",
+        adv: [
+          "Extremely fast — a broken build is caught in minutes, not after a full test cycle",
+          "Cheap to write and maintain because the scope is deliberately narrow",
+          "Prevents wasted effort running deeper suites against a fundamentally broken build",
+          "Gives immediate, high-confidence signal right after every deployment",
+        ],
+        lim: [
+          "Shallow by design — it will not catch anything beyond the most critical paths",
+          "A passing smoke test says nothing about edge cases or business logic correctness",
+          "Needs discipline to keep small; scope creep turns it into a slow regression suite",
+          "Still needs a human or a fuller suite behind it — smoke testing alone is never sufficient",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Identify critical smoke paths",
+            p: "Limit scope to 5 critical endpoints: Login, Dashboard, Employee List, Leaves, Payroll.",
+            c: `Critical Paths:\n1. GET /login -> Form visible\n2. POST /auth/login -> 200 OK + JWT\n3. GET /dashboard -> Metrics widget rendered\n4. GET /employees -> Table count > 0\n5. GET /payroll -> Active cycle visible`,
+          },
+          {
+            t: "Step 2 — Write lightweight fast-failing Selenium script",
+            p: "Set tight timeouts (e.g. 5 seconds) to fail fast on hung servers.",
+            c: `from selenium import webdriver\nfrom selenium.webdriver.common.by import By\nfrom selenium.webdriver.support.ui import WebDriverWait\nfrom selenium.webdriver.support import expected_conditions as EC\nimport pytest\n\n@pytest.fixture\ndef driver():\n    options = webdriver.ChromeOptions()\n    options.add_argument("--headless=new")\n    driver = webdriver.Chrome(options=options)\n    driver.set_page_load_timeout(10)\n    yield driver\n    driver.quit()\n\ndef test_smoke_critical_pipeline(driver):\n    wait = WebDriverWait(driver, 5)\n    \n    # 1. Login\n    driver.get("https://staging.hrms-app.com/login")\n    driver.find_element(By.NAME, "email").send_keys("smoke_user@hrms.com")\n    driver.find_element(By.NAME, "password").send_keys("SmokePass123!")\n    driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()\n    \n    # 2. Dashboard\n    wait.until(EC.visibility_of_element_located((By.ID, "dashboard-stats")))\n    \n    # 3. Employee list\n    driver.get("https://staging.hrms-app.com/employees")\n    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".employee-row")))\n    \n    # 4. Payroll\n    driver.get("https://staging.hrms-app.com/payroll")\n    wait.until(EC.visibility_of_element_located((By.ID, "payroll-period-select")))`,
+          },
+          {
+            t: "Step 3 — Wire into CI/CD deployment pipeline",
+            p: "Configure GitHub Actions / GitLab CI to run smoke tests immediately after deployment.",
+            c: `smoke-test:\n  stage: post-deploy\n  script:\n    - pytest -m smoke --maxfail=1 --timeout=120\n  rules:\n    - if: $CI_COMMIT_BRANCH == "main"`,
+          },
+          {
+            t: "Step 4 — Set fast fail & alert hook",
+            p: "On failure, halt pipeline immediately and send Slack alert with logs.",
+            c: `if pytest fails:\n  send_slack_alert("#build-failures", "🚨 Smoke test failed on Staging build! Aborting regression suite.")\n  exit 1`,
+          },
+          {
+            t: "Step 5 — Maintain strict runtime budget",
+            p: "Ensure total smoke suite execution time remains under 90 seconds.",
+            c: `Benchmark: 4 tests executed in 38.4s -> PASS`,
+          },
+          {
+            t: "Step 6 — Promote to full regression",
+            p: "When smoke is green, automatically trigger deeper automated integration & regression suites.",
+            c: `Status: SMOKE GREEN -> Triggering Full E2E & Regression Pipeline`,
+          },
+        ],
+      },
+    ],
+  },
 ];
+
 
 export function TestingTypesInteractiveManual() {
   const [searchQuery, setSearchQuery] = useState("");
