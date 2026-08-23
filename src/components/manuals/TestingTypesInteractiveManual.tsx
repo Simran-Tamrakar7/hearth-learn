@@ -2897,7 +2897,347 @@ export const TESTING_TYPES_CHAPTERS: TestingChapterData[] = [
       },
     ],
   },
+  {
+    no: "25",
+    title: "Black Box Testing",
+    category: "By Knowledge",
+    desc: "Black box testing evaluates an application purely from the outside — inputs and outputs — without any knowledge of or access to the internal code, logic, or architecture that produces those outputs. The tester acts exactly like a real user or an external system: they can't see (and don't need to see) what's happening underneath.",
+    why: "Most real users, and most of the testing types elsewhere in this manual (functional, usability, system, acceptance), operate this way by necessity — a customer doesn't read the source code before deciding a feature is broken. Black box testing keeps the focus on what actually matters to the end user: does the right input produce the right output, regardless of how messy or elegant the code behind it is.",
+    when: "Throughout functional, system, and acceptance testing — essentially the default mode for anyone testing from a user's perspective rather than a developer's. Especially valuable when the tester is independent from the development team, since it avoids any unconscious bias toward 'testing what the code does' instead of 'testing what the user needs.'",
+    practical: {
+      app: "HRMS Leave Balance Calculation",
+      scenario:
+        "A tester checks that submitting a leave request for more days than an employee has remaining is correctly rejected, based only on the stated business rule ('cannot request more leave than available balance') — with no knowledge of how the balance is calculated internally.",
+      pass: "Requesting 3 days against a 5-day balance succeeds; requesting 8 days against the same balance is rejected with a clear error.",
+      fail: "Requesting exactly the remaining balance (5 of 5 days) is incorrectly rejected — an off-by-one boundary bug the black box test catches without ever seeing the code.",
+    },
+    advantages: [
+      "Matches exactly how real users and external systems experience the application",
+      "Testers don't need programming or architecture knowledge to be effective",
+      "Naturally unbiased by implementation details — tests what should happen, not what the code happens to do",
+      "Test cases remain valid even if the internal implementation is completely rewritten",
+    ],
+    limitations: [
+      "Can't target specific code paths directly — some internal logic branches may never get exercised",
+      "Less efficient at finding certain classes of bugs (e.g. a rare internal edge case) that white box testing would catch directly",
+      "Test case design can miss scenarios if requirements themselves are incomplete or ambiguous",
+      "Root-causing a failure often takes longer, since there's no visibility into where in the code it actually broke",
+    ],
+    tools: [
+      {
+        name: "Manual (Specification-Based)",
+        sub: "Requirements-Driven Black Box Validation",
+        url: "https://en.wikipedia.org/wiki/Black-box_testing",
+        seeChapter: 5,
+        desc: "Most black box testing starts here (see Chapter 5) — a tester working through the UI or API purely based on requirements and expected behavior, with zero reference to the underlying implementation.",
+        adv: [
+          "100% focused on business requirements and user personas",
+          "Surfaces ambiguous or contradictory specification requirements",
+        ],
+        lim: [
+          "Manual regression execution becomes repetitive without automation",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Extract testable conditions from requirement specs",
+            p: "Define boundary partitions (e.g. 0 days, 1-5 days, 6+ days).",
+            c: `Equivalence Partitioning:\n- Valid: 1 <= request_days <= balance (5)\n- Invalid: request_days > balance (5)\n- Boundary: 0 days, 5 days, 6 days`,
+          },
+          {
+            t: "Step 2 — Execute boundary value test cases",
+            p: "Submit leave requests at each boundary condition via the UI form.",
+            c: `Test Case BB-01: Request 5 days (Expected: Approved -> Actual: Approved - PASS)\nTest Case BB-02: Request 6 days (Expected: 400 Bad Request -> PASS)`,
+          },
+          {
+            t: "Step 3 — Log defects with input-output mismatches",
+            p: "Record precise reproduction payloads without guessing backend causes.",
+            c: `Bug Report: BUG-601: Requesting exactly 5/5 balance displays 'Insufficient Balance' error`,
+          },
+        ],
+      },
+      {
+        name: "Selenium WebDriver",
+        sub: "Automated User-Perspective Regression",
+        url: "https://www.selenium.dev",
+        seeChapter: 6,
+        desc: "Once black box test cases are defined manually, Selenium automates the same input-and-observe-output approach (see Chapter 6) — driving the UI exactly as a user would, checking outcomes, never touching the backend code.",
+        adv: [
+          "Automates black box test suites across real browser instances",
+          "Tests end-to-end user workflows completely decoupled from backend codebase",
+        ],
+        lim: [
+          "Requires UI selector maintenance if DOM markup changes",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Script black box boundary assertions",
+            p: "Automate form input typing and verify user-facing modal responses.",
+            c: `await page.fill('#leave-days', '5');\nawait page.click('#submit-btn');\nawait expect(page.locator('.alert-success')).toBeVisible();`,
+          },
+          {
+            t: "Step 2 — Run in CI pipeline on pull requests",
+            p: "Execute full black box regression suite against staging deployment.",
+            c: `npx playwright test tests/blackbox-leave.spec.ts`,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    no: "26",
+    title: "White Box Testing",
+    category: "By Knowledge",
+    desc: "White box testing examines and tests the internal structure, logic, and code paths of an application directly — the tester (usually a developer) has full visibility into the source code and designs tests specifically to exercise particular branches, conditions, and statements within it.",
+    why: "Some bugs only live inside logic that's invisible from the outside — an untested conditional branch, a loop that mishandles one specific edge case, an off-by-one error buried in a calculation. Black box testing can miss these entirely if the right input never happens to be tried; white box testing finds them directly by deliberately targeting every path through the code, and it's what makes code coverage a meaningful, measurable metric.",
+    when: "Continuously during development, primarily by the developers writing the code themselves — unit tests are the most common form of white box testing. It's run on every commit via CI, using coverage tools to confirm which parts of the codebase are (and aren't) actually being exercised by tests.",
+    practical: {
+      app: "HRMS Leave Balance Calculation Function",
+      scenario:
+        "A coverage report shows the calculateRemainingLeave() function has 80% line coverage, but the branch handling a negative starting balance (a data correction scenario) is never exercised by any test.",
+      pass: "A new unit test specifically targeting the negative-balance branch is added, coverage rises to 96%, and the bug is caught and fixed before it ever reaches a real employee record.",
+      fail: "The untested branch contains a bug — it returns a positive number instead of correctly flagging the account for HR review — invisible until a real data-correction case eventually hits production.",
+    },
+    advantages: [
+      "Directly targets internal logic paths that black box testing can miss entirely",
+      "Coverage tools make 'how much of the code is actually tested' a concrete, measurable number",
+      "Catches edge cases and boundary conditions buried deep inside functions, not just visible at the UI/API surface",
+      "Tightly integrated into the development workflow — usually run automatically on every commit",
+    ],
+    limitations: [
+      "Requires source code access and programming knowledge — not something a non-technical tester can typically do",
+      "High coverage percentage doesn't guarantee correctness — a line can be 'covered' without meaningful assertions",
+      "Tests are tied to implementation details, so a significant refactor can require rewriting tests even if user-facing behavior didn't change",
+      "Doesn't verify the user-facing experience at all — an internal unit can be 100% covered while the UI is broken",
+    ],
+    tools: [
+      {
+        name: "Istanbul (nyc)",
+        sub: "JavaScript Code & Branch Coverage Engine",
+        url: "https://istanbul.js.org",
+        desc: "A JavaScript code coverage tool that instruments code during test runs and reports exactly which lines, branches, functions, and statements were executed by the test suite — and which were missed.",
+        adv: [
+          "Industry standard for Node.js and modern frontend frameworks (Jest, Vitest, Mocha)",
+          "Provides interactive line-by-line HTML coverage heatmaps",
+          "Strict threshold enforcement in CI (e.g. fail if branch coverage < 85%)",
+          "Highlights uncovered ternary conditions and catch blocks",
+        ],
+        lim: [
+          "Adds minor instrumentation overhead during test execution",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Run test suite with coverage instrumentation",
+            p: "Execute Jest or Vitest with the --coverage flag enabled.",
+            c: `npx jest --coverage --collectCoverageFrom="src/lib/**/*.ts"`,
+          },
+          {
+            t: "Step 2 — Inspect branch coverage report",
+            p: "Review statement, branch, function, and line coverage percentages.",
+            c: `File                  | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s\nleaveCalculator.ts    |   85.71 |    66.66 |     100 |   85.71 | 24-26 (Negative balance branch)`,
+          },
+          {
+            t: "Step 3 — Write white box unit test for uncovered branch",
+            p: "Add test case supplying negative balance inputs to reach line 24.",
+            c: `test('flags HR review when starting balance is negative', () => {\n  const result = calculateRemainingLeave({ balance: -2, requested: 3 });\n  expect(result.status).toBe('NEEDS_HR_REVIEW');\n});`,
+          },
+          {
+            t: "Step 4 — Enforce CI coverage thresholds in package.json",
+            p: "Fail build if coverage drops below specified quality bar.",
+            c: `"jest": {\n  "coverageThreshold": {\n    "global": {\n      "branches": 90,\n      "functions": 95,\n      "lines": 90\n    }\n  }\n}`,
+          },
+        ],
+      },
+      {
+        name: "Coverage.py",
+        sub: "Python Code Execution & Branch Analyzer",
+        url: "https://coverage.readthedocs.io",
+        desc: "The equivalent coverage tool for Python — measures which lines and branches of code are executed during a test run (typically via PyTest) and produces an HTML or terminal report highlighting what's covered.",
+        adv: [
+          "Seamless integration with PyTest via pytest-cov",
+          "Generates visual line-by-line color-coded HTML reports",
+          "Tracks conditional branch coverage with --branch flag",
+        ],
+        lim: [
+          "Requires separate Python virtualenv configuration",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Run PyTest with coverage tracking",
+            p: "Execute test suite with branch coverage enabled.",
+            c: `pytest --cov=hrms_payroll --cov-branch --cov-report=html tests/`,
+          },
+          {
+            t: "Step 2 — Open HTML coverage viewer",
+            p: "Inspect colored red lines representing untested exception handlers.",
+            c: `open htmlcov/index.html`,
+          },
+          {
+            t: "Step 3 — Add targeted test case to hit uncovered branch",
+            p: "Verify 100% path coverage achieved across calculation module.",
+            c: `def test_negative_leave_balance():\n    assert calculate_leave(balance=-1, days=2) == Flag.HR_AUDIT`,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    no: "27",
+    title: "Gray Box Testing",
+    category: "By Knowledge",
+    desc: "Gray box testing sits between black box and white box — the tester has partial knowledge of the internal structure (perhaps database schema, API design, or high-level architecture) without full access to or deep understanding of the complete source code, and uses that partial insight to design smarter, more targeted external tests.",
+    why: "Pure black box testing can waste time on inputs unlikely to reveal anything, while pure white box testing requires full code access that testers (especially independent QA) often don't have or need. Gray box testing gets much of white box testing's precision — targeting known trouble spots like specific database constraints or API integration points — while still testing from the outside, the way a real user or consuming system actually would.",
+    when: "Especially valuable for integration and API testing, where a tester knows the API contract or database schema without needing to read every line of backend implementation. Common when QA has access to design docs, database diagrams, or API specifications but not the full codebase.",
+    practical: {
+      app: "HRMS Employee ID Uniqueness",
+      scenario:
+        "A tester who knows (from the database schema, not the code) that employee_id is a unique constraint deliberately tests submitting two leave requests with a manually crafted duplicate employee_id via the API.",
+      pass: "The second request is correctly rejected with a 409 Conflict, matching the schema-level guarantee the tester knew to check for.",
+      fail: "The API accepts both requests and returns 200 for each — the uniqueness constraint exists in the schema but isn't actually being enforced at the application layer before the write, only relied upon (incorrectly) as documentation.",
+    },
+    advantages: [
+      "More efficient than pure black box testing — partial internal knowledge focuses effort on higher-value, more likely-to-fail scenarios",
+      "Doesn't require full codebase access or deep programming expertise, unlike white box testing",
+      "Particularly effective for integration and API testing, where contracts and schemas are naturally partial knowledge",
+      "Bridges the gap between developers and independent QA, letting each contribute what they know best",
+    ],
+    limitations: [
+      "Requires access to at least some internal documentation (schema, architecture, API spec) — not purely external like black box testing",
+      "Partial knowledge can be outdated or wrong if internal documentation isn't kept in sync with the actual implementation",
+      "Not as targeted as full white box testing, since deep code paths are still invisible",
+      "Effectiveness depends on how good and current the available partial knowledge actually is",
+    ],
+    tools: [
+      {
+        name: "Manual (Architecture-Guided)",
+        sub: "Schema & Contract-Driven Gray Box Testing",
+        url: "https://en.wikipedia.org/wiki/Gray_box_testing",
+        seeChapter: 5,
+        desc: "A tester with partial system knowledge (e.g. 'this field maps to a database column with a unique constraint') designs test cases (see Chapter 5) that specifically target known internal constraints from the outside, without needing to read backend code.",
+        adv: [
+          "Focuses test effort on known architectural weak points and data boundaries",
+          "Targets foreign key relationships and schema constraints directly",
+        ],
+        lim: [
+          "Requires reliable, up-to-date architectural diagrams or OpenAPI specs",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Review database ERD and OpenAPI schemas",
+            p: "Identify constraints: unique indexes, enum values, nullable columns, foreign keys.",
+            c: `Schema Insight: table 'leave_applications' has UNIQUE(employee_id, start_date)`,
+          },
+          {
+            t: "Step 2 — Design targeted boundary injection requests",
+            p: "Craft requests specifically designed to challenge the schema constraints from the client UI.",
+            c: `Test Scenario: Submit two overlapping leave requests for Employee #104 on 2026-09-01`,
+          },
+          {
+            t: "Step 3 — Evaluate app layer validation vs DB crashes",
+            p: "Confirm app returns HTTP 409 Conflict rather than an unhandled 500 Postgres error.",
+            c: `Response: HTTP 409 Conflict: {"error": "Leave request already exists for specified date range"} -> PASS`,
+          },
+        ],
+      },
+      {
+        name: "Postman",
+        sub: "Schema-Informed API Boundary Testing",
+        url: "https://www.postman.com",
+        seeChapter: 2,
+        desc: "Used with knowledge of the underlying API contract or database schema (see Chapter 2) to construct requests specifically designed to probe known internal boundaries from outside the system.",
+        adv: [
+          "Allows crafting precise HTTP headers, payloads, and parameter types",
+          "Validates responses against OpenAPI schema definitions automatically",
+        ],
+        lim: [
+          "Requires API collection maintenance when schemas change",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Import OpenAPI 3.0 specification into Postman",
+            p: "Load API contract to automatically generate schema validation tests.",
+            c: `Postman: Imported hrms-api-v1.yaml -> 42 endpoints with schema contracts`,
+          },
+          {
+            t: "Step 2 — Send edge-case payloads informed by DB column types",
+            p: "Test varchar(50) limits with 51-character string to ensure proper 422 Unprocessable Entity.",
+            c: `POST /api/v1/employees (Payload: { "name": "A".repeat(51) }) -> Expected: 422 Unprocessable Entity`,
+          },
+          {
+            t: "Step 3 — Assert schema integrity and status codes",
+            p: "Verify backend gracefully validates before reaching database engine.",
+            c: `pm.test("Status code is 422", () => pm.response.to.have.status(422));`,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    no: "28",
+    title: "Ad-hoc Testing",
+    category: "Other",
+    desc: "Ad-hoc testing is completely informal, unplanned testing — no charter, no documentation, no predefined scope — where a tester simply uses the application in whatever way occurs to them in the moment, specifically to catch bugs that any structured approach might never think to look for.",
+    why: "Even exploratory testing (Chapter 22) has a loose charter and session structure. Ad-hoc testing has none — and that total lack of structure is precisely its value: a tester (or anyone else) poking around with zero plan sometimes stumbles onto exactly the kind of bizarre, unanticipated bug that no amount of careful planning would have led anyone to script or even charter a session around.",
+    when: "Informally, whenever there's spare time near a release, or when onboarding a new tester who hasn't yet learned 'the right way' to use the app (their naive, uninformed usage often finds real bugs precisely because they don't know what they're 'supposed' to do). Never relied upon as the only testing strategy — it's a cheap, opportunistic supplement to structured testing, not a replacement for it.",
+    practical: {
+      app: "HRMS Login Page",
+      scenario:
+        "A new team member, unfamiliar with the 'intended' login flow, tries pasting an email address with trailing whitespace copied from an email signature.",
+      pass: "The fix (trimming whitespace before comparison) ships, and the specific scenario is added as a proper regression test so ad-hoc luck becomes permanent, repeatable coverage.",
+      fail: "Login fails silently with no error message — the backend does an exact string match on the email and never trims whitespace, a bug no scripted test had considered because no one had thought to test a copy-pasted email with trailing spaces.",
+    },
+    advantages: [
+      "Extremely cheap — needs no planning, documentation, or tooling at all",
+      "Can surface truly unanticipated bugs precisely because there's no plan constraining where the tester looks",
+      "New, uninformed testers are often especially effective at this, since they don't yet know the 'intended' way to use the app",
+      "Zero setup cost makes it easy to slot into any spare moment before a release",
+    ],
+    limitations: [
+      "Completely unrepeatable and undocumented — a bug found ad-hoc may be hard to reproduce reliably afterward",
+      "No coverage guarantee whatsoever — pure luck plays a real role in what gets found",
+      "Hard to justify as dedicated time on a schedule, since there's no way to predict or measure its output in advance",
+      "Should never be the primary or only testing strategy — it's a supplement, not a foundation",
+    ],
+    tools: [
+      {
+        name: "Manual (Unstructured Exploration)",
+        sub: "Spontaneous Monkey & Intuition-Driven Testing",
+        url: "https://en.wikipedia.org/wiki/Ad_hoc_testing",
+        seeChapter: 5,
+        desc: "Ad-hoc testing is manual by definition (see Chapter 5), and deliberately unstructured — even a loose charter would make it exploratory testing instead. The tool here is simply a person, curiosity, and no plan.",
+        adv: [
+          "Zero overhead — start immediately in any spare 10-minute window",
+          "Mimics messy, non-linear end-user behaviors (copy-pasting messy text, accidental double clicks)",
+        ],
+        lim: [
+          "Bug reproducibility depends on tester memory unless screen recording was active",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Launch application with zero predefined charter",
+            p: "Navigate freely without following standard happy paths.",
+            c: `Action: Open HRMS login -> Paste formatted email ' john.doe@company.com ' with leading and trailing spaces`,
+          },
+          {
+            t: "Step 2 — Observe UI state reactions",
+            p: "Watch for silent submission failures, unhandled exceptions, or broken button states.",
+            c: `Observed Bug: Clicking 'Sign In' shows generic 'Invalid credentials' error instead of trimming whitespace`,
+          },
+          {
+            t: "Step 3 — Reconstruct reproducible step sequence",
+            p: "Verify exact steps needed to trigger the glitch again.",
+            c: `Reproduction Steps:\n1. Open /login\n2. Paste ' test@example.com '\n3. Enter valid password\n4. Observe auth failure`,
+          },
+          {
+            t: "Step 4 — Convert discovery into automated regression test",
+            p: "Ensure backend trims input sanitizeEmail(input.trim()) and add automated test.",
+            c: `Added Test: expect(login(' user@domain.com ', 'pass123')).resolves.toBe(true);`,
+          },
+        ],
+      },
+    ],
+  },
 ];
+
 
 
 
