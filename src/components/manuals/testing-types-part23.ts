@@ -285,7 +285,7 @@ export const TESTING_TYPES_PARTS_23: TestingChapterData[] = [
           {
             t: "Step 2 — Point a botium.json at the staging bot",
             p: "Connector and endpoint for the HRMS assistant, not production.",
-            c: `{\n  "botium": {\n    "Capabilities": {\n      "PROJECTNAME": "hrms-leave-bot",\n      "CONTAINERMODE": "echo"\n    }\n  }\n}`,
+            c: `{\n  "botium": {\n    "Capabilities": {\n      "PROJECTNAME": "hrms-leave-bot",\n      "CONTAINERMODE": "simplerest",\n      "SIMPLEREST_URL": "https://staging.hrms-app.com/api/assistant/message",\n      "SIMPLEREST_METHOD": "POST",\n      "SIMPLEREST_BODY_TEMPLATE": "{ \\"text\\": \\"{{msg.messageText}}\\" }",\n      "SIMPLEREST_RESPONSE_JSONPATH": "$.reply"\n    }\n  }\n}`,
           },
           {
             t: "Step 3 — Write the happy-path convo",
