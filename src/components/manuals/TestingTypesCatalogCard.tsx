@@ -32,7 +32,7 @@ export function TestingTypesCatalogCard() {
               className="inline-block h-[7px] w-[7px] rounded-full"
               style={{ background: "#4fd68a", boxShadow: "0 0 0 3px rgba(79,214,138,0.15)" }}
             />
-            Software Testing Reference · Part 1 of N
+            Software Testing Reference · Parts 1, 17 & 18
           </div>
           <h2
             className="m-0 mb-3 tracking-tight"
@@ -43,20 +43,20 @@ export function TestingTypesCatalogCard() {
               color: "#fff",
             }}
           >
-            Testing by Level
+            Testing Types
           </h2>
           <p className="m-0 mb-6 max-w-[60ch]" style={{ color: "#8a93a6", fontSize: 16.5, lineHeight: 1.6 }}>
-            The four levels that carry an application from a single function to a signed-off release — why each one
-            matters, the free tools teams use, how to run them, and where each tool falls short.
+            Levels, automation techniques, and strategy — why each type matters, the free tools teams use, how to run
+            them, and where each one falls short.
           </p>
           <div
             className="flex border-t border-b"
             style={{ borderColor: "#272e39", fontFamily: "JetBrains Mono, monospace", fontSize: 12.5 }}
           >
             {[
-              ["04", "Chapters"],
-              ["10", "Tools covered"],
-              ["By Level", "Category"],
+              ["12", "Chapters"],
+              ["18", "Tools covered"],
+              ["Mixed", "Category"],
               ["Free", "Tool tier"],
             ].map(([n, l], i) => (
               <div
