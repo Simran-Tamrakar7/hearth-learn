@@ -16,12 +16,12 @@ import { practicalPackManuals } from './manuals/practical-pack.js'
 import { testingLevelsManual } from './manuals/testing-levels.js'
 
 export const pathwiseManuals = [
+  testingLevelsManual,
   ...automationManuals,
   playwrightPythonManual,
   ...automationManualsB,
   ...qualityManuals,
   ...qaExtraManuals,
-  testingLevelsManual,
   ...deliveryManuals,
   ...designManuals,
   ...designExtraManuals,

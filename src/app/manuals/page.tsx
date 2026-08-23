@@ -139,22 +139,21 @@ export default function ManualsCatalogPage() {
   const filteredManuals = MANUALS_DATA.filter((manual) => {
     const matchesCategory = selectedCategory === "All" || manual.category === selectedCategory;
     const needle = searchQuery.trim().toLowerCase();
-    const matchesSearch =
-      needle === "" ||
-      manual.title.toLowerCase().includes(needle) ||
-      manual.description.toLowerCase().includes(needle) ||
-      manual.category.toLowerCase().includes(needle);
+    const hay = `${manual.title} ${manual.description} ${manual.category} ${manual.slug}`.toLowerCase();
+    const matchesSearch = needle === "" || hay.includes(needle);
     return matchesCategory && matchesSearch;
   });
+  const featuredManual = filteredManuals.find((m) => m.slug === "testing-by-level");
+  const catalogManuals = filteredManuals.filter((m) => m.slug !== "testing-by-level");
 
   const grouped = useMemo(() => {
     return CATALOG_GENRES.filter((g) => g.id !== "all")
       .map((g) => ({
         ...g,
-        items: filteredManuals.filter((m) => m.category === g.category),
+        items: catalogManuals.filter((m) => m.category === g.category),
       }))
       .filter((g) => g.items.length > 0);
-  }, [filteredManuals]);
+  }, [catalogManuals]);
 
   const sections = selectedCategory === "All" ? grouped : grouped.filter((g) => g.category === selectedCategory);
 
@@ -305,7 +304,7 @@ export default function ManualsCatalogPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search Cypress, agile, design, soft skills…"
+                placeholder="Search Testing Types, Cypress, agile…"
                 className="w-full h-11 pl-11 pr-4 text-xs sm:text-sm bg-white border border-[#E7E0D3] rounded-2xl focus:outline-none focus:border-[#D97706] shadow-xs"
               />
             </div>
@@ -331,7 +330,19 @@ export default function ManualsCatalogPage() {
           ))}
         </div>
 
-        {sections.length === 0 ? (
+        {featuredManual && (
+          <section className="space-y-5">
+            <div className="space-y-1">
+              <h2 className="font-serif-display text-2xl font-bold text-[#1C2A26]">Testing Types</h2>
+              <p className="text-sm text-[#52635E]">Part 1 of the software testing reference — unit through UAT.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <ManualCard manual={featuredManual} />
+            </div>
+          </section>
+        )}
+
+        {sections.length === 0 && !featuredManual ? (
           <p className="text-[#52635E]">Nothing matches — try another word.</p>
         ) : (
           sections.map((g) => (

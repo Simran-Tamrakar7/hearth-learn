@@ -3,9 +3,9 @@ import { ch } from '../helpers.js'
 /** PART 1 — Testing by Level. Sourced from the Testing Types Part 1 HTML guide. */
 export const testingLevelsManual = {
   id: 'testing-by-level',
-  title: 'Testing by Level',
+  title: 'Testing Types',
   tagline:
-    'The four levels that carry an application from a single function to a signed-off release — why each one matters, the free tools teams use, how to run them, and where each tool falls short.',
+    'Part 1: Testing by Level — the four levels that carry an application from a single function to a signed-off release, why each one matters, the free tools teams use, how to run them, and where each tool falls short.',
   category: 'quality',
   accent: '#0F766E',
   cover: 'covers/test-automation-cover.png',

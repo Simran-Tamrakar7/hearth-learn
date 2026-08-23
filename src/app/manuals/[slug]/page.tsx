@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
-import { MANUALS_DATA, findHearthManual, ManualItem, ManualChapter } from "@/lib/manualsData";
+import { findHearthManual, ManualItem, ManualChapter } from "@/lib/manualsData";
 import { PLAYWRIGHT_ROADMAP_PHASES, downloadRoadmapSVG } from "@/lib/roadmapData";
 import { stripLeadingNumber } from "@/lib/pathwise-data/helpers.js";
 import { PinButton, getPinnedItems, PinnedItemMetadata } from "@/components/ui/PinButton";
@@ -60,7 +60,19 @@ export default function ManualDetailPage() {
   const { toast } = useToast();
 
   const slug = params?.slug as string;
-  const initialManual = findHearthManual(slug) || MANUALS_DATA[0];
+  const foundManual = findHearthManual(slug);
+  const initialManual = foundManual ?? {
+    id: "manual-missing",
+    slug: slug || "missing",
+    title: "Manual not found",
+    category: "Quality Craft" as const,
+    description: "",
+    chapterCount: 0,
+    estimatedTime: "—",
+    icon: "BookOpen",
+    coverImage: "",
+    chapters: [],
+  };
 
   // State for editable manual details
   const [manualTitle, setManualTitle] = useState<string>(initialManual.title);
@@ -523,6 +535,23 @@ export default function ManualDetailPage() {
       );
     });
   };
+
+  if (!foundManual) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1C2A26]">
+        <Navbar />
+        <main className="max-w-[1440px] mx-auto px-6 py-16 w-full space-y-4">
+          <h1 className="font-serif-display text-3xl font-bold">Manual not found</h1>
+          <p className="text-[#52635E]">That slug is not in the catalogue. Open Testing Types from Manuals.</p>
+          <Link href="/manuals">
+            <Button variant="outline" size="sm" leftIcon={<ChevronLeft className="w-4 h-4" />}>
+              Back to Manuals
+            </Button>
+          </Link>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1C2A26]">

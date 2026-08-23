@@ -204,6 +204,9 @@ export function findHearthManual(slug: string): ManualItem | undefined {
   const aliases: Record<string, string> = {
     "playwright-test-automation": "playwright",
     git: "git-version-control",
+    "testing-types": "testing-by-level",
+    "testing-types-by-level": "testing-by-level",
+    "testing-guide-part1": "testing-by-level",
   };
   const want = aliases[slug] || slug;
   return PATHWISE_HEARTH_MANUALS.find((m) => m.slug === want);
