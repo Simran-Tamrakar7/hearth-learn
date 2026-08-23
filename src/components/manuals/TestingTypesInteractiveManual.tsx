@@ -4,12 +4,16 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, Search, Copy, Check, ChevronRight } from "lucide-react";
 import { ToolItem } from "@/lib/manualsData";
+import { TESTING_TYPES_PARTS_17_18 } from "@/components/manuals/testing-types-part17-18";
 
-interface PracticalExample {
+export interface PracticalExample {
   app: string;
   scenario: string;
   pass: string;
   fail: string;
+  value?: string;
+  passLabel?: string;
+  failLabel?: string;
 }
 
 export interface TestingChapterData {
@@ -5901,16 +5905,8 @@ export const TESTING_TYPES_CHAPTERS: TestingChapterData[] = [
       },
     ],
   },
+  ...TESTING_TYPES_PARTS_17_18,
 ];
-
-
-
-
-
-
-
-
-
 
 export function TestingTypesInteractiveManual() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -5993,15 +5989,15 @@ export function TestingTypesInteractiveManual() {
         <div className="space-y-3">
           <div className="inline-flex items-center gap-2.5 font-mono text-xs tracking-wider uppercase text-[#e8a33d]">
             <span className="w-2 h-2 rounded-full bg-[#4fd68a] shadow-[0_0_0_4px_rgba(79,214,138,0.18)]" />
-            <span>Software Testing Reference · Part 1: Testing by Level</span>
+            <span>Software Testing Reference · Parts 1–18</span>
           </div>
 
           <h1 className="font-['Space_Grotesk'] font-bold text-3xl sm:text-5xl text-white tracking-tight leading-tight">
-            Testing by Level
+            Testing Types
           </h1>
 
           <p className="text-sm sm:text-base text-[#8b95a8] max-w-3xl leading-relaxed">
-            The four core testing levels carrying an application from a single function to a signed-off release — why each one matters, free industry tools, step-by-step implementation code, advantages &amp; limitations, and real-world scenarios.
+            Levels, techniques, and strategy — why each type matters, free tools, step-by-step usage, advantages and limitations, and real HRMS scenarios.
           </p>
         </div>
 
@@ -6027,7 +6023,7 @@ export function TestingTypesInteractiveManual() {
 
           <div className="p-3.5 sm:p-4 border-r border-[#262e3b]">
             <span className="block text-lg font-bold text-white mb-0.5">
-              By Level
+              Mixed
             </span>
             <span className="text-[11px] text-[#5c667a] uppercase tracking-wider">
               Category
@@ -6127,23 +6123,38 @@ export function TestingTypesInteractiveManual() {
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  <div className="p-3.5 rounded-xl border border-[#262e3b] border-t-2 border-t-[#4fd68a] bg-black/30 space-y-1">
-                    <span className="block font-mono text-[10px] uppercase tracking-wider font-bold text-[#4fd68a]">
-                      Pass Condition
-                    </span>
-                    <p className="text-xs sm:text-[13px] text-[#e7eaf0] leading-relaxed">
-                      {ch.practical.pass}
-                    </p>
-                  </div>
-
+                  {ch.practical.fail ? (
                   <div className="p-3.5 rounded-xl border border-[#262e3b] border-t-2 border-t-[#f0616d] bg-black/30 space-y-1">
                     <span className="block font-mono text-[10px] uppercase tracking-wider font-bold text-[#f0616d]">
-                      Fail Condition
+                      {ch.practical.failLabel || "Fail Condition"}
                     </span>
                     <p className="text-xs sm:text-[13px] text-[#e7eaf0] leading-relaxed">
                       {ch.practical.fail}
                     </p>
                   </div>
+                  ) : null}
+
+                  {ch.practical.pass ? (
+                  <div className="p-3.5 rounded-xl border border-[#262e3b] border-t-2 border-t-[#4fd68a] bg-black/30 space-y-1">
+                    <span className="block font-mono text-[10px] uppercase tracking-wider font-bold text-[#4fd68a]">
+                      {ch.practical.passLabel || "Pass Condition"}
+                    </span>
+                    <p className="text-xs sm:text-[13px] text-[#e7eaf0] leading-relaxed">
+                      {ch.practical.pass}
+                    </p>
+                  </div>
+                  ) : null}
+
+                  {ch.practical.value ? (
+                  <div className="p-3.5 rounded-xl border border-[#262e3b] border-t-2 border-t-[#6fa8ff] bg-black/30 space-y-1 sm:col-span-2">
+                    <span className="block font-mono text-[10px] uppercase tracking-wider font-bold text-[#6fa8ff]">
+                      Value delivered
+                    </span>
+                    <p className="text-xs sm:text-[13px] text-[#e7eaf0] leading-relaxed">
+                      {ch.practical.value}
+                    </p>
+                  </div>
+                  ) : null}
                 </div>
               </div>
 

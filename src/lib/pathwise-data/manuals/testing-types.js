@@ -1,4 +1,5 @@
 import { ch, r } from '../helpers.js'
+import { testingTypesPart1718Chapters } from './testing-types-part17-18.js'
 
 /** Tools Data for Part 1: By Level */
 const UNIT_TOOLS = [
@@ -7089,17 +7090,9 @@ export const testingTypesManual = {
         r('guide', 'Integration Testing Strategies (ISTQB)', 'https://www.istqb.org', 'EN'),
       ],
     }),
+    ...testingTypesPart1718Chapters,
   ],
 }
-
-
-
-
-
-
-
-
-
 
 
 
