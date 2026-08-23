@@ -33,6 +33,9 @@ export interface PracticalExample {
   scenario: string;
   pass: string;
   fail: string;
+  value?: string;
+  passLabel?: string;
+  failLabel?: string;
 }
 
 export interface ManualChapter {

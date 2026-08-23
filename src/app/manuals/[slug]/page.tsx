@@ -1088,23 +1088,38 @@ function GenericManualDetailPage() {
                       </p>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                        <div className="p-3.5 rounded-xl border border-emerald-200 border-t-2 border-t-emerald-500 bg-white space-y-1 shadow-2xs">
-                          <span className="block font-mono text-[10px] uppercase tracking-wider font-bold text-emerald-700">
-                            Pass Condition
-                          </span>
-                          <p className="text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed">
-                            {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.practical || activeChapter.practical)?.pass}
-                          </p>
-                        </div>
-
+                        {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.practical || activeChapter.practical)?.fail ? (
                         <div className="p-3.5 rounded-xl border border-rose-200 border-t-2 border-t-rose-500 bg-white space-y-1 shadow-2xs">
                           <span className="block font-mono text-[10px] uppercase tracking-wider font-bold text-rose-700">
-                            Fail Condition
+                            {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.practical as { failLabel?: string } | undefined)?.failLabel || "Fail Condition"}
                           </span>
                           <p className="text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed">
                             {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.practical || activeChapter.practical)?.fail}
                           </p>
                         </div>
+                        ) : null}
+
+                        {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.practical || activeChapter.practical)?.pass ? (
+                        <div className="p-3.5 rounded-xl border border-emerald-200 border-t-2 border-t-emerald-500 bg-white space-y-1 shadow-2xs">
+                          <span className="block font-mono text-[10px] uppercase tracking-wider font-bold text-emerald-700">
+                            {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.practical as { passLabel?: string } | undefined)?.passLabel || "Pass Condition"}
+                          </span>
+                          <p className="text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed">
+                            {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.practical || activeChapter.practical)?.pass}
+                          </p>
+                        </div>
+                        ) : null}
+
+                        {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.practical as { value?: string } | undefined)?.value ? (
+                        <div className="p-3.5 rounded-xl border border-sky-200 border-t-2 border-t-sky-500 bg-white space-y-1 shadow-2xs sm:col-span-2">
+                          <span className="block font-mono text-[10px] uppercase tracking-wider font-bold text-sky-700">
+                            Value delivered
+                          </span>
+                          <p className="text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed">
+                            {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.practical as { value?: string }).value}
+                          </p>
+                        </div>
+                        ) : null}
                       </div>
                     </div>
                   )}

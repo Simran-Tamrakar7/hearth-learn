@@ -14,7 +14,7 @@ export function TestingTypesCatalogCard() {
           <div className="space-y-3 max-w-3xl">
             <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#D97706]">
               <span className="w-2 h-2 rounded-full bg-emerald-500 ring-4 ring-emerald-500/20" />
-              <span>Interactive Master Manual · Part 1: Testing by Level</span>
+              <span>Interactive Master Manual · Parts 1–18</span>
             </div>
 
             <h2 className="font-serif-display text-2xl sm:text-3xl lg:text-4xl font-bold text-[#1C2A26] tracking-tight group-hover:text-[#D97706] transition-colors">
@@ -22,15 +22,15 @@ export function TestingTypesCatalogCard() {
             </h2>
 
             <p className="text-xs sm:text-sm text-[#52635E] leading-relaxed">
-              The four foundational testing levels from single function unit isolation to signed-off UAT release. Includes interactive tool switcher, advantages, limitations, and full multi-step code files for JUnit, PyTest, Jest, Postman, Selenium, Playwright, TestRail, and Jira.
+              From unit isolation through UAT, plus automation techniques and strategy — data-driven, keyword-driven, model-based, risk-based, backend, network, snapshot, and soak testing.
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <div className="px-3 py-1.5 rounded-xl bg-white border border-[#E7E0D3] text-xs font-mono font-semibold text-[#1C2A26] shadow-2xs">
-                <span className="text-[#D97706] font-bold">04</span> Chapters
+                <span className="text-[#D97706] font-bold">72</span> Chapters
               </div>
               <div className="px-3 py-1.5 rounded-xl bg-white border border-[#E7E0D3] text-xs font-mono font-semibold text-[#1C2A26] shadow-2xs">
-                <span className="text-[#D97706] font-bold">10</span> Tools Covered
+                <span className="text-[#D97706] font-bold">18</span> Parts
               </div>
               <div className="px-3 py-1.5 rounded-xl bg-white border border-[#E7E0D3] text-xs font-mono font-semibold text-[#1C2A26] shadow-2xs">
                 <span className="text-[#D97706] font-bold">100%</span> Free Tools
