@@ -1,6 +1,7 @@
 import { automationManuals } from './manuals/automation-a.js'
 import { automationManualsB } from './manuals/automation-b.js'
 import { playwrightPythonManual } from './manuals/playwright-python.js'
+import { testingTypesManual } from './manuals/testing-types.js'
 import { designManuals } from './manuals/design.js'
 import { designExtraManuals } from './manuals/design-extra.js'
 import { foundationManuals } from './manuals/foundations.js'
@@ -16,6 +17,7 @@ import { practicalPackManuals } from './manuals/practical-pack.js'
 import { testingLevelsManual } from './manuals/testing-levels.js'
 
 export const pathwiseManuals = [
+  testingTypesManual,
   testingLevelsManual,
   ...automationManuals,
   playwrightPythonManual,

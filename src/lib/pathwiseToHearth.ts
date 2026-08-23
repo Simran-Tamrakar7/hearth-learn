@@ -170,6 +170,11 @@ function chapterToHearth(ch: Record<string, unknown>, order: number): ManualChap
       : overview.slice(0, 400),
     sections: sections.filter((s) => s.body),
     codeSnippet: firstCode ? String(firstCode) : undefined,
+    overviewText: ch.overviewText ? String(ch.overviewText) : overview || undefined,
+    why: ch.why ? String(ch.why) : undefined,
+    when: ch.when ? String(ch.when) : undefined,
+    practical: ch.practical ? (ch.practical as ManualChapter["practical"]) : undefined,
+    tools: Array.isArray(ch.tools) ? (ch.tools as ManualChapter["tools"]) : undefined,
     exercises,
     resourceLinks: resourcesFrom(ch as Parameters<typeof resourcesFrom>[0]),
   };

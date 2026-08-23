@@ -158,27 +158,27 @@ export default function ShowcaseWallPage() {
     <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1C2A26]">
       <Navbar />
 
-      <main className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-12 py-10 w-full space-y-8 flex-1">
+      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 w-full space-y-6 flex-1">
         {/* Header Banner */}
-        <div className="bg-gradient-to-br from-white via-[#FAF7F2] to-[#F5EFE6] border border-[#E7E0D3] rounded-3xl p-6 sm:p-10 space-y-4 shadow-xs relative overflow-hidden">
-          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-6">
-            <div className="space-y-2 w-full">
+        <div className="bg-gradient-to-br from-white via-[#FAF7F2] to-[#F5EFE6] border border-[#E7E0D3] rounded-2xl p-5 sm:p-7 space-y-3 shadow-2xs relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+            <div className="space-y-1.5 w-full">
               <Badge variant="amber" icon={<Code2 className="w-3.5 h-3.5" />}>
                 GITHUB PROOF OF WORK WALL
               </Badge>
 
-              <h1 className="font-serif-display text-3xl sm:text-5xl font-bold text-[#1C2A26] tracking-tight">
+              <h1 className="font-serif-display text-2xl sm:text-4xl font-bold text-[#1C2A26] tracking-tight">
                 Simran Tamrakar&apos;s Showcase Wall
               </h1>
 
-              <p className="text-xs sm:text-base text-[#52635E] leading-relaxed w-full">
-                Extracted directly from GitHub (<a href="https://github.com/Simran-Tamrakar7" target="_blank" rel="noopener noreferrer" className="underline font-bold text-[#D97706]">github.com/Simran-Tamrakar7</a>). Featuring 17 open-source repositories spanning Playwright automation, Cypress POM frameworks, Next.js 16 full-stack apps, and Python tools.
+              <p className="text-xs sm:text-sm text-[#52635E] leading-relaxed w-full">
+                Extracted directly from GitHub (<a href="https://github.com/Simran-Tamrakar7" target="_blank" rel="noopener noreferrer" className="underline font-bold text-[#D97706]">github.com/Simran-Tamrakar7</a>). Featuring 17 open-source repositories spanning Playwright automation, Cypress POM frameworks, Next.js 16 full-stack apps, and Python tools. Click any card to open the repository.
               </p>
             </div>
 
             <Button
               variant="amber"
-              size="md"
+              size="sm"
               onClick={() => setIsCreating(!isCreating)}
               leftIcon={isCreating ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
               className="shrink-0"
@@ -197,13 +197,13 @@ export default function ShowcaseWallPage() {
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <Card variant="default" hoverable={false} className="p-6 sm:p-8 space-y-6 border-[#E7E0D3]">
-                <h3 className="font-serif-display font-bold text-lg text-[#1C2A26]">
+              <Card variant="default" hoverable={false} className="p-5 sm:p-6 space-y-4 border-[#E7E0D3] rounded-2xl">
+                <h3 className="font-serif-display font-bold text-base sm:text-lg text-[#1C2A26]">
                   Log Custom Built Project to Showcase Wall
                 </h3>
 
-                <form onSubmit={handleCreateProject} className="space-y-4">
-                  <div className="space-y-1.5">
+                <form onSubmit={handleCreateProject} className="space-y-3">
+                  <div className="space-y-1">
                     <label className="block text-xs font-semibold text-[#52635E]">
                       Project Name / Title
                     </label>
@@ -212,11 +212,11 @@ export default function ShowcaseWallPage() {
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                       placeholder="e.g. Next.js Server Components Micro-LMS"
-                      className="w-full h-11 px-4 text-sm bg-[#FAF7F2] border border-[#E7E0D3] rounded-xl focus:outline-none focus:border-[#D97706]"
+                      className="w-full h-9 px-3 text-xs sm:text-sm bg-[#FAF7F2] border border-[#E7E0D3] rounded-xl focus:outline-none focus:border-[#D97706]"
                     />
                   </div>
 
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <label className="block text-xs font-semibold text-[#52635E]">
                       Project URL (GitHub Repo, Figma, or Live App)
                     </label>
@@ -225,18 +225,18 @@ export default function ShowcaseWallPage() {
                       value={linkUrl}
                       onChange={(e) => setLinkUrl(e.target.value)}
                       placeholder="https://github.com/Simran-Tamrakar7/my-project"
-                      className="w-full h-11 px-4 text-sm bg-[#FAF7F2] border border-[#E7E0D3] rounded-xl focus:outline-none focus:border-[#D97706]"
+                      className="w-full h-9 px-3 text-xs sm:text-sm bg-[#FAF7F2] border border-[#E7E0D3] rounded-xl focus:outline-none focus:border-[#D97706]"
                     />
                   </div>
 
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <label className="block text-xs font-semibold text-[#52635E]">
                       Associated Trail (Optional)
                     </label>
                     <select
                       value={selectedTrailId}
                       onChange={(e) => setSelectedTrailId(e.target.value)}
-                      className="w-full h-11 px-4 text-xs bg-[#FAF7F2] border border-[#E7E0D3] rounded-xl"
+                      className="w-full h-9 px-3 text-xs bg-[#FAF7F2] border border-[#E7E0D3] rounded-xl"
                     >
                       <option value="">-- General Project (No Specific Trail) --</option>
                       {trailsList.map((t) => (
@@ -247,7 +247,7 @@ export default function ShowcaseWallPage() {
                     </select>
                   </div>
 
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <label className="block text-xs font-semibold text-[#52635E]">
                       Brief Description / What You Built
                     </label>
@@ -256,18 +256,18 @@ export default function ShowcaseWallPage() {
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="Short summary of key architectural patterns implemented..."
-                      className="w-full p-4 text-sm bg-[#FAF7F2] border border-[#E7E0D3] rounded-xl focus:outline-none focus:border-[#D97706]"
+                      className="w-full p-3 text-xs sm:text-sm bg-[#FAF7F2] border border-[#E7E0D3] rounded-xl focus:outline-none focus:border-[#D97706]"
                     />
                   </div>
 
                   {formError && (
-                    <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 text-xs rounded-xl border border-red-200">
+                    <div className="flex items-center gap-2 p-2.5 bg-red-50 text-red-700 text-xs rounded-xl border border-red-200">
                       <AlertCircle className="w-4 h-4 shrink-0" />
                       <span>{formError}</span>
                     </div>
                   )}
 
-                  <div className="flex justify-end gap-3 pt-2">
+                  <div className="flex justify-end gap-2.5 pt-1">
                     <Button variant="ghost" size="sm" onClick={() => setIsCreating(false)}>
                       Cancel
                     </Button>
@@ -336,9 +336,9 @@ export default function ShowcaseWallPage() {
         )}
 
         {/* Category Filter Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E7E0D3] pb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E7E0D3] pb-3">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold text-[#8A9B95] uppercase tracking-wider flex items-center gap-1 mr-2">
+            <span className="text-xs font-bold text-[#8A9B95] uppercase tracking-wider flex items-center gap-1 mr-1">
               <Filter className="w-3.5 h-3.5" /> Filter Category:
             </span>
             {categories.map((cat) => {
@@ -347,7 +347,7 @@ export default function ShowcaseWallPage() {
                 <button
                   key={cat}
                   onClick={() => setActiveCategoryFilter(cat)}
-                  className={`px-4 py-2 rounded-xl text-xs font-medium transition-all ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
                     activeCategoryFilter === cat
                       ? "bg-[#1C2A26] text-white shadow-xs"
                       : "bg-white text-[#52635E] border border-[#E7E0D3] hover:border-[#D97706]"
@@ -371,36 +371,36 @@ export default function ShowcaseWallPage() {
 
         {/* Projects Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Card key={i} className="h-44 animate-pulse bg-white/50">
+              <Card key={i} className="h-40 animate-pulse bg-white/50">
                 <div className="text-xs text-transparent">Loading GitHub repository...</div>
               </Card>
             ))}
           </div>
         ) : filteredProjects.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-2xl border border-[#E7E0D3] p-8 space-y-3">
-            <Globe className="w-8 h-8 text-[#8A9B95] mx-auto" />
-            <h3 className="font-serif-display font-semibold text-lg">No projects match filter</h3>
+          <div className="text-center py-12 bg-white rounded-2xl border border-[#E7E0D3] p-6 space-y-2">
+            <Globe className="w-7 h-7 text-[#8A9B95] mx-auto" />
+            <h3 className="font-serif-display font-semibold text-base">No projects match filter</h3>
             <p className="text-xs text-[#52635E]">
               Try selecting &quot;All&quot; to view all 17 public GitHub repositories.
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             {filteredProjects.map((proj) => (
               <a
                 key={proj.id}
                 href={proj.linkUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block h-full"
+                className="block h-full cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D97706] rounded-2xl group"
               >
                 <Card
                   hoverable
-                  className="h-full flex flex-col justify-between p-6 space-y-4 border-[#E7E0D3] bg-white group hover:border-[#D97706]/60 transition-all cursor-pointer"
+                  className="h-full flex flex-col justify-between p-5 space-y-3.5 border-[#E7E0D3] bg-white group-hover:border-[#D97706] group-hover:shadow-md transition-all rounded-2xl"
                 >
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     <div className="flex justify-between items-start">
                       <div className="flex items-center gap-2">
                         <Code2 className="w-4 h-4 text-[#D97706]" />
@@ -428,7 +428,7 @@ export default function ShowcaseWallPage() {
                       </div>
                     </div>
 
-                    <h3 className="font-serif-display font-bold text-lg text-[#1C2A26] group-hover:text-[#D97706] transition-colors">
+                    <h3 className="font-serif-display font-bold text-base sm:text-lg text-[#1C2A26] group-hover:text-[#D97706] transition-colors leading-snug">
                       {proj.title}
                     </h3>
 
@@ -444,7 +444,7 @@ export default function ShowcaseWallPage() {
                   <div className="pt-3 border-t border-[#E7E0D3] flex items-center justify-between text-[11px] text-[#8A9B95]">
                     <div className="flex items-center gap-3 font-mono text-[10px]">
                       {proj.stars !== undefined && (
-                        <span className="flex items-center gap-1 text-[#D97706]">
+                        <span className="flex items-center gap-1 text-[#D97706] font-semibold">
                           <Star className="w-3 h-3 fill-[#D97706]" /> {proj.stars}
                         </span>
                       )}
@@ -462,6 +462,7 @@ export default function ShowcaseWallPage() {
           </div>
         )}
       </main>
+
     </div>
   );
 }

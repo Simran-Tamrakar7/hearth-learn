@@ -34,6 +34,7 @@ export function bodyParagraphs(body) {
 /** Build a book-style chapter from a compact definition. */
 export function ch(def) {
   return {
+    ...def,
     id: def.id,
     level: def.level,
     title: def.title,
@@ -44,6 +45,11 @@ export function ch(def) {
     // Sub-chapter under another chapter id (studio / localStorage edits)
     parentId: def.parentId ?? null,
     overview: def.overview,
+    overviewText: def.overviewText ?? def.overview,
+    why: def.why ?? null,
+    when: def.when ?? null,
+    practical: def.practical ?? null,
+    tools: def.tools ?? [],
     learn: def.learn ?? [],
     steps: (def.steps ?? []).map((s, i) => normalizeStep(s, i)),
     checklist: def.checklist ?? [],
@@ -56,6 +62,7 @@ export function ch(def) {
     partIntro: def.partIntro ?? null,
   }
 }
+
 
 /** Normalize one lesson step to the shared schema (string or object). */
 export function normalizeStep(s, i) {

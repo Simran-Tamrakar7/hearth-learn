@@ -14,6 +14,9 @@ import { isTestingTypesSlug, TestingTypesGuide } from "@/components/manuals/Test
 import { PLAYWRIGHT_ROADMAP_PHASES, downloadRoadmapSVG } from "@/lib/roadmapData";
 import { stripLeadingNumber } from "@/lib/pathwise-data/helpers.js";
 import { PinButton, getPinnedItems, PinnedItemMetadata } from "@/components/ui/PinButton";
+import { ToolSwitcher } from "@/components/manuals/ToolSwitcher";
+import { TestingTypesInteractiveManual, TESTING_TYPES_CHAPTERS } from "@/components/manuals/TestingTypesInteractiveManual";
+
 import {
   ChevronLeft,
   ChevronRight,
@@ -419,7 +422,7 @@ function GenericManualDetailPage() {
     const boldParts = clean.split(/(\*\*.*?\*\*)/g);
 
     return boldParts.map((part, idx) => {
-      if (part.startsWith("**") && part.endsWith("**")) {
+      if (part.startsWith("**") && part.endsWith("**") && part.length >= 4) {
         const inner = part.slice(2, -2);
         return (
           <strong key={idx} className="font-bold text-[#1C2A26]">
@@ -430,12 +433,12 @@ function GenericManualDetailPage() {
 
       const codeParts = part.split(/(`.*?`)/g);
       return codeParts.map((cPart, cIdx) => {
-        if (cPart.startsWith("`") && cPart.endsWith("`")) {
+        if (cPart.startsWith("`") && cPart.endsWith("`") && cPart.length >= 2) {
           const cInner = cPart.slice(1, -1);
           return (
             <code
               key={cIdx}
-              className="px-2 py-0.5 rounded-md bg-[#FAF7F2] text-[#D97706] border border-[#E7E0D3] font-mono text-[11px]"
+              className="px-1.5 py-0.5 rounded-md bg-[#FAF7F2] text-[#D97706] border border-[#E7E0D3] font-mono text-[11px]"
             >
               {cInner}
             </code>
@@ -446,99 +449,215 @@ function GenericManualDetailPage() {
     });
   };
 
-  // Renders Markdown with clean spacing, margins, line-heights and zero raw symbols
+  // Renders Markdown with clean compact spacing, proportional headings, and structured callouts
   const renderFormattedMarkdown = (text: string) => {
     if (!text) return null;
 
     const codeBlockRegex = /```([\s\S]*?)```/g;
-    const parts = text.split(codeBlockRegex);
+    const rawParts = text.split(codeBlockRegex);
 
-    return parts.map((part, pIdx) => {
+    return rawParts.map((part, pIdx) => {
       if (pIdx % 2 === 1) {
         return (
-          <div key={pIdx} className="my-6 p-5 sm:p-6 bg-[#1C2A26] text-[#A7F3D0] rounded-2xl font-mono text-xs sm:text-[13px] overflow-x-auto leading-relaxed border border-[#2D3F3A] shadow-md">
+          <div
+            key={pIdx}
+            className="my-3 p-4 sm:p-5 bg-[#1C2A26] text-[#A7F3D0] rounded-xl font-mono text-xs sm:text-[13px] overflow-x-auto leading-relaxed border border-[#2D3F3A] shadow-2xs"
+          >
             <pre>{part.trim()}</pre>
           </div>
         );
       }
 
       const lines = part.split("\n");
-      return (
-        <div key={pIdx} className="space-y-4 my-4 font-sans">
-          {lines.map((line, lIdx) => {
-            const trimmed = line.trim();
-            if (!trimmed) return <div key={lIdx} className="h-2" />;
+      const elements: React.ReactNode[] = [];
+      let listItems: string[] = [];
+      let listType: "bullet" | "numbered" | null = null;
+      let paragraphLines: string[] = [];
 
-            if (trimmed.startsWith("# ")) {
-              return (
-                <h1
-                  key={lIdx}
-                  className="font-serif-display text-2xl sm:text-3xl font-bold text-[#1C2A26] pt-8 pb-3 border-b-2 border-[#E7E0D3] mt-6 flex items-center gap-3"
+      const flushParagraph = () => {
+        if (paragraphLines.length > 0) {
+          const fullText = paragraphLines.join(" ").trim();
+          if (fullText) {
+            const doThisMatch = fullText.match(/^(Do this now:?|Action:?)\s*(.*)/i);
+            const tipMatch = fullText.match(/^(Pro tip:?|Tip:?|Hint:?)\s*(.*)/i);
+            const noteMatch = fullText.match(/^(Note:?|Important:?|Warning:?)\s*(.*)/i);
+
+            if (doThisMatch) {
+              elements.push(
+                <div
+                  key={`do-${elements.length}`}
+                  className="my-2 p-3 sm:p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs sm:text-sm text-[#1C2A26] flex items-start gap-2.5 leading-relaxed"
                 >
-                  <span className="w-1.5 h-6 bg-[#D97706] rounded-full inline-block shrink-0" />
-                  {parseInlineFormatting(trimmed.replace("# ", ""))}
-                </h1>
-              );
-            }
-
-            if (trimmed.startsWith("## ")) {
-              return (
-                <h2
-                  key={lIdx}
-                  className="font-serif-display text-[clamp(1.2rem,2.4vw,1.45rem)] font-bold text-[#1C2A26] pt-6 pb-2 mt-5 flex items-center gap-2.5"
-                >
-                  <span className="w-1.5 h-5 bg-[#1C2A26] rounded-full inline-block shrink-0" />
-                  {parseInlineFormatting(trimmed.replace("## ", ""))}
-                </h2>
-              );
-            }
-
-            if (trimmed.startsWith("### ")) {
-              return (
-                <h3
-                  key={lIdx}
-                  className="font-serif-display text-[1.15rem] font-bold text-[#1C2A26] pt-5 pb-1.5 mt-3.5 flex items-center gap-2"
-                >
-                  <span className="w-2 h-2 rounded-full bg-[#D97706] inline-block shrink-0" />
-                  {parseInlineFormatting(trimmed.replace("### ", ""))}
-                </h3>
-              );
-            }
-
-            if (trimmed.startsWith("#### ")) {
-              return (
-                <h4
-                  key={lIdx}
-                  className="font-sans text-[0.95rem] font-bold text-[#2A3B35] pt-4 pb-1 tracking-wide uppercase"
-                >
-                  {parseInlineFormatting(trimmed.replace("#### ", ""))}
-                </h4>
-              );
-            }
-
-            if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
-              return (
-                <li key={lIdx} className="ml-6 list-disc text-[1.05rem] leading-[1.72] text-[#1C2A26] pl-1 text-justify text-left-last">
-                  {parseInlineFormatting(trimmed.replace(/^[-*]\s+/, ""))}
-                </li>
-              );
-            }
-
-            if (/^\d+\.\s+/.test(trimmed)) {
-              return (
-                <div key={lIdx} className="ml-5 text-[1.05rem] leading-[1.72] text-[#1C2A26] font-semibold flex items-start gap-2.5 my-1">
-                  <span className="text-[#D97706] font-mono shrink-0">{trimmed.match(/^\d+\./)?.[0]}</span>
-                  <span className="text-justify text-left-last">{parseInlineFormatting(trimmed.replace(/^\d+\.\s+/, ""))}</span>
+                  <Target className="w-4 h-4 text-[#D97706] shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-[#D97706] mr-1.5">{doThisMatch[1]}</span>
+                    <span>{parseInlineFormatting(doThisMatch[2] || fullText)}</span>
+                  </div>
                 </div>
               );
+            } else if (tipMatch) {
+              elements.push(
+                <div
+                  key={`tip-${elements.length}`}
+                  className="my-2 p-3 sm:p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs sm:text-sm text-[#1C2A26] flex items-start gap-2.5 leading-relaxed"
+                >
+                  <Sparkles className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-emerald-800 mr-1.5">{tipMatch[1]}</span>
+                    <span>{parseInlineFormatting(tipMatch[2] || fullText)}</span>
+                  </div>
+                </div>
+              );
+            } else if (noteMatch) {
+              elements.push(
+                <div
+                  key={`note-${elements.length}`}
+                  className="my-2 p-3 sm:p-3.5 rounded-xl bg-[#FAF7F2] border border-[#E7E0D3] text-xs sm:text-sm text-[#1C2A26] flex items-start gap-2.5 leading-relaxed"
+                >
+                  <Info className="w-4 h-4 text-[#52635E] shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-[#1C2A26] mr-1.5">{noteMatch[1]}</span>
+                    <span>{parseInlineFormatting(noteMatch[2] || fullText)}</span>
+                  </div>
+                </div>
+              );
+            } else {
+              elements.push(
+                <p
+                  key={`p-${elements.length}`}
+                  className="text-xs sm:text-sm leading-relaxed text-[#1C2A26] my-1.5 text-left"
+                >
+                  {parseInlineFormatting(fullText)}
+                </p>
+              );
             }
+          }
+          paragraphLines = [];
+        }
+      };
 
-            return (
-              <p key={lIdx} className="text-[1.05rem] leading-[1.72] text-[#1C2A26] text-justify text-left-last">
-                {parseInlineFormatting(trimmed)}
-              </p>
+      const flushList = () => {
+        if (listItems.length > 0 && listType) {
+          if (listType === "bullet") {
+            elements.push(
+              <ul
+                key={`ul-${elements.length}`}
+                className="my-1.5 space-y-1 pl-5 list-disc text-xs sm:text-sm leading-relaxed text-[#1C2A26]"
+              >
+                {listItems.map((item, idx) => (
+                  <li key={idx} className="pl-0.5">
+                    {parseInlineFormatting(item)}
+                  </li>
+                ))}
+              </ul>
             );
-          })}
+          } else {
+            elements.push(
+              <ol
+                key={`ol-${elements.length}`}
+                className="my-1.5 space-y-1 pl-5 list-decimal text-xs sm:text-sm leading-relaxed text-[#1C2A26]"
+              >
+                {listItems.map((item, idx) => (
+                  <li key={idx} className="pl-0.5 font-medium">
+                    {parseInlineFormatting(item)}
+                  </li>
+                ))}
+              </ol>
+            );
+          }
+          listItems = [];
+          listType = null;
+        }
+      };
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+
+        if (!trimmed) {
+          flushParagraph();
+          flushList();
+          continue;
+        }
+
+        if (trimmed.startsWith("# ")) {
+          flushParagraph();
+          flushList();
+          elements.push(
+            <h1
+              key={`h1-${elements.length}`}
+              className="font-serif-display text-lg sm:text-xl font-bold text-[#1C2A26] pt-3 pb-1 border-b border-[#E7E0D3] mt-3.5 flex items-center gap-2"
+            >
+              <span className="w-1.5 h-4 bg-[#D97706] rounded-full inline-block shrink-0" />
+              {parseInlineFormatting(trimmed.replace(/^#\s+/, ""))}
+            </h1>
+          );
+        } else if (trimmed.startsWith("## ")) {
+          flushParagraph();
+          flushList();
+          elements.push(
+            <h2
+              key={`h2-${elements.length}`}
+              className="font-serif-display text-base sm:text-lg font-bold text-[#1C2A26] pt-3 pb-1 mt-2.5 flex items-center gap-2"
+            >
+              <span className="w-1 h-4 bg-[#1C2A26] rounded-full inline-block shrink-0" />
+              {parseInlineFormatting(trimmed.replace(/^##\s+/, ""))}
+            </h2>
+          );
+        } else if (trimmed.startsWith("### ")) {
+          flushParagraph();
+          flushList();
+          elements.push(
+            <h3
+              key={`h3-${elements.length}`}
+              className="font-serif-display text-sm sm:text-base font-bold text-[#1C2A26] pt-2 pb-0.5 mt-2 flex items-center gap-1.5"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-[#D97706] inline-block shrink-0" />
+              {parseInlineFormatting(trimmed.replace(/^###\s+/, ""))}
+            </h3>
+          );
+        } else if (trimmed.startsWith("#### ")) {
+          flushParagraph();
+          flushList();
+          elements.push(
+            <h4
+              key={`h4-${elements.length}`}
+              className="font-sans text-xs font-bold text-[#2A3B35] tracking-wider uppercase pt-2 pb-0.5 mt-1.5"
+            >
+              {parseInlineFormatting(trimmed.replace(/^####\s+/, ""))}
+            </h4>
+          );
+        } else if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+          flushParagraph();
+          const itemText = trimmed.replace(/^[-*]\s+/, "");
+          if (listType === "bullet") {
+            listItems.push(itemText);
+          } else {
+            flushList();
+            listType = "bullet";
+            listItems = [itemText];
+          }
+        } else if (/^\d+\.\s+/.test(trimmed)) {
+          flushParagraph();
+          const itemText = trimmed.replace(/^\d+\.\s+/, "");
+          if (listType === "numbered") {
+            listItems.push(itemText);
+          } else {
+            flushList();
+            listType = "numbered";
+            listItems = [itemText];
+          }
+        } else {
+          flushList();
+          paragraphLines.push(trimmed);
+        }
+      }
+
+      flushParagraph();
+      flushList();
+
+      return (
+        <div key={pIdx} className="font-sans space-y-1">
+          {elements}
         </div>
       );
     });
@@ -568,8 +687,9 @@ function GenericManualDetailPage() {
       <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 w-full space-y-8 flex-1">
         {/* MANUAL HEADER CARD — TIGHT & PROPORTIONED WITHOUT GAP TRUNCATION */}
         <div className="bg-gradient-to-br from-white via-[#FAF7F2] to-[#F5EFE6] border border-[#E7E0D3] rounded-3xl p-6 sm:p-8 shadow-sm">
+
           {/* Top Bar Navigation */}
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex justify-between items-center mb-2.5">
             <Link href="/manuals">
               <Button variant="outline" size="sm" leftIcon={<ChevronLeft className="w-4 h-4" />}>
                 Back to Manuals
@@ -590,38 +710,38 @@ function GenericManualDetailPage() {
           </div>
 
           {/* Title & Description Block */}
-          <div className="space-y-2.5 mb-5 w-full">
-            <h1 className="font-serif-display text-2xl sm:text-4xl lg:text-4xl font-bold text-[#1C2A26] leading-tight">
+          <div className="space-y-1 mb-3 w-full">
+            <h1 className="font-serif-display text-xl sm:text-2xl lg:text-3xl font-bold text-[#1C2A26] leading-tight">
               {manualTitle}
             </h1>
-            <p className="text-xs sm:text-base text-[#52635E] leading-relaxed w-full">
+            <p className="text-xs sm:text-sm text-[#52635E] leading-relaxed w-full">
               {manualDescription}
             </p>
           </div>
 
           {/* Metadata Footer Row */}
-          <div className="border-t border-[#E7E0D3] pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex flex-wrap items-center gap-2.5">
+          <div className="border-t border-[#E7E0D3] pt-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => setIsRoadmapModalOpen(true)}
-                className="flex items-center gap-2 text-xs font-bold px-4 py-1.5 rounded-full bg-[#1C2A26] text-white hover:bg-[#243530] transition-all shadow-xs"
+                className="flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-[#1C2A26] text-white hover:bg-[#243530] transition-all shadow-xs"
               >
                 <Compass className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
                 <span>Learning Roadmap</span>
               </button>
 
-              <div className="flex items-center gap-2 text-xs font-semibold text-[#52635E] bg-white px-3.5 py-1.5 rounded-xl border border-[#E7E0D3] shadow-2xs">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-[#52635E] bg-white px-3 py-1 rounded-lg border border-[#E7E0D3] shadow-2xs">
                 <Layers className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
                 <span>{partCount} Parts</span>
               </div>
 
-              <div className="flex items-center gap-2 text-xs font-semibold text-[#52635E] bg-white px-3.5 py-1.5 rounded-xl border border-[#E7E0D3] shadow-2xs">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-[#52635E] bg-white px-3 py-1 rounded-lg border border-[#E7E0D3] shadow-2xs">
                 <BookOpen className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
                 <span>{totalChapters} Chapters</span>
               </div>
 
-              <div className="flex items-center gap-2 text-xs font-semibold text-[#52635E] bg-white px-3.5 py-1.5 rounded-xl border border-[#E7E0D3] shadow-2xs">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-[#52635E] bg-white px-3 py-1 rounded-lg border border-[#E7E0D3] shadow-2xs">
                 <Clock className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
                 <span>{manualEstimatedTime} Total</span>
               </div>
@@ -629,20 +749,20 @@ function GenericManualDetailPage() {
               <button
                 type="button"
                 onClick={() => setIsEditManualModalOpen(true)}
-                className="flex items-center gap-2 text-xs font-semibold text-[#52635E] bg-white px-3.5 py-1.5 rounded-xl border border-[#E7E0D3] hover:text-[#1C2A26] hover:border-[#D4CBBB] transition-all shadow-2xs"
+                className="flex items-center gap-1.5 text-xs font-semibold text-[#52635E] bg-white px-3 py-1 rounded-lg border border-[#E7E0D3] hover:text-[#1C2A26] hover:border-[#D4CBBB] transition-all shadow-2xs"
               >
                 <SquarePen className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
                 <span>Edit Manual</span>
               </button>
             </div>
 
-            <div className="flex items-center gap-3 w-full sm:w-64">
+            <div className="flex items-center gap-3 w-full sm:w-60">
               <div className="flex-1">
                 <div className="flex justify-between text-[11px] font-bold text-[#52635E] mb-1">
                   <span>Course Progress</span>
                   <span>{progressPercent}%</span>
                 </div>
-                <div className="h-2 w-full bg-[#E7E0D3] rounded-full overflow-hidden">
+                <div className="h-1.5 w-full bg-[#E7E0D3] rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-[#D97706] to-amber-500 transition-all duration-300 rounded-full"
                     style={{ width: `${progressPercent}%` }}
@@ -677,6 +797,7 @@ function GenericManualDetailPage() {
         {/* 2-COLUMN LAYOUT: TOC SIDEBAR + CHAPTER CONTENT */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
           {/* LEFT COLUMN: TABLE OF CONTENTS SIDEBAR */}
+
           <div className="lg:col-span-4 xl:col-span-4 sticky top-24 max-h-[82vh] min-h-0">
             <div className="rounded-2xl border border-[#E7E0D3] bg-[#FAF7F2] shadow-xs overflow-hidden flex flex-col max-h-[82vh]">
               <div className="flex items-center justify-between gap-2 px-2.5 pt-2.5 pb-2 border-b border-[#E7E0D3]">
@@ -711,7 +832,7 @@ function GenericManualDetailPage() {
                     className="absolute right-3.5 top-[1.125rem] text-[#8A9B95] hover:text-[#1C2A26]"
                     aria-label="Clear search"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <X className="w-3 h-3" />
                   </button>
                 )}
               </div>
@@ -773,8 +894,9 @@ function GenericManualDetailPage() {
                               }`}
                               title="Edit Chapter"
                             >
-                              <Edit className="w-3.5 h-3.5" />
+                              <Edit className="w-3 h-3" />
                             </button>
+
 
                             <button
                               type="button"
@@ -786,7 +908,7 @@ function GenericManualDetailPage() {
                               }`}
                               title="Delete Chapter"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Trash2 className="w-3 h-3" />
                             </button>
                           </div>
                         </div>
@@ -799,21 +921,21 @@ function GenericManualDetailPage() {
           </div>
 
           {/* RIGHT COLUMN: CHAPTER CONTENT VIEW */}
-          <div className="lg:col-span-8 xl:col-span-8 space-y-6">
-            <Card variant="default" hoverable={false} className="p-8 sm:p-10 space-y-8 border-[#E7E0D3] bg-white shadow-sm">
+          <div className="lg:col-span-8 xl:col-span-8 space-y-4">
+            <Card variant="default" hoverable={false} className="p-4 sm:p-6 space-y-4 border-[#E7E0D3] bg-white shadow-xs rounded-2xl">
               {/* HEADER ROW WITH VIEW MODE TOGGLE BUTTONS */}
-              <div className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-[#E7E0D3]">
-                <div className="flex flex-wrap items-center gap-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#E7E0D3]">
+                <div className="flex flex-wrap items-center gap-3">
                   <span className="text-xs font-serif-display font-bold text-[#D97706]">
                     Lesson {activeChapterIndex + 1} of {totalChapters}
                   </span>
 
-                  <div className="flex items-center bg-[#FAF7F2] border border-[#E7E0D3] rounded-xl p-1 text-xs">
+                  <div className="flex items-center bg-[#FAF7F2] border border-[#E7E0D3] rounded-lg p-0.5 text-xs">
                     <button
                       onClick={() => setViewMode("full")}
-                      className={`px-3.5 py-1.5 rounded-lg font-medium transition-colors flex items-center gap-1.5 ${
+                      className={`px-2.5 py-1 rounded-md font-medium transition-colors flex items-center gap-1.5 ${
                         viewMode === "full"
-                          ? "bg-[#1C2A26] text-white shadow-xs"
+                          ? "bg-[#1C2A26] text-white shadow-2xs"
                           : "text-[#52635E] hover:text-[#1C2A26]"
                       }`}
                     >
@@ -823,9 +945,9 @@ function GenericManualDetailPage() {
 
                     <button
                       onClick={() => setViewMode("summary")}
-                      className={`px-3.5 py-1.5 rounded-lg font-medium transition-colors flex items-center gap-1.5 ${
+                      className={`px-2.5 py-1 rounded-md font-medium transition-colors flex items-center gap-1.5 ${
                         viewMode === "summary"
-                          ? "bg-[#D97706] text-white shadow-xs"
+                          ? "bg-[#D97706] text-white shadow-2xs"
                           : "text-[#52635E] hover:text-[#1C2A26]"
                       }`}
                     >
@@ -835,7 +957,7 @@ function GenericManualDetailPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
                     size="sm"
@@ -849,7 +971,7 @@ function GenericManualDetailPage() {
                     variant={completedChapterIds.includes(activeChapter.id) ? "outline" : "primary"}
                     size="sm"
                     onClick={() => toggleMarkComplete(activeChapter.id)}
-                    leftIcon={completedChapterIds.includes(activeChapter.id) ? <Check className="w-4 h-4 text-emerald-600" /> : <CheckCircle2 className="w-4 h-4 text-[#D97706]" />}
+                    leftIcon={completedChapterIds.includes(activeChapter.id) ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <CheckCircle2 className="w-3.5 h-3.5 text-[#D97706]" />}
                   >
                     {completedChapterIds.includes(activeChapter.id) ? "Completed" : "Mark Complete"}
                   </Button>
@@ -857,12 +979,12 @@ function GenericManualDetailPage() {
               </div>
 
               {/* Title & Subtitle */}
-              <div className="space-y-3 pb-2">
-                <h1 className="font-serif-display text-2xl sm:text-4xl font-bold text-[#1C2A26] leading-tight">
+              <div className="space-y-1 pb-1">
+                <h1 className="font-serif-display text-xl sm:text-2xl lg:text-3xl font-bold text-[#1C2A26] leading-tight">
                   {stripLeadingNumber(activeChapter.title.replace(/^Chapter\s+\d+:\s*/i, ""))}
                 </h1>
                 {activeChapter.subtitle && (
-                  <p className="font-serif-display text-base sm:text-lg font-bold text-[#D97706]">
+                  <p className="font-serif-display text-xs sm:text-sm font-semibold text-[#D97706]">
                     {activeChapter.subtitle}
                   </p>
                 )}
@@ -871,60 +993,170 @@ function GenericManualDetailPage() {
               {/* CONTENT VIEW OR AI SUMMARY VIEW */}
               {viewMode === "summary" ? (
                 <motion.div
-                  initial={{ opacity: 0, y: 5 }}
+                  initial={{ opacity: 0, y: 3 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="p-7 sm:p-8 rounded-3xl bg-amber-50/70 border border-amber-200/80 space-y-4 shadow-xs"
+                  className="p-4 sm:p-5 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-2.5 shadow-2xs"
                 >
-                  <div className="flex items-center gap-2.5 text-amber-900 font-serif-display font-bold text-lg">
-                    <Zap className="w-5 h-5 text-[#D97706]" />
+                  <div className="flex items-center gap-2 text-amber-900 font-serif-display font-bold text-base">
+                    <Zap className="w-4 h-4 text-[#D97706]" />
                     <span>AI Key Takeaways & Summary</span>
                   </div>
 
-                  <div className="text-[1.05rem] leading-[1.72] text-[#1C2A26] font-sans space-y-3">
+                  <div className="text-xs sm:text-sm leading-relaxed text-[#1C2A26] font-sans space-y-2">
                     {renderFormattedMarkdown(activeChapter.summaryMarkdown || activeChapter.contentMarkdown)}
                   </div>
                 </motion.div>
+              ) : (slug === "testing-types" || slug === "testing-types-manual" || activeChapter.why || activeChapter.practical) ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 3 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-4"
+                >
+                  {/* Overview Text */}
+                  {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.desc || activeChapter.overviewText) && (
+                    <p className="text-xs sm:text-sm text-[#52635E] leading-relaxed font-sans">
+                      {TESTING_TYPES_CHAPTERS[activeChapterIndex]?.desc || activeChapter.overviewText}
+                    </p>
+                  )}
+
+                  {/* Why it matters & When to use it Strip (8080 Format) */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    <div className="p-4 sm:p-5 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] space-y-2 shadow-2xs">
+                      <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#D97706]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#D97706]" />
+                        <span>Why it matters</span>
+                      </div>
+                      <p className="text-xs sm:text-[13px] text-[#52635E] leading-relaxed">
+                        {TESTING_TYPES_CHAPTERS[activeChapterIndex]?.why || activeChapter.why}
+                      </p>
+                    </div>
+
+                    <div className="p-4 sm:p-5 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] space-y-2 shadow-2xs">
+                      <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#D97706]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#D97706]" />
+                        <span>When to use it</span>
+                      </div>
+                      <p className="text-xs sm:text-[13px] text-[#52635E] leading-relaxed">
+                        {TESTING_TYPES_CHAPTERS[activeChapterIndex]?.when || activeChapter.when}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Practical Example Block (8080 Format) */}
+                  {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.practical || activeChapter.practical) && (
+                    <div className="p-4 sm:p-5 rounded-xl border border-[#D0E2FF] bg-[#F4F8FF] space-y-3 shadow-2xs">
+                      <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#0062D2]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#0062D2]" />
+                        <span>Practical Example</span>
+                      </div>
+
+                      <p className="text-xs sm:text-sm text-[#1C2A26] leading-relaxed">
+                        <strong className="font-bold text-[#0F172A]">
+                          {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.practical || activeChapter.practical)?.app}
+                        </strong> — {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.practical || activeChapter.practical)?.scenario}
+                      </p>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        <div className="p-3.5 rounded-xl border border-emerald-200 border-t-2 border-t-emerald-500 bg-white space-y-1 shadow-2xs">
+                          <span className="block font-mono text-[10px] uppercase tracking-wider font-bold text-emerald-700">
+                            Pass Condition
+                          </span>
+                          <p className="text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed">
+                            {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.practical || activeChapter.practical)?.pass}
+                          </p>
+                        </div>
+
+                        <div className="p-3.5 rounded-xl border border-rose-200 border-t-2 border-t-rose-500 bg-white space-y-1 shadow-2xs">
+                          <span className="block font-mono text-[10px] uppercase tracking-wider font-bold text-rose-700">
+                            Fail Condition
+                          </span>
+                          <p className="text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed">
+                            {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.practical || activeChapter.practical)?.fail}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* General Level Advantages & Limitations */}
+                  {TESTING_TYPES_CHAPTERS[activeChapterIndex]?.advantages && TESTING_TYPES_CHAPTERS[activeChapterIndex]?.limitations && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      <div className="p-4 sm:p-5 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] space-y-2 shadow-2xs">
+                        <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-emerald-700">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                          <span>Advantages</span>
+                        </div>
+                        <ul className="space-y-1.5 text-xs sm:text-[13px] text-[#52635E] pl-4 list-disc marker:text-emerald-600/70 leading-relaxed">
+                          {TESTING_TYPES_CHAPTERS[activeChapterIndex].advantages!.map((adv, ai) => (
+                            <li key={ai}>{adv}</li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div className="p-4 sm:p-5 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] space-y-2 shadow-2xs">
+                        <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-rose-700">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-600" />
+                          <span>Limitations</span>
+                        </div>
+                        <ul className="space-y-1.5 text-xs sm:text-[13px] text-[#52635E] pl-4 list-disc marker:text-rose-600/70 leading-relaxed">
+                          {TESTING_TYPES_CHAPTERS[activeChapterIndex].limitations!.map((lim, li) => (
+                            <li key={li}>{lim}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Interactive Tool Switcher (Exact 8080 Design) */}
+                  {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.tools || activeChapter.tools) && (
+                    <div className="pt-1">
+                      <ToolSwitcher tools={TESTING_TYPES_CHAPTERS[activeChapterIndex]?.tools || activeChapter.tools!} />
+                    </div>
+                  )}
+
+                </motion.div>
               ) : (
                 <motion.div
-                  initial={{ opacity: 0, y: 5 }}
+                  initial={{ opacity: 0, y: 3 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="prose prose-stone max-w-none space-y-6"
+                  className="space-y-3"
                 >
                   {renderFormattedMarkdown(activeChapter.contentMarkdown)}
+
+                  {/* Structured Sections Cards (Fallback only) */}
+                  {activeChapter.sections && activeChapter.sections.length > 0 && (
+                    <div className="space-y-3 pt-3.5 border-t border-[#E7E0D3]">
+                      {activeChapter.sections.map((sec, sIdx) => (
+                        <div key={sIdx} className="p-3.5 sm:p-4 rounded-xl bg-[#FAF7F2] border border-[#E7E0D3] space-y-1.5">
+                          <h4 className="font-serif-display font-bold text-sm sm:text-base text-[#1C2A26] flex items-center gap-2">
+                            <Layers className="w-3.5 h-3.5 text-[#D97706]" /> {sec.title}
+                          </h4>
+                          <div className="text-xs sm:text-[13px] text-[#52635E] leading-relaxed whitespace-pre-line font-sans">
+                            {sec.body}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Code Snippet Box (Fallback only) */}
+                  {activeChapter.codeSnippet && (
+                    <div className="space-y-1.5 pt-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#52635E] block flex items-center gap-1.5 font-sans">
+                        <Code className="w-3 h-3 text-[#D97706]" /> CODE EXAMPLE
+                      </span>
+
+                      <div className="p-3.5 sm:p-4 bg-[#1C2A26] text-[#A7F3D0] rounded-xl font-mono text-xs sm:text-[13px] overflow-x-auto leading-relaxed border border-[#2D3F3A] shadow-inner">
+                        <pre>{activeChapter.codeSnippet}</pre>
+                      </div>
+                    </div>
+                  )}
                 </motion.div>
               )}
 
-              {/* Structured Sections Cards */}
-              {activeChapter.sections && activeChapter.sections.length > 0 && (
-                <div className="space-y-5 pt-6 border-t border-[#E7E0D3]">
-                  {activeChapter.sections.map((sec, sIdx) => (
-                    <div key={sIdx} className="p-6 rounded-2xl bg-[#FAF7F2] border border-[#E7E0D3] space-y-3">
-                      <h4 className="font-serif-display font-bold text-base text-[#1C2A26] flex items-center gap-2.5">
-                        <Layers className="w-4 h-4 text-[#D97706]" /> {sec.title}
-                      </h4>
-                      <div className="text-xs sm:text-sm text-[#52635E] leading-relaxed whitespace-pre-line font-sans">
-                        {sec.body}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Code Snippet Box */}
-              {activeChapter.codeSnippet && (
-                <div className="space-y-3 pt-4">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#52635E] block flex items-center gap-2 font-sans">
-                    <Code className="w-3.5 h-3.5 text-[#D97706]" /> CODE EXAMPLE
-                  </span>
-
-                  <div className="p-5 sm:p-6 bg-[#1C2A26] text-[#A7F3D0] rounded-2xl font-mono text-xs sm:text-[13px] overflow-x-auto leading-relaxed border border-[#2D3F3A] shadow-inner">
-                    <pre>{activeChapter.codeSnippet}</pre>
-                  </div>
-                </div>
-              )}
 
               {/* Bottom Navigation Buttons */}
-              <div className="flex items-center justify-between pt-8 border-t border-[#E7E0D3]">
+              <div className="flex items-center justify-between pt-4 border-t border-[#E7E0D3]">
                 <Button
                   variant="outline"
                   size="sm"
@@ -949,6 +1181,7 @@ function GenericManualDetailPage() {
           </div>
         </div>
       </main>
+
 
       {/* EDIT MANUAL MODAL */}
       <AnimatePresence>

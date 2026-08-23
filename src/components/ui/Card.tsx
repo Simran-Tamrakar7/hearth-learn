@@ -35,9 +35,9 @@ export function Card({
       whileHover={
         hoverable
           ? {
-              y: -4,
-              scale: 1.012,
-              boxShadow: "0 16px 32px -8px rgba(28, 42, 38, 0.08)",
+              y: -3,
+              scale: 1.008,
+              boxShadow: "0 12px 24px -6px rgba(28, 42, 38, 0.08)",
             }
           : undefined
       }
@@ -45,22 +45,27 @@ export function Card({
       className={twMerge(
         clsx(
           "group relative rounded-2xl border transition-colors duration-200 overflow-hidden",
+          !imageSrc && !className?.includes("p-") && "p-5 sm:p-6",
           variantClasses[variant],
           className
         )
       )}
       {...props}
     >
-      {imageSrc && (
-        <div className="relative w-full h-44 overflow-hidden bg-[#F5EFE6]">
-          <motion.img
-            src={imageSrc}
-            alt={imageAlt}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-          />
-        </div>
+      {imageSrc ? (
+        <>
+          <div className="relative w-full h-44 overflow-hidden bg-[#F5EFE6]">
+            <motion.img
+              src={imageSrc}
+              alt={imageAlt}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          </div>
+          <div className="p-4 sm:p-5">{children}</div>
+        </>
+      ) : (
+        children
       )}
-      <div className="p-6">{children}</div>
     </motion.div>
   );
 }
