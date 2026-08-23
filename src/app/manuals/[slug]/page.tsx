@@ -528,7 +528,7 @@ export default function ManualDetailPage() {
     <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1C2A26]">
       <Navbar />
 
-      <main className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-12 py-6 sm:py-8 w-full space-y-8 flex-1">
+      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 w-full space-y-8 flex-1">
         {/* MANUAL HEADER CARD — TIGHT & PROPORTIONED WITHOUT GAP TRUNCATION */}
         <div className="bg-gradient-to-br from-white via-[#FAF7F2] to-[#F5EFE6] border border-[#E7E0D3] rounded-3xl p-6 sm:p-8 shadow-sm">
           {/* Top Bar Navigation */}
@@ -638,41 +638,40 @@ export default function ManualDetailPage() {
         )}
 
         {/* 2-COLUMN LAYOUT: TOC SIDEBAR + CHAPTER CONTENT */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
           {/* LEFT COLUMN: TABLE OF CONTENTS SIDEBAR */}
-          <div className="lg:col-span-4 xl:col-span-4 space-y-4 sticky top-24 max-h-[82vh] overflow-y-auto pr-1 scrollbar-thin">
-            <div className="rounded-3xl border border-[#E7E0D3] bg-[#FAF7F2] px-3 py-3 space-y-3 shadow-xs">
-              <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-[#E7E0D3]">
-                <div className="flex items-center gap-2 text-xs font-serif-display font-bold text-[#1C2A26] tracking-wider uppercase">
-                  <BookOpen className="w-4 h-4 text-[#D97706]" />
-                  <span>Table of Contents</span>
+          <div className="lg:col-span-4 xl:col-span-4 sticky top-24 max-h-[82vh] min-h-0">
+            <div className="rounded-2xl border border-[#E7E0D3] bg-[#FAF7F2] shadow-xs overflow-hidden flex flex-col max-h-[82vh]">
+              <div className="flex items-center justify-between gap-2 px-2.5 pt-2.5 pb-2 border-b border-[#E7E0D3]">
+                <div className="flex items-center gap-1.5 text-xs font-serif-display font-bold text-[#1C2A26] tracking-wider uppercase min-w-0">
+                  <BookOpen className="w-4 h-4 text-[#D97706] shrink-0" />
+                  <span className="truncate">Table of Contents</span>
                 </div>
 
-                <Button
-                  variant="ghost"
-                  size="sm"
+                <button
+                  type="button"
                   onClick={openAddChapterModal}
-                  leftIcon={<Plus className="w-3.5 h-3.5 text-[#D97706]" />}
-                  className="text-[11px] font-bold text-[#52635E] hover:text-[#1C2A26] px-2 py-1 h-auto"
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-[#D97706] hover:text-[#B45309] shrink-0 px-1 py-0.5"
                 >
+                  <Plus className="w-3.5 h-3.5" />
                   Add Chapter
-                </Button>
+                </button>
               </div>
 
-              <div className="relative">
-                <Search className="w-3.5 h-3.5 text-[#8A9B95] absolute left-3.5 top-3 pointer-events-none" />
+              <div className="relative px-2 pt-2">
+                <Search className="w-3.5 h-3.5 text-[#8A9B95] absolute left-4 top-[1.125rem] pointer-events-none" />
                 <input
                   type="search"
                   value={tocQuery}
                   onChange={(e) => setTocQuery(e.target.value)}
                   placeholder="Search parts and chapters…"
-                  className="w-full pl-9 pr-8 py-2.5 bg-white border border-[#E7E0D3] rounded-xl text-xs text-[#1C2A26] placeholder-[#8A9B95] focus:outline-none focus:border-[#D97706] shadow-2xs"
+                  className="w-full pl-8 pr-7 py-2 bg-white border border-[#E7E0D3] rounded-lg text-xs text-[#1C2A26] placeholder-[#8A9B95] focus:outline-none focus:border-[#D97706]"
                 />
                 {tocQuery && (
                   <button
                     type="button"
                     onClick={() => setTocQuery("")}
-                    className="absolute right-2.5 top-2.5 text-[#8A9B95] hover:text-[#1C2A26]"
+                    className="absolute right-3.5 top-[1.125rem] text-[#8A9B95] hover:text-[#1C2A26]"
                     aria-label="Clear search"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -680,13 +679,13 @@ export default function ManualDetailPage() {
                 )}
               </div>
 
-              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1 scrollbar-thin">
+              <div className="px-1.5 pt-2 pb-2 space-y-3 overflow-y-auto min-h-0 flex-1 scrollbar-thin">
                 {filteredParts.length === 0 && (
-                  <p className="text-xs text-[#8A9B95] px-1">No matching chapters.</p>
+                  <p className="text-xs text-[#8A9B95] px-1.5">No matching chapters.</p>
                 )}
                 {filteredParts.map((part) => (
-                  <div key={part.id} className="space-y-1.5">
-                    <p className="px-1 pt-1 text-[10px] font-bold uppercase tracking-wider text-[#D97706]">
+                  <div key={part.id} className="space-y-0.5">
+                    <p className="px-1.5 pt-1 pb-0.5 text-[10px] font-bold uppercase tracking-wider text-[#D97706]">
                       {part.title}
                     </p>
                     {part.nodes.map((node) => {
@@ -699,17 +698,23 @@ export default function ManualDetailPage() {
                       );
 
                       return (
-                        <div key={chap.id || idx} className="group relative flex items-center">
+                        <div
+                          key={chap.id || idx}
+                          className={`group flex items-center gap-0.5 rounded-lg ${
+                            isActive ? "bg-[#1C2A26]" : "hover:bg-[#F3EDE2]"
+                          }`}
+                        >
                           <button
+                            type="button"
                             onClick={() => setActiveChapterIndex(idx)}
-                            className={`w-full text-left pl-3.5 pr-14 py-2.5 rounded-xl text-xs sm:text-sm transition-all flex items-center gap-2.5 min-w-0 ${
+                            className={`flex-1 min-w-0 text-left px-2 py-2 text-xs sm:text-sm transition-colors flex items-center gap-2 ${
                               isActive
-                                ? "bg-[#1C2A26] text-[#FAF7F2] font-semibold shadow-xs"
-                                : "text-[#3D4D47] hover:bg-[#F3EDE2] hover:text-[#1C2A26] font-normal"
+                                ? "text-[#FAF7F2] font-semibold"
+                                : "text-[#3D4D47] hover:text-[#1C2A26] font-normal"
                             }`}
                             title={displayTitle}
                           >
-                            <span className={`font-mono text-xs font-bold shrink-0 ${isActive ? "text-[#D97706]" : "text-[#8A9B95]"}`}>
+                            <span className={`font-mono text-[11px] font-bold shrink-0 w-5 ${isActive ? "text-[#D97706]" : "text-[#8A9B95]"}`}>
                               {idx + 1}.
                             </span>
                             <span className="truncate whitespace-nowrap flex-1 min-w-0">
@@ -717,21 +722,31 @@ export default function ManualDetailPage() {
                             </span>
                           </button>
 
-                          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 bg-inherit px-1 rounded-md">
+                          <div className="flex items-center shrink-0 pr-1">
                             <button
+                              type="button"
                               onClick={() => {
                                 setActiveChapterIndex(idx);
                                 openEditChapterModal();
                               }}
-                              className={`p-1 transition-colors ${isActive ? "text-amber-400 hover:text-white" : "text-[#52635E] hover:text-[#D97706]"}`}
+                              className={`p-1 rounded-md transition-colors ${
+                                isActive
+                                  ? "text-amber-400 hover:text-white"
+                                  : "text-[#8A9B95] hover:text-[#D97706]"
+                              }`}
                               title="Edit Chapter"
                             >
                               <Edit className="w-3.5 h-3.5" />
                             </button>
 
                             <button
+                              type="button"
                               onClick={() => handleDeleteChapter(idx)}
-                              className={`p-1 transition-colors ${isActive ? "text-amber-400 hover:text-red-400" : "text-[#52635E] hover:text-red-600"}`}
+                              className={`p-1 rounded-md transition-colors ${
+                                isActive
+                                  ? "text-amber-400 hover:text-red-400"
+                                  : "text-[#8A9B95] hover:text-red-600"
+                              }`}
                               title="Delete Chapter"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
