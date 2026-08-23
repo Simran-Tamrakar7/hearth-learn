@@ -3633,8 +3633,391 @@ export const testingTypesManual = {
         r('guide', 'Ministry of Testing — Unstructured QA Insights', 'https://www.ministryoftesting.com', 'EN'),
       ],
     }),
+
+    ch({
+      id: 'tt-alpha-testing',
+      kind: 'guide',
+      phase: 'Part 8 · Release & Quality',
+      level: 'intermediate',
+      title: 'Alpha Testing',
+      minutes: 20,
+      durationLabel: 'Chapter 29',
+      overviewText:
+        'Alpha testing is testing performed by internal staff — typically a QA team or select employees, not real external customers — on a version of the application that\'s feature-complete or near-complete, conducted in an environment that closely resembles production, before anyone outside the organization sees it.',
+      why:
+        'By the time a build is ready for alpha testing, it\'s meant to behave like the real, finished product — this is the last major internal checkpoint before real customers get involved. Alpha testing catches the kind of issues that only show up when the whole application is used end-to-end, holistically, rather than one feature or one test type at a time — precisely because it\'s the first point where everything comes together in something resembling its final form.',
+      when:
+        'After individual features have passed their own functional, integration, and system testing — as the structured internal bridge between "development is finished" and "let real users touch it" (beta testing, Chapter 30).',
+      practical: {
+        app: 'HRMS Full Onboarding Flow',
+        scenario:
+          'Before the HRMS is offered to any pilot customer, three internal employees from outside the dev team are asked to fully onboard a fictional new hire end-to-end — from account creation through first payslip.',
+        pass: 'The bug is fixed before any real customer or employee ever encounters it, and the workflow order issue is documented for future UX review.',
+        fail: 'Two of three testers get stuck at the same step — the "assign manager" field silently fails to save if left until last, with no error shown, only discovered because a full realistic workflow was followed rather than testing that field in isolation.',
+      },
+      advantages: [
+        'Catches holistic, end-to-end issues that isolated feature-level testing structurally can\'t see',
+        'Uses people already inside the organization, so it\'s fast to organize and doesn\'t require external recruitment',
+        'Happens in a controlled environment, so problems are found and fixed before any real customer is affected',
+        'Serves as a genuine go/no-go checkpoint before committing to a real beta program',
+      ],
+      limitations: [
+        'Internal staff are not truly representative of real customers — they know too much about the product and its intended use',
+        'Limited diversity of real-world hardware, network conditions, and usage patterns compared to actual external users',
+        'Can create a false sense of confidence if internal testers unconsciously avoid the "wrong" way of using the app',
+        'Doesn\'t replace beta testing\'s exposure to genuinely unpredictable real-world usage',
+      ],
+      tools: [
+        {
+          name: 'Manual (Holistic Internal Verification)',
+          sub: 'End-to-End Persona-Driven Alpha Validation',
+          url: 'https://en.wikipedia.org/wiki/Software_testing#Alpha_testing',
+          seeChapter: 5,
+          desc: 'Alpha testing is inherently manual and holistic (see Chapter 5) — internal staff use the near-final application the way a real customer eventually would, across full end-to-end workflows rather than isolated test cases.',
+          adv: [
+            'Discovers cross-module workflow friction and missing user transitions',
+            'Fast internal coordination without non-disclosure agreement overhead',
+          ],
+          lim: [
+            'Testers naturally suffer from confirmation bias toward known happy paths',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Deploy feature-complete release candidate build',
+              p: 'Stage RC1 build in dedicated staging environment mirroring production hardware and configs.',
+              c: 'Deployment Target: https://staging-rc1.hrms-company.internal\nBuild Hash: rc-1.4.0-rev8912 (Feature Freeze Applied)',
+            },
+            {
+              t: 'Step 2 — Distribute end-to-end scenario briefs to internal staff',
+              p: 'Assign realistic persona briefs (e.g. \'Onboard 5 contractors across 2 departments\').',
+              c: 'Scenario Sheet: \'You are an HR manager setting up payroll for new engineering hires.\'',
+            },
+            {
+              t: 'Step 3 — Log blocker and friction defects into triage board',
+              p: 'Record blocker issues that prevent workflow progression.',
+              c: 'Issue ALPHA-102: Saving onboarding form with empty manager dropdown silently fails.',
+            },
+            {
+              t: 'Step 4 — Execute Go / No-Go signoff audit',
+              p: 'Audit unresolved Sev-1 and Sev-2 defects before approving public beta rollout.',
+              c: 'Signoff Gate: 0 Sev-1 Blocker / 0 Sev-2 Critical -> APPROVED FOR BETA',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: 'Internal Holistic Scenario Walkthroughs',
+          body: 'Conduct structured alpha walkthroughs across cross-functional internal stakeholders with realistic seed data.',
+          doThis: 'Execute full end-to-end business workflows and document friction points on internal triage board.',
+          code: 'npm run test:e2e:staging-rc',
+        },
+      ],
+      checklist: ['Verified 0 blocker defects across core business journeys', 'Conducted cross-departmental testing with non-engineering staff', 'Achieved official Go / No-Go signoff for public beta'],
+      practice: { title: 'Alpha test plan & persona charter', brief: 'Create an internal alpha test plan covering 5 multi-step customer workflows.' },
+      resources: [
+        r('guide', 'Atlassian — Alpha vs Beta Testing Strategy', 'https://www.atlassian.com', 'EN'),
+        r('guide', 'ProductPlan — Managing Alpha Programs', 'https://www.productplan.com', 'EN'),
+      ],
+    }),
+
+    ch({
+      id: 'tt-beta-testing',
+      kind: 'guide',
+      phase: 'Part 8 · Release & Quality',
+      level: 'intermediate',
+      title: 'Beta Testing',
+      minutes: 25,
+      durationLabel: 'Chapter 30',
+      overviewText:
+        'Beta testing releases a near-final version of the application to a limited group of real, external users — actual customers or a selected pilot group — who use it in their own real-world environment, with their own real data and workflows, before general release.',
+      why:
+        'No amount of internal testing, however thorough, fully replicates real customers using real data on their own devices, networks, and workflows, with their own (sometimes unexpected) priorities and habits. Beta testing is the first genuine exposure to that unpredictability, and it surfaces feedback on both bugs and overall product fit that internal teams — too close to the product to see it fresh — are structurally unlikely to find themselves.',
+      when:
+        'After alpha testing confirms the build is stable and feature-complete, and before general/public release — run for a defined period with a defined group of real users, specifically to gather both bug reports and genuine product feedback ahead of a wider launch.',
+      practical: {
+        app: 'HRMS Payroll Module (Pilot Company)',
+        scenario:
+          'Before general release, the HRMS payroll module is piloted with one real client company (40 employees) for a full pay cycle.',
+        pass: 'A fallback in-app viewer is added for low-storage conditions, fixing a real-world constraint no internal alpha test was ever likely to reproduce.',
+        fail: 'Several employees report that payslip PDFs fail to download on older Android devices with limited storage — an issue never surfaced internally, since every internal test device had ample free storage.',
+      },
+      advantages: [
+        'Exposes the application to genuinely diverse real-world devices, networks, and usage patterns no internal test can fully replicate',
+        'Surfaces product-fit feedback ("this feature is confusing" or "I actually needed X"), not just bug reports',
+        'Both platforms provide automatic crash reporting, removing the burden of manual bug capture from testers',
+        'Staged rollout (especially Play Console\'s tracks) lets confidence build gradually before a full public release',
+      ],
+      limitations: [
+        'Real users report bugs inconsistently — some issues go unreported unless a user is specifically motivated to file one',
+        'Beta testers, even real users, are self-selected and may not represent the full eventual user base',
+        'Slower feedback loop than internal testing — waiting on real usage takes real time, not an on-demand test run',
+        'Managing a beta program (recruiting, communicating, triaging feedback) is a real ongoing operational cost, not just a technical one',
+      ],
+      tools: [
+        {
+          name: 'TestFlight',
+          sub: 'Apple iOS Beta Distribution & Feedback Engine',
+          url: 'https://developer.apple.com/testflight',
+          desc: 'Apple\'s official beta distribution platform for iOS apps — lets a limited group of real external testers install a pre-release build directly, and routes their crash reports and feedback back to the development team automatically.',
+          adv: [
+            'Distribute pre-release builds to up to 10,000 external testers via public link',
+            'Automated native crash log capturing and symbolication via App Store Connect',
+            'Testers can submit annotated screenshots and feedback directly from iOS',
+            'Multiple build version grouping with expiring 90-day test windows',
+          ],
+          lim: [
+            'Limited to iOS/iPadOS/macOS Apple ecosystem',
+            'Requires Apple Developer Program enrollment ($99/year)',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Archive and upload iOS IPA build to App Store Connect',
+              p: 'Build release archive and upload via Xcode Organizer or Fastlane.',
+              c: 'fastlane beta --env production (Uploads archive to TestFlight track)',
+            },
+            {
+              t: 'Step 2 — Configure External Beta Testing group',
+              p: 'Invite pilot corporate customers via email and specify \'What to Test\' release notes.',
+              c: 'TestFlight Group: \'HRMS Beta Pilot Cohort A\' (50 pilot users invited)',
+            },
+            {
+              t: 'Step 3 — Monitor crashes and feedback reports',
+              p: 'Review incoming stack traces and user screenshots in App Store Connect.',
+              c: 'Crash Log: EXC_BAD_ACCESS in PDFRenderer.swift (Low memory on iPhone SE 2020)',
+            },
+            {
+              t: 'Step 4 — Push patched update directly to beta cohort',
+              p: 'Deploy incremental build 1.4.0 (Build 12) with PDF streaming fix.',
+              c: 'Fastlane: Published 1.4.0 (12) -> Notification pushed to all TestFlight testers',
+            },
+          ],
+        },
+        {
+          name: 'Google Play Console',
+          sub: 'Android Internal, Closed & Open Staged Tracks',
+          url: 'https://play.google.com/console',
+          desc: 'Google\'s equivalent for Android — offers staged testing tracks (internal, closed, open) that progressively widen the real-user testing pool before a full production release.',
+          adv: [
+            'Automated Pre-Launch Reports running on real Firebase Test Lab device matrix',
+            'Tiered release tracks: Internal (quick QA), Closed (pilot email list), Open (public opt-in)',
+            'Real-time ANR (Application Not Responding) and crash analytics in Android Vitals',
+          ],
+          lim: [
+            'Google Play review process applies to closed/open tracks',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Upload Android App Bundle (AAB) to Closed Testing Track',
+              p: 'Submit bundle to targeted beta track via Play Console or Gradle.',
+              c: './gradlew bundleRelease && fastlane supply --track closed_beta',
+            },
+            {
+              t: 'Step 2 — Review Pre-Launch Report diagnostics',
+              p: 'Inspect automated test runs across 15 physical Android OEM devices.',
+              c: 'Pre-Launch Result: 1 ANR caught on Android 10 (Storage permissions deprecated)',
+            },
+            {
+              t: 'Step 3 — Promote build to staged production rollout',
+              p: 'Begin with 10% rollout, expanding to 100% as stability vitals remain clean.',
+              c: 'Release: 1.4.0 Rollout -> 10% -> 25% -> 50% -> 100% Production',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: 'Staged Beta Release Distribution & Telemetry Monitoring',
+          body: 'Deploy release candidates to closed external cohorts and collect crash diagnostics and telemetry.',
+          doThis: 'Distribute builds via TestFlight or Google Play Console and monitor crash-free sessions percentage (>99.5%).',
+          code: 'fastlane supply --track closed_beta --rollout 0.20',
+        },
+      ],
+      checklist: ['Configured feedback channels and automated crash reporting', 'Monitored crash-free rate (>99.5% goal)', 'Synthesized usability and performance feedback into sprint backlog'],
+      practice: { title: 'Beta cohort rollout strategy', brief: 'Design a 3-tier staged beta rollout for iOS and Android mobile clients.' },
+      resources: [
+        r('tool', 'Apple TestFlight Guide', 'https://developer.apple.com/testflight', 'EN'),
+        r('tool', 'Google Play Console Testing Tracks', 'https://play.google.com/console', 'EN'),
+      ],
+    }),
+
+    ch({
+      id: 'tt-retesting',
+      kind: 'guide',
+      phase: 'Part 8 · Release & Quality',
+      level: 'beginner',
+      title: 'Retesting (Confirmation Testing)',
+      minutes: 15,
+      durationLabel: 'Chapter 31',
+      overviewText:
+        'Retesting — also called confirmation testing — re-runs the exact test case that originally found a specific bug, after a fix has been applied, to confirm that specific bug is actually resolved. It\'s distinct from regression testing (Chapter 10): retesting checks only the one thing that was reported broken, not the surrounding application.',
+      why:
+        'A fix that looks correct in code review can still fail to actually resolve the reported issue — the wrong root cause was targeted, the fix was incomplete, or it only worked for some of the originally reported scenarios. Without retesting, a bug can be marked "fixed" and closed based on developer confidence alone, only for the exact same reported behavior to resurface in front of a user.',
+      when:
+        'Every time a bug fix is submitted for verification — before the associated ticket is closed, and always alongside (not instead of) a related sanity or regression check of nearby functionality.',
+      practical: {
+        app: 'HRMS Duplicate Leave Request Bug',
+        scenario:
+          'A previously reported bug — submitting a leave request twice via double-click created two duplicate entries — is fixed and sent back for verification.',
+        pass: 'Retesting the exact same steps on both Chrome and Firefox confirms only a single leave request is created in either case, and the ticket is closed with confidence.',
+        fail: 'Retesting the exact original repro (double-clicking Submit) still creates a duplicate on Firefox, even though the fix was verified as working on Chrome — the fix only addressed one browser\'s event timing.',
+      },
+      advantages: [
+        'Directly confirms the specific reported problem is actually resolved, not just assumed fixed based on the code change',
+        'Very fast and targeted — reruns one specific case, not a broader suite',
+        'Prevents prematurely closed bugs from silently resurfacing in front of real users',
+        'Catches partial fixes that resolve only some of several originally reported variations',
+      ],
+      limitations: [
+        'Narrow by design — confirms only the specific reported bug, says nothing about surrounding functionality (that\'s what sanity/regression testing is for)',
+        'Relies on the original bug report having clear, accurate, reproducible steps to retest against',
+        'No formal automation — typically manual, since it\'s tied to one specific historical report each time',
+        'Easy to skip under time pressure, which is exactly when a fix is most likely to be incomplete',
+      ],
+      tools: [
+        {
+          name: 'Manual (Exact Repro Confirmation)',
+          sub: 'Defect Verification & Closure Protocol',
+          url: 'https://en.wikipedia.org/wiki/Software_testing#Retesting',
+          seeChapter: 5,
+          desc: 'Retesting is inherently manual and specific (see Chapter 5): a tester reproduces the exact original steps that triggered the bug, using the exact original data and conditions where possible, to directly confirm the fix.',
+          adv: [
+            'Definitively verifies bug resolution against original reported steps',
+            'Validates across multiple reported platform variations (Chrome, Firefox, Safari)',
+          ],
+          lim: [
+            'Does not detect secondary side-effects or regressions in neighboring components',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Open resolved defect ticket and read reproduction steps',
+              p: 'Verify exact test preconditions, test data, and user environment.',
+              c: 'Ticket: BUG-404: Rapid double-click on \'Apply Leave\' inserts duplicate database row.',
+            },
+            {
+              t: 'Step 2 — Execute exact reproduction on patched build',
+              p: 'Attempt rapid double-clicking on submit button across multiple browsers.',
+              c: 'Action: Double click \'Apply Leave\' (Delay: 40ms between clicks)\nResult: Button disables on first click; only 1 request sent.',
+            },
+            {
+              t: 'Step 3 — Verify across reported cross-browser variations',
+              p: 'Retest on Chrome 128, Firefox 129, and Safari 17.',
+              c: 'Chrome: PASS (1 record)\nFirefox: PASS (1 record)\nSafari: PASS (1 record)',
+            },
+            {
+              t: 'Step 4 — Update ticket status to Verified / Closed',
+              p: 'Attach screen recording proof and close ticket.',
+              c: 'Status: VERIFIED FIXED -> Closed on Build v1.4.0-rc2',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: 'Defect Verification & Closure Protocol',
+          body: 'Re-run exact original defect reproduction scripts against patched staging builds.',
+          doThis: 'Verify resolved bug tickets across all reported browser and OS combinations.',
+          code: 'npm run test -- tests/retest/bug-404.spec.ts',
+        },
+      ],
+      checklist: ['Retested exact historical reproduction sequence', 'Verified across all reported platform/browser variations', 'Attached video proof to defect tracker before marking closed'],
+      practice: { title: 'Bug retesting & signoff checklist', brief: 'Document verification steps and cross-browser matrices for high-severity defect resolution.' },
+      resources: [
+        r('guide', 'Ministry of Testing — Retesting vs Regression Testing', 'https://www.ministryoftesting.com', 'EN'),
+        r('guide', 'ISTQB — Confirmation Testing Guidelines', 'https://www.istqb.org', 'EN'),
+      ],
+    }),
+
+    ch({
+      id: 'tt-mutation-testing',
+      kind: 'guide',
+      phase: 'Part 8 · Release & Quality',
+      level: 'advanced',
+      title: 'Mutation Testing',
+      minutes: 30,
+      durationLabel: 'Chapter 32',
+      overviewText:
+        'Mutation testing evaluates the quality of an existing test suite itself — not the application — by deliberately introducing small, artificial bugs ("mutants") into the source code, one at a time, and checking whether the existing tests actually catch each one. A test suite that fails to notice a deliberately broken line has a real gap in its coverage, even if its coverage percentage looks high.',
+      why:
+        'Code coverage (Chapter 26) only measures whether a line was executed during testing — not whether the test actually checks anything meaningful about it. A test can run a line of code and still pass even if that line is subtly wrong, simply because nothing in the test asserts on the right thing. Mutation testing directly exposes that gap: a genuinely strong test suite should kill (catch) nearly every artificially introduced mutant; a weak one lets many "survive" undetected.',
+      when:
+        'Periodically on critical, high-value parts of the codebase (business-critical logic, financial calculations, security-sensitive code) — not typically run on the entire codebase on every commit, since it\'s computationally expensive. Most valuable once basic code coverage is already reasonably high and the team wants to know whether that coverage is actually meaningful.',
+      practical: {
+        app: 'HRMS Leave Balance Deduction Logic',
+        scenario:
+          'Mutation testing is run specifically against the deductLeaveBalance() function, which already has 90% line coverage.',
+        pass: 'A new test asserting the exact-balance boundary case is added; re-running Stryker confirms that specific mutant is now killed, and the mutation score improves.',
+        fail: 'Stryker flips a <= to < in the balance-check condition, and every existing test still passes — revealing that no test actually checks the exact boundary case (requesting leave equal to the remaining balance), despite that line technically being "covered."',
+      },
+      advantages: [
+        'Directly measures test suite quality, not just code coverage quantity — a much stronger signal than coverage percentage alone',
+        'Surfaces specific, concrete gaps ("this exact kind of bug would slip through") rather than a vague sense that testing could be better',
+        'Particularly valuable for critical logic (financial calculations, security checks) where a silent gap is genuinely costly',
+        'Improvements are directly actionable — each surviving mutant points to exactly one missing assertion to write',
+      ],
+      limitations: [
+        'Computationally expensive — reruns the full test suite once per mutant, so it doesn\'t scale to running on every commit across an entire codebase',
+        'Best targeted at specific critical modules rather than applied broadly, due to that runtime cost',
+        'Some surviving mutants are genuinely equivalent (functionally identical to the original code) and can\'t actually be killed — these need to be manually identified and excluded, adding overhead',
+        'Requires an existing, reasonably mature test suite to be worth running at all — mutation testing on an untested codebase just reports that everything survives, which isn\'t a useful finding on its own',
+      ],
+      tools: [
+        {
+          name: 'Stryker Mutator',
+          sub: 'Automated Mutation Testing Engine for JS/TS, .NET & Scala',
+          url: 'https://stryker-mutator.io',
+          desc: 'An open-source mutation testing framework (supporting JavaScript/TypeScript, C#, and other languages) that automatically generates mutants — small code changes like flipping a > to >=, or changing true to false — reruns the existing test suite against each one, and reports which mutants were killed versus survived.',
+          adv: [
+            'Supports modern frameworks (Jest, Vitest, Mocha, Jasmine, karma)',
+            'Provides an interactive HTML dashboard showing surviving mutants line-by-line',
+            'Calculates objective Mutation Score % to evaluate test suite rigor',
+            'Built-in incremental analysis and concurrency to speed up mutation runs',
+          ],
+          lim: [
+            'High compute duration when executing across thousands of mutants',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Install Stryker CLI and test runner plugin',
+              p: 'Add Stryker dependencies to your Node project.',
+              c: 'npm install --save-dev @stryker-mutator/core @stryker-mutator/jest-runner',
+            },
+            {
+              t: 'Step 2 — Configure stryker.config.json for targeted modules',
+              p: 'Target high-criticality modules (e.g. payroll and leave calculation logic).',
+              c: '{\n  "mutate": ["src/lib/payrollCalculator.ts"],\n  "testRunner": "jest",\n  "reporters": ["html", "clear-text", "progress"],\n  "thresholds": { "high": 80, "low": 60, "break": 50 }\n}',
+            },
+            {
+              t: 'Step 3 — Run Stryker mutation suite',
+              p: 'Execute mutation analysis and observe mutation score metrics.',
+              c: 'npx stryker run\nMutation score: 72.41% (21 killed, 8 survived, 0 timeout)',
+            },
+            {
+              t: 'Step 4 — Inspect surviving mutant and add missing assertion',
+              p: 'Check mutant where operator was flipped and add missing unit test assertion.',
+              c: 'Surviving Mutant #4: line 18: balance <= 0 mutated to balance < 0\nFix: Added test expect(deductLeave(0, 1)).toThrow(\'Zero balance\');\nRe-run: Mutation score increased to 100% (All mutants killed)!',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: 'Automated Mutant Generation & Mutation Score Analysis',
+          body: 'Evaluate assertion effectiveness by running Stryker Mutator against core financial and calculation algorithms.',
+          doThis: 'Execute Stryker on critical calculation packages and achieve >80% mutation score.',
+          code: 'npx stryker run --mutate "src/lib/calculations/**/*.ts"',
+        },
+      ],
+      checklist: ['Configured Stryker for business-critical algorithms', 'Eliminated surviving mutants by adding precise boundary assertions', 'Achieved >80% mutation score on audited modules'],
+      practice: { title: 'Mutation test audit & mutant elimination', brief: 'Run Stryker on a financial calculation function and eliminate all surviving mutants.' },
+      resources: [
+        r('tool', 'Stryker Mutator Official Site', 'https://stryker-mutator.io', 'EN'),
+        r('guide', 'Mutation Testing Best Practices', 'https://martinfowler.com/bliki/MutationTesting.html', 'EN'),
+      ],
+    }),
   ],
 }
+
 
 
 
