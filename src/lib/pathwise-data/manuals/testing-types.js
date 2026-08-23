@@ -5707,8 +5707,730 @@ export const testingTypesManual = {
         r('tool', 'BackstopJS GitHub Repository', 'https://github.com/garris/BackstopJS', 'EN'),
       ],
     }),
+
+    ch({
+      id: 'tt-negative-testing',
+      kind: 'guide',
+      phase: 'Part 13 · Test Design Techniques & Partitioning',
+      level: 'beginner',
+      title: 'Negative Testing',
+      minutes: 20,
+      durationLabel: 'Chapter 49',
+      overviewText:
+        'Negative testing deliberately feeds an application invalid, unexpected, or malformed input — the opposite of what the system is designed to correctly handle — to verify it fails gracefully with a clear, correct error, rather than crashing, behaving unpredictably, or silently accepting something it shouldn\'t.',
+      why:
+        'Most requirements describe what the system should do with valid input, but real users (and real attackers) inevitably provide invalid input too — an empty required field, a negative number where only positive makes sense, a wildly out-of-range date. Without deliberate negative testing, these paths often go completely unverified, since they\'re the paths nobody thinks to check when the focus is naturally on "does the feature work."',
+      when:
+        'Alongside every positive test case, as a matching pair — any input field, form, or endpoint tested for correct valid behavior should also be tested for correct handling of invalid input, ideally designed together at the same time rather than as an afterthought.',
+      practical: {
+        app: 'HRMS Leave Request Date Field',
+        scenario:
+          'The leave request form\'s start-date field is negative-tested with a range of invalid inputs.',
+        pass: 'The same input is now rejected with a clear "Please enter a valid date within the next 2 years" error, and no record is created.',
+        fail: 'Submitting a start date in the year 1900 is silently accepted and saved without any validation error — the form only checks that a date is present, not that it\'s realistic.',
+      },
+      advantages: [
+        'Catches an entire class of real-world input that valid-only testing structurally never exercises',
+        'Directly improves error handling quality and user-facing error messages, not just crash prevention',
+        'Surfaces security-relevant gaps since many vulnerabilities begin with unexpected/malformed input',
+        'Cheap to design alongside positive test cases during initial feature analysis',
+      ],
+      limitations: [
+        'The space of possible invalid inputs is technically infinite — prioritization toward realistic and high-risk invalid inputs is necessary',
+        'Easy to under-invest in relative to positive testing when delivery deadlines press',
+        'Does not guarantee complete coverage against inputs nobody thought to try',
+        'Requires clear expected-error-behavior specifications to test against',
+      ],
+      tools: [
+        {
+          name: 'Manual Negative Testing Mindset',
+          sub: 'Heuristic Error & Boundary Injection',
+          url: 'https://hearth-learn.vercel.app/manuals/testing-types',
+          seeChapter: 5,
+          desc: 'Negative testing isn\'t a separate tool, but a deliberate mindset (see Chapter 5) applied within existing testing workflows — asking "what\'s the wrong input, and does the system handle it gracefully?"',
+          adv: [
+            'Zero software setup required — focuses on creative edge-case injection',
+            'Audits user-facing error message clarity, grammar, and field highlighting',
+          ],
+          lim: [
+            'Manual execution of large negative permutations is labor intensive',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Identify invalid input permutations',
+              p: 'List negative scenarios: past dates, empty mandatory strings, special character strings, and type mismatches.',
+              c: 'Test Vectors:\n1. Start Date: 01/01/1900\n2. Leave Days: -5\n3. Employee ID: \' OR \'1\'=\'1',
+            },
+            {
+              t: 'Step 2 — Submit negative payloads and assert error responses',
+              p: 'Confirm form highlights invalid fields with red borders and clear guidance.',
+              c: 'Expected Response: HTTP 422 Unprocessable Entity\nUI Banner: "Start date must be between today and +2 years"',
+            },
+          ],
+        },
+        {
+          name: 'Postman Negative API Suite',
+          sub: 'Schema Validation & Status Code Verification',
+          url: 'https://www.postman.com',
+          seeChapter: 2,
+          desc: 'Automates negative API assertions (see Chapter 2 and Chapter 34) ensuring endpoints reject malformed JSON, missing fields, and bad data types with appropriate 4xx status codes.',
+          adv: [
+            'Asserts HTTP 400, 401, 403, and 422 response status codes automatically',
+            'Validates error response schemas with Chai assertions',
+          ],
+          lim: [
+            'Requires maintaining negative test collection JSONs',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Send invalid payload to leave request API',
+              p: 'Transmit POST request missing mandatory \'reason\' property.',
+              c: 'pm.test("Status code is 400 Bad Request", function () {\n    pm.response.to.have.status(400);\n});\npm.test("Error message is descriptive", function () {\n    var json = pm.response.json();\n    pm.expect(json.error).to.eql("Field \'reason\' is required");\n});',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: 'Deliberate Invalid Payload & Type Assertion',
+          body: 'Submit out-of-range, null, negative, and malformed inputs to form fields and API parameters verifying graceful error handling.',
+          doThis: 'Design a 1:1 matching negative test matrix for all existing positive test cases.',
+          code: 'curl -X POST https://staging.hrms.internal/api/leave -d \'{"days": -5}\' -H "Content-Type: application/json"',
+        },
+      ],
+      checklist: ['Identified invalid permutations for every required field', 'Verified user-facing error message clarity and formatting', 'Confirmed zero database state mutations on rejected requests'],
+      practice: { title: 'Negative test suite design for user registration', brief: 'Design 15 negative test cases targeting invalid emails, weak passwords, and duplicate user records.' },
+      resources: [
+        r('guide', 'OWASP Input Validation Cheat Sheet', 'https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html', 'EN'),
+        r('tool', 'Postman API Testing Guide', 'https://learning.postman.com/docs/writing-scripts/test-scripts', 'EN'),
+      ],
+    }),
+
+    ch({
+      id: 'tt-positive-testing',
+      kind: 'guide',
+      phase: 'Part 13 · Test Design Techniques & Partitioning',
+      level: 'beginner',
+      title: 'Positive Testing',
+      minutes: 15,
+      durationLabel: 'Chapter 50',
+      overviewText:
+        'Positive testing verifies that an application behaves correctly when given valid, expected input exactly as the requirements describe — confirming the system does what it\'s supposed to do under normal, correct-usage conditions, the direct counterpart to negative testing\'s focus on invalid input.',
+      why:
+        'Before checking that a system correctly rejects what it shouldn\'t accept, it has to first be confirmed that it correctly accepts and processes what it should — positive testing is the foundational baseline check that a feature actually works at all under its intended, expected conditions. Without it as a deliberate, explicit practice, teams can end up assuming a feature works simply because no one has reported it broken yet.',
+      when:
+        'As the first, most basic layer of test coverage for any new feature — typically the very first test case written for any given piece of functionality, establishing the expected-behavior baseline that other test types (negative, boundary) build outward from.',
+      practical: {
+        app: 'HRMS Leave Request Submission',
+        scenario:
+          'The leave request form is positive-tested with a straightforward, entirely valid submission.',
+        pass: 'Submitting a leave request for 3 valid future dates, with a valid reason and an employee who has sufficient balance, correctly creates the request and shows a confirmation — establishing that the core intended flow works exactly as designed before any edge case or invalid input is considered.',
+        fail: 'A valid submission fails with an unhandled exception or hangs indefinitely on submission, indicating core baseline functional logic is broken.',
+      },
+      advantages: [
+        'Establishes the essential baseline confirmation that a feature actually works as intended before anything else is tested',
+        'Simple and fast to design and execute, directly following from stated business requirements',
+        'Forms the foundation that negative and boundary testing build on and complement',
+        'Directly validates the core business value the feature was built to deliver',
+      ],
+      limitations: [
+        'On its own, says nothing about how the system handles invalid input, edge cases, or real-world imperfect usage',
+        'Can create false confidence if treated as sufficient coverage without negative testing',
+        'Does not stress-test the edges of valid ranges — that is Boundary Value Analysis\'s role (Chapter 51)',
+        'A feature that only gets positive-tested will have its failure modes discovered by real users',
+      ],
+      tools: [
+        {
+          name: 'Manual Positive Flow Verification',
+          sub: 'Baseline Specification Verification',
+          url: 'https://hearth-learn.vercel.app/manuals/testing-types',
+          seeChapter: 5,
+          desc: 'Positive testing uses standard manual verification (see Chapter 5) with the specific, deliberate goal of confirming valid, expected input produces valid, expected output.',
+          adv: [
+            'Directly verifies requirement acceptance criteria',
+            'Fastest validation method during early development spikes',
+          ],
+          lim: [
+            'Subject to human tester bias toward happy-path only testing',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Prepare valid dataset matching requirements',
+              p: 'Select active employee with 15 days balance, set valid future dates, and provide normal text reason.',
+              c: 'Payload: { employeeId: "EMP-1042", startDate: "2026-09-01", days: 3, reason: "Annual Vacation" }',
+            },
+            {
+              t: 'Step 2 — Submit request and verify confirmation banner',
+              p: 'Confirm database updates balance from 15 to 12 and UI shows \'Application Submitted Successfully\'.',
+              c: 'Result: HTTP 201 Created | Leave Balance: 12 | Status: Pending Manager Approval -> PASS',
+            },
+          ],
+        },
+        {
+          name: 'Playwright / Selenium Positive Automation',
+          sub: 'Automated Happy Path Regression Suite',
+          url: 'https://playwright.dev',
+          seeChapter: 6,
+          desc: 'Automates positive end-to-end flows (see Chapter 6) ensuring new builds don\'t regress core functional happy paths.',
+          adv: [
+            'Executes in CI on every commit in under 30 seconds',
+            'Captures trace recordings and screenshots of successful completions',
+          ],
+          lim: [
+            'Must be paired with negative suites for comprehensive safety',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Script automated positive test in Playwright',
+              p: 'Fill valid inputs and assert redirect to confirmation view.',
+              c: 'test(\'Valid leave request submits successfully\', async ({ page }) => {\n  await page.goto(\'/leave/new\');\n  await page.fill(\'#startDate\', \'2026-09-01\');\n  await page.fill(\'#days\', \'3\');\n  await page.fill(\'#reason\', \'Vacation\');\n  await page.click(\'#submitBtn\');\n  await expect(page.locator(\'.success-alert\')).toBeVisible();\n});',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: 'Happy-Path Baseline Specification Verification',
+          body: 'Verify primary business user flows with valid, compliant inputs confirming intended functionality executes cleanly.',
+          doThis: 'Execute core acceptance test scenarios validating state transitions against business criteria.',
+          code: 'npx playwright test tests/positive/leave-creation.spec.ts',
+        },
+      ],
+      checklist: ['Verified all mandatory and optional fields with valid inputs', 'Audited persistent state changes in database records', 'Confirmed confirmation alerts and redirect destinations'],
+      practice: { title: 'Positive functional test matrix creation', brief: 'Create a comprehensive positive test suite for a shopping cart checkout flow.' },
+      resources: [
+        r('tool', 'Playwright Official Getting Started', 'https://playwright.dev/docs/intro', 'EN'),
+        r('guide', 'ISTQB Foundation Level Syllabus', 'https://www.istqb.org', 'EN'),
+      ],
+    }),
+
+    ch({
+      id: 'tt-boundary-value-analysis',
+      kind: 'guide',
+      phase: 'Part 13 · Test Design Techniques & Partitioning',
+      level: 'beginner',
+      title: 'Boundary Value Analysis',
+      minutes: 20,
+      durationLabel: 'Chapter 51',
+      overviewText:
+        'Boundary value analysis specifically targets test inputs at, just above, and just below the edges of valid input ranges — since bugs disproportionately cluster at exactly these boundary points (off-by-one errors, incorrect comparison operators), rather than spreading evenly across the entire range of possible input.',
+      why:
+        'A field accepting values from 1 to 100 is far more likely to have a bug at exactly 0, 1, 100, or 101 than at some arbitrary value like 47 — a <= mistakenly written as <, or a loop that runs one iteration too many or too few, is a boundary-specific class of bug that testing only the "safe middle" of a range would never reveal. Boundary value analysis concentrates testing effort precisely where defects are statistically most likely to actually live.',
+      when:
+        'Whenever a field, parameter, or condition has a defined valid range or threshold — numeric ranges, date ranges, string length limits, or any comparison-based business rule (e.g. "leave balance must be greater than or equal to requested days").',
+      practical: {
+        app: 'HRMS Leave Balance Boundary',
+        scenario:
+          'The leave request form is boundary-tested against an employee with exactly 5 days of remaining leave balance.',
+        pass: 'Requesting exactly 5 days is now correctly accepted, while requesting 6 days (one over the boundary) is still correctly rejected.',
+        fail: 'Requesting exactly 5 days (equal to the full remaining balance) is incorrectly rejected with an error, even though the business rule states a request "up to and including" the full balance should be allowed — an off-by-one bug using < instead of <= in the balance check.',
+      },
+      advantages: [
+        'Concentrates testing effort precisely where real bugs statistically cluster, rather than spreading it evenly and inefficiently',
+        'Directly catches off-by-one errors and incorrect comparison operators (< vs <=)',
+        'Requires relatively few test cases (3 per boundary: Min-1, Min, Min+1, Max-1, Max, Max+1) for high defect-detection yield',
+        'Straightforward to apply systematically to any field with defined numeric, date, or length bounds',
+      ],
+      limitations: [
+        'Only effective where a genuine range or threshold exists — does not apply to unconstrained free-text fields',
+        'Requires valid ranges to be explicitly known and documented',
+        'Does not cover broad invalid formats (e.g. letters in numeric fields) — pairs with negative testing',
+        'Interacting multi-variable boundaries can lead to combinatorial expansion',
+      ],
+      tools: [
+        {
+          name: 'Manual 3-Point Boundary Matrix',
+          sub: 'Minimum, Maximum & Neighbor Value Analysis',
+          url: 'https://hearth-learn.vercel.app/manuals/testing-types',
+          seeChapter: 5,
+          desc: 'A systematic test design technique (see Chapter 5) constructing 3 test values around every boundary: [Boundary - 1], [Boundary], and [Boundary + 1].',
+          adv: [
+            'High ROI defect yield per test case',
+            'Clear mathematical structure easily reviewed in QA test plans',
+          ],
+          lim: [
+            'Manual entry requires diligence across multiple input fields',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Identify Boundary Conditions for Leave Days (1 to 30)',
+              p: 'Calculate 3-point boundary values for Min (1) and Max (30).',
+              c: 'Lower Boundary (1):\n- 0 (Invalid / Blocked)\n- 1 (Valid Min / Allowed)\n- 2 (Valid / Allowed)\n\nUpper Boundary (30):\n- 29 (Valid / Allowed)\n- 30 (Valid Max / Allowed)\n- 31 (Invalid / Blocked)',
+            },
+            {
+              t: 'Step 2 — Execute boundary assertions in test environment',
+              p: 'Submit each value and record HTTP response status.',
+              c: 'Days = 0 -> 422 Unprocessable Entity (PASS)\nDays = 1 -> 201 Created (PASS)\nDays = 30 -> 201 Created (PASS)\nDays = 31 -> 422 Unprocessable Entity (PASS)',
+            },
+          ],
+        },
+        {
+          name: 'Automated Parameterized Boundary Runner',
+          sub: 'Jest / PyTest Parameterized Boundary Suites',
+          url: 'https://playwright.dev',
+          seeChapter: 6,
+          desc: 'Executes parameterized boundary test tables automatically across unit, integration, and E2E layers (see Chapter 6).',
+          adv: [
+            'Tests dozens of boundary values in milliseconds',
+            'Ensures off-by-one regressions cannot re-enter the codebase',
+          ],
+          lim: [
+            'Requires defining parameter arrays in test files',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Write parameterized Jest test table',
+              p: 'Assert boundary validation logic directly against leave calculation function.',
+              c: 'test.each([\n  [0, false],\n  [1, true],\n  [5, true],\n  [6, false]\n])(\'validateRequestedDays(%i, maxBalance=5) should return %s\', (days, expected) => {\n  expect(validateRequestedDays(days, 5)).toBe(expected);\n});',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: '3-Point Extreme Boundary Value Evaluation',
+          body: 'Calculate Min-1, Min, Min+1, Max-1, Max, and Max+1 for all numeric inputs and execute boundary validations.',
+          doThis: 'Execute boundary tests against age, date, and price threshold inputs.',
+          code: 'npx jest tests/unit/boundary-analysis.test.ts',
+        },
+      ],
+      checklist: ['Identified lower and upper boundaries for all numeric fields', 'Tested 3 points (B-1, B, B+1) at every identified boundary', 'Audited comparison operators (< vs <=, > vs >=) in code'],
+      practice: { title: 'Boundary value analysis test plan', brief: 'Construct a 3-point boundary table for a discount coupon code with 8-16 char length limits.' },
+      resources: [
+        r('guide', 'Boundary Value Analysis in Software Testing', 'https://www.guru99.com/equivalence-partitioning-boundary-value-analysis.html', 'EN'),
+        r('tool', 'Jest Parameterized Testing Docs', 'https://jestjs.io/docs/api#testeachtablename-fn-timeout', 'EN'),
+      ],
+    }),
+
+    ch({
+      id: 'tt-equivalence-partitioning',
+      kind: 'guide',
+      phase: 'Part 13 · Test Design Techniques & Partitioning',
+      level: 'beginner',
+      title: 'Equivalence Partitioning',
+      minutes: 20,
+      durationLabel: 'Chapter 52',
+      overviewText:
+        'Equivalence partitioning divides an input\'s full range of possible values into distinct partitions (or "classes") that the system is expected to treat identically, and then tests just one representative value from each partition — on the reasoning that if one value in a partition works correctly, the others in that same partition almost certainly will too.',
+      why:
+        'Testing every single possible input value is both impossible and unnecessary — most values within a given valid or invalid category will be processed identically by the underlying logic. Equivalence partitioning provides a systematic, principled way to dramatically reduce the number of test cases needed while still maintaining genuinely meaningful coverage, by testing one representative from each meaningfully distinct group rather than exhaustively testing everything.',
+      when:
+        'Whenever an input has a large or continuous range of possible values that can be logically grouped into distinct behavior categories — a natural complement to boundary value analysis, which then specifically targets the edges between the partitions this technique identifies.',
+      practical: {
+        app: 'HRMS Employee Age Field (Eligibility)',
+        scenario:
+          'The HRMS\'s benefits eligibility check partitions the age field into: invalid (under 18), valid working-age (18–64), and a separate valid senior category (65+) with different benefit rules.',
+        pass: 'Testing one representative from each partition — age 16 (correctly rejected), age 35 (correctly processed under standard rules), and age 70 (correctly processed under senior rules) — confirms all three distinct behavior categories work as intended, without needing to test every possible age individually.',
+        fail: 'A partition assumption fails because internal logic has hidden sub-branches that treat age 60 differently without QA awareness.',
+      },
+      advantages: [
+        'Dramatically reduces the number of test cases needed while preserving genuinely meaningful coverage',
+        'Provides a systematic, repeatable, principled method for choosing test cases rather than picking values arbitrarily',
+        'Naturally complements boundary value analysis — partitions identify ranges, boundaries identify the risky edges between them',
+        'Makes test coverage reasoning explicit and transparent for audit and review',
+      ],
+      limitations: [
+        'Relies on the assumption that all values within a partition are treated identically — invalid partitioning hides bugs',
+        'Requires understanding the system\'s actual business rules to partition correctly',
+        'Less effective for inputs with complex interdependencies between multiple fields',
+        'Does not test boundary edges on its own — must pair with Boundary Value Analysis (Chapter 51)',
+      ],
+      tools: [
+        {
+          name: 'Manual Equivalence Partitioning Matrix',
+          sub: 'Equivalence Class & Representative Selection',
+          url: 'https://hearth-learn.vercel.app/manuals/testing-types',
+          seeChapter: 5,
+          desc: 'Divides input domains into Valid (V) and Invalid (I) equivalence classes (see Chapter 5), selecting single representative test vectors for each class.',
+          adv: [
+            'Reduces thousands of potential test inputs to a handful of high-confidence runs',
+            'Standard test design practice required across ISTQB methodologies',
+          ],
+          lim: [
+            'Risk of missing sub-partition anomalies if business logic is misunderstood',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Construct Equivalence Class Table',
+              p: 'Define valid and invalid partitions for Employee Age input.',
+              c: 'Class 1 (Invalid): Age < 18 -> Representative: 15\nClass 2 (Valid Standard): 18 <= Age <= 64 -> Representative: 35\nClass 3 (Valid Senior): Age >= 65 -> Representative: 72\nClass 4 (Invalid Non-Numeric): String/Special -> Representative: "abc"',
+            },
+            {
+              t: 'Step 2 — Execute representative tests across all 4 partitions',
+              p: 'Confirm Class 1 rejects with minor notice, Class 2 assigns Standard Benefits, Class 3 assigns Senior Benefits, Class 4 rejects with type error.',
+              c: 'Result: 4 targeted test cases provide 100% functional equivalence coverage for the entire age spectrum.',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: 'Input Domain Partitioning & Representative Extraction',
+          body: 'Segment input data ranges into discrete equivalence classes and select single representative vectors per partition.',
+          doThis: 'Partition complex loan interest rate calculator inputs into 5 distinct classes.',
+          code: 'npx jest tests/unit/equivalence-classes.test.ts',
+        },
+      ],
+      checklist: ['Categorized all valid and invalid input partitions', 'Selected exactly one representative value per equivalence class', 'Combined partition tests with boundary checks at class transitions'],
+      practice: { title: 'Equivalence partition table design', brief: 'Design an equivalence class table for an airline baggage weight fee calculator.' },
+      resources: [
+        r('guide', 'Black-box Test Design Techniques (ISTQB)', 'https://www.istqb.org', 'EN'),
+        r('guide', 'Equivalence Class Partitioning Explained', 'https://en.wikipedia.org/wiki/Equivalence_partitioning', 'EN'),
+      ],
+    }),
+
+    ch({
+      id: 'tt-monkey-testing',
+      kind: 'guide',
+      phase: 'Part 14 · Advanced Resilience, Chaos & Contracts',
+      level: 'intermediate',
+      title: 'Monkey Testing',
+      minutes: 20,
+      durationLabel: 'Chapter 53',
+      overviewText:
+        'Monkey testing bombards an application with random, unstructured input — random taps, random keystrokes, random navigation — generated automatically and at high volume, with no logic or intent behind any individual action, specifically to find crashes and stability issues through sheer volume rather than targeted design.',
+      why:
+        'Some crashes only surface after an enormous number of interactions in unpredictable sequences — combinations no human tester would ever manually think to try, let alone repeat thousands of times. Monkey testing trades precision for volume: it doesn\'t know what it\'s looking for, but by generating vast quantities of random interaction, it reliably finds the kind of raw stability bugs (crashes, freezes, memory issues) that accumulate under real, chaotic, high-volume usage.',
+      when:
+        'Particularly valuable for mobile apps before release, as a cheap, automatable stability stress-check — run for extended periods against a build to catch crashes before real, high-volume usage in the wild finds them first.',
+      practical: {
+        app: 'HRMS Mobile App Stability',
+        scenario:
+          'Android Monkey is run against the HRMS mobile app with 100,000 random events over several hours.',
+        pass: 'The resource leak is fixed, and a repeat 100,000-event run completes without a crash, giving real confidence in the app\'s stability under sustained, unpredictable usage.',
+        fail: 'The app crashes after approximately 40,000 events with an out-of-memory error, traced to a screen transition animation that wasn\'t properly releasing image resources on repeated rapid navigation — a leak that would only become noticeable after extensive real-world usage.',
+      },
+      advantages: [
+        'Extremely cheap to run — zero test case design or maintenance required, just a target event count',
+        'Finds real stability bugs through sheer volume that manual testing would never stumble onto',
+        'Android Monkey requires zero setup beyond having the standard Android SDK installed',
+        'Runs unattended overnight or in CI without ongoing manual effort',
+      ],
+      limitations: [
+        'Completely unstructured — cannot verify business logic or expected outputs, only raw crash stability',
+        'Crashes found can be hard to reproduce since random interaction streams are not always cleanly recorded',
+        'Does not test realistic user journeys — purely random clicks rarely resemble real user behavior',
+        'May generate impossible UI sequences that real users would never encounter',
+      ],
+      tools: [
+        {
+          name: 'Android Monkey (adb monkey)',
+          sub: 'Built-In Android SDK Pseudo-Random Event Injector',
+          url: 'https://developer.android.com/studio/test/other-testing-tools/monkey',
+          desc: 'A built-in Android SDK tool that generates a specified (often very large) number of pseudo-random user events — taps, gestures, system events — directly against an app, requiring zero setup beyond having the Android SDK installed.',
+          adv: [
+            'Built directly into Android OS/SDK with zero dependencies',
+            'Injects thousands of touch events, keypresses, and orientation changes per minute',
+            'Configurable throttle delays and seed parameters for pseudo-random repeatability',
+          ],
+          lim: [
+            'Confined to Android platforms (requires Appium/XCUITest for iOS)',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Launch Android Monkey against HRMS package',
+              p: 'Execute adb monkey command targeting app package with 50,000 events.',
+              c: 'adb shell monkey -p com.hrms.mobile --throttle 100 -v -v -v 50000 > monkey_log.txt',
+            },
+            {
+              t: 'Step 2 — Monitor logcat for ANRs and native crash dumps',
+              p: 'Search generated log for OutOfMemoryError and NullPointerExceptions.',
+              c: '// CRASH: com.hrms.mobile (pid 14202)\n// Short Msg: java.lang.OutOfMemoryError: Failed to allocate a 32MB bitmap\n// Long Msg: java.lang.OutOfMemoryError in DashboardActivity.onTransition()',
+            },
+            {
+              t: 'Step 3 — Reproduce and patch bitmap allocation leak',
+              p: 'Release cached bitmap drawables in onDestroy() and re-run Monkey with same random seed.',
+              c: 'adb shell monkey -p com.hrms.mobile -s 12345 50000 -> 0 Crashes -> STABILITY VERIFIED',
+            },
+          ],
+        },
+        {
+          name: 'Appium Chaos & Monkey Scripts',
+          sub: 'Cross-Platform Random UI Navigation Generator',
+          url: 'https://appium.io',
+          seeChapter: 38,
+          desc: 'Can be configured to generate random interaction sequences programmatically (see Chapter 38) across both iOS and Android apps.',
+          adv: [
+            'Works uniformly across iOS and Android mobile applications',
+            'Restricts random clicks to valid interactive elements within the DOM tree',
+          ],
+          lim: [
+            'Slower event generation speed compared to native adb monkey',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Execute Appium random element traversal loop',
+              p: 'Query interactive buttons and randomly click elements for 1,000 iterations.',
+              c: 'const elements = await driver.$$(\'button, a, input\');\nconst randomEl = elements[Math.floor(Math.random() * elements.length)];\nawait randomEl.click();',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: 'High-Volume Unstructured Random Event Bombardment',
+          body: 'Inject 50,000+ random tap, gesture, and keyboard events into mobile app runtimes auditing memory stability.',
+          doThis: 'Execute adb shell monkey stress run and analyze logcat ANR outputs.',
+          code: 'adb shell monkey -p com.hrms.mobile -v 50000',
+        },
+      ],
+      checklist: ['Configured reproducible random seed (-s) for debugging', 'Monitored system memory and heap allocations during runs', 'Audited app response times after sustained monkey event bursts'],
+      practice: { title: 'Android Monkey stability session', brief: 'Run a 25,000-event monkey test session on an Android APK and capture any ANR traces.' },
+      resources: [
+        r('tool', 'Android Studio UI/Application Exerciser Monkey', 'https://developer.android.com/studio/test/other-testing-tools/monkey', 'EN'),
+        r('tool', 'Appium Documentation', 'https://appium.io/docs/en/latest', 'EN'),
+      ],
+    }),
+
+    ch({
+      id: 'tt-chaos-testing',
+      kind: 'guide',
+      phase: 'Part 14 · Advanced Resilience, Chaos & Contracts',
+      level: 'advanced',
+      title: 'Chaos Testing',
+      minutes: 25,
+      durationLabel: 'Chapter 54',
+      overviewText:
+        'Chaos testing deliberately and continuously injects real failures into a live (typically production or production-like) system — killing services, introducing network latency, taking down dependencies — as an ongoing practice, verifying the system\'s actual resilience under real, unpredictable conditions rather than assuming resilience based on architecture alone.',
+      why:
+        'Distributed systems fail in ways that are extremely difficult to predict from architecture diagrams or code review alone — a service that\'s supposed to fail over gracefully might not, in practice, until it\'s actually tested by deliberately breaking it in a real, running environment. Chaos testing (an evolution of recovery testing, Chapter 24, applied continuously and often directly in production) builds genuine confidence in resilience by proving it under real conditions, rather than hoping the theoretical design holds up.',
+      when:
+        'For mature systems with real production traffic and enough infrastructure sophistication to safely inject controlled failure — typically an advanced practice adopted once basic reliability and recovery testing (Chapters 20, 24) are already well established, not a starting point for a young or fragile system.',
+      practical: {
+        app: 'HRMS Payroll Service Redundancy',
+        scenario:
+          'Chaos Monkey is configured to randomly terminate one of three redundant payroll-service instances during a controlled testing window.',
+        pass: 'Health check intervals are tightened, and a repeat test shows failover now completes within 5 seconds, with zero failed requests during the same instance termination — genuine, tested resilience rather than an untested assumption.',
+        fail: 'Terminating one instance causes a brief but real spike in failed requests — the load balancer takes 45 seconds to detect the failure and reroute traffic, longer than the assumed near-instant failover the team believed was in place.',
+      },
+      advantages: [
+        'Proves real resilience under actual failure conditions, not just theoretical resilience based on architecture design',
+        'Surfaces single points of failure believed to be redundant before they cause a real uncontrolled outage',
+        'Builds an engineering culture around designing for failure as the default expectation',
+        'Netflix\'s long track record demonstrates proven effectiveness in large-scale cloud systems',
+      ],
+      limitations: [
+        'Genuinely risky if run without sufficient automated monitoring, health checks, and rollback safety nets',
+        'Requires mature cloud infrastructure (Kubernetes, AWS Auto Scaling, multi-zone redundancy)',
+        'Not appropriate for early-stage or fragile architectures',
+        'Requires explicit organizational buy-in for production-level experiments',
+      ],
+      tools: [
+        {
+          name: 'Chaos Monkey by Netflix',
+          sub: 'Cloud Infrastructure Resilience & Pod Termination Engine',
+          url: 'https://github.com/Netflix/chaosmonkey',
+          desc: 'Netflix\'s original open-source chaos engineering tool — randomly and automatically terminates instances/services within a production environment during business hours, on the principle that engineers should build systems resilient enough to handle random failure as a matter of course.',
+          adv: [
+            'Forces architectural redundancy to be built into all microservices by default',
+            'Configurable schedules (runs only during office hours when engineers are on hand)',
+            'Integrates natively with AWS EC2 Auto Scaling Groups and Spinnaker',
+          ],
+          lim: [
+            'Requires mature multi-instance cloud deployments',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Configure Chaos Monkey schedule and eligible cluster targets',
+              p: 'Define targets in chaosmonkey.toml with bounded blast radius.',
+              c: '[chaosmonkey]\nenabled = true\nleashed = true\nschedule = "0 9-15 * * 1-5"\n[clusters]\ninclude = ["hrms-payroll-service"]',
+            },
+            {
+              t: 'Step 2 — Trigger controlled container/VM termination during business hours',
+              p: 'Chaos Monkey terminates payroll-service-pod-2.',
+              c: 'Chaos Monkey Event: Terminated instance i-0a823bf91 (payroll-service)\nAction: Kubernetes replica controller provisions replacement pod within 4.2s',
+            },
+            {
+              t: 'Step 3 — Verify zero dropped user requests in APM telemetry',
+              p: 'Inspect Datadog/Prometheus metrics for HTTP 502/503 errors during pod death.',
+              c: 'Result: Load balancer rerouted traffic to remaining 2 pods | Error Rate: 0.00% | Latency P99: +12ms -> PASS',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: 'Automated Instance & Pod Failure Injection',
+          body: 'Schedule randomized pod terminations against multi-replica Kubernetes clusters observing zero-downtime failover.',
+          doThis: 'Execute Chaos Monkey experiment in staging cluster and audit error rate telemetry.',
+          code: 'kubectl delete pod -l app=hrms-payroll --grace-period=0 --force',
+        },
+      ],
+      checklist: ['Verified multi-replica container redundancy across availability zones', 'Audited load balancer health check interval thresholds (<= 5s)', 'Enforced automated alerts on unrecovered pod terminations'],
+      practice: { title: 'Chaos engineering experiment design', brief: 'Design a chaos experiment injecting 200ms latency on a database connection.' },
+      resources: [
+        r('tool', 'Netflix Chaos Monkey GitHub', 'https://github.com/Netflix/chaosmonkey', 'EN'),
+        r('guide', 'Principles of Chaos Engineering', 'https://principlesofchaos.org', 'EN'),
+      ],
+    }),
+
+    ch({
+      id: 'tt-contract-testing',
+      kind: 'guide',
+      phase: 'Part 14 · Advanced Resilience, Chaos & Contracts',
+      level: 'intermediate',
+      title: 'Contract Testing',
+      minutes: 25,
+      durationLabel: 'Chapter 55',
+      overviewText:
+        'Contract testing verifies that two independently developed services — a consumer (e.g. a frontend or another microservice) and a provider (e.g. an API) — agree on the exact shape of their interaction, without requiring either side to run against a full, live instance of the other, by checking each side independently against a shared, explicit contract.',
+      why:
+        'In a microservices or multi-team architecture, spinning up every real dependent service just to test one integration point is slow, brittle, and doesn\'t scale — but skipping integration verification entirely risks exactly the kind of silent contract-breaking change interface testing (Chapter 11) exists to catch. Contract testing solves this by letting each side test independently against a shared, versioned agreement, catching breaking changes without ever needing a full, live, integrated environment.',
+      when:
+        'In any architecture with multiple independently deployed services or teams that depend on each other\'s APIs — run in CI on both the consumer and provider sides whenever either changes, specifically before either side is deployed, to catch a contract break before it reaches a real integrated environment.',
+      practical: {
+        app: 'HRMS Payroll Frontend and Payslip API',
+        scenario:
+          'The HRMS frontend team defines a Pact contract expecting the /payslip/{id}/latest endpoint to always return net_salary as a number (directly echoing Chapter 11\'s interface testing example, verified here without needing the frontend and backend running together).',
+        pass: 'The backend reverts the field back to a number, Pact verification passes, and both teams can deploy independently with confidence the contract still holds.',
+        fail: 'The backend team\'s Pact verification run fails after a change accidentally starts returning net_salary as a string — caught in the backend team\'s own CI, before their deploy, without the frontend team\'s environment needing to be involved at all.',
+      },
+      advantages: [
+        'Verifies real integration compatibility without needing a full live integrated environment',
+        'Scales cleanly across dozens of microservices and independent team release cadences',
+        'Catches breaking API schema changes immediately in CI before code is deployed',
+        'The generated contract acts as living, versioned documentation of API expectations',
+      ],
+      limitations: [
+        'Requires both consumer and provider teams to adopt and maintain Pact contracts',
+        'Does not verify full end-to-end multi-service business logic — complements E2E testing',
+        'Upfront setup cost for Pact Broker infrastructure and CI workflows',
+        'Contracts must be actively versioned as APIs evolve to avoid schema drift',
+      ],
+      tools: [
+        {
+          name: 'Pact Framework & Pact Broker',
+          sub: 'Consumer-Driven Contract Testing Standard',
+          url: 'https://pact.io',
+          desc: 'An open-source contract testing framework where the consumer defines its expectations of the provider as an explicit, shareable contract file, and the provider then verifies independently that it actually satisfies that same contract.',
+          adv: [
+            'Consumer-driven contract generation in JavaScript, Java, Python, Go, and .NET',
+            'Pact Broker (\'can-i-deploy\' CLI tool) prevents deployments if contract verification fails',
+            'Eliminates flaky, slow end-to-end integration test environments in CI',
+          ],
+          lim: [
+            'Requires hosting or using hosted Pact Broker (PactFlow)',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Consumer defines API expectations in Pact test',
+              p: 'Frontend tests define expected JSON structure and publish contract to Pact Broker.',
+              c: 'await pact.addInteraction({\n  state: \'a valid employee exists\',\n  uponReceiving: \'a request for latest payslip\',\n  withRequest: { method: \'GET\', path: \'/api/payslip/1042/latest\' },\n  willRespondWith: {\n    status: 200,\n    body: { net_salary: MatchersV3.number(4500.00) }\n  }\n});',
+            },
+            {
+              t: 'Step 2 — Provider verifies contract independently in CI',
+              p: 'Backend runs Pact verification test against its local API server.',
+              c: 'npx pact-provider-verifier --provider-base-url=http://localhost:8080 --broker-url=https://pact.internal\nResult: 1 interaction verified successfully (0 contract breaks)',
+            },
+            {
+              t: 'Step 3 — Run can-i-deploy gatekeeper before production release',
+              p: 'Verify both frontend and backend versions satisfy compatible contracts.',
+              c: 'pact-broker can-i-deploy --pacticipant HRMS-Frontend --version 2.4.0 --to-environment production\nResult: Computer says YES. Safe to deploy.',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: 'Consumer-Driven Contract Generation & Verification',
+          body: 'Author consumer contract expectations and execute automated provider verification in CI pipelines.',
+          doThis: 'Run pact-provider-verifier against staging backend API.',
+          code: 'npx pact-provider-verifier --provider-base-url=http://localhost:3001 --pact-urls=./pacts/frontend-backend.json',
+        },
+      ],
+      checklist: ['Published versioned pact contracts to central Pact Broker', 'Configured can-i-deploy gating checks in GitHub Actions CI', 'Verified provider satisfies all active consumer contract versions'],
+      practice: { title: 'Pact contract test implementation', brief: 'Write a consumer Pact test for an employee profile endpoint and verify it against a Mock Service.' },
+      resources: [
+        r('tool', 'Pact Official Documentation', 'https://docs.pact.io', 'EN'),
+        r('tool', 'PactFlow Hosted Contract Platform', 'https://pactflow.io', 'EN'),
+      ],
+    }),
+
+    ch({
+      id: 'tt-concurrency-testing',
+      kind: 'guide',
+      phase: 'Part 14 · Advanced Resilience, Chaos & Contracts',
+      level: 'advanced',
+      title: 'Concurrency Testing',
+      minutes: 25,
+      durationLabel: 'Chapter 56',
+      overviewText:
+        'Concurrency testing verifies an application\'s correctness when multiple operations happen simultaneously against shared data or resources — checking specifically for race conditions, deadlocks, and data corruption that only occur when timing between simultaneous operations lines up in exactly the wrong way.',
+      why:
+        'Some bugs are entirely invisible in single-user, sequential testing and only emerge when two or more operations genuinely overlap in time against the same shared resource — two users updating the same record simultaneously, two processes both reading-then-writing a value without proper locking, resulting in one update silently overwriting the other. These race-condition bugs are notoriously hard to reproduce reliably, since they depend on precise, often rare timing.',
+      when:
+        'Specifically for any feature involving shared, concurrently-accessed data or resources (booking systems, balance/inventory updates, any "read-then-write" operation) — tested deliberately, since concurrency bugs essentially never surface through normal single-user manual testing at all.',
+      practical: {
+        app: 'HRMS Last-Slot Leave Approval',
+        scenario:
+          'Two managers simultaneously approve overlapping leave requests that would each independently be valid, but together would leave the team without adequate coverage on a specific day — a shared-resource conflict tested with JMeter firing both approval requests at the exact same moment.',
+        pass: 'A database-level lock on the coverage check ensures the second concurrent approval correctly sees the first one\'s effect and is properly blocked with a clear conflict error, verified by re-running the same simultaneous-approval scenario.',
+        fail: 'Both approvals succeed independently, since each request only checks current coverage without accounting for the other request being processed at the exact same instant — a lost-update race condition resulting in a real staffing gap neither manager intended.',
+      },
+      advantages: [
+        'Directly catches race conditions and deadlocks that are completely invisible to sequential testing',
+        'Verifies database isolation levels (SERIALIZABLE, REPEATABLE READ) and mutex locking mechanisms',
+        'JMeter synchronization timers force genuinely simultaneous HTTP execution',
+        'Findings translate directly into concrete architectural fixes (atomic operations, optimistic concurrency locking)',
+      ],
+      limitations: [
+        'Race conditions depend on microscopic CPU timing differences and can be intermittent to reproduce',
+        'Requires pinpointing high-risk shared database tables and transactions in advance',
+        'Verification requires direct database queries to audit data integrity after tests finish',
+        'Subsequent code refactors can re-introduce race conditions without strict concurrency regression checks',
+      ],
+      tools: [
+        {
+          name: 'Apache JMeter Synchronizing Timer',
+          sub: 'Simultaneous Concurrency & Race Condition Probe',
+          url: 'https://jmeter.apache.org',
+          seeChapter: 14,
+          desc: 'Used here not for volume performance measurement (see Chapter 14), but specifically configured with Synchronizing Timers to release multiple threads at the exact same microsecond against a shared resource.',
+          adv: [
+            'Synchronizing Timer holds threads until exact batch count is reached, releasing them simultaneously',
+            'Parametrized thread requests test conflicting balance deductions or approvals',
+            'Automated response assertions catch HTTP 409 Conflict vs 500 DB Deadlock exceptions',
+          ],
+          lim: [
+            'Requires configuring thread rendezvous points in JMeter GUI',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Configure Synchronizing Timer in JMeter Thread Group',
+              p: 'Set Group of 10 threads to block until all 10 are queued, then fire simultaneously.',
+              c: 'Thread Group: 10 Threads, Ramp-Up: 0s\n+ Synchronizing Timer (Number of Simulated Users to Group by: 10)\n+ HTTP Request: POST /api/v1/leave/approve-slot',
+            },
+            {
+              t: 'Step 2 — Execute concurrent approval requests against single remaining slot',
+              p: 'Fire 10 simultaneous approvals against Employee #1042 slot.',
+              c: 'Results:\n- Thread 1: HTTP 200 OK (Slot Claimed)\n- Threads 2-10: HTTP 409 Conflict (Slot No Longer Available)\n- Database Status: Exactly 1 record approved, 0 over-allocations -> PASS',
+            },
+            {
+              t: 'Step 3 — Verify database integrity with SQL check',
+              p: 'Assert no double-booking or negative remaining slot count in Postgres.',
+              c: 'SELECT count(*) FROM leave_slots WHERE slot_date = \'2026-09-01\' AND status = \'APPROVED\';\nResult: 1 (Row-level SELECT FOR UPDATE lock prevented race condition)',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: 'Simultaneous Multi-Threaded State Assertion',
+          body: 'Configure thread synchronization barriers releasing concurrent HTTP transactions against identical database rows.',
+          doThis: 'Execute JMeter concurrent approval test and assert 0 race condition data leaks.',
+          code: 'jmeter -n -t tests/concurrency/simultaneous-approval.jmx -l results.jtl',
+        },
+      ],
+      checklist: ['Identified all critical read-then-write database transactions', 'Configured synchronizing thread rendezvous barriers in JMeter', 'Verified database row locking (SELECT FOR UPDATE) and transaction isolation'],
+      practice: { title: 'Concurrency race condition probe', brief: 'Set up a JMeter test firing 50 simultaneous debit requests against a bank account with $100 balance.' },
+      resources: [
+        r('tool', 'Apache JMeter Documentation', 'https://jmeter.apache.org/usermanual', 'EN'),
+        r('guide', 'Concurrency Control & Race Conditions in Databases', 'https://en.wikipedia.org/wiki/Concurrency_control', 'EN'),
+      ],
+    }),
   ],
 }
+
 
 
 
