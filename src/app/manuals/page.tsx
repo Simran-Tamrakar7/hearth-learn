@@ -283,14 +283,8 @@ export default function ManualsCatalogPage() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
             <div className="space-y-4 w-full">
               <div className="flex flex-wrap items-center gap-3">
-=======
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 w-full space-y-6 flex-1">
-        <div className="bg-gradient-to-br from-white via-[#FAF7F2] to-[#F5EFE6] border border-[#E7E0D3] rounded-2xl p-5 sm:p-7 space-y-4 shadow-2xs relative overflow-hidden">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="space-y-2 w-full">
-              <div className="flex flex-wrap items-center gap-2.5">
->>>>>>> e4b193b (feat(manuals): add Testing Types Part 1 with interactive tool switcher and Hearth theme)
                 <Badge variant="amber" icon={<Compass className="w-3.5 h-3.5" />}>
+
                   COURSE CATALOGUE · MASTER MANUALS
                 </Badge>
                 <span className="text-xs font-semibold text-[#8A9B95]">
