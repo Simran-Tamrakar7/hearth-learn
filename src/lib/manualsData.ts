@@ -21,10 +21,12 @@ export interface ToolItem {
   sub: string;
   url?: string | null;
   desc: string;
+  seeChapter?: number;
   adv: string[];
   lim: string[];
   steps?: ToolStep[];
 }
+
 
 export interface PracticalExample {
   app: string;

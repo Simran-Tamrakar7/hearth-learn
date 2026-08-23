@@ -1,15 +1,14 @@
-"use client";
-
 import React, { useState } from "react";
-import { ExternalLink, ChevronRight, Copy, Check, Terminal } from "lucide-react";
+import { ExternalLink, ChevronRight, Copy, Check, Terminal, ArrowRight, BookOpen } from "lucide-react";
 import { ToolItem } from "@/lib/manualsData";
 
 interface ToolSwitcherProps {
   tools: ToolItem[];
   className?: string;
+  onNavigateChapter?: (chapterIndex: number) => void;
 }
 
-export function ToolSwitcher({ tools, className = "" }: ToolSwitcherProps) {
+export function ToolSwitcher({ tools, className = "", onNavigateChapter }: ToolSwitcherProps) {
   const [activeTab, setActiveTab] = useState(0);
   const [isStepsOpen, setIsStepsOpen] = useState(true);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
@@ -24,6 +23,32 @@ export function ToolSwitcher({ tools, className = "" }: ToolSwitcherProps) {
     setTimeout(() => {
       setCopiedIndex(null);
     }, 1800);
+  };
+
+  // Helper to parse description and render clickable Chapter links if present
+  const renderDescWithLinks = (text: string) => {
+    if (!onNavigateChapter) return text;
+    const parts = text.split(/(Chapter\s+\d+|see Chapter\s+\d+)/gi);
+    return parts.map((part, pIdx) => {
+      const match = part.match(/Chapter\s+(\d+)/i);
+      if (match) {
+        const chapNum = parseInt(match[1], 10);
+        return (
+          <button
+            key={pIdx}
+            type="button"
+            onClick={() => onNavigateChapter(chapNum - 1)}
+            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 mx-1 rounded-md bg-[#FAF7F2] hover:bg-[#EFE8DC] border border-[#D97706]/30 text-[#D97706] font-semibold text-xs transition-colors cursor-pointer"
+            title={`Jump directly to Chapter ${chapNum}`}
+          >
+            <BookOpen className="w-3 h-3 text-[#D97706]" />
+            <span>{part}</span>
+            <ArrowRight className="w-2.5 h-2.5 text-[#D97706]" />
+          </button>
+        );
+      }
+      return part;
+    });
   };
 
   return (
@@ -64,14 +89,29 @@ export function ToolSwitcher({ tools, className = "" }: ToolSwitcherProps) {
       <div className="p-5 sm:p-7 bg-white space-y-5 animate-in fade-in duration-200">
         {/* Tool Header: Title & URL */}
         <div className="flex flex-wrap items-baseline justify-between gap-3 pb-1 border-b border-[#E7E0D3]/60">
-          <h4 className="font-serif-display text-xl sm:text-2xl font-bold text-[#1C2A26] flex items-baseline gap-2">
-            <span>{currentTool.name}</span>
-            {currentTool.sub && (
-              <span className="text-xs sm:text-sm font-sans font-medium text-[#52635E]">
-                — {currentTool.sub}
-              </span>
+          <div className="flex flex-wrap items-baseline gap-2">
+            <h4 className="font-serif-display text-xl sm:text-2xl font-bold text-[#1C2A26] flex items-baseline gap-2">
+              <span>{currentTool.name}</span>
+              {currentTool.sub && (
+                <span className="text-xs sm:text-sm font-sans font-medium text-[#52635E]">
+                  — {currentTool.sub}
+                </span>
+              )}
+            </h4>
+
+            {currentTool.seeChapter && onNavigateChapter && (
+              <button
+                type="button"
+                onClick={() => onNavigateChapter(currentTool.seeChapter! - 1)}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#FAF7F2] hover:bg-[#EFE8DC] border border-[#D97706]/40 text-[#D97706] text-xs font-bold font-mono transition-all shadow-2xs cursor-pointer ml-2"
+                title={`Jump directly to Chapter ${currentTool.seeChapter}`}
+              >
+                <BookOpen className="w-3.5 h-3.5 text-[#D97706]" />
+                <span>Jump to Chapter {currentTool.seeChapter}</span>
+                <ArrowRight className="w-3 h-3 text-[#D97706]" />
+              </button>
             )}
-          </h4>
+          </div>
 
           {currentTool.url && (
             <a
@@ -88,8 +128,9 @@ export function ToolSwitcher({ tools, className = "" }: ToolSwitcherProps) {
 
         {/* Tool Description */}
         <p className="text-xs sm:text-[14px] leading-relaxed text-[#52635E] max-w-4xl font-sans">
-          {currentTool.desc}
+          {renderDescWithLinks(currentTool.desc)}
         </p>
+
 
         {/* Advantages & Limitations 2-Column Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">

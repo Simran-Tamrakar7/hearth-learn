@@ -1228,6 +1228,388 @@ export const TESTING_TYPES_CHAPTERS: TestingChapterData[] = [
       },
     ],
   },
+  {
+    no: "09",
+    title: "Sanity Testing",
+    category: "Functional",
+    desc: "Sanity testing is a narrow, focused check run after a specific bug fix or minor change — not the whole application, just the area that changed and its immediate neighbors — to confirm the fix works and didn't break anything obviously adjacent, before committing to a fuller regression pass.",
+    why: "After a fix, the natural question is \"did that actually work, and did it break anything nearby?\" Running a full regression suite for every single small fix is wasteful when the change is narrow. Sanity testing answers that immediate question quickly, so a fix can be confidently merged or immediately flagged as incomplete without waiting on a full test cycle.",
+    when: "Right after a bug fix, a small config change, or a minor patch — before merging, and before (or sometimes instead of, for very low-risk changes) a full regression run. It's the quick \"does this look sane\" check between smoke testing and full regression.",
+    practical: {
+      app: "HRMS — Single Bug Fix Sanity Check",
+      scenario: "A developer fixes a bug where employee date of birth in the profile editor was saving with an off-by-one timezone offset. The tester runs a sanity check on the DOB picker, saves the profile, and checks adjacent fields (Join Date, Anniversary Date) to confirm the fix works and didn't break nearby date inputs.",
+      pass: "DOB saves correctly as 1995-04-12, Join Date and Anniversary fields remain intact and save without corruption.",
+      fail: "Fix for DOB inadvertently breaks Join Date parsing, causing 500 error on profile update — caught in minutes before full regression.",
+    },
+    advantages: [
+      "Very fast — targeted at exactly the change, not the whole application",
+      "Gives quick confidence that a specific fix actually resolved the issue",
+      "Avoids the wasted cost of a full regression run on every small patch",
+      "Naturally performed by whoever understands the change best",
+    ],
+    limitations: [
+      "Narrow by design — will not catch problems outside the checked area",
+      "Relies heavily on the tester correctly judging what's 'adjacent' to the change",
+      "No formal record or repeatability — it's judgment-based, not scripted",
+      "Not a substitute for regression testing before a real release",
+    ],
+    tools: [
+      {
+        name: "Manual Testing",
+        sub: "Judgment-Based Verification",
+        url: null,
+        seeChapter: 5,
+        desc: "Sanity testing is inherently manual and judgment-based (see Chapter 5): a tester who understands the fix decides which handful of related checks actually matter, then runs exactly those — no script, because the scope is different every time.",
+        adv: [
+          "Very fast — targeted at exactly the change, not the whole application",
+          "Gives quick confidence that a specific fix actually resolved the issue",
+          "Avoids the wasted cost of a full regression run on every small patch",
+          "Naturally performed by whoever understands the change best",
+        ],
+        lim: [
+          "Narrow by design — will not catch problems outside the checked area",
+          "Relies heavily on the tester correctly judging what's 'adjacent' to the change",
+          "No formal record or repeatability — it's judgment-based, not scripted",
+          "Not a substitute for regression testing before a real release",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Read the fix description",
+            p: "Understand exactly which files, components, and database models were touched.",
+            c: `PR #412: "Fix timezone offset on employee DOB datepicker"\nChanged: components/DatePicker.tsx, utils/dateFormatter.ts`,
+          },
+          {
+            t: "Step 2 — Identify target & adjacent functionality",
+            p: "Target: Profile DOB field. Adjacent: Join Date, Probation End Date, Age calculation widget.",
+            c: `Sanity Scope: 1. Edit DOB -> 2. Save -> 3. Reload Profile -> 4. Check Join Date -> 5. Verify Age Badge`,
+          },
+          {
+            t: "Step 3 — Verify original bug is resolved",
+            p: "Reproduce exact conditions from original defect report.",
+            c: `Input: Select "1992-06-15" (UTC+5:45 timezone)\nExpected: Displayed as "June 15, 1992" after saving\nActual: Saved and displayed as June 15, 1992 (Fixed)`,
+          },
+          {
+            t: "Step 4 — Spot-check adjacent fields",
+            p: "Verify neighboring date pickers and calculated fields still behave normally.",
+            c: `Join Date: "2021-01-10" remains uncorrupted\nCalculated Age: "33 years" updates dynamically`,
+          },
+          {
+            t: "Step 5 — Confirm no regression in narrow area",
+            p: "Ensure profile form submissions still return HTTP 200 without console errors.",
+            c: `Network: PUT /api/employees/1042 -> 200 OK (38ms)\nConsole: 0 errors / 0 warnings`,
+          },
+          {
+            t: "Step 6 — Sign off sanity gate",
+            p: "Mark fix as verified in PR comments, unblocking merge or promotion to staging.",
+            c: `Verdict: SANITY PASSED -> Safe to merge into develop branch`,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    no: "10",
+    title: "Regression Testing",
+    category: "Functional",
+    desc: "Regression testing re-runs previously passing tests after a code change to confirm that nothing that used to work has quietly broken — the opposite direction from sanity testing: instead of narrowly checking the new change, it broadly re-checks everything that was already known to be correct.",
+    why: "Software is interconnected — a change meant to fix one thing can silently break something completely unrelated through a shared dependency, a reused component, or an overlooked side effect. Without regression testing, those breakages aren't discovered until a user (or worse, a customer in production) stumbles into them. A strong regression suite is what lets a team ship frequently without fear.",
+    when: "Before every release, after every significant merge to the main branch, and ideally on every pull request via CI/CD. The regression suite grows over time as new features are added — each new feature's tests become part of the suite that protects everything built after it.",
+    practical: {
+      app: "HRMS Regression Before a Release",
+      scenario: "Ahead of a monthly release, the full 120-test regression suite runs against the release candidate. A recent refactor of the date-formatting utility, done to fix a display bug on the payroll page, subtly changes how dates are parsed on the leave request form.",
+      pass: "All 120 tests green — release proceeds.",
+      fail: "4 leave-request tests fail with date-parsing errors, tracing back to the shared utility — a regression that had nothing to do with what the refactor was meant to touch, caught before it reached users.",
+    },
+    advantages: [
+      "Catches breakage in old, unrelated functionality that no one thought to manually re-check",
+      "Enables frequent releases with confidence instead of dread",
+      "Suite grows automatically in value over time as more features are covered",
+      "Runs unattended in CI, giving continuous protection with no ongoing manual effort",
+    ],
+    limitations: [
+      "Suite maintenance is a real, ongoing cost — tests need updates as the app legitimately changes",
+      "Large suites can become slow without parallelization, becoming a release bottleneck",
+      "Flaky tests erode trust fast — once a team starts ignoring 'failures,' the suite stops protecting anything",
+      "Doesn't replace exploratory or new-feature testing — it only re-checks what's already scripted",
+    ],
+    tools: [
+      {
+        name: "Selenium",
+        sub: "Grid Parallelized Suites",
+        url: "https://selenium.dev",
+        seeChapter: 6,
+        desc: "A common home for legacy regression suites (see Chapter 6); its maturity and Grid-based parallelization make large, long-running regression suites practical to execute quickly across many browsers.",
+        adv: [
+          "Broadest browser and language support of any automation tool",
+          "Selenium Grid parallelizes large regression suites across machines",
+          "Deepest CI/CD and test-management tool integration in the industry",
+          "Best fit for teams with existing Java/C#/Python Selenium investment",
+        ],
+        lim: [
+          "No auto-waiting — flaky without disciplined explicit waits",
+          "More verbose to write and maintain than Playwright or Cypress",
+          "Slower feedback loop during local development than Cypress's live reload",
+          "Debugging failures takes more manual digging without a built-in trace tool",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Organize test suites into regression groups",
+            p: "Tag tests with pytest markers: @pytest.mark.regression, @pytest.mark.core_auth, @pytest.mark.payroll.",
+            c: `@pytest.mark.regression\n@pytest.mark.leaves\ndef test_leave_approval_workflow(driver):\n    # Full 4-step approval flow\n    pass`,
+          },
+          {
+            t: "Step 2 — Distribute execution across Selenium Grid",
+            p: "Run tests in parallel across multiple browser nodes.",
+            c: `pytest -m regression -n 8 --dist loadscope --html=reports/full-regression.html`,
+          },
+          {
+            t: "Step 3 — Investigate failures individually",
+            p: "Every regression failure is a critical signal that previously working code broke.",
+            c: `FAILURES: test_leave_request_dates -> AttributeError in dateFormatter.ts line 42`,
+          },
+        ],
+      },
+      {
+        name: "Playwright",
+        sub: "Flake-Free CI Suite",
+        url: "https://playwright.dev",
+        seeChapter: 6,
+        desc: "Its auto-waiting and Trace Viewer (see Chapter 6) make it well suited for regression suites specifically because flaky regression failures (false positives) are one of the most damaging things a team can have — a suite nobody trusts stops getting acted on.",
+        adv: [
+          "Auto-waiting removes most flaky, timing-based failures",
+          "One API for Chromium, Firefox, and WebKit",
+          "Trace Viewer gives a step-by-step replay of any failed run",
+          "Network interception mocks specific states without needing real backend data",
+        ],
+        lim: [
+          "Smaller legacy tooling footprint than Selenium",
+          "A real learning curve for teams migrating existing Selenium suites",
+          "Modern-language-first — weaker fit for older tech stacks",
+          "Traces add storage overhead on large CI runs",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Add newly shipped features to regression directory",
+            p: "Keep tests organized by domain: tests/regression/auth/, tests/regression/payroll/.",
+            c: `tests/\n├── regression/\n│   ├── test_auth.py\n│   ├── test_employees.py\n│   ├── test_leaves.py\n│   └── test_payroll.py`,
+          },
+          {
+            t: "Step 2 — Run regression with parallel workers",
+            p: "Execute 120 tests across 4 worker processes in under 3 minutes.",
+            c: `pytest tests/regression/ --numprocesses 4 --tracing=retain-on-failure`,
+          },
+          {
+            t: "Step 3 — Inspect Trace Viewer on regression failure",
+            p: "Replay exact network requests and DOM states leading to regression failure.",
+            c: `playwright show-trace test-results/test_leaves-failed/trace.zip`,
+          },
+        ],
+      },
+      {
+        name: "BugBug",
+        sub: "No-Code Regression Suite",
+        url: "https://bugbug.io",
+        seeChapter: 7,
+        desc: "Since regression suites accumulate dozens or hundreds of recorded scenarios over time (see Chapter 7), BugBug's no-code recording lets non-developer QA staff keep contributing new regression cases without bottlenecking on engineering time to write them.",
+        adv: [
+          "No coding required — QA testers without dev skills can create real automated tests",
+          "Recording is fast — a working test exists minutes after the manual walkthrough",
+          "Visual editing makes maintaining tests approachable for non-engineers",
+          "Built-in cloud scheduling and reporting without separate CI setup",
+        ],
+        lim: [
+          "Less flexible than code-based tools for complex logic or conditional flows",
+          "Free tier has limits on test runs and team size",
+          "Recorded selectors can be brittle if the UI changes structurally",
+          "Less control over test architecture than a hand-written Playwright/Cypress suite",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Accumulate recorded test cases",
+            p: "Every completed sprint ticket gets a corresponding recorded scenario added to BugBug.",
+            c: `Suite: "Main Release Regression Suite" (74 recorded flows)`,
+          },
+          {
+            t: "Step 2 — Schedule nightly regression runs",
+            p: "Configure cloud runner to execute the full suite every night at 2:00 AM.",
+            c: `Schedule: Daily @ 02:00 UTC -> Notify Slack #qa-alerts on failure`,
+          },
+          {
+            t: "Step 3 — Prune outdated tests during redesigns",
+            p: "Update recorded steps visually when UI workflows change intentionally.",
+            c: `Action: Re-record Step 3 (New multi-step leave modal) -> Save suite version`,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    no: "11",
+    title: "Interface Testing",
+    category: "Functional",
+    desc: "Interface testing verifies the points where two systems, modules, or layers communicate — most commonly APIs — checking that requests are handled correctly, responses match the expected contract, error codes are correct, and data types and structures are exactly what the consuming side expects.",
+    why: "An interface is a contract, and contracts get broken silently — a backend team renames a field, changes a data type from string to number, or removes a value the frontend depends on, and nothing about the backend's own tests notices because the backend still \"works\" in isolation. Interface testing exists specifically to catch contract breaks at the boundary, before they surface as a broken frontend or a failed downstream integration.",
+    when: "As soon as an API or interface is defined and ready to be consumed by another team or component — often before the consuming side is even built, using the interface contract itself. It should run in CI on every change to the API layer, since interface breaks are cheap to catch at this level and expensive to catch after the frontend has already shipped against a broken assumption.",
+    practical: {
+      app: "HRMS Payroll API Contract",
+      scenario: "The payroll API's /payslip/{id}/latest endpoint is expected to always return net_salary as a number. A backend change accidentally starts returning it as a formatted string (\"NPR 45,000\") instead.",
+      pass: "The interface test asserts typeof response.net_salary === \"number\" and passes when the field is numeric.",
+      fail: "The assertion fails immediately after the backend change — caught in CI before the frontend, which does arithmetic on that field, ever breaks in front of a real user.",
+    },
+    advantages: [
+      "Catches breaking contract changes before they reach any consumer of the API",
+      "Runs independently of the frontend, so interface bugs are found earlier and diagnosed faster",
+      "Assertions double as living documentation of exactly what the API guarantees",
+      "Reusable across every team or service that consumes the same interface",
+    ],
+    limitations: [
+      "Only as good as the assumptions written into the assertions — an untested edge case stays invisible",
+      "Doesn't verify how the interface behaves under real UI-driven usage patterns",
+      "Needs to be kept in sync manually when the contract intentionally evolves",
+      "JavaScript-only assertions in Postman limit how complex the contract checks can get",
+    ],
+    tools: [
+      {
+        name: "Postman",
+        sub: "API Contract Validation",
+        url: "https://postman.com",
+        seeChapter: 2,
+        desc: "Postman is used here specifically (see Chapter 2) to validate the contract itself: status codes, response shape, field types, and required fields — independent of any particular UI flow that might consume the API.",
+        adv: [
+          "Catches breaking contract changes before they reach any consumer of the API",
+          "Runs independently of the frontend, so interface bugs are found earlier and diagnosed faster",
+          "Assertions double as living documentation of exactly what the API guarantees",
+          "Reusable across every team or service that consumes the same interface",
+        ],
+        lim: [
+          "Only as good as the assumptions written into the assertions — an untested edge case stays invisible",
+          "Doesn't verify how the interface behaves under real UI-driven usage patterns",
+          "Needs to be kept in sync manually when the contract intentionally evolves",
+          "JavaScript-only assertions in Postman limit how complex the contract checks can get",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Define expected endpoint contract",
+            p: "Document required schema: status codes, keys, and strict primitive types.",
+            c: `GET /api/v1/payslips/latest\nContract:\n- status: 200 OK\n- id: string (UUID)\n- employee_id: number\n- net_salary: number\n- line_items: array`,
+          },
+          {
+            t: "Step 2 — Write Tests tab schema assertions",
+            p: "Validate response types and structure using pm.expect.",
+            c: `pm.test("Status code is 200", () => {\n    pm.response.to.have.status(200);\n});\n\npm.test("Validate contract data types", () => {\n    const res = pm.response.json();\n    pm.expect(res).to.have.property("net_salary");\n    pm.expect(typeof res.net_salary).to.eql("number");\n    pm.expect(Array.isArray(res.line_items)).to.be.true;\n});`,
+          },
+          {
+            t: "Step 3 — Test happy path boundary",
+            p: "Execute valid requests and verify 200/201 status codes.",
+            c: `pm.test("Response time is under 200ms", () => {\n    pm.expect(pm.response.responseTime).to.be.below(200);\n});`,
+          },
+          {
+            t: "Step 4 — Test contract violations deliberately",
+            p: "Send malformed payload (e.g. invalid string ID) and assert 400 Bad Request with standard error envelope.",
+            c: `// Request with employee_id = "invalid-abc"\npm.test("Returns 400 with standard error object", () => {\n    pm.response.to.have.status(400);\n    const err = pm.response.json();\n    pm.expect(err.error).to.eql("INVALID_EMPLOYEE_ID");\n});`,
+          },
+          {
+            t: "Step 5 — Save dedicated contract collection",
+            p: "Keep contract tests isolated in an 'Interface Contracts' collection.",
+            c: `Collection: "HRMS API Contracts v1" (38 endpoint tests)`,
+          },
+          {
+            t: "Step 6 — Run via Newman CLI in CI pipeline",
+            p: "Execute contract checks on every backend commit before frontend builds.",
+            c: `newman run collections/api-contracts.json -e env/staging.json --reporters cli,junit`,
+          },
+          {
+            t: "Step 7 — Version collection alongside API",
+            p: "Commit contract collection files in the same git repository as the backend service.",
+            c: `git add postman/api-contracts.json && git commit -m "chore(api): update contract for v1.2"`,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    no: "12",
+    title: "Usability Testing",
+    category: "Functional",
+    desc: "Usability testing evaluates how easy, intuitive, and pleasant an application is for real users to actually use — not whether a feature technically works, but whether people can find it, understand it, and complete their task without confusion, frustration, or unnecessary effort.",
+    why: "A feature can pass every functional test and still fail its users if nobody can figure out how to use it. Confusing navigation, unclear labels, hidden actions, and unexpected flows drive users away or generate support tickets, even when the underlying logic is flawless. Usability testing is where a team learns whether the software actually serves the humans using it, not just the specification.",
+    when: "Early, during design and prototyping (to catch usability problems before they're expensive to fix), and again after a feature ships, by observing real usage patterns. It's a continuous practice, not a one-time gate — usability issues are often only visible once real users start behaving in ways the design didn't anticipate.",
+    practical: {
+      app: "HRMS Leave Request Form",
+      scenario: "Session recordings show a pattern: a large share of users click the \"Reason\" field, pause for several seconds, then abandon the form entirely without submitting.",
+      pass: "Adding placeholder examples in the Reason field and marking it optional instead of required raises form completion significantly, visible in the next batch of recordings.",
+      fail: "Recordings show repeated hesitation and abandonment at the same field — a usability problem invisible to every functional and regression test that had been passing the whole time, because the form worked correctly; it just wasn't usable.",
+    },
+    advantages: [
+      "Shows real user behavior, not assumptions about how users will behave",
+      "Session recordings surface confusion (rage-clicks, dead ends) that no functional test could ever detect",
+      "Heatmaps make it immediately visible when an important action is being missed by users",
+      "Feedback widgets capture user sentiment in the exact moment of friction",
+    ],
+    limitations: [
+      "Observational, not diagnostic — it shows that users struggle, not automatically why",
+      "Free tier limits session/recording volume, capping how much real usage can be observed",
+      "Raises privacy considerations — session recordings can capture sensitive on-screen data if not configured carefully",
+      "Doesn't replace structured usability testing sessions with direct user interviews and follow-up questions",
+    ],
+    tools: [
+      {
+        name: "Hotjar",
+        sub: "Behavior Analytics & Heatmaps",
+        url: "https://hotjar.com",
+        desc: "A behavior analytics tool that shows how real users actually interact with an application — session recordings play back exactly what a user clicked, scrolled, and hesitated on; heatmaps show where attention and clicks concentrate; and feedback widgets let users report confusion directly, in the moment.",
+        adv: [
+          "Shows real user behavior, not assumptions about how users will behave",
+          "Session recordings surface confusion (rage-clicks, dead ends) that no functional test could ever detect",
+          "Heatmaps make it immediately visible when an important action is being missed by users",
+          "Feedback widgets capture user sentiment in the exact moment of friction",
+        ],
+        lim: [
+          "Observational, not diagnostic — it shows that users struggle, not automatically why",
+          "Free tier limits session/recording volume, capping how much real usage can be observed",
+          "Raises privacy considerations — session recordings can capture sensitive on-screen data if not configured carefully",
+          "Doesn't replace structured usability testing sessions with direct user interviews and follow-up questions",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Create free Hotjar account & install snippet",
+            p: "Add the Hotjar tracking snippet to your web app's HTML head or Google Tag Manager.",
+            c: `<!-- Hotjar Tracking Code -->\n<script>\n    (function(h,o,t,j,a,r){\n        h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};\n        h._hjSettings={hjid:YOUR_SITE_ID,hjsv:6};\n        a=o.getElementsByTagName('head')[0];\n        r=o.createElement('script');r.async=1;\n        r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;\n        a.appendChild(r);\n    })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');\n</script>`,
+          },
+          {
+            t: "Step 2 — Enable session recordings for target flows",
+            p: "Target specific URLs: https://hrms-app.com/leaves/new and https://hrms-app.com/payroll.",
+            c: `Tracking Rule: Record sessions matching URL pattern /leaves/*`,
+          },
+          {
+            t: "Step 3 — Collect natural user sessions",
+            p: "Allow real employees to use the feature naturally or conduct 5 moderated user tests.",
+            c: `Sample: 50 employee sessions recorded over 3 business days`,
+          },
+          {
+            t: "Step 4 — Analyze rage-clicks and drop-off patterns",
+            p: "Filter for sessions with frustration signals like rapid clicking or abandonment.",
+            c: `Filter: Rage clicks > 2 OR U-turn navigation detected -> 8 sessions flagged at "Reason" textarea`,
+          },
+          {
+            t: "Step 5 — Generate click & scroll heatmaps",
+            p: "Evaluate if primary call-to-action buttons (e.g. 'Submit Leave') are below the fold.",
+            c: `Heatmap Insight: 32% of users never scroll to bottom [Submit] button on 1366x768 screens`,
+          },
+          {
+            t: "Step 6 — Deploy in-context feedback widget",
+            p: "Add a micro-survey: 'Did you find what you were looking for?'",
+            c: `Feedback Widget: 1-5 rating + optional comment on /leaves/apply page`,
+          },
+          {
+            t: "Step 7 — Iterate design and measure improvement",
+            p: "Implement UX fix (e.g. move Submit button above fold, add placeholder text) and observe next cohort.",
+            c: `Post-Fix Metric: Form completion rate increased from 61% -> 94%`,
+          },
+        ],
+      },
+    ],
+  },
 ];
 
 

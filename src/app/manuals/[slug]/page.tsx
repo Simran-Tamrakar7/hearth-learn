@@ -92,7 +92,18 @@ function GenericManualDetailPage() {
   // State for editable chapters list
   const [chapters, setChapters] = useState<ManualChapter[]>(initialManual.chapters);
   const [activeChapterIndex, setActiveChapterIndex] = useState<number>(0);
+  const [prevChapterIndex, setPrevChapterIndex] = useState<number | null>(null);
   const [completedChapterIds, setCompletedChapterIds] = useState<string[]>([]);
+
+  const handleNavigateChapter = (targetIdx: number) => {
+    if (targetIdx >= 0 && targetIdx < chapters.length) {
+      setPrevChapterIndex(activeChapterIndex);
+      setActiveChapterIndex(targetIdx);
+      if (typeof window !== "undefined") {
+        window.scrollTo({ top: 120, behavior: "smooth" });
+      }
+    }
+  };
 
   const isPlaywright = slug === "playwright" || slug === "playwright-test-automation";
   const [expandedPhases, setExpandedPhases] = useState<string[]>(() => {
@@ -976,6 +987,27 @@ function GenericManualDetailPage() {
                 </div>
               </div>
 
+              {/* Cross-Chapter Navigation Back Banner */}
+              {prevChapterIndex !== null && prevChapterIndex !== activeChapterIndex && (
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const p = prevChapterIndex;
+                      setPrevChapterIndex(null);
+                      setActiveChapterIndex(p);
+                      if (typeof window !== "undefined") {
+                        window.scrollTo({ top: 120, behavior: "smooth" });
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100/80 border border-amber-300/80 text-[#B45309] text-xs font-bold font-sans transition-all shadow-2xs group cursor-pointer"
+                  >
+                    <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform text-[#D97706]" />
+                    <span>← Return to Chapter {String(prevChapterIndex + 1).padStart(2, "0")}: {chapters[prevChapterIndex]?.title.replace(/^Chapter\s+\d+:\s*/i, "")}</span>
+                  </button>
+                </div>
+              )}
+
               {/* Title & Subtitle */}
               <div className="space-y-1 pb-1">
                 <h1 className="font-serif-display text-xl sm:text-2xl lg:text-3xl font-bold text-[#1C2A26] leading-tight">
@@ -987,6 +1019,7 @@ function GenericManualDetailPage() {
                   </p>
                 )}
               </div>
+
 
               {/* CONTENT VIEW OR AI SUMMARY VIEW */}
               {viewMode === "summary" ? (
@@ -1108,9 +1141,13 @@ function GenericManualDetailPage() {
                   {/* Interactive Tool Switcher (Exact 8080 Design) */}
                   {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.tools || activeChapter.tools) && (
                     <div className="pt-1">
-                      <ToolSwitcher tools={TESTING_TYPES_CHAPTERS[activeChapterIndex]?.tools || activeChapter.tools!} />
+                      <ToolSwitcher
+                        tools={TESTING_TYPES_CHAPTERS[activeChapterIndex]?.tools || activeChapter.tools!}
+                        onNavigateChapter={handleNavigateChapter}
+                      />
                     </div>
                   )}
+
 
                 </motion.div>
               ) : (
