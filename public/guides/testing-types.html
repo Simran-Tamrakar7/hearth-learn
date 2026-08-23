@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Testing Types — Part 1: By Level</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12151b;
+    --panel:#171b23;
+    --panel-2:#1c2129;
+    --panel-3:#151920;
+    --line:#272e39;
+    --text:#e7e9ee;
+    --muted:#8a93a6;
+    --muted-2:#5c6577;
+    --amber:#e8a33d;
+    --green:#4fd68a;
+    --red:#f0616d;
+    --blue:#6fa8ff;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1100px 500px at 12% -10%, rgba(232,163,61,0.07), transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    line-height:1.6;
+    padding:0 0 120px;
+  }
+  ::selection{background:rgba(232,163,61,0.35);}
+
+  header{max-width:920px;margin:0 auto;padding:72px 28px 40px;}
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;font-size:12.5px;letter-spacing:0.14em;
+    color:var(--amber);text-transform:uppercase;display:flex;align-items:center;gap:10px;margin-bottom:18px;
+  }
+  .eyebrow::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(79,214,138,0.15);}
+  h1{
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:clamp(34px,5vw,52px);
+    margin:0 0 16px;letter-spacing:-0.02em;color:#fff;
+  }
+  header p.lede{color:var(--muted);font-size:16.5px;max-width:60ch;margin:0 0 28px;}
+  .stat-row{
+    display:flex;gap:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    font-family:'JetBrains Mono',monospace;font-size:12.5px;
+  }
+  .stat{flex:1;padding:14px 0;border-right:1px solid var(--line);}
+  .stat:last-child{border-right:none;}
+  .stat .n{color:var(--text);font-size:17px;display:block;margin-bottom:2px;font-weight:600;}
+  .stat .l{color:var(--muted-2);text-transform:uppercase;letter-spacing:0.06em;}
+
+  main{max-width:920px;margin:0 auto;padding:0 28px;}
+  .chapter{
+    margin-top:64px;border:1px solid var(--line);border-radius:14px;
+    background:linear-gradient(180deg, var(--panel), var(--panel) 60%, #15181f);overflow:hidden;
+  }
+  .chapter-head{padding:30px 32px 24px;border-bottom:1px solid var(--line);}
+  .chip-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+  .chapno{
+    font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--bg);background:var(--amber);
+    padding:3px 8px;border-radius:5px;font-weight:600;letter-spacing:0.03em;
+  }
+  .category-tag{
+    font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);text-transform:uppercase;
+    letter-spacing:0.08em;border:1px solid var(--line);padding:3px 9px;border-radius:5px;
+  }
+  .chapter h2{font-family:'Space Grotesk',sans-serif;font-size:26px;margin:0 0 10px;color:#fff;font-weight:600;}
+  .chapter .desc{color:var(--muted);font-size:15px;max-width:68ch;margin:0;}
+
+  /* info blocks: why it matters / practical example / when to use */
+  .info-strip{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:0;
+    border-bottom:1px solid var(--line);
+  }
+  @media(max-width:640px){.info-strip{grid-template-columns:1fr;}}
+  .info-block{padding:22px 32px;border-right:1px solid var(--line);}
+  .info-block:last-child{border-right:none;}
+  .info-block h3{
+    font-family:'JetBrains Mono',monospace;font-size:11.5px;letter-spacing:0.09em;text-transform:uppercase;
+    color:var(--amber);margin:0 0 10px;display:flex;align-items:center;gap:7px;
+  }
+  .info-block h3::before{content:"";width:6px;height:6px;background:var(--amber);border-radius:1px;}
+  .info-block p{font-size:13.8px;color:var(--muted);margin:0;}
+  .practical-block{grid-column:1 / -1;border-right:none;border-top:1px solid var(--line);padding:22px 32px 26px;}
+  .practical-block h3{color:var(--blue);}
+  .practical-block h3::before{background:var(--blue);}
+  .practical-meta{font-size:13.8px;color:var(--muted);margin:0 0 12px;}
+  .practical-meta b{color:var(--text);font-weight:600;}
+  .pf-row{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;}
+  .pf-tag{
+    flex:1;min-width:240px;font-size:13.3px;padding:12px 14px;border-radius:8px;border:1px solid var(--line);
+    background:rgba(0,0,0,0.15);
+  }
+  .pf-tag b{
+    display:block;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.07em;
+    text-transform:uppercase;margin-bottom:5px;
+  }
+  .pf-tag.pass{border-top:2px solid var(--green);}
+  .pf-tag.pass b{color:var(--green);}
+  .pf-tag.fail{border-top:2px solid var(--red);}
+  .pf-tag.fail b{color:var(--red);}
+
+  /* tool switcher */
+  .tool-bar{display:flex;gap:6px;padding:16px 32px 0;flex-wrap:wrap;}
+  .tool-tab{
+    font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted);background:transparent;
+    border:1px solid var(--line);border-bottom:none;padding:9px 16px 10px;border-radius:8px 8px 0 0;
+    cursor:pointer;transition:color .15s ease, background .15s ease;position:relative;top:1px;
+  }
+  .tool-tab:hover{color:var(--text);}
+  .tool-tab.active{color:#fff;background:var(--panel-2);border-color:var(--line);}
+  .tool-tab .idx{color:var(--muted-2);margin-right:6px;}
+  .tool-tab.active .idx{color:var(--amber);}
+
+  .tool-panel-wrap{background:var(--panel-2);border-top:1px solid var(--line);padding:26px 32px 32px;}
+  .tool-panel{display:none;}
+  .tool-panel.active{display:block;animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(3px);}to{opacity:1;transform:translateY(0);}}
+
+  .tool-title-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:6px;}
+  .tool-title{font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:600;color:#fff;}
+  .tool-link{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--blue);text-decoration:none;border-bottom:1px dashed rgba(111,168,255,0.4);}
+  .tool-link:hover{border-bottom-style:solid;}
+  .tool-desc{color:var(--muted);font-size:14.5px;margin:10px 0 22px;max-width:66ch;}
+
+  .al-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px;}
+  @media(max-width:640px){.al-grid{grid-template-columns:1fr;}}
+  .al-box{border:1px solid var(--line);border-radius:10px;padding:16px 18px 18px;background:rgba(0,0,0,0.15);}
+  .al-box.adv{border-top:2px solid var(--green);}
+  .al-box.lim{border-top:2px solid var(--red);}
+  .al-label{
+    font-family:'JetBrains Mono',monospace;font-size:11.5px;letter-spacing:0.08em;text-transform:uppercase;
+    display:flex;align-items:center;gap:7px;margin-bottom:12px;
+  }
+  .al-box.adv .al-label{color:var(--green);}
+  .al-box.lim .al-label{color:var(--red);}
+  .al-label::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;}
+  .al-box ul{margin:0;padding-left:18px;}
+  .al-box li{font-size:14px;color:var(--text);margin-bottom:9px;padding-left:2px;}
+  .al-box li:last-child{margin-bottom:0;}
+  .al-box li::marker{color:var(--muted-2);}
+
+  /* how-to steps */
+  details.steps{border:1px solid var(--line);border-radius:10px;background:rgba(0,0,0,0.15);overflow:hidden;}
+  details.steps summary{
+    list-style:none;cursor:pointer;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;
+    font-family:'JetBrains Mono',monospace;font-size:12.5px;letter-spacing:0.05em;text-transform:uppercase;color:var(--text);
+  }
+  details.steps summary::-webkit-details-marker{display:none;}
+  details.steps summary .chev{color:var(--amber);transition:transform .2s ease;font-size:11px;}
+  details.steps[open] summary .chev{transform:rotate(90deg);}
+  details.steps summary::before{content:"How to use — step by step";}
+  .steps-body{padding:4px 18px 18px;border-top:1px solid var(--line);}
+  .step-item{padding:14px 0;border-bottom:1px solid rgba(39,46,57,0.6);}
+  .step-item:last-child{border-bottom:none;}
+  .step-item .step-title{
+    font-size:13.5px;font-weight:600;color:var(--text);margin:0 0 6px;
+    display:flex;align-items:baseline;gap:8px;
+  }
+  .step-item .step-title .n{
+    font-family:'JetBrains Mono',monospace;color:var(--amber);font-size:12px;font-weight:600;
+  }
+  .step-item p{font-size:13.3px;color:var(--muted);margin:0 0 8px;}
+  .step-item pre{
+    margin:0;background:var(--panel-3);border:1px solid var(--line);border-radius:7px;
+    padding:11px 13px;overflow-x:auto;
+  }
+  .step-item pre code{
+    font-family:'JetBrains Mono',monospace;font-size:12.2px;color:#c9e8d4;line-height:1.55;white-space:pre;
+  }
+
+  footer{
+    max-width:920px;margin:56px auto 0;padding:24px 28px 0;color:var(--muted-2);
+    font-family:'JetBrains Mono',monospace;font-size:12px;border-top:1px solid var(--line);text-align:center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/manuals" style="display:inline-flex;align-items:center;gap:8px;margin-bottom:22px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#8a93a6;text-decoration:none;letter-spacing:0.04em;">← Manuals</a>
+  <div class="eyebrow">Software Testing Reference · Part 1 of N</div>
+  <h1>Testing by Level</h1>
+  <p class="lede">The four levels that carry an application from a single function to a signed-off release — why each one matters, the free tools teams use, how to run them, and where each tool falls short.</p>
+  <div class="stat-row">
+    <div class="stat"><span class="n">04</span><span class="l">Chapters</span></div>
+    <div class="stat"><span class="n">10</span><span class="l">Tools covered</span></div>
+    <div class="stat"><span class="n">By Level</span><span class="l">Category</span></div>
+    <div class="stat"><span class="n">Free</span><span class="l">Tool tier</span></div>
+  </div>
+</header>
+
+<main id="chapters"></main>
+
+<footer>Select a tool tab within each chapter to compare advantages, limitations, and step-by-step usage.</footer>
+
+<script>
+function esc(s){
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;');
+}
+function code(lines){ return lines.join('\n'); }
+
+const DATA = [
+  {
+    no:"01", title:"Unit Testing", category:"By Level",
+    desc:"Testing the smallest piece of code in isolation — a single function, method, or class — with every external dependency mocked out.",
+    why:"Skipped unit tests mean bugs that could've been caught in seconds during development instead travel all the way to integration, system testing, or production. A bug found at unit level takes minutes to fix; the same bug in production takes hours across multiple systems, and may already have caused data corruption or customer-facing failures. Unit tests also double as living documentation of exactly how each function should behave.",
+    when:"Written at the same time as the code, not after — every function added in a sprint should have tests in the same pull request. They run on every commit in CI/CD and must pass before merge. The cheapest, fastest safety net in development, and it should never be skipped regardless of deadline pressure.",
+    practical:{
+      app:"HRMS — Tax deduction logic",
+      scenario:"Finance reports employee net salaries look wrong after a code change. Unit tests for the tax function immediately pinpoint the broken slab logic — a developer used &lt; instead of &lt;= on the 10% slab boundary, taxing employees earning exactly NPR 500,000 at 20% instead of 10%.",
+      pass:"calculate_tax(500000) returns 5000.0 — the 1% slab applies correctly.",
+      fail:"calculate_tax(500000) returns 100000.0 — the boundary bug is caught instantly, before it reaches payroll."
+    },
+    tools:[
+      {
+        name:"JUnit", sub:"Java", url:"https://junit.org",
+        desc:"The standard unit testing framework for Java, built around annotations (@Test, @BeforeEach, @ParameterizedTest) and wired directly into Maven and Gradle build lifecycles.",
+        adv:[
+          "Deep IDE integration — pass/fail shows inline in IntelliJ and Eclipse",
+          "Runs automatically as part of the Maven/Gradle build, no extra wiring",
+          "Modular Platform/Jupiter/Vintage design supports legacy and modern code side by side",
+          "Rich annotation model (@Nested, @ParameterizedTest) keeps large suites organized"
+        ],
+        lim:[
+          "Java-only — no use outside the JVM ecosystem",
+          "More boilerplate than PyTest or Jest for the same test",
+          "No built-in mocking — Mockito or similar has to be added separately",
+          "Parameterized data sources need extra annotations most teams have to look up each time"
+        ],
+        steps:[
+          {t:"Add JUnit to your Maven project", p:"In pom.xml, add the junit-jupiter dependency scoped to test.",
+           c:code(["<dependency>","    <groupId>org.junit.jupiter</groupId>","    <artifactId>junit-jupiter</artifactId>","    <version>5.10.0</version>","    <scope>test</scope>","</dependency>"])},
+          {t:"Write the class under test", p:"Create Calculator.java with add, subtract, and divide (which throws on divide-by-zero).",
+           c:code(["public class Calculator {","    public int add(int a, int b) { return a + b; }","    public double divide(int a, int b) {","        if (b == 0) throw new ArithmeticException(\"Cannot divide by zero\");","        return (double) a / b;","    }","}"])},
+          {t:"Create the test class", p:"Create CalculatorTest.java in src/test/java, with a fresh instance built in @BeforeEach.",
+           c:code(["@BeforeEach","void setUp() { calculator = new Calculator(); }","","@Test","void testAddTwoPositiveNumbers() {","    assertEquals(8, calculator.add(3, 5));","}"])},
+          {t:"Run tests via Maven", p:"mvn test compiles and runs the whole suite, reporting failures and errors.",
+           c:code(["mvn test","","[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0","[INFO] BUILD SUCCESS"])},
+          {t:"Run with parameterized inputs", p:"@ParameterizedTest with @CsvSource runs one test body against many input rows.",
+           c:code(["@ParameterizedTest","@CsvSource({\"2, 3, 5\", \"0, 0, 0\", \"-1, 1, 0\"})","void testAddMultipleCases(int a, int b, int expected) {","    assertEquals(expected, calculator.add(a, b));","}"])},
+          {t:"Group tests with @Nested", p:"Keeps related cases (e.g. all division tests) organized under one readable block.",
+           c:code(["@Nested","@DisplayName(\"Division tests\")","class DivisionTests {","    @Test","    void divideByZero() {","        assertThrows(ArithmeticException.class, () -> calculator.divide(5, 0));","    }","}"])},
+          {t:"View results in IntelliJ", p:"Right-click the test class → Run. Green tick per pass, red cross per fail, with expected vs actual shown inline."}
+        ]
+      },
+      {
+        name:"PyTest", sub:"Python", url:"https://pytest.org",
+        desc:"Python's default testing framework — plain functions prefixed test_, discovered and run with no class inheritance or special imports required.",
+        adv:[
+          "Almost zero boilerplate — a plain function is a valid test",
+          "One of the richest plugin ecosystems (coverage, parallel runs, HTML reports, mocking, Playwright)",
+          "Same framework can cover unit, API/integration, and UI tests",
+          "Failure output shows both sides of a failed assertion clearly"
+        ],
+        lim:[
+          "Python-only",
+          "Heavy plugin use can make a suite fragile if plugin versions drift",
+          "Fixture scoping (function/class/module/session) has a learning curve",
+          "Loose structure means teams need their own conventions to stay consistent"
+        ],
+        steps:[
+          {t:"Install PyTest", p:"", c:code(["pip install pytest pytest-cov","pytest --version"])},
+          {t:"Write the function to test", p:"Create salary.py with gross salary and slab-based tax logic.",
+           c:code(["def calculate_tax(gross_salary):","    if gross_salary <= 500000:","        return gross_salary * 0.01","    elif gross_salary <= 700000:","        return gross_salary * 0.10","    else:","        return gross_salary * 0.20"])},
+          {t:"Write the test file", p:"Create test_salary.py — plain functions starting with test_.",
+           c:code(["def test_tax_lowest_slab():","    assert calculate_tax(400000) == 4000.0","","def test_negative_basic_raises_error():","    with pytest.raises(ValueError, match=\"Basic salary cannot be negative\"):","        calculate_gross_salary(-1000, 5000, 0, 0)"])},
+          {t:"Run the tests", p:"", c:code(["pytest test_salary.py -v","","6 passed in 0.08s"])},
+          {t:"Use fixtures for reusable setup", p:"A fixture supplies shared test data to any test that requests it by name.",
+           c:code(["@pytest.fixture","def employee_data():","    return {\"basic\": 50000, \"allowances\": 10000,","            \"overtime_hours\": 5, \"overtime_rate\": 500}"])},
+          {t:"Parameterize for multiple scenarios", p:"One test body, many input/expected pairs.",
+           c:code(["@pytest.mark.parametrize(\"gross, expected_tax\", [","    (400000, 4000.0), (600000, 60000.0), (800000, 160000.0),","])","def test_tax_slabs(gross, expected_tax):","    assert calculate_tax(gross) == expected_tax"])},
+          {t:"Run with a coverage report", p:"", c:code(["pytest test_salary.py --cov=salary --cov-report=term-missing -v","","salary.py   10   0   100%"])}
+        ]
+      },
+      {
+        name:"Jest", sub:"JavaScript", url:"https://jestjs.io",
+        desc:"Meta's zero-configuration testing framework for JavaScript and TypeScript — runner, assertions, mocking, coverage, and snapshot testing bundled into one package.",
+        adv:[
+          "Zero-config — install and run, no separate assertion or mocking library needed",
+          "Parallel test execution by default via worker threads",
+          "Watch mode re-runs only affected tests for instant feedback",
+          "Snapshot testing catches unintended UI changes without writing new assertions"
+        ],
+        lim:[
+          "Snapshot tests get rubber-stamped if diffs aren't actually reviewed",
+          "Config gets complex fast for ESM or monorepo setups",
+          "Slower cold-start on very large suites than newer runners like Vitest",
+          "Full TypeScript support needs the ts-jest wrapper, not native"
+        ],
+        steps:[
+          {t:"Initialize and install Jest", p:"", c:code(["npm init -y","npm install --save-dev jest"])},
+          {t:"Write the function to test", p:"Create leaveCalculator.js.",
+           c:code(["function calculateRemainingLeave(totalDays, usedDays) {","    if (usedDays > totalDays) throw new Error(\"Used days cannot exceed total allocated days\");","    return totalDays - usedDays;","}","module.exports = { calculateRemainingLeave };"])},
+          {t:"Write the test file", p:"Create leaveCalculator.test.js using describe/test blocks.",
+           c:code(["describe('calculateRemainingLeave', () => {","  test('returns correct remaining days', () => {","    expect(calculateRemainingLeave(20, 5)).toBe(15);","  });","});"])},
+          {t:"Run the tests", p:"", c:code(["npm test","","Tests: 5 passed, 5 total"])},
+          {t:"Mock a dependency", p:"Replace a real API call with a controlled fake response.",
+           c:code(["jest.mock('./api', () => ({","  getEmployeeById: jest.fn().mockResolvedValue({ id: 1, leaveBalance: 12 })","}));"])},
+          {t:"Run with coverage", p:"", c:code(["npm run test:coverage","","leaveCalculator.js  100  100  100  100"])},
+          {t:"Run in watch mode", p:"Re-runs only the tests affected by your last save — no manual re-run needed.", c:code(["npm run test:watch"])}
+        ]
+      }
+    ]
+  },
+  {
+    no:"02", title:"Integration Testing", category:"By Level",
+    desc:"Verifying that components work correctly once combined — the interfaces, contracts, and data flow between modules that unit tests can't see.",
+    why:"The most damaging bugs in real applications live at integration points — API response shapes that don't match what the frontend expects, queries returning unexpected nulls, tokens expiring mid-session, listeners dropping messages under load. These are invisible to unit tests because unit tests mock all external dependencies. Skip this level and interface bugs survive all the way to system testing or production, where they're far more expensive to trace.",
+    when:"Begins as soon as two or more components are ready to connect — typically mid-sprint once a feature's API and frontend both exist. Runs in CI/CD on every pull request targeting main. A full integration suite must pass before any build is promoted to system testing or staging.",
+    practical:{
+      app:"HRMS — Leave request to balance integration",
+      scenario:"Full flow: log in, read an employee's leave balance (12 days), submit a 3-day annual leave request, re-read the balance, check a manager notification exists, approve the request, and re-check the balance stays consistent.",
+      pass:"All 7 steps succeed — balance drops from 12 to 9 on request, notification is created, and stays at 9 after approval.",
+      fail:"Balance still shows 12 after the request — the leave service isn't wired to the balance service, a bug unit tests would never catch."
+    },
+    tools:[
+      {
+        name:"Postman", sub:"API client", url:"https://postman.com",
+        desc:"An HTTP client built around Collections — grouped, chained API requests with variables passed between them and JavaScript assertions on every response.",
+        adv:[
+          "GUI-based, so non-developers can build and run requests without code",
+          "Collections + variables make chaining requests (e.g. login → use token) simple",
+          "Newman CLI runs full collections in CI/CD with JUnit-style reports",
+          "One-click environment switching between dev, staging, and production"
+        ],
+        lim:[
+          "Test scripts are JavaScript-only inside the Tests tab — awkward for complex logic",
+          "Large collections get hard to navigate and maintain over time",
+          "Free tier has workspace and monthly request limits at scale",
+          "Not built for direct database checks — HTTP only"
+        ],
+        steps:[
+          {t:"Install Postman", p:"Download from postman.com/downloads and create a free account (unlimited collections and requests on the free tier)."},
+          {t:"Create a Collection", p:"New → Collection, name it e.g. HRMS Integration Tests — this is your test suite."},
+          {t:"Set a collection variable for the base URL", p:"", c:code(["base_url = https://staging.hrms-app.com/api"])},
+          {t:"Add a login request and extract the token", p:"POST {{base_url}}/auth/login, then in the Tests tab assert 200 and save the token as a variable.",
+           c:code(["pm.test(\"Login returns 200\", () => pm.response.to.have.status(200));","pm.collectionVariables.set(\"auth_token\", pm.response.json().token);"])},
+          {t:"Add a chained request using the token", p:"GET {{base_url}}/employees with Authorization: Bearer {{auth_token}}, then assert the response shape.",
+           c:code(["pm.test(\"Returns array of employees\", () => {","  pm.expect(pm.response.json().data).to.be.an(\"array\");","});"])},
+          {t:"Run the full collection", p:"Collection name → Run collection — executes every request in order and shows pass/fail per assertion."},
+          {t:"Run from the terminal with Newman", p:"", c:code(["npm install -g newman newman-reporter-htmlextra","newman run HRMS_Integration_Tests.json -e staging_environment.json \\","  --reporters cli,htmlextra --reporter-htmlextra-export reports/integration_report.html"])}
+        ]
+      },
+      {
+        name:"PyTest", sub:"API integration", url:"https://pytest.org",
+        desc:"Used with the requests library, PyTest becomes an API integration tool that can add real logic — database checks, data manipulation — that Postman's scripts can't easily do.",
+        adv:[
+          "Full Python logic available in tests — DB queries, complex assertions",
+          "Same framework and CI config as unit and UI tests, if already used elsewhere",
+          "Session-scoped fixtures share an auth token across an entire suite",
+          "pytest-html produces shareable, professional reports"
+        ],
+        lim:[
+          "Requires Python fluency — not approachable for manual/business testers",
+          "No GUI for quickly exploring an endpoint ad hoc, unlike Postman",
+          "Test data cleanup has to be handled manually in code",
+          "Less visual — harder to demo results to non-technical stakeholders"
+        ],
+        steps:[
+          {t:"Install dependencies", p:"", c:code(["pip install pytest requests pytest-html"])},
+          {t:"Create conftest.py with an auth fixture", p:"Logs in once per session and shares the token across all tests.",
+           c:code(["@pytest.fixture(scope=\"session\")","def auth_token():","    r = requests.post(f\"{BASE_URL}/auth/login\", json={...})","    assert r.status_code == 200","    return r.json()[\"token\"]"])},
+          {t:"Write integration tests", p:"Checks that submitting a leave request actually decreases the stored balance.",
+           c:code(["def test_create_leave_request_updates_balance(api_headers):","    before = requests.get(f\"{BASE_URL}/leave/balance/1\", headers=api_headers).json()[\"annual_leave\"]","    requests.post(f\"{BASE_URL}/leave/request\", headers=api_headers, json={\"employee_id\":1,\"days\":2})","    after = requests.get(f\"{BASE_URL}/leave/balance/1\", headers=api_headers).json()[\"annual_leave\"]","    assert after == before - 2"])},
+          {t:"Run with an HTML report", p:"", c:code(["pytest tests/integration/ -v --html=reports/integration.html"])},
+          {t:"Parameterize across multiple employees", p:"", c:code(["@pytest.mark.parametrize(\"employee_id\", [1, 2, 3, 5, 10])","def test_payslip_exists_for_active_employees(api_headers, employee_id):","    r = requests.get(f\"{BASE_URL}/payslip/{employee_id}/latest\", headers=api_headers)","    assert r.status_code == 200"])}
+        ]
+      },
+      {
+        name:"Selenium", sub:"Browser-backend flow", url:"https://selenium.dev",
+        desc:"Used at the integration level to click real UI elements and confirm the correct data actually reaches the backend and comes back, rather than testing the API directly.",
+        adv:[
+          "Mature, 20+ years in production — huge documentation and community",
+          "WebDriver protocol works natively with every major browser",
+          "Selenium Grid distributes tests across machines and browsers in parallel",
+          "Validates the real frontend-to-backend path, not just the API contract"
+        ],
+        lim:[
+          "No built-in auto-waiting — flakier than Playwright without careful WebDriverWait usage",
+          "Slower to author tests than a pure API approach",
+          "Heavier setup and maintenance overhead than Postman or PyTest",
+          "Overkill when the integration in question doesn't touch the UI at all"
+        ],
+        steps:[
+          {t:"Install Selenium", p:"", c:code(["pip install selenium webdriver-manager"])},
+          {t:"Set up the driver", p:"", c:code(["driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))","wait = WebDriverWait(driver, 10)"])},
+          {t:"Test login integrates with session", p:"Confirms the frontend-backend auth handshake actually works, not just that the API returns 200.",
+           c:code(["driver.get(\"https://staging.hrms-app.com/login\")","driver.find_element(By.ID, \"email\").send_keys(\"hr@company.com\")","driver.find_element(By.CSS_SELECTOR, \"button[type='submit']\").click()","dashboard = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, \".dashboard-header\")))","assert dashboard.is_displayed()"])},
+          {t:"Test a form submission integrates with the database", p:"Submits a real leave request through the UI and checks for a success toast.",
+           c:code(["driver.find_element(By.ID, \"from-date\").send_keys(\"2025-09-15\")","driver.find_element(By.CSS_SELECTOR, \"button.submit-leave\").click()","success = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, \".success-toast\")))","assert \"Leave request submitted\" in success.text"])},
+          {t:"Always close the driver after tests", p:"", c:code(["driver.quit()"])}
+        ]
+      }
+    ]
+  },
+  {
+    no:"03", title:"System Testing", category:"By Level",
+    desc:"Testing the fully integrated application as a black box, end to end, exactly the way a real user would experience it.",
+    why:"System testing is the last major technical quality gate before software reaches users. It proves the application works not just piece by piece but as the unified product a real user interacts with. Bugs found here cost more to fix than earlier-level bugs, but far less than bugs found after go-live — and it produces the most business-relevant pass/fail evidence for stakeholders.",
+    when:"Begins after integration testing passes and the app is deployed to a stable staging environment. Critical-path tests run on every release candidate; a full regression suite runs before every major release, after significant features, and after architectural changes. Never the only testing layer — it works best sitting on top of solid unit and integration coverage.",
+    practical:{
+      app:"HRMS Payroll System",
+      scenario:"Full payroll cycle: log in as Payroll Admin, select the pay period, confirm all 47 active employees appear, process payroll, wait for async completion, verify one employee's gross/tax/net figures, generate payslips, then log in as that employee and check the payslip is visible.",
+      pass:"All 10 steps succeed — payroll flows end-to-end correctly.",
+      fail:"The employee can't see their payslip after generation — a cross-module visibility bug only detectable at system level."
+    },
+    tools:[
+      {
+        name:"Playwright", sub:"Modern browser automation", url:"https://playwright.dev",
+        desc:"Microsoft's browser automation library, built by former Puppeteer engineers, with auto-waiting and a Trace Viewer designed to remove the flakiness that plagued older tools.",
+        adv:[
+          "Auto-waiting removes most timing-related flaky failures automatically",
+          "One API drives Chromium, Firefox, and WebKit — no per-browser rewrites",
+          "Trace Viewer replays a failed run step-by-step with screenshots and network calls",
+          "Network interception mocks specific states without touching the real database"
+        ],
+        lim:[
+          "Newer tool — smaller long-tail community and fewer legacy integrations than Selenium",
+          "Teams migrating from Selenium have a real API and mental-model switch to make",
+          "Best support is in modern language bindings; older stacks may not be first-class",
+          "Trace files can get large on long test runs, adding storage overhead"
+        ],
+        steps:[
+          {t:"Install Playwright", p:"", c:code(["pip install playwright pytest-playwright","playwright install"])},
+          {t:"Configure conftest.py", p:"Headless launch, a shared base_url, and generous default timeouts.",
+           c:code(["@pytest.fixture(scope=\"session\")","def browser_type_launch_args():","    return {\"headless\": True}","","@pytest.fixture(scope=\"session\")","def base_url():","    return \"https://staging.hrms-app.com\""])},
+          {t:"Write a complete system test", p:"Log in, add an employee end-to-end, and confirm it shows up in the list.",
+           c:code(["def test_employee_onboarding_complete_flow(page: Page):","    page.goto(\"https://staging.hrms-app.com/login\")","    page.get_by_label(\"Email\").fill(\"hr@company.com\")","    page.get_by_role(\"button\", name=\"Login\").click()","    expect(page.get_by_role(\"heading\", name=\"Dashboard\")).to_be_visible()"])},
+          {t:"Enable tracing for failure debugging", p:"Captures screenshots, DOM snapshots, and sources for every test run.",
+           c:code(["context.tracing.start(screenshots=True, snapshots=True, sources=True)","yield context","context.tracing.stop(path=\"traces/trace.zip\")"])},
+          {t:"Run the tests", p:"", c:code(["pytest tests/ -v --html=reports/system_test_report.html"])},
+          {t:"View a trace on failure", p:"", c:code(["playwright show-trace traces/trace_failed_test.zip"])}
+        ]
+      },
+      {
+        name:"Selenium", sub:"Veteran browser automation", url:"https://selenium.dev",
+        desc:"The longest-standing browser automation tool, still widely deployed in enterprise frameworks, with WebDriver support in effectively every browser and CI system.",
+        adv:[
+          "20+ years of maturity — the largest documentation base and community in the space",
+          "Integrates with virtually every CI/CD and test management tool that exists",
+          "Selenium Grid scales to large cross-browser, cross-machine test suites",
+          "Strong fit for teams with existing Java or C# Selenium frameworks"
+        ],
+        lim:[
+          "No auto-waiting — tests are more flaky by default without careful explicit waits",
+          "Test authoring is more verbose and slower than Playwright",
+          "Falling behind on developer experience — weaker debugging tools out of the box",
+          "Higher long-term maintenance cost as the UI under test evolves"
+        ],
+        steps:[
+          {t:"Install dependencies", p:"", c:code(["pip install selenium webdriver-manager pytest"])},
+          {t:"Create a headless driver fixture", p:"", c:code(["options = webdriver.ChromeOptions()","options.add_argument(\"--headless\")","driver = webdriver.Chrome(service=service, options=options)","driver.implicitly_wait(10)"])},
+          {t:"Write a system test", p:"Full leave-application workflow from login to a visible success message.",
+           c:code(["driver.find_element(By.ID, \"email\").send_keys(\"emp@company.com\")","driver.find_element(By.CSS_SELECTOR, \"button[type='submit']\").click()","leave_link = wait.until(EC.element_to_be_clickable((By.LINK_TEXT, \"Apply Leave\")))","leave_link.click()"])},
+          {t:"Take a screenshot on failure", p:"", c:code(["@pytest.fixture(autouse=True)","def screenshot_on_failure(driver, request):","    yield","    if request.node.rep_call.failed:","        driver.save_screenshot(f\"screenshots/{request.node.name}.png\")"])},
+          {t:"Run tests in parallel", p:"", c:code(["pip install pytest-xdist","pytest tests/ -n 4"])}
+        ]
+      }
+    ]
+  },
+  {
+    no:"04", title:"Acceptance Testing (UAT)", category:"By Level",
+    desc:"The final gate before release, performed by real business stakeholders to confirm the software fits how the business actually works — not just the written spec.",
+    why:"Requirements pass through humans, developers, and project managers — three points where meaning can drift from original intent. UAT is where that drift surfaces while it's still cheap to fix. A system can pass every automated test and still fail UAT, because it was technically correct but didn't match business reality. In regulated industries UAT sign-off is a legal requirement, not optional.",
+    when:"Mandatory before every production release, without exception. Lightweight UAT happens at Sprint Review in agile projects; full formal UAT with sign-off happens before every major release. If a go-live proceeds without UAT sign-off, the business must document and formally accept that risk.",
+    practical:{
+      app:"HRMS — Leave policy compliance UAT",
+      scenario:"An HR Director with 15 years of experience applies for 3 days of casual leave for an employee who only has 2 remaining. Every automated test passed because test data always had sufficient balance — nobody tested this real-world boundary.",
+      pass:"System now shows \"Insufficient casual leave balance. Available: 2 days, Requested: 3 days. Request rejected.\"",
+      fail:"The system approves the request with no warning, allowing a negative leave balance — a Blocker, since it breaks policy and causes payroll complications."
+    },
+    tools:[
+      {
+        name:"Manual Testing", sub:"Primary UAT method", url:null,
+        desc:"Business users work through real scenarios — not scripted steps — applying job knowledge no automated check can substitute for.",
+        adv:[
+          "Applies real business judgment automation structurally cannot replicate",
+          "Scenarios are business-driven, surfacing exceptions a spec never anticipated",
+          "Catches requirement drift and specification gaps before go-live",
+          "Produces the formal, signed acceptance record required for sign-off"
+        ],
+        lim:[
+          "Business users aren't trained testers — coverage can be inconsistent",
+          "Scheduling time with busy stakeholders is a recurring bottleneck",
+          "Feedback is often vague and needs a QA engineer to turn into an actionable bug",
+          "Doesn't scale to frequent releases the way automated levels do"
+        ],
+        steps:[
+          {t:"Define UAT entry criteria", p:"System tests pass, a stable UAT environment exists, realistic test data is loaded, tester accounts are set up, and a schedule is agreed."},
+          {t:"Write scenarios in business language", p:"Not click-by-click scripts — business tasks with context and an expected outcome.",
+           c:code(["UAT Scenario: Process Monthly Payroll — August 2025","1. Log in as Payroll Manager","2. Select August 2025 pay period","3. Confirm all 47 active employees appear","4. Verify gross salaries against the approved salary sheet","5. Process payroll, generate payslips, mark disbursed"])},
+          {t:"Brief UAT testers", p:"A short 30-minute session: what UAT is for, how to mark pass/fail, how to report a bug."},
+          {t:"Execute UAT sessions", p:"A QA engineer observes and takes notes without steering — an unexpected path a tester takes is real user behaviour worth capturing."},
+          {t:"Log all findings", p:"Classify every finding as Blocker, Major, or Minor."},
+          {t:"Fix, retest, and get sign-off", p:"Dev fixes blockers and agreed majors; testers retest those specific scenarios; the authorised stakeholder formally signs off."},
+          {t:"Document the results", p:"A completion report: scenarios tested, pass/fail counts, bugs found and fixed, accepted known issues, and signatures."}
+        ]
+      },
+      {
+        name:"TestRail", sub:"Test case management", url:"https://testrail.com",
+        desc:"A web-based test case manager where UAT scenarios are assigned to specific business testers, who click through and mark pass/fail with comments — no technical skill needed.",
+        adv:[
+          "Structured scenario tracking that non-technical testers can execute unaided",
+          "Real-time dashboards show UAT progress without chasing anyone for status",
+          "Direct Jira integration turns a failed case into a bug ticket automatically",
+          "Free tier is workable for a typical small UAT cycle"
+        ],
+        lim:[
+          "Free tier caps users and projects — a constraint on larger UAT rounds",
+          "Someone still has to author good business-language scenarios up front",
+          "One more tool for already-busy stakeholders to get oriented in",
+          "Limited value on its own without a bug tracker connected to it"
+        ],
+        steps:[
+          {t:"Create a free TestRail account", p:"Sign up at testrail.com or use the hosted trial."},
+          {t:"Create a project", p:"e.g. \"HRMS UAT — August 2025 Release\"."},
+          {t:"Create a test suite with UAT scenarios", p:"Business-language cases with title, description, and plain-English expected result."},
+          {t:"Create a test plan and assign testers", p:"Payroll scenarios to the Payroll Manager, leave scenarios to the HR Director."},
+          {t:"Testers execute and record results", p:"Pass, Fail, or Blocked, with comments, all from the browser."},
+          {t:"Track progress and export a report", p:"Live dashboard during the cycle; export a PDF for the sign-off record at the end."}
+        ]
+      },
+      {
+        name:"Jira", sub:"Bug & feedback tracking", url:"https://atlassian.com/software/jira",
+        desc:"The bug and feedback repository for a UAT cycle — testers log what they saw, developers pick it up, fix it, and hand it back for retest.",
+        adv:[
+          "Industry-standard issue tracking most teams already know",
+          "Kanban board gives a visual read on every open UAT finding at a glance",
+          "Free tier covers up to 10 users, enough for most UAT teams",
+          "Clear fix loop: open → fixed → ready for retest → closed"
+        ],
+        lim:[
+          "Not a test case manager by itself — needs TestRail or similar alongside it",
+          "10-user free cap can be limiting once stakeholders are added in",
+          "Can get cluttered and noisy without disciplined ticket hygiene",
+          "UAT-specific workflows and fields need to be configured, not default"
+        ],
+        steps:[
+          {t:"Create a free Jira account", p:"Create a project, e.g. \"HRMS UAT Bugs\"."},
+          {t:"Configure issue types", p:"Bug for defects, Task for retest activity, Feedback for non-bug observations."},
+          {t:"Testers log bugs", p:"Summary, description (steps/expected/actual), priority, and a screenshot attachment.",
+           c:code(["Summary: Payslip shows wrong tax amount for employees above NPR 700,000","Priority: Blocker"])},
+          {t:"Developers work the queue", p:"Filter for open UAT bugs, fix, transition to \"Fixed — Ready for UAT Retest\"."},
+          {t:"Tester retests and closes", p:"Confirms the fix and closes the ticket, or reopens with comments."},
+          {t:"UAT sign-off", p:"Once all Blockers and agreed Majors are closed, export a zero-open-blockers report for the formal sign-off document."}
+        ]
+      }
+    ]
+  }
+];
+
+const root = document.getElementById('chapters');
+
+DATA.forEach((ch, ci) => {
+  const chapter = document.createElement('section');
+  chapter.className = 'chapter';
+
+  chapter.innerHTML = `
+    <div class="chapter-head">
+      <div class="chip-row">
+        <span class="chapno">CH ${ch.no}</span>
+        <span class="category-tag">${ch.category}</span>
+      </div>
+      <h2>${ch.title}</h2>
+      <p class="desc">${ch.desc}</p>
+    </div>
+    <div class="info-strip">
+      <div class="info-block">
+        <h3>Why it matters</h3>
+        <p>${ch.why}</p>
+      </div>
+      <div class="info-block">
+        <h3>When to use it</h3>
+        <p>${ch.when}</p>
+      </div>
+      <div class="info-block practical-block">
+        <h3>Practical example</h3>
+        <p class="practical-meta"><b>${esc(ch.practical.app)}</b> — ${ch.practical.scenario}</p>
+        <div class="pf-row">
+          <div class="pf-tag pass"><b>Pass</b>${ch.practical.pass}</div>
+          <div class="pf-tag fail"><b>Fail</b>${ch.practical.fail}</div>
+        </div>
+      </div>
+    </div>
+    <div class="tool-bar" id="tabs-${ci}"></div>
+    <div class="tool-panel-wrap" id="panels-${ci}"></div>
+  `;
+
+  root.appendChild(chapter);
+
+  const tabsEl = chapter.querySelector(`#tabs-${ci}`);
+  const panelsEl = chapter.querySelector(`#panels-${ci}`);
+
+  ch.tools.forEach((tool, ti) => {
+    const tab = document.createElement('button');
+    tab.className = 'tool-tab' + (ti === 0 ? ' active' : '');
+    tab.innerHTML = `<span class="idx">0${ti+1}</span>${tool.name}`;
+    tab.addEventListener('click', () => {
+      tabsEl.querySelectorAll('.tool-tab').forEach(t => t.classList.remove('active'));
+      panelsEl.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      panelsEl.children[ti].classList.add('active');
+    });
+    tabsEl.appendChild(tab);
+
+    const stepsHtml = (tool.steps || []).map((s, si) => `
+      <div class="step-item">
+        <p class="step-title"><span class="n">${String(si+1).padStart(2,'0')}</span>${esc(s.t)}</p>
+        ${s.p ? `<p>${esc(s.p)}</p>` : ''}
+        ${s.c ? `<pre><code>${esc(s.c)}</code></pre>` : ''}
+      </div>
+    `).join('');
+
+    const panel = document.createElement('div');
+    panel.className = 'tool-panel' + (ti === 0 ? ' active' : '');
+    panel.innerHTML = `
+      <div class="tool-title-row">
+        <span class="tool-title">${tool.name} <span style="color:var(--muted-2);font-weight:400;font-size:14px;">— ${tool.sub}</span></span>
+        ${tool.url ? `<a class="tool-link" href="${tool.url}" target="_blank" rel="noopener">${tool.url.replace('https://','')} ↗</a>` : ''}
+      </div>
+      <p class="tool-desc">${tool.desc}</p>
+      <div class="al-grid">
+        <div class="al-box adv">
+          <div class="al-label">Advantages</div>
+          <ul>${tool.adv.map(a => `<li>${a}</li>`).join('')}</ul>
+        </div>
+        <div class="al-box lim">
+          <div class="al-label">Limitations</div>
+          <ul>${tool.lim.map(l => `<li>${l}</li>`).join('')}</ul>
+        </div>
+      </div>
+      <details class="steps">
+        <summary><span></span><span class="chev">▶</span></summary>
+        <div class="steps-body">${stepsHtml}</div>
+      </details>
+    `;
+    panelsEl.appendChild(panel);
+  });
+});
+</script>
+
+</body>
+</html>

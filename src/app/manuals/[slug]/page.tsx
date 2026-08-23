@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import { findHearthManual, ManualItem, ManualChapter } from "@/lib/manualsData";
+import { isTestingTypesSlug, TestingTypesGuide } from "@/components/manuals/TestingTypesGuide";
 import { PLAYWRIGHT_ROADMAP_PHASES, downloadRoadmapSVG } from "@/lib/roadmapData";
 import { stripLeadingNumber } from "@/lib/pathwise-data/helpers.js";
 import { PinButton, getPinnedItems, PinnedItemMetadata } from "@/components/ui/PinButton";
@@ -55,6 +56,13 @@ import {
 } from "lucide-react";
 
 export default function ManualDetailPage() {
+  const params = useParams();
+  const slug = params?.slug as string;
+  if (isTestingTypesSlug(slug)) return <TestingTypesGuide />;
+  return <GenericManualDetailPage />;
+}
+
+function GenericManualDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();

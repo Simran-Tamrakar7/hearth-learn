@@ -16,6 +16,7 @@ import {
   isShowcaseCatalogPin,
   PinnedItemMetadata,
 } from "@/components/ui/PinButton";
+import { TestingTypesCatalogCard } from "@/components/manuals/TestingTypesCatalogCard";
 
 const GENRE_CATEGORY: Record<string, ManualItem["category"] | "All"> = {
   all: "All",
@@ -162,6 +163,7 @@ export default function ManualsCatalogPage() {
       <Navbar />
 
       <main className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-12 py-10 sm:py-12 w-full space-y-10 flex-1">
+        {featuredManual && <TestingTypesCatalogCard />}
         {pinnedManuals.length > 0 && (
           <div className="space-y-4 bg-gradient-to-br from-white via-[#FAF7F2] to-[#FEF3C7]/40 border border-[#E7E0D3] rounded-3xl p-6 shadow-xs">
             <div className="flex items-center justify-between">
@@ -329,18 +331,6 @@ export default function ManualsCatalogPage() {
             </button>
           ))}
         </div>
-
-        {featuredManual && (
-          <section className="space-y-5">
-            <div className="space-y-1">
-              <h2 className="font-serif-display text-2xl font-bold text-[#1C2A26]">Testing Types</h2>
-              <p className="text-sm text-[#52635E]">Part 1 of the software testing reference — unit through UAT.</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              <ManualCard manual={featuredManual} />
-            </div>
-          </section>
-        )}
 
         {sections.length === 0 && !featuredManual ? (
           <p className="text-[#52635E]">Nothing matches — try another word.</p>
