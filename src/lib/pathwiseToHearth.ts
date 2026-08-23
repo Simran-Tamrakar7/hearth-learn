@@ -209,10 +209,14 @@ export function findHearthManual(slug: string): ManualItem | undefined {
   const aliases: Record<string, string> = {
     "playwright-test-automation": "playwright",
     git: "git-version-control",
-    "testing-types": "testing-by-level",
-    "testing-types-by-level": "testing-by-level",
-    "testing-guide-part1": "testing-by-level",
+    "testing-by-level": "testing-types",
+    "testing-levels": "testing-types",
+    "testing-types-by-level": "testing-types",
+    "testing-guide-part1": "testing-types",
   };
   const want = aliases[slug] || slug;
-  return PATHWISE_HEARTH_MANUALS.find((m) => m.slug === want);
+  return PATHWISE_HEARTH_MANUALS.find(
+    (m) => m.slug === want || m.id === want || m.id === `manual-${want}`
+  );
 }
+

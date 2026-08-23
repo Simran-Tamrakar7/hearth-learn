@@ -59,11 +59,9 @@ import {
 } from "lucide-react";
 
 export default function ManualDetailPage() {
-  const params = useParams();
-  const slug = params?.slug as string;
-  if (isTestingTypesSlug(slug)) return <TestingTypesGuide />;
   return <GenericManualDetailPage />;
 }
+
 
 function GenericManualDetailPage() {
   const params = useParams();
