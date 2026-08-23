@@ -213,10 +213,13 @@ export function findHearthManual(slug: string): ManualItem | undefined {
     "testing-levels": "testing-types",
     "testing-types-by-level": "testing-types",
     "testing-guide-part1": "testing-types",
+    "test-automation": "testing-types",
+    "automation-testing": "testing-types",
   };
   const want = aliases[slug] || slug;
   return PATHWISE_HEARTH_MANUALS.find(
     (m) => m.slug === want || m.id === want || m.id === `manual-${want}`
   );
 }
+
 
