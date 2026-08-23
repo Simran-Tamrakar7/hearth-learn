@@ -3530,7 +3530,343 @@ export const TESTING_TYPES_CHAPTERS: TestingChapterData[] = [
       },
     ],
   },
+  {
+    no: "33",
+    title: "A/B Testing",
+    category: "Other",
+    desc: "A/B testing compares two (or more) versions of a feature — shown to different segments of real users simultaneously — to measure which version actually performs better against a specific, predefined metric (conversion rate, engagement, completion rate), rather than deciding through opinion or internal debate.",
+    why: "Teams often disagree about which of two designs, copy choices, or flows is 'better,' and that disagreement is frequently unresolvable through discussion alone — different people have genuinely different intuitions. A/B testing replaces that debate with real evidence: actual user behavior, measured against a specific metric, decides the outcome. It also catches cases where a change that feels like an improvement to the team actually performs worse with real users.",
+    when: "When there's a genuine, specific decision to make between two or more concrete alternatives, and enough traffic/users to reach a statistically meaningful result in a reasonable timeframe. Not useful for low-traffic features or purely subjective creative decisions with no clear success metric to measure against.",
+    practical: {
+      app: "HRMS Leave Request Form Length",
+      scenario:
+        "The team hypothesizes that removing the optional 'Additional Comments' field from the leave request form will increase completion rate, but disagrees on whether it's worth the loss of context for approvers.",
+      pass: "The shorter form variant shows a statistically significant 9% increase in completion rate over two weeks, with no measurable increase in approval-stage back-and-forth — settling the debate with evidence rather than opinion.",
+      fail: "Teams spend 3 weeks debating in meeting rooms without data, while completion rates drop on unoptimized legacy forms.",
+    },
+    advantages: [
+      "Replaces subjective opinion with real, measured user behavior on a specific metric",
+      "Free, self-hostable, and integrates with feature-flagging, so variants can be toggled without a redeploy",
+      "Statistical significance reporting prevents decisions based on noise or too-small samples",
+      "Builds an organizational record of what's actually been tried and what the real outcome was",
+    ],
+    limitations: [
+      "Requires meaningful traffic/user volume to reach significance in a reasonable time",
+      "Only measures the specific metric chosen — can miss secondary qualitative impacts",
+      "Running many simultaneous experiments on overlapping segments can create interaction effects",
+      "Requires real discipline to wait for statistical significance rather than reacting prematurely",
+    ],
+    tools: [
+      {
+        name: "GrowthBook",
+        sub: "Open-Source Feature Flagging & Experimentation Platform",
+        url: "https://growthbook.io",
+        desc: "An open-source feature flagging and A/B testing platform — lets a team split real users into variant groups, serve each group a different version of a feature, and analyze which variant wins against a chosen metric, with a self-hostable free tier.",
+        adv: [
+          "Self-hostable open-source engine with zero vendor lock-in",
+          "Built-in Bayesian and Frequentist statistical calculation engines",
+          "SDK support for Next.js, React, Node.js, Python, iOS, and Android",
+          "Connects directly to your data warehouse (Postgres, BigQuery, Snowflake)",
+        ],
+        lim: [
+          "Requires connecting an analytics data warehouse for automated metric queries",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Initialize GrowthBook SDK in Next.js frontend",
+            p: "Load feature flags and assign user to variant group based on user UUID.",
+            c: `import { GrowthBook } from '@growthbook/growthbook-react';\nconst gb = new GrowthBook({\n  apiHost: 'https://growthbook.company.com',\n  clientKey: 'sdk-prod-key-1892'\n});`,
+          },
+          {
+            t: "Step 2 — Define variant feature flag in code",
+            p: "Branch form layout based on experiment feature flag value.",
+            c: `const formVariant = gb.getFeatureValue('hrms_leave_form_length', 'control');\n// 'control' -> Full form | 'variant_compact' -> Compact 1-step form`,
+          },
+          {
+            t: "Step 3 — Track conversion event on form submission",
+            p: "Dispatch completed_leave_request telemetry event to analytics pipeline.",
+            c: `analytics.track('leave_request_completed', {\n  userId: user.id,\n  durationMs: elapsedTime,\n  variant: formVariant\n});`,
+          },
+          {
+            t: "Step 4 — Evaluate statistical significance in dashboard",
+            p: "Review p-value and confidence interval before declaring winner.",
+            c: `GrowthBook Dashboard:\n- Variant Compact: +9.2% Conversion (p = 0.003 -> 99.7% Statistically Significant)\n- Action: Promote Variant Compact to 100% rollout`,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    no: "34",
+    title: "API Testing",
+    category: "Other",
+    desc: "API testing verifies an API's behavior directly at the request/response level — checking endpoints, methods, payloads, status codes, headers, and response bodies — independent of any UI, working with the API exactly as any consuming client (frontend, mobile app, third-party integration) actually would.",
+    why: "Modern applications are built on APIs, often consumed by more than one client (web, mobile, partner integrations) — testing only through one UI never fully validates the API itself, and a bug fixed for one consumer can remain broken for the others. API testing catches issues earlier and faster than UI-driven testing, since there's no rendering, no browser, and no waiting on frontend behavior — just the request and response themselves.",
+    when: "As soon as an endpoint exists and is ready to be called — often the very first testing possible on new backend work, well before any UI is built against it — and continuously afterward in CI, since API tests run fast and catch backend regressions immediately.",
+    practical: {
+      app: "HRMS Leave Request API",
+      scenario:
+        "The POST /leave-requests endpoint is tested directly, independent of the leave request form UI that will eventually call it.",
+      pass: "A valid request returns 201 with the created leave request object, matching the documented schema exactly.",
+      fail: "Submitting a request with start_date after end_date returns 201 (success) instead of the expected 400 validation error — a backend gap caught in API testing weeks before the UI is even built against this endpoint.",
+    },
+    advantages: [
+      "Faster and more direct than UI-driven testing — no browser rendering or frontend overhead",
+      "Validates the API for every consumer (web, mobile, third-party), not just whichever UI happens to be tested",
+      "Catches backend issues at the earliest possible point, often before any frontend is built",
+      "Free tools cover everything from quick browser checks (Hoppscotch) to full CI suites (Postman/Newman)",
+    ],
+    limitations: [
+      "Doesn't verify how the API is consumed and rendered by a real UI — pair with E2E testing",
+      "Assertions are only as good as the understanding of the intended contract — untested edge cases stay invisible",
+      "Doesn't catch issues that only manifest from real concurrent, UI-driven usage patterns",
+    ],
+    tools: [
+      {
+        name: "Postman",
+        sub: "Complete API Lifecycle, Mocking & CI Runner",
+        url: "https://www.postman.com",
+        seeChapter: 2,
+        desc: "The most widely used API client (see Chapter 2 and Chapter 11) for manual and automated API testing, with collections, environments, and scripted assertions covering everything from quick checks to CI suites via Newman.",
+        adv: [
+          "Environment variable chaining across multiple API calls",
+          "Automated collection runner via Newman CLI in CI pipelines",
+        ],
+        lim: [
+          "Free tier limits cloud collection sharing in large teams",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Create request and environment variables",
+            p: "Configure authorization bearer tokens and base URLs.",
+            c: `POST {{baseUrl}}/api/v1/leave-requests\nHeaders: { "Authorization": "Bearer {{jwtToken}}" }`,
+          },
+          {
+            t: "Step 2 — Write test script assertions in Postman",
+            p: "Verify status code, response time (<200ms), and JSON schema.",
+            c: `pm.test("Status code is 201", () => pm.response.to.have.status(201));\npm.test("Returns valid leave ID", () => {\n  pm.expect(pm.response.json().data).to.have.property('id');\n});`,
+          },
+          {
+            t: "Step 3 — Run in CI pipeline via Newman",
+            p: "Automate entire collection run on every backend pull request.",
+            c: `npx newman run collections/hrms-api.json -e env/staging.json --reporters cli,junit`,
+          },
+        ],
+      },
+      {
+        name: "Insomnia",
+        sub: "Lightweight REST & GraphQL Developer Client",
+        url: "https://insomnia.rest",
+        desc: "A lightweight, developer-focused REST/GraphQL API client — a leaner alternative to Postman, well suited to developers who want a fast, low-friction way to build and test requests.",
+        adv: [
+          "Extremely fast and lightweight native desktop client",
+          "First-class GraphQL schema introspection and code generation",
+          "Git-based collection sync with repository branches",
+        ],
+        lim: [
+          "Fewer team collaboration features on free tier",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Build request in Insomnia workspace",
+            p: "Construct payload with syntax-highlighted JSON editor.",
+            c: `POST https://api.hrms.internal/graphql\nQuery: mutation { applyLeave(days: 3, type: SICK) { id status } }`,
+          },
+          {
+            t: "Step 2 — Inspect response headers and timings",
+            p: "Check 200 OK, latency breakdown, and JSON body structure.",
+            c: `Response: 200 OK | Time: 42ms | Size: 180 B`,
+          },
+        ],
+      },
+      {
+        name: "Hoppscotch",
+        sub: "Open-Source Browser & WebSocket API Playground",
+        url: "https://hoppscotch.io",
+        desc: "A free, open-source, browser-based API testing tool — needs no installation at all, runs directly at hoppscotch.io, and supports REST, GraphQL, and WebSocket testing with a clean, fast interface.",
+        adv: [
+          "Zero install — runs instantly in any web browser",
+          "Supports REST, GraphQL, WebSocket, SSE, and MQTT in one interface",
+          "100% free and open-source with offline PWA support",
+        ],
+        lim: [
+          "Browser CORS restrictions require Hoppscotch browser extension for local APIs",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Open Hoppscotch in browser",
+            p: "Navigate to https://hoppscotch.io and select REST or WebSocket tab.",
+            c: `Target: https://api.hrms.internal/api/v1/health`,
+          },
+          {
+            t: "Step 2 — Send real-time SSE or WebSocket messages",
+            p: "Test server-sent notifications for leave request approvals in real time.",
+            c: `Connected: wss://api.hrms.internal/notifications/feed\nReceived: {"event": "LEAVE_APPROVED", "id": "lr_9012"}`,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    no: "35",
+    title: "Database Testing",
+    category: "Other",
+    desc: "Database testing verifies the data layer directly — schema structure, constraints, data integrity, stored procedures, and the correctness of the raw data itself — independent of any application layer sitting on top of it, checking the database exactly as it actually stores and enforces data.",
+    why: "An application can appear to work correctly in the UI while the underlying data is silently wrong, duplicated, orphaned, or violating an intended constraint — a foreign key that should prevent an orphaned record but doesn't, a transaction that partially commits, a migration that subtly corrupts existing rows. These issues often go unnoticed at the application layer until they cause a much harder-to-diagnose problem later.",
+    when: "Whenever schema changes are made (new tables, new constraints, migrations), and periodically as a direct integrity check independent of application-level testing — especially important after any bulk data operation, migration, or refactor of how a table is used.",
+    practical: {
+      app: "HRMS Employee-Department Relationship",
+      scenario:
+        "After a migration restructures how employees are linked to departments, DBeaver is used to directly verify data integrity.",
+      pass: "A corrective script reassigns the orphaned records, and a foreign key constraint is added so the same orphaning can no longer occur silently in the future.",
+      fail: "A query reveals 12 employee records with a department_id that no longer exists in the departments table — orphaned records left behind by an incomplete migration, invisible in the UI since the application simply shows a blank department field rather than erroring.",
+    },
+    advantages: [
+      "Verifies data integrity directly at the source, independent of whatever the application layer happens to display",
+      "Catches constraint and migration issues that could otherwise go unnoticed until causing major database corruption",
+      "DBeaver supports most major databases (Postgres, MySQL, Oracle, SQLite) with one consistent tool",
+      "Direct SQL queries easily audit millions of records for subtle inconsistencies",
+    ],
+    limitations: [
+      "Requires SQL knowledge and an understanding of schema constraints to be effective",
+      "Testing directly against the database bypasses application-layer validation, requiring care with test data",
+      "Must be run against disposable staging databases, never production, given destructive test checks",
+      "Doesn't verify UI presentation — pairs with, but doesn't replace, application testing",
+    ],
+    tools: [
+      {
+        name: "DBeaver Community",
+        sub: "Universal Database Management & SQL Inspection Client",
+        url: "https://dbeaver.io",
+        desc: "A free, universal database client supporting most major databases (PostgreSQL, MySQL, SQL Server, and more) — lets a tester connect directly to the database, browse schema, run arbitrary queries, and directly inspect and verify data and constraints without going through the application.",
+        adv: [
+          "Universal multi-platform support (PostgreSQL, MySQL, MariaDB, SQLite, Oracle, Snowflake)",
+          "Visual Entity Relationship Diagram (ERD) schema visualizer",
+          "Data compare and schema diff tools to audit migrations",
+          "Export query results to CSV, JSON, or SQL dump for test verification",
+        ],
+        lim: [
+          "Requires direct database port connectivity (or SSH tunnel) to staging DB",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Connect DBeaver to Staging Database via SSL/SSH Tunnel",
+            p: "Establish secure connection to Postgres staging instance.",
+            c: `Host: staging-db.internal | Port: 5432 | Database: hrms_db | SSL: require`,
+          },
+          {
+            t: "Step 2 — Audit foreign key constraint enforcement",
+            p: "Attempt inserting orphan child record directly to test schema constraints.",
+            c: `INSERT INTO leave_requests (id, employee_id, days) VALUES ('lr_99', 'non_existent_emp', 3);\nExpected: ERROR: insert on table "leave_requests" violates foreign key constraint "fk_employee" -> PASS`,
+          },
+          {
+            t: "Step 3 — Run SQL integrity audit queries post-migration",
+            p: "Verify 0 orphan records, 0 invalid nulls, and exact row counts.",
+            c: `SELECT e.id, e.name FROM employees e\nLEFT JOIN departments d ON e.department_id = d.id\nWHERE d.id IS NULL;\nResult: 0 rows (No orphans detected -> PASS)`,
+          },
+          {
+            t: "Step 4 — Verify ACID transaction rollback on mid-flight failure",
+            p: "Simulate failure during batch payroll update and confirm ledger is untouched.",
+            c: `BEGIN;\nUPDATE employee_balances SET leave_balance = leave_balance - 1;\n-- Simulating failure before COMMIT\nROLLBACK;\nSELECT count(*) FROM employee_balances WHERE updated_at > now() - interval '1 minute';\nResult: 0 rows (Rollback verified)`,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    no: "36",
+    title: "End-to-End (E2E) Testing",
+    category: "Other",
+    desc: "End-to-end testing verifies a complete user journey through the entire system exactly as a real user would experience it — from the UI, through the backend, to the database and back — covering the full path a real task takes rather than any single layer or component in isolation.",
+    why: "Individual layers can each pass their own tests (the API works, the database is correct, the UI renders fine) while the combination of all of them still fails for a real user — a token that expires between two API calls in a multi-step flow, a UI state that gets out of sync with a backend response, a redirect that breaks partway through. End-to-end testing is the only testing type in this manual that verifies the entire real journey works together, exactly as a user actually experiences it.",
+    when: "For the most critical, high-value user journeys (login, checkout, core workflows like leave request submission) — not for every possible path, since E2E tests are the slowest and most expensive to write and maintain. Run in CI before releases, and ideally on every merge to the main branch for the most critical flows.",
+    practical: {
+      app: "HRMS Full Leave Request Journey",
+      scenario:
+        "An E2E test walks through the entire real journey: log in as an employee, navigate to the leave request form, fill it out, submit, log in as their manager, approve it, and confirm the leave balance updates correctly.",
+      pass: "The dashboard cache is correctly invalidated on approval, and the full journey — from submission through visible balance update — passes as a real user would experience it.",
+      fail: "The leave balance on the employee's dashboard doesn't update after manager approval — every individual layer (API, database, UI component) passes its own tests, but the combination, specifically the dashboard's cache not being invalidated after approval, only breaks when the full real journey is tested end-to-end.",
+    },
+    advantages: [
+      "The only testing type that verifies the complete, real path a user actually takes, across every layer working together",
+      "Catches integration issues between layers that no individual layer's own tests could ever detect on their own",
+      "Directly validates the highest-value, most business-critical journeys with the highest possible confidence",
+      "Both tools offer strong debugging (Cypress's time-travel, Playwright's trace viewer) for diagnosing failures quickly",
+    ],
+    limitations: [
+      "Slowest and most expensive tests to run and maintain in the entire testing pyramid — use sparingly on critical paths",
+      "Most prone to flakiness of any test type, since real timing, network, and rendering are all involved simultaneously",
+      "A failure doesn't immediately indicate which layer broke — requires investigation via trace logs",
+      "Requires a full, realistic integrated environment to run against",
+    ],
+    tools: [
+      {
+        name: "Playwright",
+        sub: "Modern Cross-Browser & Multi-Tab E2E Engine",
+        url: "https://playwright.dev",
+        seeChapter: 6,
+        desc: "Supports true end-to-end journeys (see Chapter 6) across multiple browser engines (Chromium, Firefox, WebKit), with strong support for multi-tab, multi-origin, and complex authentication flows that a full real user journey involves.",
+        adv: [
+          "Auto-waiting eliminates arbitrary sleep timers and test flakiness",
+          "Supports multi-context personas (e.g. Employee submits, Manager approves in same test)",
+          "Rich HTML trace viewer with DOM snapshot recording and video capture",
+        ],
+        lim: [
+          "Requires real browser engine downloads in CI runners",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Create multi-persona E2E test in Playwright",
+            p: "Instantiate employee and manager browser contexts simultaneously.",
+            c: `const employeeContext = await browser.newContext();\nconst managerContext = await browser.newContext();\nconst empPage = await employeeContext.newPage();\nconst mgrPage = await managerContext.newPage();`,
+          },
+          {
+            t: "Step 2 — Employee submits leave request",
+            p: "Fill leave application form and submit.",
+            c: `await empPage.goto('/dashboard/leave/apply');\nawait empPage.fill('#leave-days', '3');\nawait empPage.click('#submit-btn');\nawait expect(empPage.locator('.status-badge')).toHaveText('PENDING_APPROVAL');`,
+          },
+          {
+            t: "Step 3 — Manager approves leave request",
+            p: "Navigate to approval inbox in manager session and click approve.",
+            c: `await mgrPage.goto('/admin/approvals');\nawait mgrPage.click('button:has-text("Approve #9812")');\nawait expect(mgrPage.locator('.alert-success')).toBeVisible();`,
+          },
+          {
+            t: "Step 4 — Verify employee dashboard cache reflects balance deduction",
+            p: "Confirm employee balance decrements from 15 to 12 days live.",
+            c: `await empPage.reload();\nawait expect(empPage.locator('#remaining-balance')).toHaveText('12 Days');`,
+          },
+        ],
+      },
+      {
+        name: "Cypress",
+        sub: "Developer-Centric Real-Time Interactive E2E Runner",
+        url: "https://www.cypress.io",
+        seeChapter: 6,
+        desc: "A JavaScript-based E2E testing framework (see Chapter 6) built specifically around real browser execution, with time-travel debugging and automatic waiting that makes multi-step flows easy to write reliably.",
+        adv: [
+          "Visual interactive test runner with real-time DOM time-travel",
+          "Automatic waiting for elements and network requests before assertions",
+        ],
+        lim: [
+          "Limited multi-tab support compared to Playwright",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Write end-to-end journey in Cypress",
+            p: "Walk through complete authentication and onboarding flow.",
+            c: `describe('Employee Onboarding Journey', () => {\n  it('completes onboarding and verifies payslip generation', () => {\n    cy.login('hr_admin@company.com', 'SecurePass123');\n    cy.visit('/onboarding/new');\n    cy.get('#emp-name').type('Jane Doe');\n    cy.get('#submit').click();\n    cy.url().should('include', '/employees/overview');\n  });\n});`,
+          },
+          {
+            t: "Step 2 — Run in CI headlessly with video recording",
+            p: "Execute full suite and capture screenshots on unexpected errors.",
+            c: `npx cypress run --record --key $CYPRESS_RECORD_KEY`,
+          },
+        ],
+      },
+    ],
+  },
 ];
+
 
 
 
