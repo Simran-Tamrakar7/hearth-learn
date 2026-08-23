@@ -13,6 +13,7 @@ import { deliveryManuals } from './manuals/delivery.js'
 import { opsExtraManuals } from './manuals/ops-extra.js'
 import { extrasPackManuals } from './manuals/extras-pack.js'
 import { practicalPackManuals } from './manuals/practical-pack.js'
+import { testingLevelsManual } from './manuals/testing-levels.js'
 
 export const pathwiseManuals = [
   ...automationManuals,
@@ -20,6 +21,7 @@ export const pathwiseManuals = [
   ...automationManualsB,
   ...qualityManuals,
   ...qaExtraManuals,
+  testingLevelsManual,
   ...deliveryManuals,
   ...designManuals,
   ...designExtraManuals,
