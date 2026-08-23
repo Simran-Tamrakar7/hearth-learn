@@ -5416,7 +5416,493 @@ export const TESTING_TYPES_CHAPTERS: TestingChapterData[] = [
       },
     ],
   },
+  {
+    no: "57",
+    title: "Configuration Testing",
+    category: "Non-Functional",
+    desc: "Configuration testing verifies that an application behaves correctly across the different hardware, software, and settings configurations it's expected to run under — different OS versions, browser settings, screen resolutions, locale/language settings, and application-level configuration flags — checking specifically for configuration-dependent behavior rather than a single fixed environment.",
+    why: "An application tested only in its developers' default configuration can behave differently the moment a real user's environment diverges even slightly — a different OS version, a disabled browser feature, a non-default locale setting, or a toggled feature flag. Configuration testing exists specifically to catch the gap between 'works on my machine' and 'works across the actual range of configurations real users and deployments will have.'",
+    when: "Before release, against the specific matrix of configurations the real user base or deployment targets are known to use — and again whenever new configurable options, feature flags, or settings are introduced, since each new toggle multiplies the configuration space that needs to be verified.",
+    practical: {
+      app: "HRMS Multi-Currency Configuration",
+      scenario:
+        "The HRMS is configuration-tested with the 'multi-currency payroll' feature flag toggled on, a setting only a subset of customers actually enable.",
+      pass: "The export correctly reflects the configured currency when the flag is enabled, verified by re-testing specifically with the flag toggled on, not just the default configuration.",
+      fail: "With the flag enabled, the payslip PDF export silently defaults to USD formatting regardless of the configured local currency — a bug invisible in the default (flag-off) configuration that most internal testing had exclusively used.",
+    },
+    advantages: [
+      "Catches environment-and-settings-dependent bugs invisible in a single fixed test configuration",
+      "Systematic matrix approach ensures configuration coverage is deliberate rather than incidental",
+      "Particularly important for applications with many feature flags or deployment-specific settings",
+      "Reuses existing tooling from cross-browser and compatibility testing (Chapters 19 & 37)",
+    ],
+    limitations: [
+      "The full configuration space is often too large to test exhaustively — real-world prioritization is essential",
+      "Feature-flag combinations grow combinatorially, quickly outpacing manual verification capacity",
+      "Findings tied to a specific configuration can be harder to reproduce and debug than single-environment bugs",
+      "Requires accurate knowledge of real user configuration distribution to prioritize effectively",
+    ],
+    tools: [
+      {
+        name: "LambdaTest Configuration Grid",
+        sub: "Matrix OS, Browser & Feature-Flag Runner",
+        url: "https://www.lambdatest.com",
+        seeChapter: 37,
+        desc: "Used to systematically run functional test flows across combinations of OS, browser version, screen resolution, and runtime environment settings (see Chapter 37).",
+        adv: [
+          "Covers 3000+ browser, OS, and resolution combinations on real cloud infrastructure",
+          "Allows testing feature flags and locale settings programmatically via capabilities",
+        ],
+        lim: [
+          "Requires prioritizing high-usage combinations to manage execution runtimes",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Define Configuration Test Matrix",
+            p: "Specify target combinations: OS (macOS Sonoma, Windows 11, Ubuntu), Browser (Chrome, Firefox, Safari), and Flag (multiCurrency=true).",
+            c: `const matrix = [\n  { os: 'Windows 11', browser: 'Chrome', flags: { multiCurrency: true, locale: 'en-GB' } },\n  { os: 'macOS Sonoma', browser: 'Safari', flags: { multiCurrency: true, locale: 'ja-JP' } }\n];`,
+          },
+          {
+            t: "Step 2 — Execute automated test suite across matrix nodes",
+            p: "Run payslip export validation across all defined configuration nodes.",
+            c: `npx playwright test tests/config-matrix/payslip-export.spec.ts --project=lambdatest-grid`,
+          },
+          {
+            t: "Step 3 — Assert currency symbol and number formatting compliance",
+            p: "Verify generated PDF and UI display £ for GBP and ¥ for JPY.",
+            c: `Result: Windows/Chrome -> £4,500.00 (PASS) | macOS/Safari -> ¥650,000 (PASS)`,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    no: "58",
+    title: "Data Migration Testing",
+    category: "Other",
+    desc: "Data migration testing verifies that data is correctly, completely, and accurately transferred when moving between systems, schemas, or storage formats — checking that every migrated record retains its integrity, that no data is lost or duplicated, and that the migrated data behaves correctly in the new system, not just that the migration process completed without an error.",
+    why: "A migration script can run to completion, report success, and still have silently corrupted, dropped, or mismatched data — a completed migration process is not proof of a correct one. Because migrations are often one-way and hard to reverse cleanly once real usage has resumed on the new system, an undetected migration defect can be exceptionally costly and difficult to fix after the fact, making thorough testing before and during the migration especially critical.",
+    when: "Before any significant data migration — schema changes, platform migrations, database version upgrades, or moving to an entirely new system — tested first against a copy of real data in a safe environment, never attempted for the first time directly against production.",
+    practical: {
+      app: "HRMS Legacy System Migration",
+      scenario:
+        "Employee records are migrated from a legacy HRMS to the new system, tested first against a full copy of real production data.",
+      pass: "The migration script is corrected to convert legacy placeholder values to proper nulls, a re-run of the test migration shows all 340 records now pass validation, and the real migration proceeds with confidence.",
+      fail: "340 employee records with a legacy 'N/A' placeholder in the phone number field are migrated as literal text 'N/A' instead of being correctly converted to a proper null value — breaking the new system's phone-number validation on those records.",
+    },
+    advantages: [
+      "Directly verifies data correctness and completeness, not just that migration scripts ran without throwing errors",
+      "Catches transformation edge cases (unusual characters, nulls, date formats) that simple row-count checks miss",
+      "Testing against isolated test copies eliminates the risk of catastrophic corruption on live production databases",
+      "A tested rollback plan provides a verified safety net if cutover anomalies occur",
+    ],
+    limitations: [
+      "Requires a representative sanitized copy of real production data to uncover dirty-data edge cases",
+      "Field-by-field verification on billions of rows requires statistical sampling or automated checksum hashing",
+      "Testing in lower environments cannot always simulate peak concurrent production traffic during real cutover",
+      "Rollback testing adds substantial time and storage overhead to project timelines",
+    ],
+    tools: [
+      {
+        name: "DBeaver Data Comparison & Schema Audit",
+        sub: "Pre/Post Data Reconciliation & Checksum Engine",
+        url: "https://dbeaver.io",
+        seeChapter: 35,
+        desc: "Used to compare source and destination datasets (see Chapter 35), verifying record counts, data types, foreign key constraints, and checksum values before and after migration.",
+        adv: [
+          "Universal database client supporting PostgreSQL, MySQL, Oracle, and MS SQL",
+          "Automated table row count comparison and schema structure diffing",
+        ],
+        lim: [
+          "Requires building custom SQL reconciliation queries for complex transformed columns",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Audit Pre-Migration Source Row Counts & Hashes",
+            p: "Execute count and MD5 checksum aggregate across legacy tables.",
+            c: `SELECT count(*), md5(string_agg(id || name || email, '')) FROM legacy_employees;\nResult: 14,250 records | Hash: 8f9b2d4e1...`,
+          },
+          {
+            t: "Step 2 — Execute migration pipeline against staging database copy",
+            p: "Run ETL pipeline transforming legacy schemas into new PostgreSQL tables.",
+            c: `python3 scripts/migrate_employees.py --source=legacy_db --dest=staging_hrms_db`,
+          },
+          {
+            t: "Step 3 — Run Post-Migration Data Reconciliation Script",
+            p: "Verify 100% record match, zero orphaned records, and valid null conversions.",
+            c: `SELECT count(*) FROM employees WHERE phone_number = 'N/A';\nResult: 0 records (Converted to NULL correctly) | Total Migrated: 14,250 -> 100% PASS`,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    no: "59",
+    title: "Disaster Recovery Testing",
+    category: "Non-Functional",
+    desc: "Disaster recovery testing verifies that an organization can actually restore a fully functioning system after a catastrophic, large-scale failure — a full data center outage, a complete database loss, a major security incident — by actually executing the recovery plan, not just reviewing it on paper, and measuring whether it meets defined recovery time and data loss targets.",
+    why: "A written disaster recovery plan that's never actually been executed is an untested assumption, not a real safety net — backups can be silently corrupted or incomplete, documented recovery steps can be outdated or simply wrong, and the people expected to execute the plan may not actually know how in a real crisis. Disaster recovery testing is what turns 'we have a plan' into 'we've proven the plan actually works,' well before a real disaster forces the answer under far higher pressure.",
+    when: "Periodically (at minimum annually, more often for critical systems) as a scheduled, deliberate exercise — and definitely after any significant infrastructure change that could affect the recovery process (new database, new hosting provider, new backup strategy), since a recovery plan tested against an old architecture may no longer be valid.",
+    practical: {
+      app: "HRMS Full Database Loss Simulation",
+      scenario:
+        "The team simulates a complete production database loss in an isolated environment, executing the documented recovery procedure from backups.",
+      pass: "The recovery documentation is corrected to reflect the current backup tooling, and a repeat test completes full restoration in 1 hour 40 minutes, within the defined target, with a verified data loss of under 5 minutes.",
+      fail: "Recovery takes 6 hours against a documented Recovery Time Objective of 2 hours — the written procedure referenced a backup tool that had been replaced eight months earlier without the documentation being updated.",
+    },
+    advantages: [
+      "Proves recovery capability is real and current rather than an untested assumption on paper",
+      "Surfaces gaps in documentation, access credentials, and team readiness before real crises",
+      "Establishes empirical RTO (Recovery Time Objective) and RPO (Recovery Point Objective) metrics",
+      "Builds genuine team familiarity and operational confidence during high-stress incidents",
+    ],
+    limitations: [
+      "Time-consuming and resource-intensive to execute realistic full-scale disaster drills",
+      "Simulating complete regional cloud outages safely without risking production requires isolated staging environments",
+      "Drills conducted once a year risk documentation becoming stale between exercises",
+      "Cannot anticipate every unpredictable multi-factor failure sequence in advance",
+    ],
+    tools: [
+      {
+        name: "Manual Disaster Recovery Drill Procedure",
+        sub: "RTO & RPO Cold-Start Restoration Drill",
+        url: "https://hearth-learn.vercel.app/manuals/testing-types",
+        seeChapter: 5,
+        desc: "A deliberate, stopwatch-timed operational exercise (see Chapter 5) executing the documented Disaster Recovery (DR) runbook from scratch in an isolated environment.",
+        adv: [
+          "Verifies real-world backup restore capability and backup encryption key validity",
+          "Measures empirical Recovery Time Objective (RTO) against SLA commitments",
+        ],
+        lim: [
+          "Requires cross-functional coordination between DevOps, DBA, and QA teams",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Declare simulated disaster & start stopwatch",
+            p: "Simulate primary database deletion in isolated disaster recovery AWS VPC.",
+            c: `Event: AWS us-east-1 Primary RDS instance terminated.\nTarget SLA: RTO <= 2 Hours | RPO <= 15 Minutes.`,
+          },
+          {
+            t: "Step 2 — Execute runbook: restore cross-region WAL backup",
+            p: "Deploy new PostgreSQL instance in us-west-2 from encrypted S3 backup snapshot.",
+            c: `aws rds restore-db-instance-to-point-in-time \\\n  --source-db-instance-identifier hrms-prod-backup \\\n  --target-db-instance-identifier hrms-restored \\\n  --restore-time "2026-08-23T10:00:00Z"`,
+          },
+          {
+            t: "Step 3 — Run smoke validation & stop timer",
+            p: "Point staging application endpoints to restored database and verify data integrity.",
+            c: `Status: Restored 14,250 employee records | Time Elapsed: 1h 38m (RTO MET) | Data Gap: 3m (RPO MET) -> PASS`,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    no: "60",
+    title: "Documentation Testing",
+    category: "Other",
+    desc: "Documentation testing verifies that an application's supporting documentation — user guides, API documentation, help articles, installation instructions, README files — is accurate, complete, and actually works when followed exactly as written, rather than assuming documentation is correct simply because it exists.",
+    why: "Documentation is often written once, early, and then never re-verified as the underlying application evolves — a screenshot goes stale, a described step no longer matches the current UI, an API example uses a field that's since been renamed. Users who follow inaccurate documentation don't just fail to complete their task; they often lose trust in the product entirely, assuming (reasonably) that if the documentation is wrong, the product itself might be too.",
+    when: "Whenever documentation is written or updated, and periodically thereafter as the underlying application changes — especially important to re-verify after any UI change, API change, or feature update that the existing documentation describes, since documentation drift accumulates silently over time.",
+    practical: {
+      app: "HRMS API Documentation",
+      scenario:
+        "A tester follows the public API documentation's example request for creating a leave request exactly as written.",
+      pass: "The documentation is corrected to match the current field name, the exact documented example is re-tested and now succeeds as written, and a note is added to the release checklist to re-verify API docs on any field-naming change going forward.",
+      fail: "The documented example uses a field named leave_type, but the actual current API expects type — the field was renamed three releases ago and the documentation was never updated, meaning every developer following the docs exactly as written gets an immediate, confusing 400 error.",
+    },
+    advantages: [
+      "Catches user-facing blockers invisible to automated code tests when the software works but docs are wrong",
+      "Fresh-reader audits surface hidden domain assumptions the original developer overlooked",
+      "Directly protects customer trust and reduces costly customer support ticket volumes",
+      "API documentation testing acts as contract verification between developer teams",
+    ],
+    limitations: [
+      "Purely manual and vulnerable to being deprioritized under tight delivery deadlines",
+      "Documentation drift re-accumulates quickly if not embedded in release checklists",
+      "Does not automatically scale across hundreds of localized help articles",
+      "Evaluating clarity and structure requires qualitative writing judgment rather than binary pass/fail checks",
+    ],
+    tools: [
+      {
+        name: "Manual Documentation & API Verification",
+        sub: "Literal Execution & Fresh-Reader Audit",
+        url: "https://hearth-learn.vercel.app/manuals/testing-types",
+        seeChapter: 5,
+        desc: "A rigorous review practice (see Chapter 5) where an independent tester executes every code sample, cURL command, and UI click instruction verbatim without prior assumptions.",
+        adv: [
+          "Guarantees every code sample in API docs executes successfully out-of-the-box",
+          "Audits documentation links, screenshots, and parameter schemas against live build",
+        ],
+        lim: [
+          "Requires dedicated manual review time on each feature release",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Execute documented API cURL snippet verbatim",
+            p: "Copy exact JSON payload from docs portal and send request to staging endpoint.",
+            c: `curl -X POST https://api.hrms.com/v1/leave \\\n  -H "Authorization: Bearer <TOKEN>" \\\n  -H "Content-Type: application/json" \\\n  -d '{"type": "VACATION", "startDate": "2026-09-01", "days": 3}'`,
+          },
+          {
+            t: "Step 2 — Assert response matches documented schema",
+            p: "Compare HTTP 201 response JSON with published docs example.",
+            c: `Documented Schema: { "id": "LV-104", "status": "PENDING" }\nActual Server Response: { "id": "LV-104", "status": "PENDING" } -> 100% MATCH (PASS)`,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    no: "61",
+    title: "Compliance / Regulatory Testing",
+    category: "Non-Functional",
+    desc: "Compliance testing verifies that an application meets the specific legal, regulatory, or industry-standard requirements it's obligated to follow — data privacy laws (GDPR, CCPA), industry standards (PCI-DSS for payment data, HIPAA for health data), or accessibility mandates — checking against externally defined rules the organization doesn't get to choose, rather than internal requirements it wrote itself.",
+    why: "Non-compliance carries consequences beyond a typical bug: legal liability, regulatory fines, loss of the ability to operate in a given market or industry, and serious reputational damage — none of which a standard functional bug report typically triggers. Because compliance requirements are set externally and often carry legal weight, verifying them can't be treated as optional polish; it's frequently a hard requirement for the application to legally operate at all in its intended market.",
+    when: "Early in design (since some compliance requirements, like data residency or consent flows, are far cheaper to build in from the start than retrofit), and then verified again before any release touching regulated data or functionality — often involving legal or compliance specialists alongside the testing team, not testing alone.",
+    practical: {
+      app: "HRMS Employee Data Deletion (GDPR)",
+      scenario:
+        "The HRMS's 'right to erasure' feature is compliance-tested against GDPR's requirement that a user's personal data be genuinely and completely removed on request.",
+      pass: "A proper cascading deletion (or documented anonymization) removes personal data across all relevant tables and is reflected in the next backup cycle, with the process documented as evidence for compliance audits.",
+      fail: "Deleting an employee's record removes them from the active employee list, but their personal data remains fully intact in the payroll history table and in backup snapshots taken before the deletion — not a genuine erasure, just a UI-level hide.",
+    },
+    advantages: [
+      "Directly protects the organization from legal liability, regulatory fines, and license revocation",
+      "Mandatory gating requirement for operating in regulated markets (FinTech, HealthTech, EU GDPR)",
+      "Building compliance in during early architecture avoids massive retrofit costs later",
+      "Documented testing evidence directly satisfies external compliance and security audits",
+    ],
+    limitations: [
+      "Requires specialized legal and regulatory expertise to interpret evolving mandates accurately",
+      "Regulations vary widely across geographic jurisdictions (GDPR vs CCPA vs APPI)",
+      "Passing internal checklists does not guarantee passing external regulatory audits",
+      "Many compliance rules are organizational policies (data access workflows) rather than code-only checks",
+    ],
+    tools: [
+      {
+        name: "Manual Regulatory Checklist & Evidence Audit",
+        sub: "GDPR, HIPAA & PCI-DSS Verification Matrix",
+        url: "https://hearth-learn.vercel.app/manuals/testing-types",
+        seeChapter: 5,
+        desc: "Structured checklist audit (see Chapter 5) mapping legal clauses to concrete technical assertions and timestamped evidence logs.",
+        adv: [
+          "Creates audit-ready evidence trail for regulatory bodies",
+          "Audits data encryption at rest (AES-256) and in transit (TLS 1.3)",
+        ],
+        lim: [
+          "Requires periodic updating as statutory frameworks evolve",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Verify GDPR Article 17 (Right to Erasure) Technical Flow",
+            p: "Execute employee deletion request and query raw PostgreSQL tables.",
+            c: `DELETE FROM employees WHERE id = 'EMP-9021';\nAudit Check:\nSELECT * FROM payroll_records WHERE employee_id = 'EMP-9021';\nResult: 0 rows returned (Cascaded anonymization verified)`,
+          },
+          {
+            t: "Step 2 — Verify Cookie Consent & Tracking Prevention",
+            p: "Inspect browser network traffic before user accepts cookie banner.",
+            c: `Network Inspection: 0 analytics beacons fired before consent -> GDPR Compliant (PASS)`,
+          },
+        ],
+      },
+      {
+        name: "axe DevTools Accessibility Compliance Suite",
+        sub: "Section 508 / ADA / WCAG 2.1 AA Regulatory Engine",
+        url: "https://www.deque.com/axe/devtools/",
+        seeChapter: 21,
+        desc: "Automated engine (see Chapter 21) asserting compliance against statutory accessibility mandates (ADA, European Accessibility Act, Section 508).",
+        adv: [
+          "Directly maps automated scan violations to WCAG 2.1 success criteria",
+          "Zero false-positive rule set ensures actionable legal compliance reports",
+        ],
+        lim: [
+          "Must be supplemented with manual screen reader testing for full compliance coverage",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Run automated WCAG AA compliance audit in CI",
+            p: "Scan public employee portal for Section 508 compliance violations.",
+            c: `npx @axe-core/cli https://staging.hrms.com/login --tags wcag2aa,section508\nResult: 0 Critical / 0 Serious Violations -> ADA COMPLIANCE VERIFIED`,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    no: "62",
+    title: "Pilot Testing",
+    category: "Other",
+    desc: "Pilot testing deploys the actual, real production system to a small, real, live subset of the intended user base — not a separate test build like beta testing, but the genuine live system used in genuine day-to-day operation by a limited group — before rolling it out to the full user base.",
+    why: "Beta testing (Chapter 30) typically tests a pre-release build under real users' informal, exploratory usage. Pilot testing goes a step further: it's the actual production rollout, used for genuine, real, ongoing work by a limited group, revealing exactly how the system holds up under real operational usage and real organizational processes — not just whether real users can find bugs while poking around a preview build.",
+    when: "After beta testing has confirmed the build is stable, specifically before committing to a full-scale rollout across an entire organization or user base — particularly valuable for internal enterprise systems (like an HRMS) being rolled out department by department, or for a new customer-facing product being launched in one market before others.",
+    practical: {
+      app: "HRMS Department Rollout",
+      scenario:
+        "Before rolling the new HRMS out company-wide, it's piloted with the 25-person Finance department for one full month of real, live usage.",
+      pass: "A bulk-approval improvement is built and verified with the same pilot group before the company-wide rollout proceeds, avoiding a much larger, harder-to-manage problem if every department had hit the same issue simultaneously.",
+      fail: "The pilot reveals that Finance's month-end payroll close process, which involves a specific bulk-approval workflow rarely used elsewhere, takes noticeably longer in the new system than the old one — a real operational regression invisible in earlier beta testing, which hadn't exercised that specific real workflow at real volume.",
+    },
+    advantages: [
+      "Verifies real operational workflows under genuine daily production business usage",
+      "Limits organizational business risk to a small, controlled user group before full rollout",
+      "Surfaces employee training, onboarding, and documentation bottlenecks alongside software defects",
+      "Provides empirical telemetry and user feedback to plan the pacing of full rollout",
+    ],
+    limitations: [
+      "Plays out over real calendar weeks/months, making it slower than synthetic test runs",
+      "Workflows unique to the pilot group may not uncover issues in other specialized departments",
+      "Requires dedicated user support bandwidth during the active pilot phase",
+      "Cannot completely replace full-scale load testing for high-concurrency sitewide launches",
+    ],
+    tools: [
+      {
+        name: "Manual Pilot Group Supervision & Analytics",
+        sub: "Live Departmental Rollout & Operational Telemetry",
+        url: "https://hearth-learn.vercel.app/manuals/testing-types",
+        seeChapter: 5,
+        desc: "Structured rollout methodology (see Chapter 5) monitoring real user satisfaction, task completion times, and support escalation tickets in production.",
+        adv: [
+          "Identifies business process friction before full organizational release",
+          "Builds internal champions and super-users across pilot departments",
+        ],
+        lim: [
+          "Requires dedicated customer support triage channel",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Scope Pilot Cohort and Provision Production Access",
+            p: "Select 25 Finance department users and provision live HRMS production accounts.",
+            c: `Pilot Parameters:\n- Cohort: Finance Dept (25 Users)\n- Duration: 30 Days\n- Authoritative Work: Real monthly payroll cycle`,
+          },
+          {
+            t: "Step 2 — Track daily operational metrics & ticket escalations",
+            p: "Monitor task completion latency and support ticket volume in Jira Service Desk.",
+            c: `Telemetry:\n- Total Submissions: 1,420\n- Bulk Approval Latency: Identified 4.2s delay on 50+ batch sizes\n- Resolution: Added database index on approval status`,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    no: "63",
+    title: "Parallel Testing",
+    category: "Other",
+    desc: "Parallel testing runs the old and new versions of a system side by side, processing the exact same real input through both simultaneously, and directly compares their outputs — verifying the new system produces correct, equivalent results before fully cutting over and retiring the old one.",
+    why: "When replacing a critical system — especially one handling financial calculations, payroll, or other high-stakes logic — trusting the new system's correctness based on its own tests alone can be risky if the old system has years of real-world-proven behavior, including undocumented edge-case handling nobody fully wrote down. Parallel testing sidesteps that risk entirely: instead of trusting the new system's tests in isolation, it directly proves the new system produces the same results as the trusted old one, using real production input, before the old system is ever turned off.",
+    when: "When replacing a critical, high-stakes system with real financial, legal, or safety consequences if the replacement gets something subtly wrong — run for a defined period processing real, live input through both systems before fully committing to the cutover and decommissioning the old system.",
+    practical: {
+      app: "HRMS Payroll Calculation Migration",
+      scenario:
+        "The new HRMS's payroll calculation engine is run in parallel with the legacy system for two full monthly payroll cycles, with the legacy system's output remaining the one actually used to pay employees.",
+      pass: "The new system's rounding logic is corrected to match the legacy system's documented (and legally required) rounding rule, a repeat parallel run shows zero discrepancies across two full cycles, and the team proceeds to cut over with genuine confidence.",
+      fail: "A comparison script flags a discrepancy for 8 employees with overtime hours — the new system calculates overtime pay using a slightly different rounding rule than the legacy system, a subtle difference invisible in the new system's own unit tests, which had rounded consistently but not identically to the old system's real behavior.",
+    },
+    advantages: [
+      "Directly proves correctness against a battle-tested legacy system using real production payloads",
+      "Catches subtle arithmetic, rounding, and business logic discrepancies invisible in standalone unit tests",
+      "Zero business risk during evaluation since legacy system remains the authoritative source of truth",
+      "Gives executive stakeholders empirical mathematical proof before authorizing legacy retirement",
+    ],
+    limitations: [
+      "High infrastructure and operational cost maintaining two live systems simultaneously",
+      "Comparison script is only as good as the assertions it encodes — uncompared fields can harbor bugs",
+      "Intended feature changes require manual triage so expected improvements aren't flagged as errors",
+      "Significantly extends migration timelines by requiring multiple parallel billing/payroll cycles",
+    ],
+    tools: [
+      {
+        name: "Custom Dual-Run Comparison Scripts",
+        sub: "Automated Python & SQL Discrepancy Diffing",
+        url: "https://hearth-learn.vercel.app/manuals/testing-types",
+        desc: "Automated scripts that feed identical input batches to legacy and modern systems simultaneously, diffing every resulting field in milliseconds.",
+        adv: [
+          "Compares thousands of financial records down to the cent in seconds",
+          "Generates granular CSV discrepancy logs for accounting teams",
+        ],
+        lim: [
+          "Requires writing custom diffing scripts tailored to both schemas",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Feed identical monthly timesheet batch to both engines",
+            p: "Execute payroll calculation in Legacy HRMS and New Cloud HRMS simultaneously.",
+            c: `python3 run_parallel_payroll.py --month=2026-08 --employees=14250`,
+          },
+          {
+            t: "Step 2 — Execute automated SQL diff query in DBeaver",
+            p: "Audit net_salary, tax_deduction, and overtime_pay across both calculation tables.",
+            c: `SELECT l.emp_id, l.net_pay AS legacy_pay, n.net_pay AS new_pay, (n.net_pay - l.net_pay) AS diff\nFROM legacy_payroll l\nJOIN new_payroll n ON l.emp_id = n.emp_id\nWHERE abs(n.net_pay - l.net_pay) > 0.001;`,
+          },
+          {
+            t: "Step 3 — Analyze discrepancy output",
+            p: "Confirm 0 discrepancies across all 14,250 records across 2 consecutive months.",
+            c: `Result: 0 rows returned | 100.00% Net Salary Match -> AUTHORIZED FOR CUTOVER`,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    no: "64",
+    title: "Big Bang vs. Incremental Integration Testing",
+    category: "Integration subtype",
+    desc: "Big Bang integration testing combines all modules or components at once and tests the fully assembled system together in a single pass, while incremental integration testing combines and tests modules gradually, one (or a few) at a time, verifying each newly added piece works correctly with what's already been integrated before adding the next.",
+    why: "These represent two fundamentally different strategies for the same underlying goal — verifying that independently developed modules work correctly together — with very different trade-offs. Big Bang is simpler to set up but makes failures far harder to isolate (with everything combined at once, a single bug could be anywhere), while incremental integration takes more discipline to sequence but makes exactly where a new problem was introduced immediately obvious, since only one new piece was added at each step.",
+    when: "Incremental integration is generally preferred for any system with clearly separable modules and enough time to integrate gradually — it's the far more common, more disciplined approach in modern development. Big Bang is sometimes used (often out of necessity rather than choice) when modules genuinely can't be meaningfully integrated separately, or under significant time pressure where a full incremental sequence isn't feasible.",
+    practical: {
+      app: "HRMS Modules (Auth, Leave, Payroll)",
+      scenario:
+        "The HRMS's authentication, leave management, and payroll modules are integrated using an incremental approach: authentication first, then leave management against verified authentication, then payroll against both.",
+      pass: "Incremental result: When a bug appears during payroll integration (an authorization check incorrectly denies managers access to their team's payroll data), it's immediately clear the issue lies specifically in the newly added payroll module's own authorization logic, since authentication and leave management were both already fully verified working correctly beforehand.",
+      fail: "Contrast (hypothetical Big Bang): Had all three modules been combined and tested together at once from the start, the same bug would have required checking all three modules and their interactions from scratch to determine where the actual fault lay — a meaningfully slower diagnosis for the exact same underlying bug.",
+    },
+    advantages: [
+      "Incremental: Pinpoints defect locations instantly to the single newly added component",
+      "Incremental: Progressively builds system confidence without waiting for all modules to be completed",
+      "Big Bang: Simple initial setup with no requirement for stubs, drivers, or sequenced scheduling",
+      "Big Bang: Can be convenient when all modules finish development concurrently in small projects",
+    ],
+    limitations: [
+      "Incremental: Requires architectural planning, dependency graphing, and maintaining test stubs/mocks",
+      "Incremental: Takes more total calendar time as integration moves through structured stages",
+      "Big Bang: Root-cause debugging is slow and painful when multiple interconnected components fail simultaneously",
+      "Big Bang: Discovers integration defects late in the release cycle when fixes are most disruptive",
+    ],
+    tools: [
+      {
+        name: "Playwright / Selenium Incremental Suite",
+        sub: "Sequenced Component Integration & Mocking Driver",
+        url: "https://playwright.dev",
+        seeChapter: 6,
+        desc: "Automates incremental module integration testing (see Chapter 6), using API route mocking and staged component drivers to test modules in order of architectural dependency.",
+        adv: [
+          "Enables top-down (stubs) or bottom-up (drivers) incremental integration pipelines",
+          "Pinpoints failing network boundaries immediately in automated CI reports",
+        ],
+        lim: [
+          "Requires maintaining stub definitions until dependent modules are implemented",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Phase 1: Test Auth Module in Isolation",
+            p: "Verify JWT token generation and session expiration.",
+            c: `npx playwright test tests/integration/phase1-auth.spec.ts -> PASS`,
+          },
+          {
+            t: "Step 2 — Phase 2: Integrate Leave Management with verified Auth",
+            p: "Verify leave request submission using authenticated JWT context.",
+            c: `npx playwright test tests/integration/phase2-auth-leave.spec.ts -> PASS`,
+          },
+          {
+            t: "Step 3 — Phase 3: Integrate Payroll Module with Auth + Leave",
+            p: "Verify payroll calculation accurately reflects approved leave days.",
+            c: `npx playwright test tests/integration/phase3-auth-leave-payroll.spec.ts -> PASS (All 3 Modules Integrated)`,
+          },
+        ],
+      },
+    ],
+  },
 ];
+
 
 
 
