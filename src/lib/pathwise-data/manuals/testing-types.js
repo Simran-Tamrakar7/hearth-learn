@@ -2226,8 +2226,533 @@ export const testingTypesManual = {
         r('guide', 'Cloudflare — Understanding Horizontal vs Vertical Scalability', 'https://www.cloudflare.com/learning/performance/what-is-scalability/', 'EN'),
       ],
     }),
+
+    ch({
+      id: 'tt-volume-testing',
+      kind: 'guide',
+      phase: 'Part 5 · Non-Functional',
+      level: 'advanced',
+      title: 'Volume Testing',
+      minutes: 25,
+      durationLabel: 'Chapter 17',
+      overviewText:
+        'Volume testing checks how an application behaves when the database is filled with a large quantity of data — not many concurrent users, but a large amount of data at rest — verifying that queries, searches, exports, and reports still perform acceptably once the system has scaled up in data size rather than traffic.',
+      why:
+        'A system tested with 50 sample records can behave very differently once a real database holds 500,000 rows — an unindexed query that returned instantly in dev can take minutes in production, pagination can break, exports can time out, and reports can grind to a halt. Volume testing catches the specific failure mode of "it works, but only with a small amount of data," which functional testing on a small dataset will never reveal.',
+      when:
+        'Before launch, once the expected data growth over the first year (or several years) can be estimated, and again whenever a new data-heavy feature (bulk import, reporting module, audit log) is added. It\'s especially important before enabling any feature that queries or aggregates across the entire dataset.',
+      practical: {
+        app: 'HRMS Employee Search',
+        scenario:
+          'The employee search feature is tested with 100 employees during development, then loaded with 50,000 synthetic employee records to simulate several years of company growth.',
+        pass: 'Adding a database index on name brings search down to 80ms at the same 50,000-record volume.',
+        fail: 'Search takes 6.2 seconds per query — a full table scan with no index on the name column.',
+      },
+      advantages: [
+        'Directly exposes missing database indexes and inefficient queries before real data accumulates',
+        'Cheap to generate — synthetic data at any scale, without needing real users or real time',
+        'Reveals UI-level breakage (broken pagination, timeouts) that only appears at scale',
+        'Findings translate directly into concrete database and query fixes',
+      ],
+      limitations: [
+        'Synthetic data can miss real-world data patterns (skewed distributions, unusual characters, edge-case values)',
+        'Requires a disposable test database — never run volume tests against production',
+        'Doesn\'t test concurrent access at volume, only single-user query performance at scale',
+        'Cleanup after testing needs care — large synthetic datasets must be fully removed before reuse',
+      ],
+      tools: [
+        {
+          name: 'Python + Faker',
+          sub: 'Synthetic Bulk Data Generation',
+          url: 'https://faker.readthedocs.io',
+          desc: 'A lightweight approach where a script generates large volumes of realistic-looking fake data (names, dates, addresses) and inserts it directly into the database, bypassing the UI entirely for speed.',
+          adv: [
+            'Fast generation of millions of structured rows tailored to exact schema',
+            'Bypasses UI overhead for high-speed direct database seeding',
+            'Customizable localization (locales, currencies, regional phone formats)',
+            'Free and easy to integrate into migration pipelines',
+          ],
+          lim: [
+            'Requires custom scripting tailored to relational foreign-key constraints',
+            'May not fully replicate organic distribution skews',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Install Faker library in Python environment',
+              p: 'Install Faker and your database connector (e.g. psycopg2, mysql-connector).',
+              c: 'pip install faker psycopg2-binary',
+            },
+            {
+              t: 'Step 2 — Write bulk generator script',
+              p: 'Generate realistic employee records in memory batches of 10,000 rows.',
+              c: 'from faker import Faker\nimport psycopg2\n\nfake = Faker()\nconn = psycopg2.connect("dbname=hrms_staging user=postgres")\ncur = conn.cursor()\n\nrecords = [(fake.name(), fake.email(), fake.job(), fake.date_of_birth()) for _ in range(50000)]\ncur.executemany("INSERT INTO employees (name, email, role, dob) VALUES (%s, %s, %s, %s)", records)\nconn.commit()',
+            },
+            {
+              t: 'Step 3 — Seed target volume tiers',
+              p: 'Benchmark performance at 10k, 100k, and 500k rows.',
+              c: 'python seed_volume.py --target=500000',
+            },
+            {
+              t: 'Step 4 — Execute query benchmarks & explain plans',
+              p: 'Run query profiling (EXPLAIN ANALYZE) against search and filtering queries.',
+              c: 'EXPLAIN ANALYZE SELECT * FROM employees WHERE name ILIKE \'%Smith%\';\n-- Seq Scan on employees (actual time=6200.12ms)',
+            },
+            {
+              t: 'Step 5 — Apply query optimization & database indexing',
+              p: 'Create b-tree or trigram index on heavily filtered columns.',
+              c: 'CREATE INDEX idx_employees_name_trgm ON employees USING gin (name gin_trgm_ops);',
+            },
+            {
+              t: 'Step 6 — Verify sub-second execution',
+              p: 'Re-run query to confirm index scan reduces time from 6.2s to 80ms.',
+              c: 'EXPLAIN ANALYZE SELECT * FROM employees WHERE name ILIKE \'%Smith%\';\n-- Bitmap Index Scan on idx_employees_name_trgm (actual time=78.4ms) -> PASS',
+            },
+          ],
+        },
+        {
+          name: 'Apache JMeter',
+          sub: 'Volume-Loaded Query Benchmarking',
+          url: 'https://jmeter.apache.org',
+          seeChapter: 14,
+          desc: 'Once volume is loaded into the database, JMeter can be reused (see Chapter 14) to hit the affected endpoints repeatedly and measure how response time changes purely due to data size, independent of concurrent user count.',
+          adv: [
+            'Measures end-to-end API response time under full database payload volume',
+            'Automates pagination, filtering, and export endpoint testing',
+            'Reuses existing test plans from Chapter 14',
+          ],
+          lim: [
+            'Requires dedicated staging instance with pre-populated test data',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Configure HTTP Sampler for search endpoint',
+              p: 'Hit /api/v1/employees/search?q=Smith against the 500k-row staging environment.',
+              c: 'GET https://staging.hrms-app.com/api/v1/employees/search?page=1&limit=50&q=Smith',
+            },
+            {
+              t: 'Step 2 — Add duration assertions',
+              p: 'Assert response completes in under 500ms even with 500,000 records in database.',
+              c: 'Duration Assertion: Max response time <= 500ms',
+            },
+            {
+              t: 'Step 3 — Test CSV/PDF bulk export timeout limits',
+              p: 'Hit /api/v1/reports/export-all and verify background worker queues payload without HTTP 504 Gateway Timeout.',
+              c: 'POST /api/v1/reports/export-all -> 202 Accepted (Job ID: exp_9812)',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: 'Database Volume Inflation & Query Optimization',
+          body: 'Benchmark database indexing and full-table scan query bottlenecks with synthetic datasets exceeding 500,000 records.',
+          doThis: 'Generate 500k mock records with Faker and profile database query performance.',
+          code: 'python seed_volume.py --records=500000',
+        },
+      ],
+      checklist: ['Generated realistic synthetic test dataset', 'Executed EXPLAIN ANALYZE on top 5 critical queries', 'Added necessary indexes to maintain sub-100ms response times'],
+      practice: { title: '500,000-row volume query optimization', brief: 'Benchmark search endpoints under high-volume database conditions and optimize indexing.' },
+      resources: [
+        r('tool', 'Faker Python Documentation', 'https://faker.readthedocs.io', 'EN'),
+        r('guide', 'Use The Index, Luke — Database Indexing Guide', 'https://use-the-index-luke.com', 'EN'),
+      ],
+    }),
+
+    ch({
+      id: 'tt-security-testing',
+      kind: 'guide',
+      phase: 'Part 5 · Non-Functional',
+      level: 'advanced',
+      title: 'Security Testing',
+      minutes: 30,
+      durationLabel: 'Chapter 18',
+      overviewText:
+        'Security testing probes an application for vulnerabilities that could let an attacker access data, impersonate a user, disrupt service, or otherwise act outside their intended permissions — checking not whether the app does what it\'s supposed to, but whether it can be made to do what it\'s not supposed to.',
+      why:
+        'A functionally perfect application can still expose sensitive data or grant unauthorized access if a single endpoint is missing an auth check, a form is vulnerable to injection, or a session token isn\'t invalidated correctly. Security failures are also uniquely costly — unlike a functional bug, a security gap can be actively and repeatedly exploited by someone specifically looking for it, often silently, long before anyone notices.',
+      when:
+        'Continuously — basic checks (dependency scanning, auth checks on new endpoints) belong in every CI run, while deeper testing (manual probing, penetration-style checks) should happen before major releases and whenever authentication, permissions, or data-handling code changes.',
+      practical: {
+        app: 'HRMS Payslip Access (IDOR Vulnerability)',
+        scenario:
+          'Manual security testing checks whether an employee can view another employee\'s payslip by changing the ID in the URL (/payslip/104 → /payslip/105).',
+        pass: 'The same request returns a 403 Forbidden, because the backend now verifies the session\'s employee ID matches the requested payslip\'s owner.',
+        fail: 'The request succeeds and returns employee 105\'s payslip data — a broken access control vulnerability, since the backend checked only that a valid session existed, not that it belonged to the requested employee.',
+      },
+      advantages: [
+        'ZAP catches common, well-known vulnerability classes automatically, without needing deep security expertise to start',
+        'Dependency scanning catches inherited risk from third-party code, which manual testing would never think to check',
+        'Both are free and scriptable, fitting naturally into CI/CD for continuous coverage',
+        'Findings map directly to well-known, well-documented vulnerability categories (OWASP Top 10), making fixes easier to research',
+      ],
+      limitations: [
+        'Automated scanning finds known patterns, not novel logic flaws — it doesn\'t replace a skilled human security review or a real penetration test',
+        'Produces false positives that require manual verification, and can also miss context-specific vulnerabilities',
+        'Dependency scanners only know about disclosed vulnerabilities — a zero-day dependency risk stays invisible',
+        'Authenticated/permission-based flaws often need manual scenario testing',
+      ],
+      tools: [
+        {
+          name: 'OWASP ZAP',
+          sub: 'Automated Vulnerability & Proxy Scanner',
+          url: 'https://www.zaproxy.org',
+          desc: 'A free, open-source web application security scanner that acts as a proxy between the tester and the application, automatically crawling it and testing for common vulnerabilities (SQL injection, XSS, insecure headers, and more) drawn from the OWASP Top 10.',
+          adv: [
+            'Free, industry-standard tool backed by OWASP Foundation',
+            'Automated spider crawler and active attack scanner',
+            'Can intercept and tamper with live HTTP requests as an interactive proxy',
+            'Provides clear remediation guidance mapped to CWE and OWASP Top 10',
+          ],
+          lim: [
+            'Active scanning can alter test data — execute against staging only',
+            'Requires authenticated session configuration for protected areas',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Launch OWASP ZAP & configure browser proxy',
+              p: 'Start ZAP GUI or Docker container and point target browser to 127.0.0.1:8080.',
+              c: 'zap.sh -daemon -port 8080 -config api.disablekey=true',
+            },
+            {
+              t: 'Step 2 — Run Automated Spider crawl',
+              p: 'Discover all endpoints, forms, input fields, and REST APIs.',
+              c: 'Target: https://staging.hrms-app.com\nSpider: Discovered 48 URLs and 14 form parameters',
+            },
+            {
+              t: 'Step 3 — Configure authenticated context',
+              p: 'Supply session cookie or JWT bearer token so ZAP can audit internal authenticated routes.',
+              c: 'Header: Authorization: Bearer eyJhbGciOi...',
+            },
+            {
+              t: 'Step 4 — Execute Active Scan against OWASP Top 10',
+              p: 'Inject automated payloads testing for SQLi, Reflected XSS, and CSRF.',
+              c: 'Active Scan Status: Testing Cross-Site Scripting (XSS), SQL Injection, Path Traversal',
+            },
+            {
+              t: 'Step 5 — Review risk-categorized Alert report',
+              p: 'Inspect High, Medium, and Low findings with proof-of-concept request/response pairs.',
+              c: 'Alert Summary:\n- High: Missing Content-Security-Policy (CSP)\n- Medium: Cookie without SameSite=Strict\n- Informational: Server header banner leakage',
+            },
+            {
+              t: 'Step 6 — Integrate ZAP in GitHub Actions CI',
+              p: 'Automate baseline security scans on every pull request.',
+              c: 'docker run -v $(pwd):/zap/wrk/:rw -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t https://staging.hrms-app.com -r zap_report.html',
+            },
+          ],
+        },
+        {
+          name: 'npm audit / pip-audit',
+          sub: 'Dependency Vulnerability Gatekeeper',
+          url: 'https://pypi.org/project/pip-audit/',
+          desc: 'Dependency vulnerability scanners built into (or added alongside) the package manager, checking every third-party library the project depends on against known vulnerability databases.',
+          adv: [
+            'Zero setup — built directly into package managers',
+            'Scans entire dependency graph including transitive child packages',
+            'Automated exit codes for continuous integration breaking on High/Critical CVEs',
+            'Directly recommends semver-safe upgrade commands',
+          ],
+          lim: [
+            'Only detects known public CVEs (zero-days remain unflagged)',
+            'Cannot audit proprietary custom in-house libraries',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Run audit scan on project root',
+              p: 'Execute security scan across package-lock.json or requirements.txt.',
+              c: 'npm audit\n# Or for Python:\npip-audit -r requirements.txt',
+            },
+            {
+              t: 'Step 2 — Inspect vulnerability advisory details',
+              p: 'Review CVE severity, CVSS score, affected package versions, and fix availability.',
+              c: 'axios  <1.7.4\nSeverity: High\nAxios Cross-Site Request Forgery Vulnerability - CVE-2024-39338\nFix available: upgrade to axios@1.7.4',
+            },
+            {
+              t: 'Step 3 — Apply automated safe patches',
+              p: 'Upgrade vulnerable dependencies without breaking major versions.',
+              c: 'npm audit fix',
+            },
+            {
+              t: 'Step 4 — Add CI audit barrier',
+              p: 'Configure pipeline to fail if any High or Critical severity CVE is introduced.',
+              c: 'npm audit --audit-level=high',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: 'OWASP Top 10 & Dependency Audit',
+          body: 'Scan endpoints for injection and broken object-level authorization (IDOR) vulnerabilities and audit dependencies.',
+          doThis: 'Run OWASP ZAP baseline scan and configure automated dependency audit checks.',
+          code: 'npm audit && docker run -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t https://staging.hrms-app.com',
+        },
+      ],
+      checklist: ['Configured automated dependency CVE scanner', 'Executed OWASP ZAP active scan against authenticated endpoints', 'Verified strict object-level authorization controls'],
+      practice: { title: 'OWASP Top 10 vulnerability assessment', brief: 'Conduct a penetration testing pass and audit authorization policies.' },
+      resources: [
+        r('tool', 'OWASP ZAP Official Site', 'https://www.zaproxy.org', 'EN'),
+        r('guide', 'OWASP Top 10 Security Risks', 'https://owasp.org/www-project-top-ten/', 'EN'),
+      ],
+    }),
+
+    ch({
+      id: 'tt-compatibility-testing',
+      kind: 'guide',
+      phase: 'Part 5 · Non-Functional',
+      level: 'intermediate',
+      title: 'Compatibility Testing',
+      minutes: 25,
+      durationLabel: 'Chapter 19',
+      overviewText:
+        'Compatibility testing verifies that an application works correctly across the different environments real users will actually use it in — different browsers, operating systems, screen sizes, and devices — rather than just the one environment it was built and tested on.',
+      why:
+        'Code that renders and behaves correctly in one browser can break in another due to differing CSS support, JavaScript engine quirks, or default behaviors — and a layout that looks fine on a developer\'s laptop can be unusable on a small phone screen. Without compatibility testing, these gaps only surface when real users on real devices hit them, often generating confusing, hard-to-reproduce support tickets.',
+      when:
+        'Throughout development for major features, and definitely before release — checked against the specific browsers, OS versions, and device sizes the actual user base is known (or expected) to use, rather than testing exhaustively against every possible combination.',
+      practical: {
+        app: 'HRMS Leave Calendar Widget',
+        scenario:
+          'The leave calendar widget, built and tested primarily in Chrome on desktop, is checked against Safari on iOS and an older Android device.',
+        pass: 'The overlay renders correctly across Chrome, Safari, and the tested Android browser once the stacking-context bug is corrected.',
+        fail: 'On Safari iOS, the date picker overlay renders behind the calendar instead of on top of it, making dates unselectable — a CSS stacking-context issue invisible in Chrome.',
+      },
+      advantages: [
+        'Real-device testing (BrowserStack) catches issues emulators and simulators simply can\'t reproduce',
+        'Covers the full matrix of browser/OS/device combinations without needing to physically own each one',
+        'DevTools Device Mode gives a fast, free, zero-setup first pass during active development',
+        'Screenshot comparison makes visual regressions across browsers immediately obvious',
+      ],
+      limitations: [
+        'Free/trial tiers limit the number of test minutes or device combinations available',
+        'Testing every possible combination is impossible — prioritization based on real user analytics is essential',
+        'Device Mode emulation isn\'t a perfect substitute for a real device\'s touch behavior, performance, or rendering quirks',
+        'Manual walkthroughs across many combinations are time-consuming without automation layered on top',
+      ],
+      tools: [
+        {
+          name: 'BrowserStack',
+          sub: 'Real Cloud Device & Cross-Browser Lab',
+          url: 'https://browserstack.com',
+          desc: 'A cloud platform providing access to real browsers and real devices (not just emulators) for manual and automated cross-browser/cross-device testing, without needing to own or maintain a physical device lab.',
+          adv: [
+            'Access to real physical iPhones, iPads, Samsung Galaxy, and Google Pixel devices',
+            'Supports hundreds of legacy and modern browser versions (Chrome, Firefox, Safari, Edge)',
+            'Interactive devtools with remote debugging from cloud devices',
+            'Automated parallel test execution with Selenium and Playwright',
+          ],
+          lim: [
+            'Free tier offers limited interactive test minutes',
+            'Requires internet connection with occasional cloud streaming latency',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Select target OS, Browser, and Device matrix',
+              p: 'Select Safari on iOS 17 (iPhone 15) and Chrome on Windows 11.',
+              c: 'Environment Matrix:\n1. iOS 17 | Safari | iPhone 15 Pro\n2. Android 14 | Chrome | Galaxy S24\n3. macOS Sonoma | Safari 17.4',
+            },
+            {
+              t: 'Step 2 — Launch live interactive testing session',
+              p: 'Navigate to staging HRMS URL and interact with UI in real time.',
+              c: 'Live session URL: https://staging.hrms-app.com/calendar',
+            },
+            {
+              t: 'Step 3 — Inspect device-specific rendering and console logs',
+              p: 'Open remote Web Inspector to debug CSS z-index and touch-event behavior.',
+              c: 'Inspected: .datepicker-modal { z-index: 9999; -webkit-transform: translateZ(0); }',
+            },
+            {
+              t: 'Step 4 — Capture cross-browser visual comparison screenshots',
+              p: 'Trigger 10-browser screenshot comparison in one click.',
+              c: 'Captured: Desktop Chrome, Desktop Firefox, Desktop Safari, iOS Safari, Android Chrome',
+            },
+            {
+              t: 'Step 5 — Log bug with direct BrowserStack session link',
+              p: 'Export annotated screen recordings directly to Jira or GitHub Issues.',
+              c: 'Ticket Created: BUG-402: Datepicker modal hidden behind calendar table on Mobile Safari',
+            },
+          ],
+        },
+        {
+          name: 'Chrome DevTools Device Mode',
+          sub: 'Built-In Viewport & Touch Emulation',
+          url: 'https://developer.chrome.com/docs/devtools/device-mode',
+          desc: 'A free, built-in feature of Chrome that simulates different screen sizes and device viewports directly in the browser, useful for quick responsive-design checks without needing BrowserStack for every small check.',
+          adv: [
+            'Instant access with zero accounts, tokens, or setup required',
+            'Simulates mobile viewports, touch cursors, and orientation rotation',
+            'Network throttling (Fast 3G, Slow 3G, Offline) and CPU throttling',
+            'Inspect media queries and CSS breakpoints live',
+          ],
+          lim: [
+            'Uses Blink engine — cannot catch Safari (WebKit) or Firefox (Gecko) rendering bugs',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Toggle Device Toolbar in Chrome DevTools',
+              p: 'Press Ctrl+Shift+M (Windows/Linux) or Cmd+Option+M (macOS).',
+              c: 'Shortcut: Cmd + Option + M',
+            },
+            {
+              t: 'Step 2 — Select device preset or responsive dimensions',
+              p: 'Test iPhone SE (375px), iPhone 14 Pro (393px), and iPad Mini (768px).',
+              c: 'Viewport: 375 x 667 (iPhone SE) | DPR: 2.0',
+            },
+            {
+              t: 'Step 3 — Verify responsive navigation & touch targets',
+              p: 'Ensure mobile hamburger menu opens and tap targets meet the 48x48px minimum size.',
+              c: 'Check: Button touch target >= 48px x 48px | Text readable without pinch zoom',
+            },
+            {
+              t: 'Step 4 — Test network throttling on mobile viewport',
+              p: 'Select Slow 3G to evaluate layout shifts while assets download.',
+              c: 'Throttling: Slow 3G (500 Kbps, 400ms RTT) | Check for CLS issues',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: 'Cross-Device & Cross-Browser Verification',
+          body: 'Validate responsive viewport layouts and CSS rendering across iOS Safari, Android Chrome, and desktop browsers.',
+          doThis: 'Test responsive breakpoints in DevTools Device Mode and execute cross-browser passes on BrowserStack.',
+          code: 'npx playwright test --project=webkit --project=firefox',
+        },
+      ],
+      checklist: ['Verified mobile breakpoints (375px, 768px, 1024px)', 'Tested on real iOS Safari and Android Chrome devices', 'Confirmed touch target usability on mobile inputs'],
+      practice: { title: 'Responsive & cross-browser audit', brief: 'Audit layout and interaction fidelity across mobile, tablet, and desktop viewports.' },
+      resources: [
+        r('tool', 'BrowserStack Live', 'https://browserstack.com', 'EN'),
+        r('guide', 'Chrome DevTools Device Mode', 'https://developer.chrome.com/docs/devtools/device-mode', 'EN'),
+      ],
+    }),
+
+    ch({
+      id: 'tt-reliability-testing',
+      kind: 'guide',
+      phase: 'Part 5 · Non-Functional',
+      level: 'advanced',
+      title: 'Reliability Testing',
+      minutes: 25,
+      durationLabel: 'Chapter 20',
+      overviewText:
+        'Reliability testing verifies that an application continues to function correctly over an extended, continuous period of real-world-like usage — checking for the slow degradation, resource leaks, and intermittent failures that only show up over time, not in a single short test run.',
+      why:
+        'Some problems simply don\'t appear in a quick test — a memory leak that\'s invisible after five minutes can crash a server after five days; a background job that occasionally fails silently might go unnoticed until it\'s failed hundreds of times. Reliability testing answers a question none of the other non-functional tests do: not "is it fast" or "does it break under load," but "does it keep working, correctly, hour after hour, day after day."',
+      when:
+        'Before launch for any system expected to run continuously (most production systems), and especially before releases introducing long-running processes, background jobs, or caching layers — run as an extended soak test over hours or days rather than a short pass/fail check.',
+      practical: {
+        app: 'HRMS Background Payroll Job',
+        scenario:
+          'A background job that recalculates payroll totals nightly is soak-tested by running it continuously, once per hour, for 72 hours in a staging environment instead of just once.',
+        pass: 'With the connection properly closed, memory usage returns to baseline after each run and stays flat across the full 72-hour soak test.',
+        fail: 'Memory usage climbs steadily with each run and never releases, and by hour 60 the job starts failing outright — a connection object was never being closed after each run.',
+      },
+      advantages: [
+        'Catches slow-building problems (memory leaks, connection exhaustion, gradual degradation) invisible to short tests',
+        'Soak testing gives confidence the system can run unattended for real production durations, not just survive a demo',
+        'Uptime Kuma provides ongoing, long-term visibility rather than a one-time snapshot',
+        'Correlating downtime/latency spikes with deployment history turns reliability into an actionable, trackable metric',
+      ],
+      limitations: [
+        'Inherently time-consuming — a meaningful soak test takes hours or days, not minutes, to produce a useful signal',
+        'Requires a stable, dedicated test environment tied up for the full duration of the run',
+        'A slow leak may need an even longer run than initially planned to become clearly visible in the data',
+        'Uptime monitoring shows that something degraded, not automatically why',
+      ],
+      tools: [
+        {
+          name: 'Apache JMeter',
+          sub: 'Extended Soak & Memory Leak Detection',
+          url: 'https://jmeter.apache.org',
+          seeChapter: 14,
+          desc: 'The same load-testing tool from Chapter 14 (see Chapter 14), reused here not for a short burst but for a sustained, moderate, continuous load run over many hours, specifically watching for degradation over time rather than an immediate breaking point.',
+          adv: [
+            'Simulates steady realistic background traffic over hours or days',
+            'Exposes unclosed database connections and thread deadlocks',
+            'Automated generation of response time trend graphs',
+          ],
+          lim: [
+            'Requires dedicated staging infrastructure during test window',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Configure moderate steady thread group',
+              p: 'Configure 50 virtual users with constant throughput rather than an escalating ramp.',
+              c: 'Thread Group:\n- Users: 50 VUs\n- Constant Throughput: 120 req/min\n- Duration: 86400 seconds (24 Hours)',
+            },
+            {
+              t: 'Step 2 — Monitor server memory & CPU consumption',
+              p: 'Attach Prometheus/Grafana or Node.js process monitor to track heap allocation.',
+              c: 'Monitoring: process.memoryUsage().heapUsed recorded every 60 seconds',
+            },
+            {
+              t: 'Step 3 — Analyze response time drift',
+              p: 'Compare 95th percentile latency in Hour 1 vs Hour 24.',
+              c: 'Hour 01 Latency: 180ms\nHour 12 Latency: 185ms\nHour 24 Latency: 182ms -> Flat curve (No degradation)',
+            },
+            {
+              t: 'Step 4 — Verify zero connection exhaustion',
+              p: 'Confirm database connection pool returns all leased connections to pool.',
+              c: 'Active Postgres Connections: Constant 8/20 pool size across 24 hours -> PASS',
+            },
+          ],
+        },
+        {
+          name: 'Uptime Kuma',
+          sub: 'Self-Hosted Uptime & SLA Monitor',
+          url: 'https://github.com/louislam/uptime-kuma',
+          desc: 'A free, self-hostable uptime monitoring tool that continuously pings an application\'s endpoints and tracks availability, response time, and downtime over days, weeks, or months — reliability observed through real, ongoing operation rather than a single test.',
+          adv: [
+            '100% free, open-source, and self-hostable via Docker in under 2 minutes',
+            'Supports HTTP/HTTPS, TCP, Ping, DNS, and keyword validation',
+            'Beautiful status pages and instant multi-channel alerts (Slack, Discord, Email, Webhook)',
+            'Calculates 24h, 30-day, and 1-year uptime percentages with certificate expiry tracking',
+          ],
+          lim: [
+            'Requires hosting server to run monitor continuously',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Deploy Uptime Kuma via Docker',
+              p: 'Run single container instance on monitoring server.',
+              c: 'docker run -d --restart=always -p 3001:3001 -v uptime-kuma:/app/data --name uptime-kuma louislam/uptime-kuma:1',
+            },
+            {
+              t: 'Step 2 — Add application monitors & keyword checks',
+              p: 'Monitor healthcheck endpoint /api/health and assert status 200 with JSON payload {"status":"ok"}.',
+              c: 'Monitor Type: HTTP(s) - Keyword\nURL: https://hrms-app.com/api/health\nInterval: 60 seconds\nKeyword: "status":"ok"',
+            },
+            {
+              t: 'Step 3 — Configure instant alert notifications',
+              p: 'Set up Webhook or Slack alerts if an endpoint fails 3 consecutive checks.',
+              c: 'Alert Channels: Slack #alerts-devops, Telegram Bot, PagerDuty',
+            },
+            {
+              t: 'Step 4 — Track 30-day SLA and correlate with releases',
+              p: 'Inspect uptime graph (99.98%) and review response time spikes following code deployments.',
+              c: 'Monthly Uptime: 99.98% | Mean Response Time: 142ms | Total Downtime: 8 mins',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: 'Soak Testing & Uptime Monitoring',
+          body: 'Execute extended soak tests to surface memory leaks and monitor production uptime SLAs.',
+          doThis: 'Run a 24-hour soak test with JMeter and configure continuous health probes in Uptime Kuma.',
+          code: 'docker run -d -p 3001:3001 louislam/uptime-kuma:1',
+        },
+      ],
+      checklist: ['Completed 24h+ soak test under steady load', 'Verified flat memory and CPU resource utilization', 'Configured 60-second automated uptime health checks'],
+      practice: { title: '72-hour soak test & SLA monitoring plan', brief: 'Plan and execute an extended soak test to verify zero memory leaks over long durations.' },
+      resources: [
+        r('tool', 'Uptime Kuma GitHub', 'https://github.com/louislam/uptime-kuma', 'EN'),
+        r('guide', 'Google SRE Book — Monitoring Distributed Systems', 'https://sre.google/sre-book/monitoring-distributed-systems/', 'EN'),
+      ],
+    }),
   ],
 }
+
 
 
 
