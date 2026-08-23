@@ -2530,7 +2530,375 @@ export const TESTING_TYPES_CHAPTERS: TestingChapterData[] = [
       },
     ],
   },
+  {
+    no: "21",
+    title: "Accessibility Testing",
+    category: "Other",
+    desc: "Accessibility testing verifies that an application can actually be used by people with disabilities — screen reader users, keyboard-only users, people with low vision or color blindness, people with motor impairments — checking against established standards (primarily WCAG) rather than assuming 'it works for me' means it works for everyone.",
+    why: "Accessibility gaps quietly exclude real users: a button that's only clickable with a mouse locks out keyboard users entirely, low-contrast text is unreadable for people with low vision, and unlabeled form fields are meaningless to a screen reader. In many jurisdictions it's also a legal requirement, not just good practice — but even without that, a genuinely usable application has to be usable by everyone, not just the majority case.",
+    when: "Throughout design and development, not bolted on at the end — checked whenever new UI is built, and audited more thoroughly before release. Retrofitting accessibility into a finished application is far more expensive than building it in from the start.",
+    practical: {
+      app: "HRMS Leave Request Form",
+      scenario:
+        "The leave request form is scanned with axe DevTools, then manually tested using keyboard-only navigation.",
+      pass: "The date picker is fully operable via keyboard, and an aria-label announces 'Leave start date, press Enter to open calendar' to screen reader users.",
+      fail: "The date picker can be opened with a mouse click but has no keyboard equivalent — Tab skips over it entirely, and screen readers announce it only as 'button,' with no indication of its purpose.",
+    },
+    advantages: [
+      "Automated tools catch a large share of common issues in seconds, with no specialized training required to start",
+      "WAVE's in-context overlay makes it easy to see and fix issues without cross-referencing a separate report",
+      "Findings map to WCAG, a well-documented, industry-standard set of guidelines",
+      "Free and requires no backend access — works on any page reachable by the browser",
+    ],
+    limitations: [
+      "Automated scanning catches roughly a third to half of real accessibility issues — many problems (logical reading order, meaningful alt text, screen-reader usability) need manual testing",
+      "Doesn't replace testing with a real screen reader (NVDA, JAWS, VoiceOver) or real keyboard-only navigation",
+      "Doesn't evaluate cognitive accessibility (clarity of language, predictability of flows) at all",
+      "Best practice is manual testing with actual assistive-technology users, which neither tool provides",
+    ],
+    tools: [
+      {
+        name: "axe DevTools",
+        sub: "Automated WCAG Rule Engine & Browser Extension",
+        url: "https://www.deque.com/axe/devtools",
+        desc: "A free browser extension that automatically scans a page against WCAG rules and flags specific violations — missing alt text, insufficient color contrast, missing form labels, improper heading structure — each with a direct link to the relevant guideline.",
+        adv: [
+          "Zero false-positive rule engine trusted across enterprise development teams",
+          "One-click scan directly within Chrome/Firefox DevTools",
+          "Clear categorization by severity: Critical, Serious, Moderate, Minor",
+          "Automates compliance auditing with WCAG 2.1 AA and AAA standards",
+        ],
+        lim: [
+          "Automated audits only catch ~40% of all WCAG criteria",
+          "Keyboard trapping and visual focus order require manual inspection",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Install axe DevTools browser extension",
+            p: "Install from Chrome Web Store or Firefox Add-ons and open browser DevTools.",
+            c: `Shortcut: Open DevTools -> Navigate to 'axe DevTools' tab`,
+          },
+          {
+            t: "Step 2 — Execute Full Page Automated Scan",
+            p: "Click 'Scan ALL of my page' to analyze entire DOM hierarchy.",
+            c: `Scanning: https://staging.hrms-app.com/leave-request\nInspecting: 142 DOM nodes, 18 form inputs`,
+          },
+          {
+            t: "Step 3 — Inspect Critical & Serious WCAG Violations",
+            p: "Review highlighted target elements, failure summaries, and code snippets.",
+            c: `Violation Found: WCAG 4.1.2 (Name, Role, Value)\nElement: <button class="date-trigger">📅</button>\nFix: Add aria-label="Select leave start date"`,
+          },
+          {
+            t: "Step 4 — Perform manual Tab key navigation pass",
+            p: "Unplug mouse and navigate using Tab, Shift+Tab, Enter, and Spacebar.",
+            c: `Navigation Sequence: [Header] -> [Tab: Reason Input] -> [Tab: Datepicker Button (Focus Ring Visible)] -> [Enter: Modal Opens]`,
+          },
+          {
+            t: "Step 5 — Re-scan page to confirm 100% automated resolution",
+            p: "Re-run axe DevTools scanner to verify zero remaining Critical/Serious issues.",
+            c: `axe Clean Scan: 0 Critical, 0 Serious, 0 Moderate -> PASS`,
+          },
+        ],
+      },
+      {
+        name: "WAVE",
+        sub: "Visual In-Context Accessibility Evaluation",
+        url: "https://wave.webaim.org",
+        desc: "A free web-based accessibility evaluation tool by WebAIM that overlays visual icons directly on the page showing exactly where each accessibility issue is located, making it especially easy to see problems in context.",
+        adv: [
+          "Visual in-page icon overlays point directly to offending UI components",
+          "Dedicated Contrast analyzer tests foreground/background ratios in real time",
+          "Structure view visualizes semantic heading hierarchies (H1 -> H2 -> H3)",
+          "100% free with no registration required",
+        ],
+        lim: [
+          "Visual icon badges can temporarily shift dynamic CSS layouts during inspection",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Launch WAVE extension on target view",
+            p: "Activate WAVE toolbar icon on HRMS leave management screen.",
+            c: `WAVE Activated: Overlaying accessibility badges across 34 interface elements`,
+          },
+          {
+            t: "Step 2 — Review color contrast ratios",
+            p: "Check low-contrast helper text against WCAG 4.5:1 requirement for standard text.",
+            c: `Contrast Error: #8A9B95 on #FAF7F2 (Contrast ratio: 3.1:1 - FAIL)\nFixed Color: #52635E on #FAF7F2 (Contrast ratio: 5.4:1 - PASS)`,
+          },
+          {
+            t: "Step 3 — Inspect semantic heading hierarchy",
+            p: "Open the 'Structure' panel to confirm heading levels aren't skipped.",
+            c: `Heading Tree:\n- H1: Request Leave\n  - H2: Employee Information\n  - H2: Dates & Duration\n  - H3: Half-Day Options`,
+          },
+          {
+            t: "Step 4 — Verify ARIA Landmarks and form labels",
+            p: "Ensure all <input>, <select>, and <textarea> elements possess linked <label for> tags.",
+            c: `Check: <label for="leave_type">Leave Type</label> correctly tied to <select id="leave_type">`,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    no: "22",
+    title: "Exploratory Testing",
+    category: "Other",
+    desc: "Exploratory testing is simultaneous learning, test design, and test execution — a tester actively explores the application without a predefined script, using their own judgment, curiosity, and growing understanding of the system to hunt for bugs that scripted tests were never written to find.",
+    why: "Scripted tests only find what they were explicitly written to check. A skilled tester exploring freely — trying unusual input combinations, unexpected navigation paths, or edge cases nobody thought to script — routinely finds real bugs that every other testing type in this manual misses entirely, simply because no one anticipated that specific scenario in advance.",
+    when: "Continuously, alongside scripted testing rather than instead of it — especially valuable on new features (before enough is known to write good scripts yet), and as a periodic supplement even on mature, heavily-scripted areas of the application.",
+    practical: {
+      app: "HRMS Leave Request Form",
+      scenario:
+        "During a 90-minute exploratory session on the newly built leave request feature, a tester tries submitting the form with the browser's back button mid-submission, then resubmitting.",
+      pass: "The bug is fixed, and a new scripted regression test is added specifically for back-button resubmission, so exploratory testing effectively expanded the regression suite's coverage.",
+      fail: "Using back-then-resubmit creates two duplicate leave requests for the same dates, silently — no script had ever been written to check this specific navigation pattern, because no one anticipated it during scripted test design.",
+    },
+    advantages: [
+      "Finds real bugs that no scripted test was ever written to catch, since it isn't limited by a predefined script",
+      "Cheap to start — needs no tooling or setup, only a skilled, curious tester and time",
+      "Builds deep, first-hand understanding of the application that improves the quality of future scripted tests too",
+      "Particularly effective early on new features, before there's enough stability to script against yet",
+    ],
+    limitations: [
+      "Not repeatable or automatable by nature — the same session run twice can turn up different findings",
+      "Effectiveness depends heavily on the individual tester's skill, domain knowledge, and curiosity",
+      "No formal coverage guarantee — there's no way to confirm every important area was actually explored",
+      "Hard to measure or report on in the same structured way as pass/fail scripted results",
+    ],
+    tools: [
+      {
+        name: "Manual (Unscripted Exploration)",
+        sub: "Time-Boxed Charter & Heuristic Bug Hunting",
+        url: "https://www.agilealliance.org/glossary/exploratory-testing/",
+        seeChapter: 5,
+        desc: "Exploratory testing is inherently manual and unscripted by definition (see Chapter 5) — a dedicated tool would defeat the point, since the value comes from a human's real-time judgment and curiosity, not a repeatable script.",
+        adv: [
+          "Freedom to follow intuitive hunches and investigate subtle UI/logic glitches",
+          "Zero script maintenance overhead",
+          "Uncovers unexpected race conditions, duplicate submissions, and navigation edge cases",
+        ],
+        lim: [
+          "Non-deterministic execution requires diligent session recording for repros",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Define a focused Session Charter",
+            p: "Set a 60–90 minute timebox with a specific exploratory scope.",
+            c: `Charter: Explore edge cases in leave submission workflows with aggressive back/forward navigation and double clicks.\nDuration: 75 Minutes`,
+          },
+          {
+            t: "Step 2 — Apply creative testing heuristics",
+            p: "Test boundary values, rapid input changes, tab switching, and session timeouts.",
+            c: `Heuristics Applied:\n- SFDPOT (Structure, Function, Data, Platform, Operations, Time)\n- Interrupt-driven actions (Back button, Refresh mid-POST, Double Submit)`,
+          },
+          {
+            t: "Step 3 — Log real-time observations and anomalies",
+            p: "Record video or take timestamped notes of unexpected behaviors.",
+            c: `Observation: Clicking Submit -> Back -> Submit creates duplicate record with ID #9081 and #9082 without validation error`,
+          },
+          {
+            t: "Step 4 — File bug report and convert to automated regression",
+            p: "Document reproducible steps and add a scripted Playwright/Cypress test.",
+            c: `Created Jira: BUG-519 (Duplicate leave request on browser back-navigation)\nAdded Automated Test: tests/e2e/leave-duplicate-prevent.spec.ts`,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    no: "23",
+    title: "Localization Testing",
+    category: "Other",
+    desc: "Localization testing verifies that an application works correctly when adapted for a specific language, region, or culture — checking not just that text is translated, but that dates, currencies, number formats, text direction, and layout all behave correctly for each target locale.",
+    why: "Translation alone isn't localization — a correctly translated app can still show dates in the wrong format, truncate text that's longer in the target language than in English, mishandle currency symbols, or break layout entirely in a right-to-left language. These issues are invisible to anyone testing only in the original language, yet directly affect every user in the target locale.",
+    when: "As soon as a locale is added or planned, and again whenever UI text changes (since new strings need translation and re-verification) — checked specifically in each supported locale, not assumed to work based on the default-locale testing already done.",
+    practical: {
+      app: "HRMS Payslip Page (German locale)",
+      scenario:
+        "The payslip page, which shows 'Net Salary' as a button label, is checked in the German locale where the translated label is significantly longer.",
+      pass: "The button is resized to accommodate longer translated text, and the layout is re-verified across all supported locales to confirm no other label overflows.",
+      fail: "'Netto-Gehalt anzeigen' overflows its button and wraps awkwardly onto two lines, overlapping the amount displayed below it.",
+    },
+    advantages: [
+      "Catches real, user-facing localization bugs that reviewing translation files alone would miss entirely",
+      "Manual locale switching requires no special tooling, just the application's existing locale settings",
+      "Surfaces layout bugs (truncation, RTL mirroring) that are highly visible and damaging to trust once shipped",
+      "Builds a reusable checklist per locale that scales as more languages are added",
+    ],
+    limitations: [
+      "Manual and time-consuming — scales linearly with the number of supported locales",
+      "Requires either a native speaker or a professional translation review to properly validate — machine translation spot-checks aren't sufficient on their own",
+      "Easy to miss a locale-specific edge case (an unusual date format, an uncommon currency symbol) without a native reviewer's eye",
+      "Doesn't automatically re-verify itself when new strings are added — needs to be repeated on every content change",
+    ],
+    tools: [
+      {
+        name: "Manual Locale Switching",
+        sub: "In-App Locale & RTL Layout Verification",
+        url: "https://developer.mozilla.org/en-US/docs/Mozilla/Localization",
+        seeChapter: 5,
+        desc: "The core of localization testing is manually walking through the application (see Chapter 5) with each supported locale selected, since layout, date, and formatting issues only appear with real locale-specific data.",
+        adv: [
+          "Evaluates exact pixel layout, text overflow, and line-breaking behaviors",
+          "Validates date/time formatting (DD/MM/YYYY vs MM/DD/YYYY) and currency symbols",
+          "Verifies Right-to-Left (RTL) mirroring for Arabic and Hebrew locales",
+        ],
+        lim: [
+          "Manual regression pass required whenever UI strings or layouts change",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Switch active locale in application settings",
+            p: "Select German (de-DE), Japanese (ja-JP), and Arabic (ar-SA).",
+            c: `Locale Switch: de-DE (German) | Currency: EUR (€) | Date: DD.MM.YYYY`,
+          },
+          {
+            t: "Step 2 — Inspect text expansion & button truncation",
+            p: "Ensure German compound nouns (e.g. Urlaubsantragsformular) do not overflow button boundaries.",
+            c: `Inspected: Button width dynamically expands with flexbox; no CSS overflow: hidden truncation`,
+          },
+          {
+            t: "Step 3 — Validate date, time, and numeric formatting",
+            p: "Check currency separators (e.g. 1.234,56 € vs $1,234.56) and calendar weeks.",
+            c: `Formatted Output: € 4.500,00 | Date: 23.08.2026 -> Verified`,
+          },
+          {
+            t: "Step 4 — Verify Right-to-Left (RTL) layout mirroring",
+            p: "Switch to Arabic and verify navigation menus, sidebars, and icons mirror to dir=\"rtl\".",
+            c: `Check: <html dir="rtl"> correctly flips flex-direction and text-align`,
+          },
+          {
+            t: "Step 5 — Detect untranslated raw i18n keys",
+            p: "Search DOM for missing key fallbacks (e.g. leave.request.submit_button).",
+            c: `Audit: 0 raw string keys detected in rendered HTML -> PASS`,
+          },
+        ],
+      },
+      {
+        name: "Google Translate (Spot-Check Only)",
+        sub: "Sanity Verification for Translated Strings",
+        url: "https://translate.google.com",
+        desc: "Used only as a rough sanity check on translated strings, not as a translation source — to catch obviously wrong or nonsensical translations before flagging them to an actual translator for a proper review.",
+        adv: [
+          "Instant spot-checking of unfamiliar languages during QA testing",
+          "Detects obviously corrupted encodings or reversed translations",
+        ],
+        lim: [
+          "Cannot replace professional human translation or native domain review",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Paste suspicious UI copy into Google Translate",
+            p: "Check if translated button label reflects expected action context.",
+            c: `Input (DE): 'Urlaub einreichen' -> Output (EN): 'Submit leave' (Context matches)`,
+          },
+          {
+            t: "Step 2 — Flag ambiguous translations for native review",
+            p: "Create translation review tickets for native localization specialists.",
+            c: `Ticket: L10N-104: Review German payslip tax deduction phrasing with HR compliance`,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    no: "24",
+    title: "Recovery Testing",
+    category: "Other",
+    desc: "Recovery testing deliberately induces failure — killing a server process, cutting a database connection, forcing a crash mid-operation — to verify that the application recovers correctly afterward, without data loss or corruption, rather than assuming failures simply won't happen.",
+    why: "Failures happen regardless of how well an application is built — servers restart, networks drop, dependencies go down. What separates a resilient system from a fragile one isn't whether failure occurs, but what happens next: does the system recover cleanly with data intact, or does it corrupt data, lose in-progress work, or require manual intervention to bring back online? Recovery testing answers that question deliberately, before a real outage forces the answer on the team.",
+    when: "Before launch for any system where downtime or data loss would be costly, and periodically afterward — especially after infrastructure changes (new caching layer, new database replication setup) that could change how the system behaves during a failure.",
+    practical: {
+      app: "HRMS Leave Request Submission",
+      scenario:
+        "A tester kills the application server process midway through a leave request submission, right after the database write but before the confirmation response is sent back to the user.",
+      pass: "A unique submission token prevents the duplicate: the resubmission is recognized as the same request and safely ignored, and the user is shown the original confirmation instead.",
+      fail: "The leave request is saved in the database, but because the user never received confirmation, they resubmit — creating a duplicate request, since there was no safeguard against a repeated submission of the same data.",
+    },
+    advantages: [
+      "Verifies real resilience under actual failure conditions, not just assumed resilience based on code review",
+      "Directly tests data integrity guarantees (transactions, rollbacks) under the exact conditions they're meant to protect against",
+      "Surfaces failure scenarios that need automatic recovery (retries, failover) versus ones needing better monitoring/alerting for manual response",
+      "Builds real confidence and concrete recovery-time expectations for the team, rather than optimistic assumptions",
+    ],
+    limitations: [
+      "Deliberately destructive — must be run in an isolated staging environment, never against production without extreme care and a maintenance window",
+      "Manual approach doesn't scale to testing every possible failure combination — prioritization toward the most critical/likely failures is necessary",
+      "Some failure modes (e.g. certain network partition types) are genuinely hard to simulate accurately without specialized chaos-engineering tools",
+      "A passing recovery test today doesn't guarantee the same resilience after future architecture changes — needs periodic re-testing",
+    ],
+    tools: [
+      {
+        name: "Manual Process & Network Interruption",
+        sub: "Forced Process Termination & Database Disconnect",
+        url: "https://en.wikipedia.org/wiki/Fault_tolerance",
+        seeChapter: 5,
+        desc: "Recovery testing at a basic level doesn't require specialized chaos-engineering tooling (see Chapter 5) — a tester or engineer can manually kill a process, disconnect a network cable, or forcibly stop a database mid-transaction, then observe recovery behavior.",
+        adv: [
+          "Simulates real unannounced infrastructure outages",
+          "Validates database ACID transaction rollbacks under crash conditions",
+          "Evaluates client-side retry exponential backoff policies",
+        ],
+        lim: [
+          "Must strictly execute in dedicated staging/sandbox environments",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Identify critical transactional workflows",
+            p: "Select multi-step write operations such as payroll processing or bulk employee import.",
+            c: `Target: POST /api/v1/payroll/process (Multi-table batch transaction)`,
+          },
+          {
+            t: "Step 2 — Trigger transaction and force process kill (SIGKILL)",
+            p: "Execute kill -9 on Node.js / Java worker during active batch insertion.",
+            c: `kill -9 $(pgrep -f "payroll-worker")`,
+          },
+          {
+            t: "Step 3 — Restart worker service and verify automatic recovery",
+            p: "Start service and observe if orchestrator (e.g. systemd/Kubernetes) heals the container.",
+            c: `systemctl restart hrms-worker\nStatus: Active (Running) within 3.2 seconds`,
+          },
+          {
+            t: "Step 4 — Audit database state for partial writes",
+            p: "Verify Postgres transaction rolled back cleanly without orphan records.",
+            c: `SELECT count(*) FROM payroll_ledger WHERE batch_id = 'b_9812' AND status = 'PARTIAL';\nResult: 0 rows (Transaction rolled back completely -> PASS)`,
+          },
+          {
+            t: "Step 5 — Test idempotency token on client resubmission",
+            p: "Resubmit failed payroll request and verify duplicate is rejected with cached confirmation.",
+            c: `POST /api/v1/payroll/process (Header: Idempotency-Key: idemp_9812)\nResponse: 200 OK (Replayed original transaction confirmation)`,
+          },
+        ],
+      },
+      {
+        name: "Chaos Engineering Scripts",
+        sub: "Automated Failure Injection & Latency Simulation",
+        url: "https://principlesofchaos.org",
+        desc: "Lightweight bash/docker scripts that periodically inject random network latency, drop database packets, or restart services to test resilience automatically.",
+        adv: [
+          "Automates intermittent outage testing",
+          "Measures Mean Time to Recovery (MTTR) with objective timers",
+        ],
+        lim: [
+          "Requires careful isolation to prevent cross-service pollution",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Inject packet loss with Toxiproxy or Pumba",
+            p: "Simulate 500ms network latency and 20% packet loss between App and Redis cache.",
+            c: `docker run --rm -v /var/run/docker.sock:/var/run/docker.sock gaiaadm/pumba netem --duration 5m delay --time 500 redis_container`,
+          },
+          {
+            t: "Step 2 — Verify application degrades gracefully without crashing",
+            p: "Confirm app falls back to primary DB when cache is slow without throwing 500 errors.",
+            c: `Health Check: 200 OK (Cache bypassed via fallback policy) -> PASS`,
+          },
+        ],
+      },
+    ],
+  },
 ];
+
 
 
 export function TestingTypesInteractiveManual() {
