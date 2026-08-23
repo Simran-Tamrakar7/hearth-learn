@@ -127,7 +127,10 @@ function chapterToHearth(ch: Record<string, unknown>, order: number): ManualChap
       const tip = s.tip ? `\n\nPro tip: ${s.tip}` : "";
       const doThis = s.doThis ? `\n\nDo this now: ${s.doThis}` : "";
       const list = items.length ? "\n\n" + items.map((i) => `- ${i}`).join("\n") : "";
-      return `## ${title}\n\n${body}${list}${tip}${doThis}`.trim();
+      const code = s.code
+        ? `\n\n${s.codeTitle ? `#### ${s.codeTitle}\n\n` : ""}` + "```\n" + String(s.code) + "\n```"
+        : "";
+      return `## ${title}\n\n${body}${list}${code}${tip}${doThis}`.trim();
     }),
   ].filter(Boolean);
 

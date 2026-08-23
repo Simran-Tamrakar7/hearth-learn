@@ -1,15 +1,21 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { MANUALS_DATA, ManualItem } from "@/lib/manualsData";
+import { MANUALS_DATA, findHearthManual, ManualItem } from "@/lib/manualsData";
 import { genres } from "@/lib/pathwise-data/helpers.js";
-import { Compass, Search, Clock, BookOpen, ArrowRight } from "lucide-react";
-import { PinButton } from "@/components/ui/PinButton";
+import { Compass, Search, Clock, BookOpen, ArrowRight, Pin, ExternalLink, Code2 } from "lucide-react";
+import {
+  PinButton,
+  subscribePinnedItems,
+  isManualsCatalogPin,
+  isShowcaseCatalogPin,
+  PinnedItemMetadata,
+} from "@/components/ui/PinButton";
 
 const GENRE_CATEGORY: Record<string, ManualItem["category"] | "All"> = {
   all: "All",
@@ -41,6 +47,20 @@ const CATALOG_GENRES: GenreRow[] = (genres as { id: string; label: string; blurb
     category: GENRE_CATEGORY[g.id] || "Foundations",
   })
 );
+
+function resolvePinnedManual(pin: PinnedItemMetadata) {
+  const fromUrl = pin.url?.match(/\/manuals\/([^/?#]+)/)?.[1];
+  const fromId = String(pin.id || "").replace(/^man-/, "");
+  const slug = fromUrl || fromId;
+  const manual = slug ? findHearthManual(slug) : undefined;
+  return {
+    ...pin,
+    title: manual?.title || pin.title,
+    category: pin.category || manual?.category,
+    url: manual ? `/manuals/${manual.slug}` : pin.url,
+    coverImage: manual?.coverImage,
+  };
+}
 
 function ManualCard({ manual }: { manual: ManualItem }) {
   return (
@@ -106,6 +126,15 @@ function ManualCard({ manual }: { manual: ManualItem }) {
 export default function ManualsCatalogPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [pinnedManuals, setPinnedManuals] = useState<ReturnType<typeof resolvePinnedManual>[]>([]);
+  const [pinnedShowcase, setPinnedShowcase] = useState<PinnedItemMetadata[]>([]);
+
+  useEffect(() => {
+    return subscribePinnedItems((allPins) => {
+      setPinnedManuals(allPins.filter(isManualsCatalogPin).map(resolvePinnedManual));
+      setPinnedShowcase(allPins.filter(isShowcaseCatalogPin));
+    });
+  }, []);
 
   const filteredManuals = MANUALS_DATA.filter((manual) => {
     const matchesCategory = selectedCategory === "All" || manual.category === selectedCategory;
@@ -134,6 +163,119 @@ export default function ManualsCatalogPage() {
       <Navbar />
 
       <main className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-12 py-10 sm:py-12 w-full space-y-10 flex-1">
+        {pinnedManuals.length > 0 && (
+          <div className="space-y-4 bg-gradient-to-br from-white via-[#FAF7F2] to-[#FEF3C7]/40 border border-[#E7E0D3] rounded-3xl p-6 shadow-xs">
+            <div className="flex items-center justify-between">
+              <h2 className="font-serif-display text-xl font-bold text-[#1C2A26] flex items-center gap-2">
+                <Pin className="w-5 h-5 text-[#D97706]" />
+                <span>Your Pinned Manuals ({pinnedManuals.length})</span>
+              </h2>
+              <span className="text-xs text-[#8A9B95] font-semibold">Open the course</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {pinnedManuals.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white border border-[#E7E0D3] rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-2xs hover:border-[#1C2A26] transition-all"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      {item.coverImage ? (
+                        <img src={item.coverImage} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                      ) : (
+                        <BookOpen className="w-4 h-4 text-[#D97706]" />
+                      )}
+                      <PinButton
+                        itemId={item.id}
+                        itemTitle={item.title}
+                        itemCategory={item.category}
+                        itemType="manual"
+                        itemUrl={item.url}
+                        itemIcon={item.icon}
+                        variant="icon"
+                      />
+                    </div>
+                    <h3 className="font-serif-display font-bold text-base text-[#1C2A26] truncate pt-1">
+                      {item.title}
+                    </h3>
+                    {item.category && (
+                      <span className="text-[10px] font-bold text-[#D97706] uppercase tracking-wider block">
+                        {item.category}
+                      </span>
+                    )}
+                  </div>
+
+                  <Link
+                    href={item.url}
+                    className="inline-flex items-center justify-center gap-1.5 w-full h-9 px-3 rounded-xl bg-[#1C2A26] text-white text-xs font-semibold hover:bg-[#243530] transition-colors"
+                  >
+                    Open Manual
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {pinnedShowcase.length > 0 && (
+          <div className="space-y-4 bg-gradient-to-br from-white via-[#FAF7F2] to-[#FEF3C7]/40 border border-[#E7E0D3] rounded-3xl p-6 shadow-xs">
+            <div className="flex items-center justify-between">
+              <h2 className="font-serif-display text-xl font-bold text-[#1C2A26] flex items-center gap-2">
+                <Pin className="w-5 h-5 text-[#D97706]" />
+                <span>Pinned Showcase Links ({pinnedShowcase.length})</span>
+              </h2>
+              <span className="text-xs text-[#8A9B95] font-semibold">Opens in a new tab</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {pinnedShowcase.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white border border-[#E7E0D3] rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-2xs hover:border-[#1C2A26] transition-all"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <Code2 className="w-4 h-4 text-[#D97706]" />
+                      <PinButton
+                        itemId={item.id}
+                        itemTitle={item.title}
+                        itemCategory={item.category}
+                        itemType="showcase"
+                        itemUrl={item.url}
+                        itemIcon={item.icon}
+                        variant="icon"
+                      />
+                    </div>
+                    <h3 className="font-serif-display font-bold text-base text-[#1C2A26] truncate pt-1">
+                      {item.title}
+                    </h3>
+                    {item.category && (
+                      <span className="text-[10px] font-bold text-[#D97706] uppercase tracking-wider block">
+                        {item.category}
+                      </span>
+                    )}
+                    <p className="text-[11px] font-semibold text-[#D97706] truncate">
+                      {item.url.replace(/^https?:\/\//, "")}
+                    </p>
+                  </div>
+
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-1.5 w-full h-9 px-3 rounded-xl bg-[#D97706] text-white text-xs font-semibold hover:bg-[#b45309] transition-colors"
+                  >
+                    Open Link
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="bg-gradient-to-br from-white via-[#FAF7F2] to-[#F5EFE6] border border-[#E7E0D3] rounded-3xl p-8 sm:p-12 space-y-6 shadow-sm relative overflow-hidden">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
             <div className="space-y-4 w-full">

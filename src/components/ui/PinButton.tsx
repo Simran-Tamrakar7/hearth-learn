@@ -8,7 +8,7 @@ interface PinButtonProps {
   itemId: string;
   itemTitle: string;
   itemCategory?: string;
-  itemType: "manual" | "game" | "recipe" | "trail";
+  itemType: "manual" | "game" | "recipe" | "trail" | "showcase";
   itemUrl: string;
   itemIcon?: string;
   className?: string;
@@ -19,7 +19,7 @@ export interface PinnedItemMetadata {
   id: string;
   title: string;
   category?: string;
-  type: "manual" | "game" | "recipe" | "trail";
+  type: "manual" | "game" | "recipe" | "trail" | "showcase";
   url: string;
   icon?: string;
   pinnedAt: number;
@@ -47,6 +47,30 @@ export function getPinnedItems(): PinnedItemMetadata[] {
     console.error("Failed to parse pinned items:", e);
   }
   return [];
+}
+
+export function isManualsCatalogPin(item: PinnedItemMetadata) {
+  if (item.type === "manual" || item.type === "trail") return true;
+  if (String(item.id || "").startsWith("man-") || String(item.id || "").startsWith("trail-")) return true;
+  return String(item.url || "").includes("/manuals");
+}
+
+export function isShowcaseCatalogPin(item: PinnedItemMetadata) {
+  return item.type === "showcase";
+}
+
+export function subscribePinnedItems(onChange: (items: PinnedItemMetadata[]) => void) {
+  if (typeof window === "undefined") return () => {};
+  const emit = () => onChange(getPinnedItems());
+  emit();
+  window.addEventListener("hearth_pins_updated", emit);
+  window.addEventListener("storage", emit);
+  window.addEventListener("focus", emit);
+  return () => {
+    window.removeEventListener("hearth_pins_updated", emit);
+    window.removeEventListener("storage", emit);
+    window.removeEventListener("focus", emit);
+  };
 }
 
 export function savePinnedItems(items: PinnedItemMetadata[]) {
@@ -118,7 +142,7 @@ export function PinButton({
       type: pinnedNow ? "achievement" : "info",
       title: pinnedNow ? "Pinned to Dashboard! 📌" : "Unpinned Item",
       description: pinnedNow
-        ? `"${itemTitle}" is now on your Dashboard quick access shelf.`
+        ? `"${itemTitle}" is pinned on Manuals and Dashboard.`
         : `"${itemTitle}" removed from pins.`,
     });
   };

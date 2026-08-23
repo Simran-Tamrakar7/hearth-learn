@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
+import { PinButton, getPinnedItems, PinnedItemMetadata } from "@/components/ui/PinButton";
 import {
   ExternalLink,
   Plus,
@@ -24,6 +25,7 @@ import {
   Filter,
   Terminal,
   Cpu,
+  Pin,
 } from "lucide-react";
 
 interface ShowcaseProject {
@@ -57,9 +59,19 @@ export default function ShowcaseWallPage() {
   const [selectedTrailId, setSelectedTrailId] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [formError, setFormError] = useState("");
+  const [pinnedProjects, setPinnedProjects] = useState<PinnedItemMetadata[]>([]);
 
   useEffect(() => {
     fetchShowcaseAndTrails();
+  }, []);
+
+  useEffect(() => {
+    const updatePins = () => {
+      setPinnedProjects(getPinnedItems().filter((p) => p.type === "showcase"));
+    };
+    updatePins();
+    window.addEventListener("hearth_pins_updated", updatePins);
+    return () => window.removeEventListener("hearth_pins_updated", updatePins);
   }, []);
 
   const fetchShowcaseAndTrails = async () => {
@@ -269,6 +281,60 @@ export default function ShowcaseWallPage() {
           )}
         </AnimatePresence>
 
+        {pinnedProjects.length > 0 && (
+          <div className="space-y-4 bg-gradient-to-br from-white via-[#FAF7F2] to-[#FEF3C7]/40 border border-[#E7E0D3] rounded-3xl p-6 shadow-xs">
+            <div className="flex items-center justify-between">
+              <h2 className="font-serif-display text-xl font-bold text-[#1C2A26] flex items-center gap-2">
+                <Pin className="w-5 h-5 text-[#D97706]" />
+                <span>Your Pinned Showcase Links ({pinnedProjects.length})</span>
+              </h2>
+              <span className="text-xs text-[#8A9B95] font-semibold">Opens in a new tab</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {pinnedProjects.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white border border-[#E7E0D3] rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-2xs hover:border-[#1C2A26] transition-all"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <Code2 className="w-4 h-4 text-[#D97706]" />
+                      <PinButton
+                        itemId={item.id}
+                        itemTitle={item.title}
+                        itemCategory={item.category}
+                        itemType="showcase"
+                        itemUrl={item.url}
+                        itemIcon={item.icon}
+                        variant="icon"
+                      />
+                    </div>
+                    <h3 className="font-serif-display font-bold text-base text-[#1C2A26] truncate pt-1">
+                      {item.title}
+                    </h3>
+                    {item.category && (
+                      <span className="text-[10px] font-bold text-[#D97706] uppercase tracking-wider block">
+                        {item.category}
+                      </span>
+                    )}
+                  </div>
+
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-1.5 w-full h-9 px-3 rounded-xl bg-[#D97706] text-white text-xs font-semibold hover:bg-[#b45309] transition-colors"
+                  >
+                    Open Link
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Category Filter Bar */}
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E7E0D3] pb-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -323,57 +389,75 @@ export default function ShowcaseWallPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProjects.map((proj) => (
-              <Card
+              <a
                 key={proj.id}
-                hoverable
-                className="h-full flex flex-col justify-between p-6 space-y-4 border-[#E7E0D3] bg-white group hover:border-[#D97706]/60 transition-all"
+                href={proj.linkUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block h-full"
               >
-                <div className="space-y-3">
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-2">
-                      <Code2 className="w-4 h-4 text-[#D97706]" />
-                      {proj.language && (
-                        <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#FAF7F2] text-[#52635E] border border-[#E7E0D3]">
-                          {proj.language}
+                <Card
+                  hoverable
+                  className="h-full flex flex-col justify-between p-6 space-y-4 border-[#E7E0D3] bg-white group hover:border-[#D97706]/60 transition-all cursor-pointer"
+                >
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-2">
+                        <Code2 className="w-4 h-4 text-[#D97706]" />
+                        {proj.language && (
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#FAF7F2] text-[#52635E] border border-[#E7E0D3]">
+                            {proj.language}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <PinButton
+                          itemId={proj.id}
+                          itemTitle={proj.title}
+                          itemCategory={proj.category || proj.trail?.category}
+                          itemType="showcase"
+                          itemUrl={proj.linkUrl}
+                          variant="icon"
+                        />
+                        <span
+                          className="p-1.5 rounded-xl bg-[#FAF7F2] text-[#D97706] group-hover:bg-[#FEF3C7] transition-colors"
+                          title="Open project link"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </span>
+                      </div>
+                    </div>
+
+                    <h3 className="font-serif-display font-bold text-lg text-[#1C2A26] group-hover:text-[#D97706] transition-colors">
+                      {proj.title}
+                    </h3>
+
+                    <p className="text-xs text-[#52635E] leading-relaxed line-clamp-3">
+                      {proj.description || "No description provided."}
+                    </p>
+
+                    <p className="text-[11px] font-semibold text-[#D97706] truncate underline-offset-2 group-hover:underline">
+                      {proj.linkUrl.replace(/^https?:\/\//, "")}
+                    </p>
+                  </div>
+
+                  <div className="pt-3 border-t border-[#E7E0D3] flex items-center justify-between text-[11px] text-[#8A9B95]">
+                    <div className="flex items-center gap-3 font-mono text-[10px]">
+                      {proj.stars !== undefined && (
+                        <span className="flex items-center gap-1 text-[#D97706]">
+                          <Star className="w-3 h-3 fill-[#D97706]" /> {proj.stars}
+                        </span>
+                      )}
+                      {proj.forks !== undefined && (
+                        <span className="flex items-center gap-1 text-[#52635E]">
+                          <GitFork className="w-3 h-3" /> {proj.forks}
                         </span>
                       )}
                     </div>
-                    <a
-                      href={proj.linkUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-1.5 rounded-xl bg-[#FAF7F2] text-[#D97706] group-hover:bg-[#FEF3C7] transition-colors"
-                      title="View GitHub Repository"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
+                    <span className="truncate max-w-[120px]">{new Date(proj.createdAt).toLocaleDateString()}</span>
                   </div>
-
-                  <h3 className="font-serif-display font-bold text-lg text-[#1C2A26] group-hover:text-[#D97706] transition-colors">
-                    {proj.title}
-                  </h3>
-
-                  <p className="text-xs text-[#52635E] leading-relaxed line-clamp-3">
-                    {proj.description || "No description provided."}
-                  </p>
-                </div>
-
-                <div className="pt-3 border-t border-[#E7E0D3] flex items-center justify-between text-[11px] text-[#8A9B95]">
-                  <div className="flex items-center gap-3 font-mono text-[10px]">
-                    {proj.stars !== undefined && (
-                      <span className="flex items-center gap-1 text-[#D97706]">
-                        <Star className="w-3 h-3 fill-[#D97706]" /> {proj.stars}
-                      </span>
-                    )}
-                    {proj.forks !== undefined && (
-                      <span className="flex items-center gap-1 text-[#52635E]">
-                        <GitFork className="w-3 h-3" /> {proj.forks}
-                      </span>
-                    )}
-                  </div>
-                  <span className="truncate max-w-[120px]">{new Date(proj.createdAt).toLocaleDateString()}</span>
-                </div>
-              </Card>
+                </Card>
+              </a>
             ))}
           </div>
         )}
