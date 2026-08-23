@@ -4820,8 +4820,896 @@ export const testingTypesManual = {
         r('tool', 'Nikto Scanner GitHub Repository', 'https://github.com/sullo/nikto', 'EN'),
       ],
     }),
+
+    ch({
+      id: 'tt-seo-site-health-testing',
+      kind: 'guide',
+      phase: 'Part 11 · Operational, Infrastructure & Site Health',
+      level: 'beginner',
+      title: 'SEO / Site Health Testing',
+      minutes: 15,
+      durationLabel: 'Chapter 41',
+      overviewText:
+        'SEO and site health testing checks how well an application\'s public-facing pages are structured for search engine crawling and indexing — proper metadata, valid sitemaps, crawlable links, mobile-friendliness, and the absence of broken links or crawl errors — verifying discoverability rather than functionality.',
+      why:
+        'A feature can work perfectly for a user who\'s already on the page and still fail the business if search engines can\'t crawl, index, or rank it correctly — missing meta tags, broken canonical URLs, orphaned pages with no internal links, or a robots.txt accidentally blocking an entire section can quietly make otherwise-working content invisible to anyone searching for it. These issues are typically invisible to functional testing entirely, since the page itself renders and works fine — it\'s just never found.',
+      when:
+        'Before launch of any public-facing site or major content change, and periodically afterward (monthly or after significant site restructuring), since crawl issues and broken links accumulate gradually as content and links change over time.',
+      practical: {
+        app: 'HRMS Public Careers Page',
+        scenario:
+          'A Screaming Frog crawl of the company\'s public careers section (linked from the HRMS) turns up a batch of broken internal links.',
+        pass: 'Broken links are corrected or removed, unique titles are added to each page, and a re-crawl confirms zero remaining 404s in the careers section.',
+        fail: '14 job listing pages return 404 because they were removed without their internal links being cleaned up elsewhere on the site, and three pages have duplicate <title> tags, hurting how they\'re distinguished in search results.',
+      },
+      advantages: [
+        'Search Console uses real Google crawl and search data, not a simulation — the most accurate picture of how the site is actually seen',
+        'Screaming Frog\'s full-site crawl catches structural issues (broken links, duplicate metadata) that spot-checking individual pages would miss',
+        'Both tools are free for small-to-mid-sized sites, with no setup cost beyond installing/verifying',
+        'Findings translate directly into concrete, actionable fixes (a broken link, a missing tag) rather than vague scores',
+      ],
+      limitations: [
+        'Screaming Frog\'s free tier caps at 500 URLs — larger sites need the paid tier for a full crawl',
+        'Search Console data has an inherent delay — it reflects Google\'s crawl history, not the current live state of every page',
+        'Neither tool evaluates actual keyword ranking strategy or content quality — they check technical crawlability and structure',
+        'Fixing flagged issues doesn\'t guarantee improved rankings — many external ranking factors are outside what these tools measure',
+      ],
+      tools: [
+        {
+          name: 'Google Search Console',
+          sub: 'Official Google Indexing, Crawl & Core Web Vitals Platform',
+          url: 'https://search.google.com/search-console',
+          desc: 'Google\'s own free tool showing exactly how Googlebot sees and indexes a site — which pages are indexed, which are excluded and why, crawl errors, mobile usability issues, and Core Web Vitals data pulled directly from real Google crawl and search data.',
+          adv: [
+            '100% authoritative direct telemetry from Googlebot search crawlers',
+            'URL inspection tool displays live rendered HTML, DOM snapshots, and HTTP response codes',
+            'Real-user Core Web Vitals data (LCP, INP, CLS) aggregated from Chrome UX Report',
+          ],
+          lim: [
+            'Data updates on a 24-48 hour delay rather than real-time inspection',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Verify domain ownership and submit XML sitemap',
+              p: 'Add DNS TXT record or HTML meta tag and submit sitemap.xml to Search Console.',
+              c: 'Sitemap: https://company.com/sitemap.xml\nSubmitted: 342 URLs -> 342 Indexed (0 Errors)',
+            },
+            {
+              t: 'Step 2 — Inspect individual page indexability and mobile usability',
+              p: 'Run URL Inspection on key public pages to verify Googlebot rendering and canonical tags.',
+              c: 'URL: https://company.com/careers/senior-qa-engineer\nPage is indexed: Yes | Mobile usable: Yes | Canonical: https://company.com/careers/senior-qa-engineer',
+            },
+            {
+              t: 'Step 3 — Monitor Coverage and Core Web Vitals reports',
+              p: 'Check for 404 crawl errors, unindexed pages, or slow LCP render metrics.',
+              c: 'Coverage Report: 0 Server errors (5xx), 0 Redirect errors, 0 Excluded by \'noindex\' tag',
+            },
+          ],
+        },
+        {
+          name: 'Screaming Frog SEO Spider',
+          sub: 'Desktop Website Crawler & Technical SEO Audit Engine',
+          url: 'https://screamingfrog.co.uk',
+          desc: 'A desktop crawler that systematically walks an entire site the way a search engine would, free up to 500 URLs, reporting broken links, missing metadata, duplicate titles, redirect chains, and other structural SEO issues in one consolidated crawl.',
+          adv: [
+            'Simulates search engine crawlers with deep depth and internal link graph analysis',
+            'Pinpoints broken internal links (4xx), redirect loops (3xx), and missing H1/meta tags instantly',
+            'Audits canonical links, hreflang tags, and structured schema JSON-LD markup',
+          ],
+          lim: [
+            'Free tier limits single crawl sessions to 500 URLs',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Run site crawl in Screaming Frog',
+              p: 'Enter base URL and crawl staging/production domain.',
+              c: 'Target: https://company.com | Crawled: 480 URLs | Duration: 42s',
+            },
+            {
+              t: 'Step 2 — Filter Response Codes tab for 4xx Client Errors',
+              p: 'Identify broken links and inspect the Inlinks tab to find exactly which pages contain the broken anchor tags.',
+              c: 'Filter: Client Error (4xx)\nURL: /careers/intern-designer -> 404 Not Found\nInlinks: Found linked on /careers and /about-us -> Clean up obsolete links',
+            },
+            {
+              t: 'Step 3 — Audit Page Titles and Meta Descriptions tabs',
+              p: 'Identify missing, duplicate, or truncated title tags across all crawled pages.',
+              c: 'Filter: Duplicate Titles -> /careers/job-1 and /careers/job-2 have identical title \'Careers - Company\'\nFix: Make titles dynamic with position names',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: 'Technical Crawlability & Metadata Audit',
+          body: 'Verify public-facing HTML documents contain valid canonical links, schema markup, and zero 4xx errors.',
+          doThis: 'Execute Screaming Frog audit and verify 100% crawl pass rate.',
+          code: 'screamingfrogseospider --crawl https://staging.hrms.internal --headless --output-folder ./reports',
+        },
+      ],
+      checklist: ['Verified sitemap.xml validity in Google Search Console', 'Confirmed zero broken internal links (4xx) across public pages', 'Audited meta titles, descriptions, and OpenGraph social tags'],
+      practice: { title: 'Site health crawl & broken link remediation', brief: 'Run Screaming Frog on a public portal and eliminate all 4xx/3xx redirect chains.' },
+      resources: [
+        r('tool', 'Google Search Console Help', 'https://support.google.com/webmasters', 'EN'),
+        r('tool', 'Screaming Frog SEO Spider Guide', 'https://www.screamingfrog.co.uk/seo-spider/user-guide', 'EN'),
+      ],
+    }),
+
+    ch({
+      id: 'tt-uptime-availability-testing',
+      kind: 'guide',
+      phase: 'Part 11 · Operational, Infrastructure & Site Health',
+      level: 'beginner',
+      title: 'Uptime / Availability Testing',
+      minutes: 15,
+      durationLabel: 'Chapter 42',
+      overviewText:
+        'Uptime and availability testing continuously monitors whether an application (or specific critical endpoints) is actually reachable and responding correctly, over time, from external vantage points — tracking real-world availability as an ongoing metric rather than a one-time pass/fail test.',
+      why:
+        'An application can pass every functional and performance test and still go down in production due to infrastructure failure, a bad deploy, a certificate expiring, or a dependency outage — and without active external monitoring, the team may not find out until a user reports it, which is far slower and far more damaging than catching it immediately. Uptime testing turns availability from an assumption into a continuously measured, alertable fact.',
+      when:
+        'Continuously, in production, from the moment an application goes live — this isn\'t a pre-release test type at all, but an ongoing operational practice that should run for the entire lifetime of the application.',
+      practical: {
+        app: 'HRMS Login Endpoint Outage',
+        scenario:
+          'UptimeRobot, monitoring the HRMS login endpoint every 5 minutes, detects a failure.',
+        pass: 'The team rolls back the deploy immediately based on the automated alert, avoiding what would otherwise have been a morning-long outage discovered only through user complaints.',
+        fail: 'An alert fires within 5 minutes of a bad deploy taking down the login endpoint — well before the next morning\'s login surge, and well before any user had a chance to report it.',
+      },
+      advantages: [
+        'Continuous, always-on monitoring catches outages the moment they happen, rather than waiting for a user report',
+        'Free tiers are genuinely usable for small-to-mid scale applications, with no infrastructure to self-host',
+        'Historical uptime data gives a concrete, trackable reliability metric over time, not just anecdotal impressions',
+        'SSL expiration monitoring (StatusCake) catches a specific, entirely preventable class of outage before it happens',
+      ],
+      limitations: [
+        'Free tier check intervals (e.g. every 5 minutes) mean brief transient outages can go briefly undetected',
+        'Simple HTTP status pings don\'t verify deep functional workflows — a page can return 200 while UI logic fails',
+        'Doesn\'t diagnose root causes, only flags that an outage occurred — requires APM/logs for debugging',
+        'Public status pages require active human communication during major incidents',
+      ],
+      tools: [
+        {
+          name: 'UptimeRobot',
+          sub: 'Cloud Uptime & API Endpoint Heartbeat Monitor',
+          url: 'https://uptimerobot.com',
+          desc: 'A free uptime monitoring service that pings a specified URL or endpoint at a regular interval (as frequently as every 5 minutes on the free tier) and sends alerts the moment a check fails, tracking uptime percentage and response time history over time.',
+          adv: [
+            '50 free monitors with 5-minute interval check cadence',
+            'Multi-channel alerting via Slack, Discord, Microsoft Teams, Webhooks, SMS, and Email',
+            'Free hosted public status page for incident communication',
+            'HTTP keyword matching (verifies response body text, not just status 200)',
+          ],
+          lim: [
+            '1-minute check intervals require paid tier',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Create HTTP(s) and Keyword monitors',
+              p: 'Add critical endpoints with response assertion checks.',
+              c: 'Monitor Type: HTTP(s) Keyword\nURL: https://hrms.company.com/api/health\nKeyword to find: "status":"healthy"\nInterval: 5 minutes',
+            },
+            {
+              t: 'Step 2 — Configure alerting integrations for on-call teams',
+              p: 'Set up webhook dispatch to Slack #engineering-alerts and PagerDuty.',
+              c: 'Alert Contact: Webhook -> https://hooks.slack.com/services/T00/B00/X00\nThreshold: Alert when down for 1 check cycle',
+            },
+            {
+              t: 'Step 3 — Deploy public status page',
+              p: 'Publish transparent status dashboard at status.company.com.',
+              c: 'Status Page: https://status.company.com\nMetrics: 99.98% 30-Day Uptime | Avg Response Time: 142ms',
+            },
+          ],
+        },
+        {
+          name: 'StatusCake',
+          sub: 'Global Multi-Location Uptime & SSL Expiration Sentinel',
+          url: 'https://statuscake.com',
+          desc: 'A free uptime and performance monitoring service, additionally offering multi-location checks (verifying reachability from several global regions, not just one) and basic SSL certificate expiration monitoring on its free tier.',
+          adv: [
+            'Global test probes across North America, Europe, Asia, and Australia',
+            'Automated SSL certificate expiration alerts 30 days and 7 days prior to expiry',
+            'Page speed and server response time historical tracking',
+          ],
+          lim: [
+            'Free tier limits total test count to 10 monitors',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Configure Multi-Location Uptime Check',
+              p: 'Verify reachability from globally distributed test nodes.',
+              c: 'Target: https://hrms.company.com\nLocations: US East, London, Singapore, Sydney\nRule: Trigger alert only if 2+ locations report failure (prevent false alarms)',
+            },
+            {
+              t: 'Step 2 — Enable SSL Expiry Sentinel',
+              p: 'Configure automated notification 14 days before certificate expiration.',
+              c: 'SSL Check: hrms.company.com\nIssuer: Let\'s Encrypt | Expiry: 48 days remaining | Alert trigger: <= 14 days',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: 'Automated 24/7 Availability & Latency Monitoring',
+          body: 'Deploy external heartbeat monitors executing regular ping and HTTP body assertions against core user journeys.',
+          doThis: 'Set up UptimeRobot monitor and simulate endpoint failure to test alerting webhooks.',
+          code: 'curl -X POST https://api.uptimerobot.com/v2/newMonitor -d "api_key=u10-key&type=1&url=https://hrms.company.com"',
+        },
+      ],
+      checklist: ['Configured multi-location uptime checks on primary APIs', 'Verified on-call alerting channel integration (Slack/PagerDuty)', 'Enabled SSL certificate expiration alerts at 30-day thresholds'],
+      practice: { title: 'Uptime monitoring and status page setup', brief: 'Set up an UptimeRobot dashboard monitoring 5 critical endpoints with a public status page.' },
+      resources: [
+        r('tool', 'UptimeRobot Documentation', 'https://uptimerobot.com/help', 'EN'),
+        r('tool', 'StatusCake Help Center', 'https://statuscake.com/help', 'EN'),
+      ],
+    }),
+
+    ch({
+      id: 'tt-fuzz-testing',
+      kind: 'guide',
+      phase: 'Part 11 · Operational, Infrastructure & Site Health',
+      level: 'advanced',
+      title: 'Fuzz Testing',
+      minutes: 25,
+      durationLabel: 'Chapter 43',
+      overviewText:
+        'Fuzz testing feeds an application large volumes of random, malformed, or unexpected input — automatically and at scale — specifically to find inputs that cause crashes, hangs, memory corruption, or unexpected behavior that no one would have thought to manually craft as a test case.',
+      why:
+        'Manually designed test cases only cover inputs a human thought to try. Fuzzing automates the search across a vast space of inputs no person would ever manually enumerate, and it\'s particularly effective at finding the kind of low-level, security-relevant bugs (buffer overflows, unhandled exceptions, injection points) that cause real crashes or vulnerabilities — often the exact class of bug that becomes a serious exploit if a real attacker finds it first.',
+      when:
+        'Especially valuable for any component that parses external or untrusted input directly (file uploads, API request parsing, data import features) — run periodically, and especially before release of any new input-parsing functionality, since fuzzing is computationally intensive and best targeted rather than run blindly everywhere.',
+      practical: {
+        app: 'HRMS CSV Bulk Import',
+        scenario:
+          'The HRMS\'s bulk employee-import feature (CSV upload) is fuzz-tested with ZAP\'s fuzzer, feeding malformed and oversized field values into the upload parameter.',
+        pass: 'A field-length validation check is added before processing, and the fix is confirmed by re-running the same fuzzer payloads without triggering the hang.',
+        fail: 'A CSV row with an extremely long value in the name field causes the import process to hang indefinitely rather than rejecting it with a validation error — a resource-exhaustion risk if repeated deliberately by a malicious upload.',
+      },
+      advantages: [
+        'Automatically explores a vastly larger input space than any manually designed test suite could feasibly cover',
+        'Particularly effective at finding security-relevant low-level bugs (crashes, memory issues) before an attacker does',
+        'Coverage-guided fuzzing (AFL) intelligently targets rarely-exercised code paths rather than wasting effort on already-tested ones',
+        'Runs unattended once configured, continuously generating new findings without ongoing manual effort',
+      ],
+      limitations: [
+        'Computationally intensive and often needs to run for extended periods (hours to days) to be genuinely effective',
+        'AFL specifically requires compiled/native code and source access — not directly applicable to web apps without adaptation',
+        'A crash found by a fuzzer still needs manual investigation to determine real-world exploitability and severity',
+        'Less effective against code with heavy early structural validation that rejects malformed data before reaching deep logic',
+      ],
+      tools: [
+        {
+          name: 'OWASP ZAP Fuzzer',
+          sub: 'Application-Layer Parameter & Payload Fuzzing Engine',
+          url: 'https://www.zaproxy.org',
+          seeChapter: 18,
+          desc: 'ZAP includes a built-in fuzzer (see Chapter 18 and Chapter 40) that can be pointed at specific request parameters, automatically substituting a wide range of malformed, boundary, and malicious payloads into that parameter and observing how the application responds.',
+          adv: [
+            'Built-in fuzzing payload databases (JbroFuzz, SecLists, SQL Injection, Format Strings)',
+            'Real-time HTTP response code, size, and latency anomaly detection',
+            'Supports custom regex payload generators and mutation dictionaries',
+          ],
+          lim: [
+            'Targeted at HTTP request parameters rather than binary memory spaces',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Intercept target API request in ZAP',
+              p: 'Select POST /api/v1/employees/bulk-import request and right-click -> Fuzz.',
+              c: 'Target Parameter: file_contents or employee_name',
+            },
+            {
+              t: 'Step 2 — Attach SecLists Malformed & Boundary Payload sets',
+              p: 'Configure payload generator with 10,000 malformed strings and unicode byte sequences.',
+              c: 'Payload Categories: Null bytes, Long strings (65KB+), Special characters (%00, \\r\\n, \\uFFFF), Format strings',
+            },
+            {
+              t: 'Step 3 — Execute fuzzing run and filter by response anomalies',
+              p: 'Sort fuzzer results by HTTP 500 Internal Server Error, timeouts (>5000ms), and atypical body sizes.',
+              c: 'Result: Payload #4102 (String length 131,072 chars) -> HTTP 504 Gateway Timeout (Regex ReDoS detected in parser)\nFix: Bound input length to max 255 chars in Joi/Zod validator',
+            },
+          ],
+        },
+        {
+          name: 'AFL (American Fuzzy Lop)',
+          sub: 'Coverage-Guided Genetic Binary & Native Code Fuzzer',
+          url: 'https://github.com/google/AFL',
+          desc: 'A well-known, highly effective coverage-guided fuzzer, primarily used against compiled binaries/native code — it intelligently mutates input based on which code paths each mutation newly exercises, making it far more effective than purely random fuzzing.',
+          adv: [
+            'Genetic algorithm uses lightweight binary instrumentation to track branch coverage',
+            'Extremely fast — executes thousands of mutated executions per second per CPU core',
+            'Automated test-case minimization (afl-tmin) reduces crashing payloads to minimal repros',
+          ],
+          lim: [
+            'Requires C/C++/Rust source compilation with afl-gcc or afl-clang instrumentation',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Compile native parser binary with AFL instrumentation',
+              p: 'Instrument CSV/Image/PDF parsing engine using AFL compiler wrapper.',
+              c: 'afl-gcc -O2 -o hrms_parser src/csv_parser.c',
+            },
+            {
+              t: 'Step 2 — Seed test corpus and launch fuzzing engine',
+              p: 'Provide small valid seed files in in_dir and start afl-fuzz across CPU cores.',
+              c: 'afl-fuzz -i seed_inputs/ -o findings_dir/ -- ./hrms_parser @@',
+            },
+            {
+              t: 'Step 3 — Inspect crashing inputs in findings directory',
+              p: 'Analyze core dumps and heap traces generated in findings_dir/crashes/.',
+              c: 'Crash ID 0001: SIGSEGV (Out of bounds buffer read at line 84)\nFix: Added explicit array bounds check before memory copy',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: 'Boundary & Malformed Parameter Fuzzing',
+          body: 'Subject file upload and JSON ingestion endpoints to large payload mutation sets detecting ReDoS and buffer anomalies.',
+          doThis: 'Execute ZAP fuzzing session on CSV import API and audit response times.',
+          code: 'zap-cli fuzz --target https://staging.hrms.internal/api/import --payload-list seclists-fuzz.txt',
+        },
+      ],
+      checklist: ['Identified all untrusted data parsing interfaces (CSV, PDF, JSON)', 'Audited input length limits and regex ReDoS vulnerabilities', 'Eliminated unhandled 500 error responses during fuzzing runs'],
+      practice: { title: 'API parameter fuzzing with OWASP ZAP', brief: 'Fuzz a user profile update API with 5,000 malformed unicode and boundary strings.' },
+      resources: [
+        r('tool', 'AFL GitHub Repository', 'https://github.com/google/AFL', 'EN'),
+        r('guide', 'OWASP Fuzzing Guide', 'https://owasp.org/www-community/Fuzzing', 'EN'),
+      ],
+    }),
+
+    ch({
+      id: 'tt-vulnerability-scanning',
+      kind: 'guide',
+      phase: 'Part 11 · Operational, Infrastructure & Site Health',
+      level: 'intermediate',
+      title: 'Vulnerability Scanning',
+      minutes: 25,
+      durationLabel: 'Chapter 44',
+      overviewText:
+        'Vulnerability scanning automatically checks an application and its infrastructure against databases of known, previously disclosed vulnerabilities — outdated software versions, missing security patches, exposed services, and common misconfigurations — providing broad, continuous coverage of well-documented risk rather than discovering novel issues.',
+      why:
+        'A large share of real-world breaches don\'t come from exotic, novel attacks — they come from known, disclosed vulnerabilities in outdated software that simply hasn\'t been patched yet. Vulnerability scanning provides continuous, low-effort coverage of exactly that risk category, catching an outdated library or an exposed misconfigured service before it becomes the entry point for a real attacker who\'s specifically searching for exactly this kind of easy, known target.',
+      when:
+        'Continuously — ideally scheduled to run automatically on a regular cadence (daily or weekly) against both the application and its infrastructure, since new vulnerabilities are disclosed in existing, unchanged software on an ongoing basis, not just when the codebase itself changes.',
+      practical: {
+        app: 'HRMS Server Infrastructure',
+        scenario:
+          'A scheduled weekly Nessus scan against the HRMS\'s staging infrastructure flags an outdated version of a widely used web server software with a publicly disclosed, actively exploited vulnerability.',
+        pass: 'The server software is updated to the patched version, a re-scan confirms the vulnerability is no longer present, and the update cadence is tightened to catch future disclosures faster.',
+        fail: 'The flagged version has been running unpatched for three months since the last infrastructure update, exposing a known, actively exploited vulnerability to anything that finds and probes the server.',
+      },
+      advantages: [
+        'Provides broad, continuous, automated coverage of well-known vulnerability categories with minimal manual effort',
+        'Catches an entire class of real-world breach risk (unpatched, known-vulnerable software) actively exploited in the wild',
+        'Nessus extends coverage beyond the web application layer into broader infrastructure and network-level risk',
+        'Findings map directly to CVE identifiers with concrete remediation and patching guidance',
+      ],
+      limitations: [
+        'Only catches known, previously disclosed vulnerabilities — offers zero protection against zero-day issues',
+        'Produces false positives requiring manual triage and verification, same as any automated scanner',
+        'Doesn\'t test business logic or chained exploitation paths — that\'s specifically what penetration testing (Chapter 40) is for',
+        'Nessus Essentials free tier caps scan targets to 16 IP addresses',
+      ],
+      tools: [
+        {
+          name: 'OWASP ZAP Dynamic Scanner',
+          sub: 'Automated DAST Web Vulnerability Scanner',
+          url: 'https://www.zaproxy.org',
+          seeChapter: 18,
+          desc: 'Used here (see Chapter 18 and Chapter 40) in its core automated-scan mode, run on a recurring schedule against the live application to catch newly disclosed vulnerability patterns matching the OWASP Top 10.',
+          adv: [
+            'Automated DAST spidering and active vulnerability scanning',
+            'Native GitHub Actions / GitLab CI/CD pipeline integration for automated gatekeeping',
+            'Exports machine-readable SARIF, JSON, and HTML vulnerability reports',
+          ],
+          lim: [
+            'Active scanning can create high load and generate dummy test records in databases',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Run automated baseline scan in CI pipeline',
+              p: 'Execute ZAP docker container against staging environment.',
+              c: 'docker run -t zaproxy/zap-stable zap-baseline.py -t https://staging.hrms.internal -r zap-report.html',
+            },
+            {
+              t: 'Step 2 — Triage identified High and Medium findings',
+              p: 'Review generated HTML report for SQLi, XSS, and broken CORS headers.',
+              c: 'Findings:\n- 0 High Severity\n- 1 Medium: Missing Anti-clickjacking Header (X-Frame-Options)\n- 2 Low: Cookie Without SameSite Attribute',
+            },
+          ],
+        },
+        {
+          name: 'Nessus Essentials',
+          sub: 'Comprehensive Infrastructure & Host Vulnerability Scanner',
+          url: 'https://www.tenable.com/products/nessus',
+          desc: 'A free (for up to 16 IP addresses) vulnerability scanner covering infrastructure-level checks — network services, outdated OS packages, misconfigurations — drawing on Tenable\'s industry-leading vulnerability database.',
+          adv: [
+            'Massive database of 180,000+ CVE plugins updated continuously',
+            'Audits OS patch levels, SSH configurations, open database ports, and SSL ciphers',
+            'Identifies actively exploited vulnerabilities (CISA KEV catalog integration)',
+          ],
+          lim: [
+            'Free tier limited to 16 IP addresses',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Create and launch Basic Network Scan',
+              p: 'Configure target subnet IP range and trigger discovery scan.',
+              c: 'Target: 192.168.1.10-20 | Scan Policy: Basic Network Scan | Duration: 14m',
+            },
+            {
+              t: 'Step 2 — Analyze CVE severity breakdown and remediation guide',
+              p: 'Filter findings by CVSS >= 7.0 and review vendor patch instructions.',
+              c: 'Critical: OpenSSL 1.1.1k Vulnerability (CVE-2021-3711 -> Remote Code Execution)\nRemediation: Upgrade openssl to >= 1.1.1l via apt-get upgrade openssl',
+            },
+            {
+              t: 'Step 3 — Re-scan to verify remediation',
+              p: 'Execute differential scan to confirm 0 critical host vulnerabilities remain.',
+              c: 'Re-scan: 192.168.1.14 -> 0 Critical, 0 High -> PASS',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: 'Automated DAST & Infrastructure CVE Audit',
+          body: 'Schedule automated DAST scans and host port assessments to identify unpatched third-party vulnerabilities.',
+          doThis: 'Execute weekly Nessus host scan and verify zero unpatched critical CVEs.',
+          code: 'docker run --rm -v $(pwd):/zap/wrk/:rw zaproxy/zap-stable zap-full-scan.py -t https://staging.hrms.internal',
+        },
+      ],
+      checklist: ['Scheduled weekly automated vulnerability scans in staging', 'Triaged all Critical and High CVE findings with vendor patches', 'Audited security headers (CSP, HSTS, X-Content-Type-Options)'],
+      practice: { title: 'Automated DAST scan pipeline integration', brief: 'Set up a GitHub Actions workflow running OWASP ZAP baseline scan on PRs.' },
+      resources: [
+        r('tool', 'Tenable Nessus Community', 'https://www.tenable.com/products/nessus', 'EN'),
+        r('guide', 'NIST National Vulnerability Database', 'https://nvd.nist.gov', 'EN'),
+      ],
+    }),
+
+    ch({
+      id: 'tt-static-testing',
+      kind: 'guide',
+      phase: 'Part 12 · Code Quality, Techniques & Visual UI',
+      level: 'beginner',
+      title: 'Static Testing',
+      minutes: 20,
+      durationLabel: 'Chapter 45',
+      overviewText:
+        'Static testing examines an application\'s code, requirements, or design artifacts without actually executing the program — reviewing source code, checking for style and structural issues, and validating documents against standards, all before a single line of code ever runs.',
+      why:
+        'Some classes of problems are cheapest to catch before execution ever happens at all — a syntax issue, an unused variable, an unreachable code path, an inconsistency between a requirement document and what\'s actually being built. Static testing catches these at the earliest, cheapest possible point in the development cycle, often in seconds, well before a dynamic test would even have the chance to run and reveal the same issue at a much higher cost.',
+      when:
+        'Continuously, as code is written — ideally directly in the editor and again automatically on every commit via CI, since static analysis is fast, cheap, and doesn\'t require a running application at all. Requirements and design document reviews happen earlier still, before any code is written against them.',
+      practical: {
+        app: 'HRMS Leave Balance Function',
+        scenario:
+          'A SonarQube scan flags the calculateRemainingLeave() function for a code smell: deeply nested conditional logic that\'s hard to read and maintain.',
+        pass: 'The function is refactored into smaller, named helper functions with early returns, reducing nesting — SonarQube\'s quality gate now passes, and the logic is meaningfully easier for the next developer to safely modify.',
+        fail: 'Five levels of nested if statements make the function\'s actual logic difficult to follow and prone to future editing mistakes, even though it currently works correctly.',
+      },
+      advantages: [
+        'Catches issues before any code runs, at the cheapest possible point in the development cycle',
+        'Fast enough to run on every keystroke in the editor or every commit in CI, with zero runtime overhead',
+        'SonarQube\'s trend dashboard makes overall codebase health and technical debt visible over time',
+        'ESLint catches real bugs (unused variables, race conditions, unreachable code) alongside style issues',
+      ],
+      limitations: [
+        'Cannot catch runtime-only issues — data-dependent bugs that manifest only with specific inputs stay invisible',
+        'Rule sets need careful tuning to avoid overwhelming developers with noisy false-positive lints',
+        'Doesn\'t verify actual application behavior, only code structure and compliance with configured rules',
+        'SonarQube self-hosting incurs ongoing infrastructure and maintenance costs',
+      ],
+      tools: [
+        {
+          name: 'SonarQube Community Edition',
+          sub: 'Self-Hosted Code Quality, Security & Technical Debt Platform',
+          url: 'https://sonarsource.com/products/sonarqube',
+          desc: 'A free, self-hostable static code analysis platform covering multiple languages, checking for code smells, bugs, security vulnerabilities, and duplicated code, with a dashboard tracking code quality trends over time across an entire codebase.',
+          adv: [
+            'Analyzes 30+ programming languages for Bugs, Vulnerabilities, and Code Smells',
+            'Automated Quality Gates block PR merges on new vulnerabilities or low test coverage',
+            'Calculates technical debt remediation time estimates in hours and days',
+          ],
+          lim: [
+            'Requires hosting a server instance and database (Postgres)',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Integrate SonarScanner in GitHub Actions CI',
+              p: 'Add scanner step to pull request validation workflow.',
+              c: '- name: SonarQube Scan\n  uses: SonarSource/sonarqube-scan-action@v2\n  env:\n    SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}\n    SONAR_HOST_URL: \'https://sonarqube.internal\'',
+            },
+            {
+              t: 'Step 2 — Configure Quality Gate thresholds in sonar-project.properties',
+              p: 'Enforce zero new bugs and maintain >80% test coverage on new code.',
+              c: 'sonar.projectKey=hrms-core\nsonar.sources=src\nsonar.qualitygate.wait=true',
+            },
+            {
+              t: 'Step 3 — Review findings dashboard and refactor high-cognitive complexity blocks',
+              p: 'Inspect flagged nested branches and refactor to guard clauses.',
+              c: 'SonarQube Alert: Cognitive Complexity of calculateLeave() is 18 (allowed: 15)\nAction: Refactored 5 nested ifs into early returns -> Cognitive Complexity reduced to 6 -> Quality Gate PASSED',
+            },
+          ],
+        },
+        {
+          name: 'ESLint',
+          sub: 'Pluggable JavaScript & TypeScript Static Analysis Linter',
+          url: 'https://eslint.org',
+          desc: 'A widely used, configurable JavaScript/TypeScript linter — checks code against a defined set of style and correctness rules directly in the editor and in CI, catching issues like unused variables, unreachable code, and inconsistent style before code is even committed.',
+          adv: [
+            'Instant in-editor feedback under 50ms as you type',
+            'Automated auto-fixing (`--fix`) fixes hundreds of formatting and syntax issues automatically',
+            'Extensible ecosystem with typescript-eslint, react-hooks, and security plugins',
+          ],
+          lim: [
+            'Confined to JavaScript, TypeScript, and JSON files',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Configure eslint.config.mjs with recommended security and type rules',
+              p: 'Set up strict typescript-eslint and react rules.',
+              c: 'import tsPlugin from \'@typescript-eslint/eslint-plugin\';\nexport default [\n  tsPlugin.configs[\'recommended-type-checked\'],\n  { rules: { \'no-unused-vars\': \'error\', \'no-floating-promises\': \'error\' } }\n];',
+            },
+            {
+              t: 'Step 2 — Run linter in CI and pre-commit hooks via husky',
+              p: 'Prevent invalid code from being committed.',
+              c: 'npx eslint src/ --max-warnings=0\nResult: 0 errors, 0 warnings (100% clean build)',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: 'Static Code Analysis & Quality Gate Enforcement',
+          body: 'Analyze source code using AST parsers detecting dead code, type mismatches, and cognitive complexity anomalies.',
+          doThis: 'Execute ESLint and SonarScanner locally before pushing pull requests.',
+          code: 'npx eslint src/ && npx sonarqube-scanner',
+        },
+      ],
+      checklist: ['Configured strict linter rules in editor and pre-commit hook', 'Enforced Quality Gate blocking PRs on new bugs or security flaws', 'Eliminated code duplication and reduced cognitive complexity'],
+      practice: { title: 'SonarQube quality gate and ESLint setup', brief: 'Configure a strict TypeScript ESLint config and SonarQube quality gate for a project.' },
+      resources: [
+        r('tool', 'ESLint Official Documentation', 'https://eslint.org/docs', 'EN'),
+        r('tool', 'SonarQube Documentation', 'https://docs.sonarsource.com/sonarqube', 'EN'),
+      ],
+    }),
+
+    ch({
+      id: 'tt-dynamic-testing',
+      kind: 'guide',
+      phase: 'Part 12 · Code Quality, Techniques & Visual UI',
+      level: 'beginner',
+      title: 'Dynamic Testing',
+      minutes: 20,
+      durationLabel: 'Chapter 46',
+      overviewText:
+        'Dynamic testing evaluates an application by actually executing it with real inputs and observing real outputs and behavior — the umbrella category covering nearly every testing type elsewhere in this manual that involves running the software, in direct contrast to static testing\'s code-only, no-execution approach.',
+      why:
+        'Static testing can catch a real class of issues before execution, but it fundamentally cannot verify that the application actually behaves correctly for a real user — that requires actually running it. Dynamic testing is where functional correctness, real performance, real user experience, and real integration between components are all ultimately proven, since no amount of code review alone can substitute for observing the actual running system.',
+      when:
+        'Throughout the entire testing process, essentially anywhere the application is actually running and being interacted with — this chapter names the category rather than introducing a new activity, since functional, system, performance, and most other chapters in this manual are all forms of dynamic testing.',
+      practical: {
+        app: 'HRMS Leave Balance Function (Dynamic Execution)',
+        scenario:
+          'The same calculateRemainingLeave() function from Chapter 45\'s static example is dynamically tested by actually calling it with real employee data across a range of scenarios.',
+        pass: 'Re-running the same dynamic test with a zero balance now correctly returns a blocked request, verified by actually executing the function rather than just reading it.',
+        fail: 'Calling the function with a leave balance of exactly zero returns a negative number instead of correctly blocking the request — a runtime behavior bug that static analysis, which only reviewed the code\'s structure, never caught since the code was syntactically fine.',
+      },
+      advantages: [
+        'The only way to verify actual runtime behavior — no amount of code review substitutes for observing the real running system',
+        'Directly validates the real user experience, network requests, and database transactions',
+        'Covers the vast majority of meaningful testing activity, since most bugs that matter to users only manifest at runtime',
+        'Encompasses nearly every specific testing type covered elsewhere in this manual',
+      ],
+      limitations: [
+        'Requires a running, executable application and configured test environment — cannot be done from source alone',
+        'Slower and more resource-intensive than static analysis',
+        'Test coverage depends strictly on which scenarios are executed — unexecuted execution paths remain untested',
+        'Best paired with static testing rather than used in isolation',
+      ],
+      tools: [
+        {
+          name: 'Playwright Dynamic Test Engine',
+          sub: 'Cross-Browser Dynamic Runtime Execution Framework',
+          url: 'https://playwright.dev',
+          seeChapter: 6,
+          desc: 'Automates dynamic testing directly (see Chapter 6 and Chapter 36) — driving a real, running browser through real interactions and observing real resulting behavior, the defining characteristic of dynamic testing.',
+          adv: [
+            'Interacts with real DOM nodes, WebSockets, cookies, and local storage',
+            'Asserts live network responses and dynamic client-side state transitions',
+          ],
+          lim: [
+            'Requires compiled and running frontend/backend servers',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Execute live browser interaction script',
+              p: 'Drive real browser session through leave submission workflow.',
+              c: 'await page.goto(\'http://localhost:3000/dashboard\');\nawait page.click(\'#apply-leave-btn\');\nawait page.fill(\'#days-input\', \'0\');\nawait page.click(\'#submit-btn\');',
+            },
+            {
+              t: 'Step 2 — Assert runtime error handling and DOM validation',
+              p: 'Confirm application dynamically blocks 0-day submission with visible toast error.',
+              c: 'await expect(page.locator(\'.toast-error\')).toHaveText(\'Leave days must be at least 1\');\nawait expect(page.locator(\'#leave-balance\')).toHaveText(\'10 Days Remaining\');',
+            },
+          ],
+        },
+        {
+          name: 'Selenium WebDriver',
+          sub: 'Industry Standard Browser Automation Protocol',
+          url: 'https://www.selenium.dev',
+          seeChapter: 6,
+          desc: 'Drives real browsers across native operating systems (see Chapter 6) executing dynamic test assertions against live web applications.',
+          adv: [
+            'W3C standard WebDriver protocol supported across all major browsers',
+            'Direct multi-language bindings for Java, Python, C#, and Ruby',
+          ],
+          lim: [
+            'Requires external driver binaries (chromedriver, geckodriver)',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Launch WebDriver instance and navigate to target',
+              p: 'Initialize browser driver and execute dynamic HTTP request.',
+              c: 'WebDriver driver = new ChromeDriver();\ndriver.get("https://hrms.internal/login");',
+            },
+            {
+              t: 'Step 2 — Execute dynamic form interaction',
+              p: 'Interact with live DOM elements and assert page title change.',
+              c: 'driver.findElement(By.id("username")).sendKeys("admin");\ndriver.findElement(By.id("submit")).click();\nassertEquals("Dashboard", driver.getTitle());',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: 'Live Runtime Execution & Boundary Assertion',
+          body: 'Execute running application binaries stimulating real boundary conditions and validating HTTP state transitions.',
+          doThis: 'Execute Playwright dynamic runtime suite against local dev server.',
+          code: 'npx playwright test tests/dynamic/leave-boundary.spec.ts',
+        },
+      ],
+      checklist: ['Verified live runtime execution across valid and invalid inputs', 'Audited state transitions on UI, database, and cache layers', 'Paired dynamic execution passes with prior static analysis checks'],
+      practice: { title: 'Dynamic test suite implementation', brief: 'Implement a suite of Playwright dynamic tests asserting 0-day, negative, and max leave submissions.' },
+      resources: [
+        r('tool', 'Playwright Test Guide', 'https://playwright.dev/docs/intro', 'EN'),
+        r('guide', 'Dynamic Testing Methodology', 'https://www.guru99.com/dynamic-testing.html', 'EN'),
+      ],
+    }),
+
+    ch({
+      id: 'tt-gui-testing',
+      kind: 'guide',
+      phase: 'Part 12 · Code Quality, Techniques & Visual UI',
+      level: 'intermediate',
+      title: 'GUI Testing',
+      minutes: 25,
+      durationLabel: 'Chapter 47',
+      overviewText:
+        'GUI testing verifies the graphical user interface itself — buttons, forms, menus, layout, visual elements, and their interactive behavior — checking that what\'s rendered looks and behaves correctly, distinct from testing the underlying business logic those UI elements happen to trigger.',
+      why:
+        'The UI is what a user actually sees and touches, and a perfectly correct backend can still fail a real user if a button is misaligned, a dropdown doesn\'t open, a form field doesn\'t accept expected input, or a modal fails to close — none of which necessarily reflects a business logic bug at all, just a UI-layer defect. GUI testing focuses specifically on this visible, interactive surface, which is exactly where most real users spend all of their attention.',
+      when:
+        'Throughout UI development, on every new screen or component, and again during full regression passes before release — particularly important after any UI framework upgrade, redesign, or styling change, since these can silently break visual or interactive elements without touching any underlying logic at all.',
+      practical: {
+        app: 'HRMS Leave Request Submit Button',
+        scenario:
+          'A GUI test both clicks the \'Submit\' button (functional) and visually snapshots the button\'s appearance (visual) after a recent styling update.',
+        pass: 'The button\'s contrast is corrected, the visual snapshot matches an updated approved baseline, and both the functional click and visual appearance are confirmed correct together.',
+        fail: 'The button correctly submits the form, but the visual snapshot shows it\'s now rendered in a low-contrast gray-on-gray color scheme following a recent style change — technically functional, but visually broken in a way only the visual comparison catches.',
+      },
+      advantages: [
+        'Directly verifies the exact surface real users interact with and judge the product by',
+        'Applitools\' visual AI meaningfully reduces false positives compared to simple pixel-diff comparisons',
+        'Selenium/Playwright interaction testing catches functional GUI defects (unresponsive buttons, broken dropdowns)',
+        'Can be automated and run continuously in CI pipelines',
+      ],
+      limitations: [
+        'Purely functional GUI tests won\'t catch visual-only issues like misaligned text that is still clickable',
+        'Applitools free tier limits visual checkpoints/snapshots available per month',
+        'GUI tests require more maintenance than API tests as visual design evolves',
+        'Doesn\'t evaluate whether the GUI is intuitive — that is Usability Testing\'s scope (Chapter 12)',
+      ],
+      tools: [
+        {
+          name: 'Selenium GUI Driver',
+          sub: 'Functional DOM & Interactive Element Automation',
+          url: 'https://www.selenium.dev',
+          seeChapter: 6,
+          desc: 'Automates interaction with GUI elements directly (see Chapter 6) — clicking buttons, filling forms, opening menus — verifying they respond correctly to real interaction, the core of functional GUI testing.',
+          adv: [
+            'Simulates real user mouse clicks, keyboard strokes, drag-and-drop, and hover interactions',
+            'Explicit WebDriverWait handles dynamic AJAX element rendering smoothly',
+          ],
+          lim: [
+            'Does not detect visual color contrast or layout misalignment issues on its own',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Locate and interact with GUI dropdown components',
+              p: 'Select option from interactive leave type dropdown menu.',
+              c: 'WebElement dropdown = driver.findElement(By.id("leave-type-select"));\nSelect select = new Select(dropdown);\nselect.selectByVisibleText("Annual Leave");',
+            },
+            {
+              t: 'Step 2 — Verify modal dialog opens and closes smoothly',
+              p: 'Click trigger and assert modal overlay visibility in the DOM.',
+              c: 'driver.findElement(By.id("open-policy-modal")).click();\nWebElement modal = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("policy-modal")));\nassertTrue(modal.isDisplayed());',
+            },
+          ],
+        },
+        {
+          name: 'Applitools Eyes',
+          sub: 'AI-Powered Visual GUI & Contrast Validation',
+          url: 'https://applitools.com',
+          desc: 'An AI-powered visual testing platform that goes beyond functional interaction to compare how a UI actually looks against a baseline, using visual AI to intelligently distinguish meaningful visual changes from harmless rendering noise.',
+          adv: [
+            'Visual AI algorithm ignores pixel anti-aliasing noise and focuses on real human-visible discrepancies',
+            'Automated cross-browser and cross-device visual layout checks in cloud Ultrafast Grid',
+            'Automated WCAG color contrast compliance verification built into visual snapshots',
+          ],
+          lim: [
+            'Free tier limited to 100 visual checkpoints per month',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Initialize Applitools Eyes in test suite',
+              p: 'Configure API key and open visual session.',
+              c: 'import { Eyes, Target } from \'@applitools/eyes-playwright\';\nconst eyes = new Eyes();\nawait eyes.open(page, \'HRMS App\', \'Leave Form GUI Check\');',
+            },
+            {
+              t: 'Step 2 — Capture visual snapshot of interactive form',
+              p: 'Check entire DOM snapshot against AI baseline.',
+              c: 'await page.goto(\'/leave/apply\');\nawait eyes.check(\'Apply Leave Form Initial View\', Target.window().fully());\nawait eyes.close();',
+            },
+            {
+              t: 'Step 3 — Review AI visual diff in Applitools dashboard',
+              p: 'Inspect highlighted color contrast defect on primary CTA button.',
+              c: 'Dashboard:\n- Flagged Defect: Submit button contrast ratio 2.1:1 (Fails WCAG AA minimum 4.5:1)\n- Action: Update button background from #CCCCCC to #1C2A26 -> Re-run -> 100% Match',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: 'Interactive GUI Component Verification',
+          body: 'Script clicks, hovers, modal triggers, and form validations verifying UI responsiveness and visual appearance.',
+          doThis: 'Execute Playwright GUI interaction and Applitools visual check.',
+          code: 'npx eyes-playwright test tests/gui/components.spec.ts',
+        },
+      ],
+      checklist: ['Verified all interactive states (hover, focus, disabled, active)', 'Audited color contrast ratios against WCAG 2.1 AA (>= 4.5:1)', 'Automated modal, dropdown, and tooltip visibility assertions'],
+      practice: { title: 'GUI component interaction and visual test', brief: 'Write automated tests checking form inputs, select dropdowns, and modal dialogs.' },
+      resources: [
+        r('tool', 'Applitools Official Tutorial', 'https://applitools.com/tutorials', 'EN'),
+        r('guide', 'W3C WAI-ARIA Authoring Practices', 'https://www.w3.org/WAI/ARIA/apg', 'EN'),
+      ],
+    }),
+
+    ch({
+      id: 'tt-visual-regression-testing',
+      kind: 'guide',
+      phase: 'Part 12 · Code Quality, Techniques & Visual UI',
+      level: 'intermediate',
+      title: 'Visual Regression Testing',
+      minutes: 25,
+      durationLabel: 'Chapter 48',
+      overviewText:
+        'Visual regression testing captures screenshots of an application\'s UI and automatically compares them against a previously approved baseline, flagging any pixel-level (or perceptually meaningful) visual differences — catching unintended appearance changes that functional tests, which only check behavior, would never notice.',
+      why:
+        'A code change can leave every functional test green — every button still clicks, every form still submits — while silently breaking the visual appearance: a CSS change bleeds into an unrelated component, a font fails to load, spacing shifts unexpectedly. These are real, user-visible defects that pure functional testing structurally cannot detect, since functionality and appearance are genuinely separate concerns.',
+      when:
+        'On every UI-affecting change, ideally in CI on every pull request — most valuable specifically for shared components and design-system elements, where an unintended visual change can silently ripple across many pages that all depend on that one shared piece.',
+      practical: {
+        app: 'HRMS Shared Button Component',
+        scenario:
+          'A shared <Button> component used across dozens of pages in the HRMS has its default padding changed as part of an unrelated ticket.',
+        pass: 'The team confirms the padding change was actually intentional and desired everywhere, approves the new baseline across all 23 scenarios at once, and the visual regression suite now reflects the updated, intended design.',
+        fail: 'BackstopJS flags visual differences across 23 different pages/scenarios that all use the shared component — a change intended for one specific screen unintentionally affected every page using that component, caught immediately rather than discovered piecemeal by users.',
+      },
+      advantages: [
+        'Catches purely visual regressions that no functional test, however thorough, would ever detect',
+        'Percy integrates directly into existing Playwright/Cypress suites without writing new test flows',
+        'BackstopJS is fully free and self-hosted, with zero account or usage-tier limits',
+        'Invaluable for design systems and shared UI component libraries',
+      ],
+      limitations: [
+        'Requires an established, deliberately maintained baseline to avoid constant noisy diffs',
+        'Every intentional design change requires updating and approving the new baseline',
+        'Sensitive to font rendering differences across different CI host OS environments unless containerized',
+        'Doesn\'t verify backend functional correctness — pairs with, not replaces, functional testing',
+      ],
+      tools: [
+        {
+          name: 'Percy by BrowserStack',
+          sub: 'Cloud Automated Visual Review & PR Diff Platform',
+          url: 'https://percy.io',
+          desc: 'A visual review platform that integrates with existing test suites (Selenium, Cypress, Playwright) to automatically capture screenshots during test runs and compare them against an approved baseline, presenting visual diffs for review directly in pull requests.',
+          adv: [
+            'Zero-friction SDK integration (`percySnapshot(page, \'Name\')`) into existing test suites',
+            'Automated visual rendering across Chrome, Firefox, Edge, and Safari at multiple breakpoints',
+            'Direct GitHub/GitLab PR integration with visual approval check gates',
+          ],
+          lim: [
+            'Free tier provides 5,000 visual snapshots per month',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Install Percy Playwright SDK',
+              p: 'Add @percy/playwright to project dependencies.',
+              c: 'npm install --save-dev @percy/cli @percy/playwright',
+            },
+            {
+              t: 'Step 2 — Add visual snapshots into existing Playwright tests',
+              p: 'Trigger DOM snapshot upload at key UI states.',
+              c: 'import percySnapshot from \'@percy/playwright\';\n\ntest(\'Visual regression check on dashboard\', async ({ page }) => {\n  await page.goto(\'/dashboard\');\n  await percySnapshot(page, \'HRMS Dashboard Home\', { widths: [375, 768, 1280] });\n});',
+            },
+            {
+              t: 'Step 3 — Run test suite with Percy CLI in CI',
+              p: 'Execute tests and upload DOM assets for rendering.',
+              c: 'npx percy exec -- npx playwright test',
+            },
+            {
+              t: 'Step 4 — Review visual diffs on GitHub PR',
+              p: 'Inspect highlighted pixel changes and click \'Approve\' to set new baseline.',
+              c: 'Percy Bot: 1 visual change detected in \'HRMS Dashboard Home\' (1280px)\nDiff: Navigation sidebar padding shifted by 8px\nAction: Approved by Lead Designer',
+            },
+          ],
+        },
+        {
+          name: 'BackstopJS',
+          sub: 'Open-Source Self-Hosted Visual Regression Engine',
+          url: 'https://github.com/garris/BackstopJS',
+          desc: 'A free, open-source visual regression tool that\'s fully self-hosted (no account or paid tier needed at all) — captures screenshots at defined breakpoints/scenarios and generates an HTML report highlighting pixel differences against a saved reference set.',
+          adv: [
+            '100% free and open-source with unlimited local/CI runs',
+            'Config-driven scenarios (`backstop.json`) without writing complex test scripts',
+            'Runs inside official Docker container to eliminate cross-platform font rendering diffs',
+          ],
+          lim: [
+            'Requires hosting and managing reference image files in Git or S3',
+          ],
+          steps: [
+            {
+              t: 'Step 1 — Initialize BackstopJS configuration',
+              p: 'Generate backstop.json specifying viewports and URLs.',
+              c: 'npx backstop init',
+            },
+            {
+              t: 'Step 2 — Create reference baseline screenshots',
+              p: 'Capture initial golden master screenshots across viewports.',
+              c: 'npx backstop reference',
+            },
+            {
+              t: 'Step 3 — Execute visual regression test against modified code',
+              p: 'Capture new screenshots and compare against reference images.',
+              c: 'npx backstop test\nReport: 22 passed, 1 failed (Shared button component padding altered)',
+            },
+            {
+              t: 'Step 4 — Approve intentional visual updates',
+              p: 'Promote new screenshots to become the updated reference baseline.',
+              c: 'npx backstop approve',
+            },
+          ],
+        },
+      ],
+      steps: [
+        {
+          title: 'Pixel-Level Snapshot Baseline Comparison',
+          body: 'Capture viewport screenshots of components across breakpoints and assert zero unexpected pixel variations.',
+          doThis: 'Execute BackstopJS visual regression suite and inspect HTML diff report.',
+          code: 'npx backstop test',
+        },
+      ],
+      checklist: ['Captured reference screenshots across mobile, tablet, and desktop viewports', 'Enforced visual regression gate in pull request CI workflows', 'Containerized test execution in Docker for consistent font rendering'],
+      practice: { title: 'Visual regression test suite configuration', brief: 'Set up BackstopJS for a design system component library across 3 breakpoints.' },
+      resources: [
+        r('tool', 'Percy Documentation', 'https://docs.percy.io', 'EN'),
+        r('tool', 'BackstopJS GitHub Repository', 'https://github.com/garris/BackstopJS', 'EN'),
+      ],
+    }),
   ],
 }
+
 
 
 
