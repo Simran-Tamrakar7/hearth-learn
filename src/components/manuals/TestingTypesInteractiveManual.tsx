@@ -3865,7 +3865,303 @@ export const TESTING_TYPES_CHAPTERS: TestingChapterData[] = [
       },
     ],
   },
+  {
+    no: "37",
+    title: "Cross-browser Testing",
+    category: "Other",
+    desc: "Cross-browser testing verifies that an application renders and functions correctly across the different browsers real users actually use — Chrome, Firefox, Safari, Edge, and their various versions — checking specifically for browser-engine differences rather than device or screen-size differences (that's compatibility testing's broader scope, Chapter 19).",
+    why: "Different browsers use different rendering engines (Blink, Gecko, WebKit) with different levels of CSS and JavaScript support, and even the same engine can behave differently across versions — a flexbox layout that renders perfectly in Chrome can break in Safari, or a JavaScript feature can silently fail in an older browser version still used by a real portion of the audience. Without deliberate cross-browser testing, these gaps only surface as confusing, hard-to-reproduce bug reports from specific users.",
+    when: "Throughout development on any UI-facing feature, and definitely before release — checked against the specific browsers and versions the actual user base analytics show are actually in use, rather than testing exhaustively against every browser that has ever existed.",
+    practical: {
+      app: "HRMS Leave Calendar Widget (Revisited)",
+      scenario:
+        "The same leave calendar widget from Chapter 19 is run through LambdaTest's automated grid across Chrome, Firefox, Safari, and Edge simultaneously, using the existing Playwright suite.",
+      pass: "A Safari-specific CSS adjustment resolves the misalignment, confirmed by re-running the same automated suite across all four browsers in parallel.",
+      fail: "The calendar's date-picker overlay renders correctly in Chrome, Firefox, and Edge, but is subtly misaligned in Safari specifically — a WebKit-specific CSS quirk that a single-browser local test run would never have surfaced.",
+    },
+    advantages: [
+      "Covers real browser engines and versions without needing to install and maintain each one locally",
+      "Existing Selenium/Playwright/Cypress suites can be reused directly against the cloud grid without rewriting",
+      "Parallel execution across many browsers is dramatically faster than testing each one sequentially by hand",
+      "Screenshot comparison makes visual, engine-specific rendering bugs immediately obvious",
+    ],
+    limitations: [
+      "Free tier limits test minutes, concurrent sessions, or browser combinations available",
+      "Testing every possible browser/version combination is impractical — prioritization by analytics is essential",
+      "Cloud-based execution can be slower than a local browser for quick iterative dev checks",
+      "Doesn't cover mobile-specific browser quirks as deeply as dedicated mobile testing (Chapter 38)",
+    ],
+    tools: [
+      {
+        name: "LambdaTest",
+        sub: "Cloud Cross-Browser Testing Cloud & Real-Device Farm",
+        url: "https://lambdatest.com",
+        desc: "A cloud-based cross-browser testing platform offering real and emulated browsers across many OS/browser/version combinations, supporting both manual, live interactive testing and automated Selenium/Playwright/Cypress test execution across that same browser matrix.",
+        adv: [
+          "Over 3000+ real browser and operating system combinations",
+          "Automated visual regression and screenshot comparison across browsers",
+          "Direct integration with Playwright, Cypress, and Selenium test runners",
+          "Local tunnel testing (UnderPass) for localhost and staging environments",
+        ],
+        lim: [
+          "Free tier limits monthly live testing minutes and parallel executions",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Configure Playwright project for LambdaTest cloud grid",
+            p: "Set capabilities and authentication credentials in playwright.config.ts.",
+            c: `const capabilities = {\n  'browserName': 'Safari',\n  'browserVersion': '17.0',\n  'LT:Options': {\n    'platform': 'macOS Sonoma',\n    'build': 'HRMS Build #104',\n    'user': process.env.LT_USERNAME,\n    'accessKey': process.env.LT_ACCESS_KEY\n  }\n};`,
+          },
+          {
+            t: "Step 2 — Connect Playwright test to LambdaTest CDP endpoint",
+            p: "Execute tests remotely over secure websocket connection.",
+            c: `const browser = await chromium.connect({\n  wsEndpoint: \`wss://cdp.lambdatest.com/playwright?capabilities=\${encodeURIComponent(JSON.stringify(capabilities))}\`\n});`,
+          },
+          {
+            t: "Step 3 — Run cross-browser visual snapshot comparisons",
+            p: "Capture rendered calendar component and assert pixel tolerance across WebKit and Blink.",
+            c: `await page.goto('/leave-calendar');\nawait expect(page).toHaveScreenshot('calendar-widget.png', { maxDiffPixelRatio: 0.01 });`,
+          },
+          {
+            t: "Step 4 — Review cross-browser execution report in LambdaTest dashboard",
+            p: "Inspect video recordings, console logs, and network telemetry for Safari failures.",
+            c: `Report:\n- Chrome 122 (Win 11): PASS (1.2s)\n- Firefox 123 (macOS): PASS (1.4s)\n- Safari 17 (macOS): FAIL (WebKit CSS alignment offset detected -> Fixed in PR #88)`,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    no: "38",
+    title: "Mobile Testing",
+    category: "Other",
+    desc: "Mobile testing verifies an application's behavior specifically on mobile devices — native apps (iOS/Android) or mobile web — covering touch interactions, device-specific behaviors (interruptions like calls or notifications, orientation changes, varying screen sizes), and mobile-specific constraints like intermittent network connectivity and battery/performance limits.",
+    why: "Mobile devices introduce an entire category of behavior that desktop testing simply doesn't exercise — touch gestures instead of mouse clicks, apps getting backgrounded or interrupted mid-task, unreliable network connections, wildly varying screen sizes and pixel densities, and OS-level behaviors (permissions, notifications) unique to mobile. An application that works flawlessly on desktop can still be genuinely broken or frustrating on a real phone.",
+    when: "Throughout development for any application with a mobile presence (native app or responsive mobile web), and definitely before release — tested against the specific device/OS combinations that match the real or expected user base.",
+    practical: {
+      app: "HRMS Mobile Leave Request",
+      scenario:
+        "A mobile-specific test deliberately backgrounds the app midway through filling out a leave request form, then returns to it after two minutes.",
+      pass: "Form data is persisted locally as it's entered, so returning to the app after being backgrounded restores exactly where the user left off.",
+      fail: "Returning to the app shows a completely blank form — all previously entered data was lost when the app was backgrounded, since form state was only held in memory with no persistence.",
+    },
+    advantages: [
+      "Covers mobile-specific interaction patterns and OS behaviors that desktop tools never exercise",
+      "One framework (Appium) spans both iOS and Android, avoiding separate automation toolchains",
+      "Free and open-source, with a huge community and active driver ecosystem",
+      "Can run against both emulators/simulators (fast, cheap) and physical real devices (most accurate)",
+    ],
+    limitations: [
+      "Setup is notably more involved than web automation (XCUITest, UiAutomator2, Xcode, Android SDK)",
+      "Emulators don't perfectly replicate real device battery drain, touch latency, or thermal throttling",
+      "Execution speed is slower than web automation, especially against physical devices",
+      "iOS automation strictly requires macOS with Xcode installed",
+    ],
+    tools: [
+      {
+        name: "Appium",
+        sub: "Cross-Platform Native & Mobile Web Automation Framework",
+        url: "https://appium.io",
+        desc: "A free, open-source automation framework for native, hybrid, and mobile web apps on both iOS and Android — uses the same underlying automation approach across platforms, letting a single testing strategy (and largely similar test code) cover both.",
+        adv: [
+          "Supports iOS (XCUITest driver) and Android (UiAutomator2 driver) using WebDriver standard",
+          "Automate native, hybrid, and mobile web apps with standard JavaScript, Python, or Java",
+          "Simulate device hardware triggers (rotation, backgrounding, network toggling, battery status)",
+          "Integrates seamlessly with Appium Inspector for visual element hierarchy exploration",
+        ],
+        lim: [
+          "Requires local Android SDK / Xcode toolchain configuration",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Install Appium 2.x and platform drivers",
+            p: "Install core engine along with Android and iOS drivers.",
+            c: `npm install -g appium\nappium driver install uiautomator2\nappium driver install xcuitest`,
+          },
+          {
+            t: "Step 2 — Define Appium desired capabilities for mobile test session",
+            p: "Configure target package, activity, and device identifiers.",
+            c: `const caps = {\n  platformName: 'Android',\n  'appium:automationName': 'UiAutomator2',\n  'appium:deviceName': 'Pixel_7_API_34',\n  'appium:app': './builds/hrms-mobile.apk',\n  'appium:appPackage': 'com.hrms.app'\n};`,
+          },
+          {
+            t: "Step 3 — Write mobile interruption test with WebDriverIO/Appium",
+            p: "Fill leave request form, background app for 10 seconds, and assert form state persistence.",
+            c: `const leaveInput = await driver.$('~leave_reason_input');\nawait leaveInput.setValue('Medical appointment');\n// Background app for 10 seconds\nawait driver.background(10);\n// Verify input persisted upon foregrounding\nawait expect(leaveInput).toHaveText('Medical appointment');`,
+          },
+          {
+            t: "Step 4 — Execute test suite on connected device or emulator",
+            p: "Run mobile tests via Appium CLI server.",
+            c: `npx wdio run wdio.conf.js --spec tests/mobile/leave-interruption.spec.js`,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    no: "39",
+    title: "Installation Testing",
+    category: "Other",
+    desc: "Installation testing verifies that an application installs, updates, and uninstalls correctly across the environments and methods real users will actually use — checking the install process itself, not the application's functionality once it's already running.",
+    why: "An application that works perfectly once installed is still a failure if users can't actually get it installed in the first place, or if an update corrupts their existing data, or if an uninstall leaves broken remnants behind. Installation is a real user's very first experience with the product — a bad first impression here can lose a user before they ever see any of the application's actual features.",
+    when: "Before every release that includes a packaged installer, app store submission, or update mechanism — checked specifically against a clean environment (not the developer's already-configured machine) and against the realistic upgrade path from the previous version.",
+    practical: {
+      app: "HRMS Desktop Client Update",
+      scenario:
+        "The HRMS desktop client is tested updating from version 2.3 to 2.4 on a machine with existing saved data and settings.",
+      pass: "The update correctly migrates the existing settings file to the new version's format, and the user's saved preferences persist across the update exactly as expected.",
+      fail: "After updating, the user's saved report filters and dashboard layout preferences are reset to default — the update process overwrote the local settings file instead of migrating it.",
+    },
+    advantages: [
+      "Catches a user's literal first impression of the product, before any feature is even reached",
+      "Update-path testing specifically protects existing users' data during version upgrades",
+      "Clean-environment testing surfaces missing dependencies invisible on dev machines",
+      "Relatively quick to test manually compared to the cost of a broken install reaching real users",
+    ],
+    limitations: [
+      "Manual and environment-specific — requires genuinely clean systems/VMs to avoid false positives",
+      "Doesn't scale easily across every possible OS version and hardware configuration combination",
+      "Update-path testing requires maintaining prior release builds and realistic migration fixtures",
+      "App-store review and rollout mechanisms introduce platform behaviors outside team control",
+    ],
+    tools: [
+      {
+        name: "Manual Clean-State Matrix",
+        sub: "Clean Virtual Machine & Sandbox State Verification",
+        url: "https://hearth-learn.vercel.app/manuals/testing-types",
+        seeChapter: 5,
+        desc: "Installation testing is inherently manual (see Chapter 5), environment-specific, and best done on genuinely clean systems or fresh device images, since a developer's own machine already has dependencies and prior state that would mask real installation problems.",
+        adv: [
+          "Zero software overhead — validates real user installer dialogs and permissions",
+          "Exercises real disk permissions, firewall prompts, and registry write locks",
+          "Audits data persistence during real in-place binary upgrades",
+        ],
+        lim: [
+          "Requires provisioning disposable VMs (e.g. VirtualBox, Windows Sandbox, Docker)",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Spin up clean, unprovisioned VM/Sandbox environment",
+            p: "Use Windows Sandbox or fresh macOS user account with no pre-installed runtimes.",
+            c: `Windows Sandbox: launch clean instance with default OS image`,
+          },
+          {
+            t: "Step 2 — Execute clean install test",
+            p: "Verify installer wizard steps, desktop shortcut generation, and startup launch.",
+            c: `Run HRMS-Setup-2.4.0.exe -> Verify installation completes without missing DLL errors`,
+          },
+          {
+            t: "Step 3 — Execute upgrade path test with existing user profile",
+            p: "Install v2.3 first, customize user preferences, then run v2.4 installer over it.",
+            c: `1. Install v2.3.0 -> Save filter "Q3 Engineering Leave"\n2. Run v2.4.0 updater\n3. Launch app -> Verify filter "Q3 Engineering Leave" is preserved intact`,
+          },
+          {
+            t: "Step 4 — Execute clean uninstall verification",
+            p: "Uninstall application and check that file system and registry are cleaned safely.",
+            c: `Uninstall HRMS -> Verify %APPDATA%/HRMS cleans binaries while prompting to retain user data files`,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    no: "40",
+    title: "Penetration Testing",
+    category: "Security",
+    desc: "Penetration testing simulates a real, motivated attacker deliberately trying to break into an application — going beyond automated vulnerability scanning (Chapter 18) to manually chain together weaknesses, exploit business logic flaws, and attempt actual unauthorized access, exactly as a real adversary would.",
+    why: "Automated security scanning (Chapter 18) is good at catching known vulnerability patterns, but a skilled human attacker doesn't stop at a single flagged issue — they chain a minor information leak with a weak permission check with a predictable ID to achieve something far more damaging than any single automated finding would suggest. Penetration testing is what reveals that real, combined risk, which automated tools structurally can't discover on their own.",
+    when: "Before major releases involving authentication, payment, or sensitive data handling, and periodically (e.g. annually, or after significant architecture changes) for applications handling genuinely sensitive data — as a deeper complement to continuous automated security scanning in CI.",
+    practical: {
+      app: "HRMS Cross-Account Data Access",
+      scenario:
+        "A penetration tester manually chains two individually minor findings: predictable, sequential employee IDs in the URL, and a payslip endpoint that only checks for a valid session rather than verifying it belongs to the requested employee.",
+      pass: "The severity is escalated from a routine backlog item to an emergency fix, based on the demonstrated real-world impact rather than the automated scanner's more abstract finding.",
+      fail: "By iterating sequential employee IDs, the tester demonstrates systematic access to every employee's payslip data in the company with a single valid low-privilege login — a full-scale data exposure that automated scanning had only flagged as an isolated finding without demonstrating its true scope.",
+    },
+    advantages: [
+      "Finds real, chained risk that automated scanning alone structurally cannot discover",
+      "Directly tests business logic flaws (e.g. broken object-level authorization across user accounts) that pattern scanners miss",
+      "Produces concrete, demonstrated exploit paths that create urgent prioritization for critical fixes",
+      "Complements continuous automated scanning (Chapter 18) rather than duplicating it",
+    ],
+    limitations: [
+      "Requires genuine security expertise to be effective — cannot be replaced by running an automated tool",
+      "Time-consuming and typically run periodically, not continuously on every commit",
+      "Must have explicit authorization and clearly defined scope — unauthorized testing is illegal",
+      "A clean test result today doesn't guarantee safety after future code changes",
+    ],
+    tools: [
+      {
+        name: "OWASP ZAP",
+        sub: "Interactive Interception Proxy & Penetration Suite",
+        url: "https://www.zaproxy.org",
+        seeChapter: 18,
+        desc: "Used here (see Chapter 18) not just for automated scanning but as an interactive proxy — a human tester actively manipulates requests, chains findings together, and probes business logic manually, using ZAP as a tool to intercept and modify traffic.",
+        adv: [
+          "Intercept and rewrite HTTP/HTTPS requests in flight (Breakpoints)",
+          "Fuzzer tool sends thousands of boundary payloads against specific parameter fields",
+          "Custom payload scripting in JavaScript and Python",
+        ],
+        lim: [
+          "Requires configuring local proxy certificate in target browser",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Configure ZAP as intercepting proxy",
+            p: "Route browser traffic through localhost:8080 to inspect and pause live requests.",
+            c: `Browser Network Proxy -> 127.0.0.1:8080 (ZAP Proxy)`,
+          },
+          {
+            t: "Step 2 — Set breakpoint on sensitive endpoint",
+            p: "Trap request before it reaches server to manipulate payload parameters.",
+            c: `GET /api/v1/employees/1042/payslip\nHeader: Authorization: Bearer <Emp1042_Token>`,
+          },
+          {
+            t: "Step 3 — Manually tamper employee ID to probe Broken Object Level Authorization (BOLA)",
+            p: "Change employee ID to 1043 while keeping Emp 1042 token to verify authorization enforcement.",
+            c: `Tampered Request: GET /api/v1/employees/1043/payslip\nExpected: 403 Forbidden\nActual (Vulnerable): 200 OK with Emp 1043 salary data -> CRITICAL VULNERABILITY CONFIRMED`,
+          },
+          {
+            t: "Step 4 — Document reproduction steps and provide patch recommendation",
+            p: "Produce proof-of-concept exploit report for developers with required session check.",
+            c: `Fix in controller: if (req.user.id !== requestedEmpId && !req.user.isAdmin) throw new ForbiddenException();`,
+          },
+        ],
+      },
+      {
+        name: "Nikto",
+        sub: "Open-Source Web Server Infrastructure Vulnerability Scanner",
+        url: "https://github.com/sullo/nikto",
+        desc: "A free, open-source web server scanner that checks specifically for dangerous files, outdated server software, and known server-level misconfigurations — a useful complement to ZAP's application-layer focus.",
+        adv: [
+          "Scans web servers for over 6700 potentially dangerous files and CGIs",
+          "Checks for outdated server components, exposed .git directories, and open admin endpoints",
+          "Fast CLI execution suitable for infrastructure auditing",
+        ],
+        lim: [
+          "Generates high volume of server log traffic — easily detected by WAFs",
+        ],
+        steps: [
+          {
+            t: "Step 1 — Install and run Nikto against staging target",
+            p: "Execute comprehensive web server configuration scan.",
+            c: `nikto -h https://staging.hrms.internal -ssl -port 443`,
+          },
+          {
+            t: "Step 2 — Analyze security header and exposed file findings",
+            p: "Check for missing security headers (X-Frame-Options, CSP) and backup file disclosures.",
+            c: `+ OSVDB-3092: /admin.bak: Backup file found containing server credentials.\n+ Missing security header: X-Content-Type-Options\n+ Server leaks Nginx version: nginx/1.18.0`,
+          },
+          {
+            t: "Step 3 — Remediate server configuration",
+            p: "Harden Nginx config by deleting exposed backup files and hiding server banners.",
+            c: `server_tokens off;\nadd_header X-Content-Type-Options nosniff;`,
+          },
+        ],
+      },
+    ],
+  },
 ];
+
 
 
 
