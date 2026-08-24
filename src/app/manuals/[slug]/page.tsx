@@ -171,7 +171,17 @@ function GenericManualDetailPage() {
         if (parsed.description) setManualDescription(parsed.description);
         if (parsed.category) setManualCategory(parsed.category);
         if (parsed.estimatedTime) setManualEstimatedTime(parsed.estimatedTime);
-        if (parsed.chapters && Array.isArray(parsed.chapters)) setChapters(parsed.chapters);
+        if (parsed.chapters && Array.isArray(parsed.chapters)) {
+          const catalog = initialManual.chapters;
+          // ponytail: a saved TOC shorter than the catalog is a stale snapshot; keep user-added extras only
+          if (catalog.length > parsed.chapters.length) {
+            const catalogIds = new Set(catalog.map((c) => c.id));
+            const extras = parsed.chapters.filter((c: ManualChapter) => c.id && !catalogIds.has(c.id));
+            setChapters([...catalog, ...extras]);
+          } else {
+            setChapters(parsed.chapters);
+          }
+        }
       } catch (e) {}
     }
   }, [initialManual.id]);
