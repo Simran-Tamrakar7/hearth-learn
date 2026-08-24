@@ -16,6 +16,7 @@ import { stripLeadingNumber } from "@/lib/pathwise-data/helpers.js";
 import { PinButton, getPinnedItems, PinnedItemMetadata } from "@/components/ui/PinButton";
 import { ToolSwitcher } from "@/components/manuals/ToolSwitcher";
 import { TestingTypesInteractiveManual, TESTING_TYPES_CHAPTERS } from "@/components/manuals/TestingTypesInteractiveManual";
+import { readerChaptersFromOverlay } from "@/components/manuals/testing-types-reader";
 
 import {
   ChevronLeft,
@@ -89,8 +90,18 @@ function GenericManualDetailPage() {
   const [manualCategory, setManualCategory] = useState<string>(initialManual.category);
   const [manualEstimatedTime, setManualEstimatedTime] = useState<string>(initialManual.estimatedTime);
 
+  const isTestingTypesManual =
+    slug === "testing-types" ||
+    slug === "testing-types-manual" ||
+    isTestingTypesSlug(slug);
+
+  // Testing Types TOC must follow TESTING_TYPES_CHAPTERS, not a stale localStorage snapshot (was freezing at 64).
+  const catalogChapters = isTestingTypesManual
+    ? readerChaptersFromOverlay(initialManual.chapters)
+    : initialManual.chapters;
+
   // State for editable chapters list
-  const [chapters, setChapters] = useState<ManualChapter[]>(initialManual.chapters);
+  const [chapters, setChapters] = useState<ManualChapter[]>(catalogChapters);
   const [activeChapterIndex, setActiveChapterIndex] = useState<number>(0);
   const [prevChapterIndex, setPrevChapterIndex] = useState<number | null>(null);
   const [completedChapterIds, setCompletedChapterIds] = useState<string[]>([]);
@@ -171,18 +182,13 @@ function GenericManualDetailPage() {
         if (parsed.description) setManualDescription(parsed.description);
         if (parsed.category) setManualCategory(parsed.category);
         if (parsed.estimatedTime) setManualEstimatedTime(parsed.estimatedTime);
-        if (parsed.chapters && Array.isArray(parsed.chapters)) {
-          const catalog = initialManual.chapters;
-          // ponytail: a saved TOC shorter than the catalog is a stale snapshot; keep user-added extras only
-          if (catalog.length > parsed.chapters.length) {
-            const catalogIds = new Set(catalog.map((c) => c.id));
-            const extras = parsed.chapters.filter((c: ManualChapter) => c.id && !catalogIds.has(c.id));
-            setChapters([...catalog, ...extras]);
-          } else {
-            setChapters(parsed.chapters);
-          }
+        if (parsed.chapters && Array.isArray(parsed.chapters) && !isTestingTypesManual) {
+          setChapters(parsed.chapters);
         }
       } catch (e) {}
+    }
+    if (isTestingTypesManual) {
+      setChapters(readerChaptersFromOverlay(initialManual.chapters));
     }
   }, [initialManual.id]);
 
@@ -280,7 +286,7 @@ function GenericManualDetailPage() {
       description: manualDescription,
       category: manualCategory,
       estimatedTime: manualEstimatedTime,
-      chapters,
+      ...(isTestingTypesManual ? {} : { chapters }),
     };
     saveCustomDataToStorage(updated);
     setIsEditManualModalOpen(false);
