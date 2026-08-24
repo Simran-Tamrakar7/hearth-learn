@@ -998,26 +998,26 @@ function GenericManualDetailPage() {
 
           <div className="lg:col-span-4 xl:col-span-4 sticky top-24 max-h-[82vh] min-h-0">
             <div className="rounded-2xl border border-[#E7E0D3] bg-[#FAF7F2] shadow-xs overflow-hidden flex flex-col max-h-[82vh]">
-              <div className="flex items-center justify-between gap-2 px-2.5 pt-2.5 pb-2 border-b border-[#E7E0D3]">
+              <div className="flex flex-wrap items-center justify-between gap-2 px-2.5 pt-2.5 pb-2 border-b border-[#E7E0D3]">
                 <div className="flex items-center gap-1.5 text-xs font-serif-display font-bold text-[#1C2A26] tracking-wider uppercase min-w-0">
                   <BookOpen className="w-4 h-4 text-[#D97706] shrink-0" />
                   <span className="truncate">Table of Contents</span>
                 </div>
 
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <button
                     type="button"
                     onClick={handleCreatePart}
-                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#1C2A26] hover:text-[#D97706] px-1 py-0.5"
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-white bg-[#1C2A26] hover:bg-[#243530] px-2 py-1 rounded-lg"
                     title="Add Part"
                   >
-                    <Plus className="w-3.5 h-3.5" />
+                    <Plus className="w-3.5 h-3.5 text-[#D97706]" />
                     Add Part
                   </button>
                   <button
                     type="button"
                     onClick={openAddChapterModal}
-                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#D97706] hover:text-[#B45309] px-1 py-0.5"
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#D97706] bg-white border border-[#E7E0D3] hover:border-[#D97706] px-2 py-1 rounded-lg"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Add Chapter
@@ -1025,34 +1025,34 @@ function GenericManualDetailPage() {
                 </div>
               </div>
 
-              {selectedPartIndices.length > 0 && (
-                <div className="flex flex-wrap items-center gap-1 px-2 py-1.5 border-b border-[#E7E0D3] bg-white">
-                  <span className="text-[10px] font-bold text-[#52635E] mr-1">
-                    {selectedPartIndices.length} selected
-                  </span>
-                  <button type="button" onClick={() => handleMoveSelectedParts(-1)} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md border border-[#E7E0D3] hover:border-[#D97706]" title="Move up">
-                    <ArrowUp className="w-3 h-3" /> Up
-                  </button>
-                  <button type="button" onClick={() => handleMoveSelectedParts(1)} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md border border-[#E7E0D3] hover:border-[#D97706]" title="Move down">
-                    <ArrowDown className="w-3 h-3" /> Down
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleMergeSelectedParts}
-                    disabled={selectedPartIndices.length < 2}
-                    className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md border border-[#E7E0D3] hover:border-[#D97706] disabled:opacity-40"
-                    title="Merge selected parts"
-                  >
-                    <Combine className="w-3 h-3" /> Merge
-                  </button>
-                  <button type="button" onClick={() => handleDeleteSelectedParts(selectedPartIndices)} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md border border-rose-200 text-rose-700 hover:bg-rose-50" title="Delete selected">
-                    <Trash2 className="w-3 h-3" /> Delete
-                  </button>
+              <div className="flex flex-wrap items-center gap-1 px-2 py-1.5 border-b border-[#E7E0D3] bg-white">
+                <span className="text-[10px] font-bold text-[#52635E] mr-1">
+                  {selectedPartIndices.length > 0 ? `${selectedPartIndices.length} selected` : "Select parts"}
+                </span>
+                <button type="button" onClick={() => handleMoveSelectedParts(-1)} disabled={selectedPartIndices.length === 0} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#FAF7F2] hover:border-[#D97706] disabled:opacity-40" title="Move up">
+                  <ArrowUp className="w-3 h-3" /> Up
+                </button>
+                <button type="button" onClick={() => handleMoveSelectedParts(1)} disabled={selectedPartIndices.length === 0} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#FAF7F2] hover:border-[#D97706] disabled:opacity-40" title="Move down">
+                  <ArrowDown className="w-3 h-3" /> Down
+                </button>
+                <button
+                  type="button"
+                  onClick={handleMergeSelectedParts}
+                  disabled={selectedPartIndices.length < 2}
+                  className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#FAF7F2] hover:border-[#D97706] disabled:opacity-40"
+                  title="Merge selected parts"
+                >
+                  <Combine className="w-3 h-3" /> Merge
+                </button>
+                <button type="button" onClick={() => handleDeleteSelectedParts(selectedPartIndices)} disabled={selectedPartIndices.length === 0} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-rose-200 text-rose-700 bg-rose-50 hover:bg-rose-100 disabled:opacity-40" title="Delete selected">
+                  <Trash2 className="w-3 h-3" /> Delete
+                </button>
+                {selectedPartIndices.length > 0 && (
                   <button type="button" onClick={() => setSelectedPartIndices([])} className="ml-auto text-[10px] font-bold text-[#8A9B95] hover:text-[#1C2A26]">
                     Clear
                   </button>
-                </div>
-              )}
+                )}
+              </div>
 
               <div className="relative px-2 pt-2">
                 <Search className="w-3.5 h-3.5 text-[#8A9B95] absolute left-4 top-[1.125rem] pointer-events-none" />
@@ -1081,12 +1081,12 @@ function GenericManualDetailPage() {
                 )}
                 {filteredPartGroups.map((part) => (
                   <div key={part.partKey} className="space-y-0.5">
-                    <div className="flex items-center gap-0.5 px-1 pt-1 pb-0.5">
+                    <div className="flex items-center gap-1 px-1.5 py-1 rounded-lg bg-white border border-[#E7E0D3]">
                       <input
                         type="checkbox"
                         checked={selectedPartIndices.includes(part.index)}
                         onChange={() => togglePartSelected(part.index)}
-                        className="rounded border-[#D4CBBB] text-[#D97706] focus:ring-[#D97706] w-3 h-3 shrink-0"
+                        className="rounded border-[#D4CBBB] text-[#D97706] focus:ring-[#D97706] w-3.5 h-3.5 shrink-0"
                         aria-label={`Select ${displayPartTitle(part.index, part.name)}`}
                       />
                       {editingPartIndex === part.index ? (
@@ -1110,7 +1110,7 @@ function GenericManualDetailPage() {
                         </div>
                       ) : (
                         <>
-                          <p className="flex-1 min-w-0 px-1 text-[10px] font-bold uppercase tracking-wider text-[#D97706] truncate" title={displayPartTitle(part.index, part.name)}>
+                          <p className="flex-1 min-w-0 px-1 text-[11px] font-bold tracking-wide text-[#D97706] truncate" title={displayPartTitle(part.index, part.name)}>
                             {displayPartTitle(part.index, part.name)}
                           </p>
                           <button
@@ -1129,10 +1129,10 @@ function GenericManualDetailPage() {
                                 return [...next].sort((a, b) => a - b);
                               });
                             }}
-                            className="p-0.5 text-[#8A9B95] hover:text-[#D97706] disabled:opacity-30"
+                            className="p-1 rounded-md bg-[#FAF7F2] text-[#52635E] hover:text-[#D97706] hover:bg-[#F5EFE6] disabled:opacity-30"
                             title="Move part up"
                           >
-                            <ArrowUp className="w-3 h-3" />
+                            <ArrowUp className="w-3.5 h-3.5" />
                           </button>
                           <button
                             type="button"
@@ -1150,10 +1150,10 @@ function GenericManualDetailPage() {
                                 return [...next].sort((a, b) => a - b);
                               });
                             }}
-                            className="p-0.5 text-[#8A9B95] hover:text-[#D97706] disabled:opacity-30"
+                            className="p-1 rounded-md bg-[#FAF7F2] text-[#52635E] hover:text-[#D97706] hover:bg-[#F5EFE6] disabled:opacity-30"
                             title="Move part down"
                           >
-                            <ArrowDown className="w-3 h-3" />
+                            <ArrowDown className="w-3.5 h-3.5" />
                           </button>
                           <button
                             type="button"
@@ -1161,18 +1161,18 @@ function GenericManualDetailPage() {
                               setEditingPartIndex(part.index);
                               setEditingPartName(part.name);
                             }}
-                            className="p-0.5 text-[#8A9B95] hover:text-[#D97706]"
+                            className="p-1 rounded-md bg-[#FAF7F2] text-[#52635E] hover:text-[#D97706] hover:bg-[#F5EFE6]"
                             title="Edit part name"
                           >
-                            <SquarePen className="w-3 h-3" />
+                            <SquarePen className="w-3.5 h-3.5" />
                           </button>
                           <button
                             type="button"
                             onClick={() => handleDeleteSelectedParts([part.index])}
-                            className="p-0.5 text-[#8A9B95] hover:text-red-600"
+                            className="p-1 rounded-md bg-[#FAF7F2] text-[#52635E] hover:text-red-600 hover:bg-rose-50"
                             title="Delete part"
                           >
-                            <Trash2 className="w-3 h-3" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </>
                       )}
