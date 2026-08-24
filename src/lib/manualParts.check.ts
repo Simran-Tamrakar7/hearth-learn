@@ -6,6 +6,7 @@ import {
   displayPartTitle,
   groupChaptersIntoParts,
   mergeParts,
+  moveChapterToPart,
   moveParts,
   renamePart,
   stripPartNumber,
@@ -80,5 +81,23 @@ assert.equal(groupChaptersIntoParts(mergedGap)[0].chapters.map((c) => c.id).join
 
 assert.equal(chapterIndexAfter(merged, "e", 0), merged.findIndex((c) => c.id === "e"));
 assert.equal(chapterIndexAfter(merged, "missing", 9), merged.length - 1);
+
+const toPart = moveChapterToPart(seed, 0, 2);
+assert.equal(toPart.map((c) => c.id).join(""), "bcdae");
+assert.equal(groupChaptersIntoParts(toPart)[2].chapters.map((c) => c.id).join(""), "da");
+assert.equal(displayPartTitle(2, groupChaptersIntoParts(toPart)[2].name), "Part 3 · Functional");
+
+const emptied = moveChapterToPart(seed, 2, 0);
+assert.equal(emptied.map((c) => c.id).join(""), "abcde");
+assert.equal(groupChaptersIntoParts(emptied).length, 3);
+assert.equal(groupChaptersIntoParts(emptied)[0].chapters.map((c) => c.id).join(""), "abc");
+
+const same = moveChapterToPart(seed, 0, 0);
+assert.equal(same.map((c) => c.id).join(""), "abcde");
+
+const fresh = moveChapterToPart(seed, 0, -1);
+assert.equal(fresh.map((c) => c.id).join(""), "bcdea");
+assert.equal(groupChaptersIntoParts(fresh).length, 5);
+assert.equal(fresh[fresh.length - 1].id, "a");
 
 console.log("manualParts.check: ok");
