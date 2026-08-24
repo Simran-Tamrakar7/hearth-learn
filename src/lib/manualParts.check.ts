@@ -5,8 +5,10 @@ import {
   deleteParts,
   displayPartTitle,
   groupChaptersIntoParts,
+  mergeChapters,
   mergeParts,
   moveChapterToPart,
+  moveChapters,
   moveParts,
   renamePart,
   stripPartNumber,
@@ -99,5 +101,14 @@ const fresh = moveChapterToPart(seed, 0, -1);
 assert.equal(fresh.map((c) => c.id).join(""), "bcdea");
 assert.equal(groupChaptersIntoParts(fresh).length, 5);
 assert.equal(fresh[fresh.length - 1].id, "a");
+
+const chUp = moveChapters(seed, [2], -1);
+assert.equal(chUp.chapters.map((c) => c.id).join(""), "acbde");
+assert.deepEqual(chUp.selected, [1]);
+
+const chMerge = mergeChapters(seed, [0, 1]);
+assert.equal(chMerge.map((c) => c.id).join(""), "acde");
+assert.ok((chMerge[0].contentMarkdown || "").includes("b"));
+assert.equal(chMerge.length, 4);
 
 console.log("manualParts.check: ok");

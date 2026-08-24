@@ -23,8 +23,10 @@ import {
   deleteParts,
   displayPartTitle,
   groupChaptersIntoParts,
+  mergeChapters,
   mergeParts,
   moveChapterToPart,
+  moveChapters,
   moveParts,
   renamePart,
 } from "@/lib/manualParts";
@@ -160,6 +162,9 @@ function GenericManualDetailPage() {
   const [chapterModalMode, setChapterModalMode] = useState<"add" | "edit">("add");
   const [editingChapterIndex, setEditingChapterIndex] = useState<number>(0);
   const [selectedPartIndices, setSelectedPartIndices] = useState<number[]>([]);
+  const [selectedChapterIndices, setSelectedChapterIndices] = useState<number[]>([]);
+  const [isEditingParts, setIsEditingParts] = useState<boolean>(false);
+  const [isEditingChapters, setIsEditingChapters] = useState<boolean>(false);
   const [editingPartIndex, setEditingPartIndex] = useState<number | null>(null);
   const [editingPartName, setEditingPartName] = useState<string>("");
 
@@ -624,6 +629,65 @@ function GenericManualDetailPage() {
     );
   };
 
+  const toggleChapterSelected = (index: number) => {
+    setSelectedChapterIndices((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index].sort((a, b) => a - b)
+    );
+  };
+
+  const toggleEditParts = () => {
+    if (isEditingParts) {
+      setSelectedPartIndices([]);
+      setEditingPartIndex(null);
+      setIsEditingParts(false);
+    } else {
+      setIsEditingParts(true);
+    }
+  };
+
+  const toggleEditChapters = () => {
+    if (isEditingChapters) {
+      setSelectedChapterIndices([]);
+      setIsEditingChapters(false);
+    } else {
+      setIsEditingChapters(true);
+    }
+  };
+
+  const handleMoveSelectedChapters = (direction: -1 | 1) => {
+    if (selectedChapterIndices.length === 0) return;
+    const result = moveChapters(chapters, selectedChapterIndices, direction);
+    persistChapters(result.chapters, activeChapter.id);
+    setSelectedChapterIndices(result.selected);
+  };
+
+  const handleMergeSelectedChapters = () => {
+    if (selectedChapterIndices.length < 2) {
+      toast({ type: "error", title: "Select chapters to merge", description: "Pick two or more chapters." });
+      return;
+    }
+    const keepId = chapters[Math.min(...selectedChapterIndices)]?.id;
+    persistChapters(mergeChapters(chapters, selectedChapterIndices), keepId);
+    setSelectedChapterIndices([]);
+    toast({ type: "success", title: "Chapters Merged", description: "Combined into the first selected chapter." });
+  };
+
+  const handleDeleteSelectedChapters = (indices: number[]) => {
+    if (indices.length === 0) return;
+    if (indices.length >= chapters.length) {
+      const kept = emptyChapter();
+      persistChapters([kept], kept.id);
+    } else {
+      const drop = new Set(indices);
+      persistChapters(
+        chapters.filter((_, i) => !drop.has(i)).map((c, i) => ({ ...c, order: i + 1 })),
+        activeChapter.id
+      );
+    }
+    setSelectedChapterIndices([]);
+    toast({ type: "info", title: "Chapter Deleted", description: `Removed ${indices.length} chapter${indices.length === 1 ? "" : "s"}.` });
+  };
+
   // Inline formatting helper for **bold** and `code` without raw Markdown tokens
   const parseInlineFormatting = (text: string) => {
     if (!text) return "";
@@ -1019,12 +1083,29 @@ function GenericManualDetailPage() {
                 <div className="flex items-center gap-1.5 shrink-0">
                   <button
                     type="button"
-                    onClick={handleCreatePart}
-                    className="inline-flex items-center gap-1 text-[11px] font-bold text-white bg-[#1C2A26] hover:bg-[#243530] px-2 py-1 rounded-lg"
-                    title="Add Part"
+                    onClick={toggleEditParts}
+                    className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-lg ${
+                      isEditingParts
+                        ? "text-white bg-[#1C2A26]"
+                        : "text-[#1C2A26] bg-white border border-[#E7E0D3] hover:border-[#D97706]"
+                    }`}
+                    title="Edit parts"
                   >
-                    <Plus className="w-3.5 h-3.5 text-[#D97706]" />
-                    Add Part
+                    <SquarePen className="w-3.5 h-3.5 text-[#D97706]" />
+                    Edit Part
+                  </button>
+                  <button
+                    type="button"
+                    onClick={toggleEditChapters}
+                    className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-lg ${
+                      isEditingChapters
+                        ? "text-white bg-[#1C2A26]"
+                        : "text-[#D97706] bg-white border border-[#E7E0D3] hover:border-[#D97706]"
+                    }`}
+                    title="Edit chapters"
+                  >
+                    <SquarePen className="w-3.5 h-3.5" />
+                    Edit Chapter
                   </button>
                   <button
                     type="button"
@@ -1037,10 +1118,14 @@ function GenericManualDetailPage() {
                 </div>
               </div>
 
+              {isEditingParts && (
               <div className="flex flex-wrap items-center gap-1 px-2 py-1.5 border-b border-[#E7E0D3] bg-white">
                 <span className="text-[10px] font-bold text-[#52635E] mr-1">
-                  {selectedPartIndices.length > 0 ? `${selectedPartIndices.length} selected` : "Select parts"}
+                  {selectedPartIndices.length > 0 ? `${selectedPartIndices.length} parts` : "Select parts"}
                 </span>
+                <button type="button" onClick={handleCreatePart} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#1C2A26] text-white" title="Add part">
+                  <Plus className="w-3 h-3 text-[#D97706]" /> Part
+                </button>
                 <button type="button" onClick={() => handleMoveSelectedParts(-1)} disabled={selectedPartIndices.length === 0} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#FAF7F2] hover:border-[#D97706] disabled:opacity-40" title="Move up">
                   <ArrowUp className="w-3 h-3" /> Up
                 </button>
@@ -1065,6 +1150,38 @@ function GenericManualDetailPage() {
                   </button>
                 )}
               </div>
+              )}
+
+              {isEditingChapters && (
+              <div className="flex flex-wrap items-center gap-1 px-2 py-1.5 border-b border-[#E7E0D3] bg-white">
+                <span className="text-[10px] font-bold text-[#52635E] mr-1">
+                  {selectedChapterIndices.length > 0 ? `${selectedChapterIndices.length} chapters` : "Select chapters"}
+                </span>
+                <button type="button" onClick={() => handleMoveSelectedChapters(-1)} disabled={selectedChapterIndices.length === 0} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#FAF7F2] hover:border-[#D97706] disabled:opacity-40" title="Move up">
+                  <ArrowUp className="w-3 h-3" /> Up
+                </button>
+                <button type="button" onClick={() => handleMoveSelectedChapters(1)} disabled={selectedChapterIndices.length === 0} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#FAF7F2] hover:border-[#D97706] disabled:opacity-40" title="Move down">
+                  <ArrowDown className="w-3 h-3" /> Down
+                </button>
+                <button
+                  type="button"
+                  onClick={handleMergeSelectedChapters}
+                  disabled={selectedChapterIndices.length < 2}
+                  className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#FAF7F2] hover:border-[#D97706] disabled:opacity-40"
+                  title="Merge selected chapters"
+                >
+                  <Combine className="w-3 h-3" /> Merge
+                </button>
+                <button type="button" onClick={() => handleDeleteSelectedChapters(selectedChapterIndices)} disabled={selectedChapterIndices.length === 0} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-rose-200 text-rose-700 bg-rose-50 hover:bg-rose-100 disabled:opacity-40" title="Delete selected">
+                  <Trash2 className="w-3 h-3" /> Delete
+                </button>
+                {selectedChapterIndices.length > 0 && (
+                  <button type="button" onClick={() => setSelectedChapterIndices([])} className="ml-auto text-[10px] font-bold text-[#8A9B95] hover:text-[#1C2A26]">
+                    Clear
+                  </button>
+                )}
+              </div>
+              )}
 
               <div className="relative px-2 pt-2">
                 <Search className="w-3.5 h-3.5 text-[#8A9B95] absolute left-4 top-[1.125rem] pointer-events-none" />
@@ -1093,7 +1210,8 @@ function GenericManualDetailPage() {
                 )}
                 {filteredPartGroups.map((part) => (
                   <div key={part.partKey} className="space-y-0.5">
-                    <div className="flex items-center gap-1 px-1.5 py-1 rounded-lg bg-white border border-[#E7E0D3]">
+                    <div className={`flex items-center gap-1 px-1.5 py-1 rounded-lg ${isEditingParts ? "bg-white border border-[#E7E0D3]" : ""}`}>
+                      {isEditingParts && (
                       <input
                         type="checkbox"
                         checked={selectedPartIndices.includes(part.index)}
@@ -1101,6 +1219,7 @@ function GenericManualDetailPage() {
                         className="rounded border-[#D4CBBB] text-[#D97706] focus:ring-[#D97706] w-3.5 h-3.5 shrink-0"
                         aria-label={`Select ${displayPartTitle(part.index, part.name)}`}
                       />
+                      )}
                       {editingPartIndex === part.index ? (
                         <div className="flex items-center gap-1 flex-1 min-w-0">
                           <input
@@ -1125,6 +1244,8 @@ function GenericManualDetailPage() {
                           <p className="flex-1 min-w-0 px-1 text-[11px] font-bold tracking-wide text-[#D97706] truncate" title={displayPartTitle(part.index, part.name)}>
                             {displayPartTitle(part.index, part.name)}
                           </p>
+                          {isEditingParts && (
+                          <>
                           <button
                             type="button"
                             disabled={part.index === 0}
@@ -1186,6 +1307,8 @@ function GenericManualDetailPage() {
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
+                          </>
+                          )}
                         </>
                       )}
                     </div>
@@ -1204,6 +1327,15 @@ function GenericManualDetailPage() {
                             isActive ? "bg-[#1C2A26]" : "hover:bg-[#F3EDE2]"
                           }`}
                         >
+                          {isEditingChapters && (
+                            <input
+                              type="checkbox"
+                              checked={selectedChapterIndices.includes(idx)}
+                              onChange={() => toggleChapterSelected(idx)}
+                              className="ml-1 rounded border-[#D4CBBB] text-[#D97706] focus:ring-[#D97706] w-3.5 h-3.5 shrink-0"
+                              aria-label={`Select ${displayTitle}`}
+                            />
+                          )}
                           <button
                             type="button"
                             onClick={() => setActiveChapterIndex(idx)}
@@ -1222,7 +1354,54 @@ function GenericManualDetailPage() {
                             </span>
                           </button>
 
+                          {isEditingChapters && (
                           <div className="flex items-center shrink-0 pr-1">
+                            <button
+                              type="button"
+                              disabled={idx === 0}
+                              onClick={() => {
+                                const result = moveChapters(chapters, [idx], -1);
+                                persistChapters(result.chapters, chapters[activeChapterIndex]?.id);
+                                setSelectedChapterIndices((prev) => {
+                                  if (!prev.length) return prev;
+                                  const next = new Set(prev);
+                                  if (next.has(idx)) {
+                                    next.delete(idx);
+                                    result.selected.forEach((i) => next.add(i));
+                                  }
+                                  return [...next].sort((a, b) => a - b);
+                                });
+                              }}
+                              className={`p-1 rounded-md transition-colors disabled:opacity-30 ${
+                                isActive ? "text-amber-400 hover:text-white" : "text-[#8A9B95] hover:text-[#D97706]"
+                              }`}
+                              title="Move chapter up"
+                            >
+                              <ArrowUp className="w-3 h-3" />
+                            </button>
+                            <button
+                              type="button"
+                              disabled={idx === chapters.length - 1}
+                              onClick={() => {
+                                const result = moveChapters(chapters, [idx], 1);
+                                persistChapters(result.chapters, chapters[activeChapterIndex]?.id);
+                                setSelectedChapterIndices((prev) => {
+                                  if (!prev.length) return prev;
+                                  const next = new Set(prev);
+                                  if (next.has(idx)) {
+                                    next.delete(idx);
+                                    result.selected.forEach((i) => next.add(i));
+                                  }
+                                  return [...next].sort((a, b) => a - b);
+                                });
+                              }}
+                              className={`p-1 rounded-md transition-colors disabled:opacity-30 ${
+                                isActive ? "text-amber-400 hover:text-white" : "text-[#8A9B95] hover:text-[#D97706]"
+                              }`}
+                              title="Move chapter down"
+                            >
+                              <ArrowDown className="w-3 h-3" />
+                            </button>
                             <button
                               type="button"
                               onClick={() => openEditChapterModal(idx)}
@@ -1235,8 +1414,6 @@ function GenericManualDetailPage() {
                             >
                               <Edit className="w-3 h-3" />
                             </button>
-
-
                             <button
                               type="button"
                               onClick={() => handleDeleteChapter(idx)}
@@ -1250,6 +1427,7 @@ function GenericManualDetailPage() {
                               <Trash2 className="w-3 h-3" />
                             </button>
                           </div>
+                          )}
                         </div>
                       );
                     })}

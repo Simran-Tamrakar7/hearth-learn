@@ -237,6 +237,60 @@ export function moveChapterToPart<T extends PartishChapter>(
   return stamp(ensureKeys(groups));
 }
 
+export function moveChapters<T extends PartishChapter>(
+  chapters: T[],
+  indices: number[],
+  direction: -1 | 1
+): { chapters: T[]; selected: number[] } {
+  const next = chapters.map((c) => ({ ...c }));
+  const sel = new Set(indices.filter((i) => i >= 0 && i < next.length));
+  if (sel.size === 0) return { chapters, selected: [] };
+
+  if (direction === -1) {
+    for (let i = 0; i < next.length; i++) {
+      if (sel.has(i) && i > 0 && !sel.has(i - 1)) {
+        [next[i - 1], next[i]] = [next[i], next[i - 1]];
+        sel.delete(i);
+        sel.add(i - 1);
+      }
+    }
+  } else {
+    for (let i = next.length - 1; i >= 0; i--) {
+      if (sel.has(i) && i < next.length - 1 && !sel.has(i + 1)) {
+        [next[i + 1], next[i]] = [next[i], next[i + 1]];
+        sel.delete(i);
+        sel.add(i + 1);
+      }
+    }
+  }
+
+  return {
+    chapters: next.map((c, i) => ({ ...c, order: i + 1 })),
+    selected: [...sel].sort((a, b) => a - b),
+  };
+}
+
+export function mergeChapters<T extends { contentMarkdown?: string; title?: string; overviewText?: string; order?: number }>(
+  chapters: T[],
+  indices: number[]
+): T[] {
+  const unique = [...new Set(indices)].filter((i) => i >= 0 && i < chapters.length).sort((a, b) => a - b);
+  if (unique.length < 2) return chapters;
+  const keep = unique[0];
+  const drop = new Set(unique.slice(1));
+  const extra = unique.slice(1)
+    .map((i) => {
+      const ch = chapters[i];
+      const heading = ch.title ? `\n\n# ${ch.title}\n\n` : "\n\n";
+      return heading + (ch.contentMarkdown || ch.overviewText || "");
+    })
+    .join("");
+  return chapters
+    .map((ch, i) => (i === keep ? { ...ch, contentMarkdown: (ch.contentMarkdown || "") + extra } : ch))
+    .filter((_, i) => !drop.has(i))
+    .map((ch, i) => ({ ...ch, order: i + 1 }));
+}
+
 export function chapterIndexAfter<T extends { id?: string }>(
   chapters: T[],
   keepId: string | undefined,
