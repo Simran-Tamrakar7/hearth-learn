@@ -187,6 +187,56 @@ export function mergeParts<T extends PartishChapter>(chapters: T[], partIndices:
   return stamp(ensureKeys(remaining));
 }
 
+/** Move one chapter into another part (append). -1 creates a new part at the end. */
+export function moveChapterToPart<T extends PartishChapter>(
+  chapters: T[],
+  chapterIndex: number,
+  destPartIndex: number
+): T[] {
+  if (chapterIndex < 0 || chapterIndex >= chapters.length) return chapters;
+
+  const groups = groupChaptersIntoParts(chapters).map((g) => ({
+    name: g.name,
+    partKey: g.partKey,
+    chapters: [...g.chapters],
+  }));
+
+  let src = -1;
+  let offset = -1;
+  let seen = 0;
+  for (let i = 0; i < groups.length; i++) {
+    const n = groups[i].chapters.length;
+    if (chapterIndex < seen + n) {
+      src = i;
+      offset = chapterIndex - seen;
+      break;
+    }
+    seen += n;
+  }
+  if (src < 0) return chapters;
+
+  const makeNew = destPartIndex < 0 || destPartIndex >= groups.length;
+  if (!makeNew && destPartIndex === src) return chapters;
+
+  const [moved] = groups[src].chapters.splice(offset, 1);
+  if (groups[src].chapters.length === 0) {
+    groups.splice(src, 1);
+    if (!makeNew && destPartIndex > src) destPartIndex -= 1;
+  }
+
+  if (makeNew || destPartIndex < 0 || destPartIndex >= groups.length) {
+    groups.push({
+      name: stripPartNumber(moved.subtitle) || "New Part",
+      partKey: `part-${Date.now()}-${groups.length}`,
+      chapters: [moved],
+    });
+  } else {
+    groups[destPartIndex].chapters.push(moved);
+  }
+
+  return stamp(ensureKeys(groups));
+}
+
 export function chapterIndexAfter<T extends { id?: string }>(
   chapters: T[],
   keepId: string | undefined,

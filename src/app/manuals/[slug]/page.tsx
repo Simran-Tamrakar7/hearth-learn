@@ -24,9 +24,9 @@ import {
   displayPartTitle,
   groupChaptersIntoParts,
   mergeParts,
+  moveChapterToPart,
   moveParts,
   renamePart,
-  stripPartNumber,
 } from "@/lib/manualParts";
 
 import {
@@ -170,6 +170,7 @@ function GenericManualDetailPage() {
   const [formChapterContent, setFormChapterContent] = useState<string>("");
   const [formChapterCode, setFormChapterCode] = useState<string>("");
   const [formChapterRank, setFormChapterRank] = useState<number>(1);
+  const [formChapterPartIndex, setFormChapterPartIndex] = useState<number>(0);
   const [contentView, setContentView] = useState<"write" | "preview">("write");
   const contentRef = useRef<HTMLTextAreaElement>(null);
   const chapterEditBackup = useRef<{
@@ -179,6 +180,7 @@ function GenericManualDetailPage() {
     content: string;
     code: string;
     rank: number;
+    partIndex: number;
   } | null>(null);
   const [pinnedShowcase, setPinnedShowcase] = useState<PinnedItemMetadata[]>([]);
 
@@ -355,6 +357,7 @@ function GenericManualDetailPage() {
     setFormChapterContent("# New Chapter Title\n\nWrite your lesson content here...");
     setFormChapterCode("# Example code snippet\nprint('Hello Playwright!')");
     setFormChapterRank(chapters.length + 1);
+    setFormChapterPartIndex(host?.index ?? partGroups.length);
     setContentView("write");
     chapterEditBackup.current = {
       title: `Chapter ${chapters.length + 1}: New Chapter`,
@@ -363,6 +366,7 @@ function GenericManualDetailPage() {
       content: "# New Chapter Title\n\nWrite your lesson content here...",
       code: "# Example code snippet\nprint('Hello Playwright!')",
       rank: chapters.length + 1,
+      partIndex: host?.index ?? partGroups.length,
     };
     setIsChapterModalOpen(true);
   };
@@ -380,6 +384,8 @@ function GenericManualDetailPage() {
     setFormChapterContent(chap.contentMarkdown || "");
     setFormChapterCode(chap.codeSnippet || "");
     setFormChapterRank(idx + 1);
+    const host = partGroups.find((g) => g.chapterIndices.includes(idx));
+    setFormChapterPartIndex(host?.index ?? 0);
     setContentView("write");
     chapterEditBackup.current = {
       title: chap.title,
@@ -388,6 +394,7 @@ function GenericManualDetailPage() {
       content: chap.contentMarkdown || "",
       code: chap.codeSnippet || "",
       rank: idx + 1,
+      partIndex: host?.index ?? 0,
     };
     setIsChapterModalOpen(true);
   };
@@ -401,6 +408,7 @@ function GenericManualDetailPage() {
       setFormChapterContent(snap.content);
       setFormChapterCode(snap.code);
       setFormChapterRank(snap.rank);
+      setFormChapterPartIndex(snap.partIndex);
     }
     chapterEditBackup.current = null;
     setIsChapterModalOpen(false);
@@ -454,17 +462,14 @@ function GenericManualDetailPage() {
     };
 
     if (chapterModalMode === "add") {
-      const host = partGroups.find((g) => g.chapterIndices.includes(activeChapterIndex)) || partGroups[partGroups.length - 1];
+      const destPart = partGroups[formChapterPartIndex];
       const newChap: ManualChapter = {
         id: `custom-ch-${Date.now()}`,
         order: chapters.length + 1,
         slug: `ch-${chapters.length + 1}`,
         title: formChapterTitle,
-        subtitle: formChapterSubtitle || host?.name,
-        partKey:
-          host && stripPartNumber(formChapterSubtitle || host.name) === host.name
-            ? host.partKey
-            : `part-${Date.now()}`,
+        subtitle: destPart?.name || formChapterSubtitle || "New Part",
+        partKey: destPart?.partKey || `part-${Date.now()}`,
         estimatedMinutes: formChapterMinutes,
         contentMarkdown: formChapterContent,
         codeSnippet: formChapterCode,
@@ -472,18 +477,19 @@ function GenericManualDetailPage() {
         resourceLinks: [],
       };
       const inserted = [...chapters, newChap];
-      const placed = placeAt(inserted, inserted.length - 1, formChapterRank);
-      updatedChapters = placed.list;
-      setActiveChapterIndex(placed.to);
+      updatedChapters = moveChapterToPart(inserted, inserted.length - 1, formChapterPartIndex);
+      const keepId = newChap.id;
+      setActiveChapterIndex(chapterIndexAfter(updatedChapters, keepId, updatedChapters.length - 1));
       toast({ type: "success", title: "Chapter Created", description: `Added ${newChap.title}.` });
     } else {
       const targetIdx = editingChapterIndex;
+      const destPart = partGroups[formChapterPartIndex];
       updatedChapters = chapters.map((chap, idx) => {
         if (idx === targetIdx) {
           return {
             ...chap,
             title: formChapterTitle,
-            subtitle: formChapterSubtitle,
+            subtitle: destPart?.name || formChapterSubtitle,
             estimatedMinutes: formChapterMinutes,
             contentMarkdown: formChapterContent,
             codeSnippet: formChapterCode,
@@ -491,9 +497,15 @@ function GenericManualDetailPage() {
         }
         return chap;
       });
-      const placed = placeAt(updatedChapters, targetIdx, formChapterRank);
-      updatedChapters = placed.list;
-      setActiveChapterIndex(placed.to);
+      const currentPart = partGroups.find((g) => g.chapterIndices.includes(targetIdx));
+      if (formChapterPartIndex !== (currentPart?.index ?? -1)) {
+        updatedChapters = moveChapterToPart(updatedChapters, targetIdx, formChapterPartIndex);
+      } else {
+        const placed = placeAt(updatedChapters, targetIdx, formChapterRank);
+        updatedChapters = placed.list;
+      }
+      const keepId = chapters[targetIdx]?.id;
+      setActiveChapterIndex(chapterIndexAfter(updatedChapters, keepId, 0));
       toast({ type: "success", title: "Chapter Updated", description: "Saved chapter changes." });
     }
 
@@ -1689,6 +1701,30 @@ function GenericManualDetailPage() {
                 </div>
 
                 <div>
+                  <label className="block font-bold text-[#1C2A26] mb-1">Part</label>
+                  <select
+                    value={formChapterPartIndex}
+                    onChange={(e) => {
+                      const next = Number(e.target.value);
+                      setFormChapterPartIndex(next);
+                      const dest = partGroups[next];
+                      setFormChapterSubtitle(dest?.name || "New Part");
+                    }}
+                    className="w-full p-3 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] focus:outline-none focus:border-[#D97706]"
+                  >
+                    {partGroups.map((g) => (
+                      <option key={g.partKey} value={g.index}>
+                        {displayPartTitle(g.index, g.name)}
+                      </option>
+                    ))}
+                    <option value={partGroups.length}>New part</option>
+                  </select>
+                  <p className="mt-1 text-[11px] text-[#8A9B95]">
+                    Move this chapter into another part. Numbers update from the new order.
+                  </p>
+                </div>
+
+                <div>
                   <label className="block font-bold text-[#1C2A26] mb-1">Chapter number</label>
                   <div className="flex items-center gap-2">
                     <button
@@ -1723,16 +1759,6 @@ function GenericManualDetailPage() {
                       Put this chapter in front of another — e.g. 4 → 3.
                     </span>
                   </div>
-                </div>
-
-                <div>
-                  <label className="block font-bold text-[#1C2A26] mb-1">Subtitle (Optional)</label>
-                  <input
-                    type="text"
-                    value={formChapterSubtitle}
-                    onChange={(e) => setFormChapterSubtitle(e.target.value)}
-                    className="w-full p-3 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] focus:outline-none focus:border-[#D97706]"
-                  />
                 </div>
 
                 <div>
