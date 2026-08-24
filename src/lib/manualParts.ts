@@ -1,10 +1,12 @@
 /** Part grouping + CRUD. "Part N" is always index+1 — never stored as a number. */
 
 export type PartishChapter = {
+  id?: string;
   subtitle?: string;
   partKey?: string;
   order?: number;
   contentMarkdown?: string;
+  parentId?: string;
 };
 
 export type PartGroup<T extends PartishChapter = PartishChapter> = {
@@ -219,6 +221,15 @@ export function moveChapterToPart<T extends PartishChapter>(
   if (!makeNew && destPartIndex === src) return chapters;
 
   const [moved] = groups[src].chapters.splice(offset, 1);
+  const kids: T[] = [];
+  if (!moved.parentId && moved.id) {
+    for (let i = groups[src].chapters.length - 1; i >= 0; i--) {
+      if (groups[src].chapters[i].parentId === moved.id) {
+        kids.unshift(groups[src].chapters.splice(i, 1)[0]);
+      }
+    }
+  }
+  const payload = [moved, ...kids];
   if (groups[src].chapters.length === 0) {
     groups.splice(src, 1);
     if (!makeNew && destPartIndex > src) destPartIndex -= 1;
@@ -228,10 +239,10 @@ export function moveChapterToPart<T extends PartishChapter>(
     groups.push({
       name: stripPartNumber(moved.subtitle) || "New Part",
       partKey: `part-${Date.now()}-${groups.length}`,
-      chapters: [moved],
+      chapters: payload,
     });
   } else {
-    groups[destPartIndex].chapters.push(moved);
+    groups[destPartIndex].chapters.push(...payload);
   }
 
   return stamp(ensureKeys(groups));
@@ -300,4 +311,120 @@ export function chapterIndexAfter<T extends { id?: string }>(
   const idx = chapters.findIndex((c) => c.id === keepId);
   if (idx >= 0) return idx;
   return Math.max(0, Math.min(fallback, Math.max(0, chapters.length - 1)));
+}
+
+export function isSubchapter<T extends { parentId?: string }>(ch: T | undefined): boolean {
+  return Boolean(ch?.parentId);
+}
+
+export function parentIndexOf<T extends { id?: string; parentId?: string }>(chapters: T[], index: number): number {
+  const ch = chapters[index];
+  if (!ch?.parentId) return index;
+  const p = chapters.findIndex((c) => c.id === ch.parentId);
+  return p >= 0 ? p : index;
+}
+
+/** Display numbers in a part: 1, 1.1, 1.2, 2, … */
+export function tocNumbersForPart<T extends { id?: string; parentId?: string }>(
+  chapters: T[],
+  indices: number[]
+): Map<number, string> {
+  const map = new Map<number, string>();
+  let n = 0;
+  for (const idx of indices) {
+    const ch = chapters[idx];
+    if (!ch || ch.parentId) continue;
+    n += 1;
+    map.set(idx, String(n));
+    let s = 0;
+    for (const j of indices) {
+      if (chapters[j]?.parentId === ch.id) {
+        s += 1;
+        map.set(j, `${n}.${s}`);
+      }
+    }
+  }
+  return map;
+}
+
+export function createSubchapter<T extends PartishChapter>(
+  chapters: T[],
+  parentIndex: number,
+  newChapter: T
+): T[] {
+  const parent = chapters[parentIndex];
+  if (!parent) return chapters;
+  const host = parent.parentId ? parentIndexOf(chapters, parentIndex) : parentIndex;
+  const hostCh = chapters[host];
+  if (!hostCh?.id) return chapters;
+  let insertAt = host + 1;
+  while (insertAt < chapters.length && chapters[insertAt].parentId === hostCh.id) insertAt += 1;
+  const row = {
+    ...newChapter,
+    parentId: hostCh.id,
+    subtitle: hostCh.subtitle,
+    partKey: hostCh.partKey,
+  };
+  const next = [...chapters];
+  next.splice(insertAt, 0, row);
+  return next.map((c, i) => ({ ...c, order: i + 1 }));
+}
+
+export function deleteChaptersWithSubs<T extends { id?: string; parentId?: string; order?: number }>(
+  chapters: T[],
+  indices: number[]
+): T[] {
+  const drop = new Set(indices.filter((i) => i >= 0 && i < chapters.length));
+  for (const i of [...drop]) {
+    const ch = chapters[i];
+    if (!ch?.id || ch.parentId) continue;
+    chapters.forEach((c, j) => {
+      if (c.parentId === ch.id) drop.add(j);
+    });
+  }
+  return chapters.filter((_, i) => !drop.has(i)).map((c, i) => ({ ...c, order: i + 1 }));
+}
+
+/** Move a chapter (and its sub-chapters) as one block; subs only swap with siblings. */
+export function moveChapterBlock<T extends PartishChapter>(
+  chapters: T[],
+  index: number,
+  direction: -1 | 1
+): { chapters: T[]; selected: number[] } {
+  const ch = chapters[index];
+  if (!ch) return { chapters, selected: [] };
+
+  if (ch.parentId) {
+    const sibs = chapters.map((_, i) => i).filter((i) => chapters[i].parentId === ch.parentId);
+    const pos = sibs.indexOf(index);
+    const swapWith = sibs[pos + direction];
+    if (swapWith == null) return { chapters, selected: [index] };
+    const next = chapters.map((c) => ({ ...c }));
+    [next[index], next[swapWith]] = [next[swapWith], next[index]];
+    return { chapters: next.map((c, i) => ({ ...c, order: i + 1 })), selected: [swapWith] };
+  }
+
+  let end = index + 1;
+  while (end < chapters.length && chapters[end].parentId === ch.id) end += 1;
+  const block = chapters.slice(index, end);
+
+  if (direction === -1) {
+    if (index === 0) return { chapters, selected: [index] };
+    let prevStart = index - 1;
+    if (chapters[prevStart].parentId) {
+      const p = chapters.findIndex((c) => c.id === chapters[prevStart].parentId);
+      prevStart = p >= 0 ? p : prevStart;
+    }
+    const next = [...chapters.slice(0, prevStart), ...block, ...chapters.slice(prevStart, index), ...chapters.slice(end)];
+    return { chapters: next.map((c, i) => ({ ...c, order: i + 1 })), selected: [prevStart] };
+  }
+
+  if (end >= chapters.length) return { chapters, selected: [index] };
+  const nextCh = chapters[end];
+  let nextEnd = end + 1;
+  if (!nextCh.parentId && nextCh.id) {
+    while (nextEnd < chapters.length && chapters[nextEnd].parentId === nextCh.id) nextEnd += 1;
+  }
+  const next = [...chapters.slice(0, index), ...chapters.slice(end, nextEnd), ...block, ...chapters.slice(nextEnd)];
+  return { chapters: next.map((c, i) => ({ ...c, order: i + 1 })), selected: [index + (nextEnd - end)] };
 }

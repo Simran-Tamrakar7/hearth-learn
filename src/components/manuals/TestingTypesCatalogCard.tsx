@@ -2,10 +2,21 @@
 
 import Link from "next/link";
 import { Compass, ArrowRight, Sparkles, Layers, Terminal, CheckCircle2 } from "lucide-react";
+import { PinButton, manualPinId } from "@/components/ui/PinButton";
 
 export function TestingTypesCatalogCard() {
   return (
-    <section className="w-full">
+    <section className="w-full relative">
+      <div className="absolute top-4 right-4 z-20">
+        <PinButton
+          itemId={manualPinId("testing-types")}
+          itemTitle="Software Testing Types & Levels"
+          itemCategory="Quality Craft"
+          itemType="manual"
+          itemUrl="/manuals/testing-types"
+          variant="icon"
+        />
+      </div>
       <Link
         href="/manuals/testing-types"
         className="group block overflow-hidden rounded-3xl border border-[#E7E0D3] bg-gradient-to-br from-white via-[#FAF7F2] to-[#FEF3C7]/30 p-6 sm:p-8 transition-all hover:border-[#D97706] hover:shadow-md relative"

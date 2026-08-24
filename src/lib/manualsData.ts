@@ -46,6 +46,8 @@ export interface ManualChapter {
   estimatedMinutes: number;
   /** Stable part identity. "Part N" is never stored — it is always the part's index. */
   partKey?: string;
+  /** If set, this row is a sub-chapter of that chapter id (one level only). */
+  parentId?: string;
   subtitle?: string;
   overviewText?: string;
   why?: string;

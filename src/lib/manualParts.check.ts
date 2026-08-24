@@ -2,16 +2,20 @@ import assert from "node:assert/strict";
 import {
   chapterIndexAfter,
   createPart,
+  createSubchapter,
+  deleteChaptersWithSubs,
   deleteParts,
   displayPartTitle,
   groupChaptersIntoParts,
   mergeChapters,
   mergeParts,
+  moveChapterBlock,
   moveChapterToPart,
   moveChapters,
   moveParts,
   renamePart,
   stripPartNumber,
+  tocNumbersForPart,
 } from "./manualParts.ts";
 
 type Ch = {
@@ -110,5 +114,38 @@ const chMerge = mergeChapters(seed, [0, 1]);
 assert.equal(chMerge.map((c) => c.id).join(""), "acde");
 assert.ok((chMerge[0].contentMarkdown || "").includes("b"));
 assert.equal(chMerge.length, 4);
+
+type Nested = Ch & { parentId?: string };
+const nested: Nested[] = [
+  ch("p", "Part 1 · A"),
+  { ...ch("s1", "Part 1 · A"), parentId: "p" },
+  { ...ch("s2", "Part 1 · A"), parentId: "p" },
+  ch("q", "Part 1 · A"),
+];
+const withSub = createSubchapter([ch("p", "Part 1 · A"), ch("q", "Part 1 · A")], 0, ch("s0", "x"));
+assert.equal(withSub.map((c) => c.id).join(""), "ps0q");
+assert.equal(withSub[1].parentId, "p");
+
+const nums = tocNumbersForPart(nested, [0, 1, 2, 3]);
+assert.equal(nums.get(0), "1");
+assert.equal(nums.get(1), "1.1");
+assert.equal(nums.get(2), "1.2");
+assert.equal(nums.get(3), "2");
+
+const movedParent = moveChapterBlock(nested, 0, 1);
+assert.equal(movedParent.chapters.map((c) => c.id).join(""), "qps1s2");
+assert.equal(movedParent.chapters[2].parentId, "p");
+assert.equal(movedParent.chapters[3].parentId, "p");
+
+const movedSub = moveChapterBlock(nested, 1, 1);
+assert.equal(movedSub.chapters.map((c) => c.id).join(""), "ps2s1q");
+
+const gone = deleteChaptersWithSubs(nested, [0]);
+assert.equal(gone.map((c) => c.id).join(""), "q");
+
+const toPartNested = moveChapterToPart(nested, 0, -1);
+assert.equal(toPartNested.map((c) => c.id).join(""), "qps1s2");
+assert.equal(groupChaptersIntoParts(toPartNested).length, 2);
+assert.equal(toPartNested.filter((c) => c.id === "p" || c.parentId === "p").map((c) => c.id).join(""), "ps1s2");
 
 console.log("manualParts.check: ok");

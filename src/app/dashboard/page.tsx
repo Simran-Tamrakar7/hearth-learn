@@ -55,12 +55,12 @@ interface DashboardData {
 
 // Pinnable Manuals Catalog
 const PINNABLE_MANUALS = [
-  { id: "man-playwright", title: "Playwright Automation", category: "Testing & DevOps", slug: "playwright", icon: "🎭" },
-  { id: "man-git", title: "Pro Git & Version Control", category: "DevOps & SCM", slug: "git", icon: "🐙" },
-  { id: "man-nextjs", title: "Next.js 15 App Router", category: "Full-Stack Web", slug: "nextjs", icon: "⚡" },
-  { id: "man-typescript", title: "TypeScript Mastery", category: "Languages", slug: "typescript", icon: "📘" },
-  { id: "man-python", title: "Python 3 & Data Science", category: "Backend & Data", slug: "python", icon: "🐍" },
-  { id: "man-docker", title: "Docker Containers", category: "Cloud Infrastructure", slug: "docker", icon: "🐳" },
+  { id: "man-testing-types", title: "Software Testing Types & Levels", category: "Quality Craft", slug: "testing-types", icon: "🧪" },
+  { id: "man-playwright", title: "Playwright Automation", category: "Automation & Testing", slug: "playwright", icon: "🎭" },
+  { id: "man-cypress", title: "Cypress", category: "Automation & Testing", slug: "cypress", icon: "🌲" },
+  { id: "man-git", title: "Pro Git & Version Control", category: "Foundations", slug: "git-version-control", icon: "🐙" },
+  { id: "man-javascript", title: "JavaScript", category: "Foundations", slug: "javascript", icon: "📘" },
+  { id: "man-prompt-engineering", title: "Prompt Engineering", category: "AI & Prompting", slug: "prompt-engineering", icon: "✨" },
 ];
 
 // Zodiac Signs Data
