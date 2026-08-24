@@ -17,6 +17,17 @@ import { PinButton, getPinnedItems, PinnedItemMetadata } from "@/components/ui/P
 import { ToolSwitcher } from "@/components/manuals/ToolSwitcher";
 import { TestingTypesInteractiveManual, TESTING_TYPES_CHAPTERS } from "@/components/manuals/TestingTypesInteractiveManual";
 import { readerChaptersFromOverlay } from "@/components/manuals/testing-types-reader";
+import {
+  chapterIndexAfter,
+  createPart,
+  deleteParts,
+  displayPartTitle,
+  groupChaptersIntoParts,
+  mergeParts,
+  moveParts,
+  renamePart,
+  stripPartNumber,
+} from "@/lib/manualParts";
 
 import {
   ChevronLeft,
@@ -39,6 +50,9 @@ import {
   Plus,
   X,
   Save,
+  ArrowUp,
+  ArrowDown,
+  Combine,
   FileText,
   Heading1,
   Heading2,
@@ -144,6 +158,10 @@ function GenericManualDetailPage() {
   const [isRoadmapModalOpen, setIsRoadmapModalOpen] = useState<boolean>(false);
   const [isChapterModalOpen, setIsChapterModalOpen] = useState<boolean>(false);
   const [chapterModalMode, setChapterModalMode] = useState<"add" | "edit">("add");
+  const [editingChapterIndex, setEditingChapterIndex] = useState<number>(0);
+  const [selectedPartIndices, setSelectedPartIndices] = useState<number[]>([]);
+  const [editingPartIndex, setEditingPartIndex] = useState<number | null>(null);
+  const [editingPartName, setEditingPartName] = useState<string>("");
 
   // Form State for Chapter Modal
   const [formChapterTitle, setFormChapterTitle] = useState<string>("");
@@ -154,6 +172,14 @@ function GenericManualDetailPage() {
   const [formChapterRank, setFormChapterRank] = useState<number>(1);
   const [contentView, setContentView] = useState<"write" | "preview">("write");
   const contentRef = useRef<HTMLTextAreaElement>(null);
+  const chapterEditBackup = useRef<{
+    title: string;
+    subtitle: string;
+    minutes: number;
+    content: string;
+    code: string;
+    rank: number;
+  } | null>(null);
   const [pinnedShowcase, setPinnedShowcase] = useState<PinnedItemMetadata[]>([]);
 
   useEffect(() => {
@@ -182,13 +208,22 @@ function GenericManualDetailPage() {
         if (parsed.description) setManualDescription(parsed.description);
         if (parsed.category) setManualCategory(parsed.category);
         if (parsed.estimatedTime) setManualEstimatedTime(parsed.estimatedTime);
-        if (parsed.chapters && Array.isArray(parsed.chapters) && !isTestingTypesManual) {
+        if (parsed.chapters && Array.isArray(parsed.chapters) && parsed.chapters.length > 0 && (parsed.tocManaged || !isTestingTypesManual)) {
           setChapters(parsed.chapters);
         }
       } catch (e) {}
     }
     if (isTestingTypesManual) {
-      setChapters(readerChaptersFromOverlay(initialManual.chapters));
+      const saved = localStorage.getItem(`hearth_manual_custom_data_${initialManual.id}`);
+      let tocManaged = false;
+      if (saved) {
+        try {
+          tocManaged = Boolean(JSON.parse(saved).tocManaged);
+        } catch (e) {}
+      }
+      if (!tocManaged) {
+        setChapters(readerChaptersFromOverlay(initialManual.chapters));
+      }
     }
   }, [initialManual.id]);
 
@@ -198,6 +233,20 @@ function GenericManualDetailPage() {
       `hearth_manual_custom_data_${initialManual.id}`,
       JSON.stringify(updatedData)
     );
+  };
+
+  const persistChapters = (updated: ManualChapter[], keepId?: string) => {
+    const id = keepId ?? chapters[activeChapterIndex]?.id;
+    setChapters(updated);
+    setActiveChapterIndex((prev) => chapterIndexAfter(updated, id, prev));
+    saveCustomDataToStorage({
+      title: manualTitle,
+      description: manualDescription,
+      category: manualCategory,
+      estimatedTime: manualEstimatedTime,
+      chapters: updated,
+      tocManaged: true,
+    });
   };
 
   const activeChapter: ManualChapter = chapters[activeChapterIndex] || chapters[0] || {
@@ -214,50 +263,50 @@ function GenericManualDetailPage() {
   const totalChapters = chapters.length;
   const completedCount = completedChapterIds.filter((id) => chapters.some((c) => c.id === id)).length;
   const progressPercent = totalChapters > 0 ? Math.round((completedCount / totalChapters) * 100) : 0;
+  const partGroups = React.useMemo(() => groupChaptersIntoParts(chapters), [chapters]);
+  const overlayChapter = React.useMemo(() => {
+    if (!isTestingTypesManual) return undefined;
+    return TESTING_TYPES_CHAPTERS.find((t) => t.title === activeChapter.title);
+  }, [isTestingTypesManual, activeChapter.title]);
+  const activePartGroup = partGroups.find((g) => g.chapterIndices.includes(activeChapterIndex));
   const roadmapParts = React.useMemo(() => {
-    const map = new Map<
-      string,
-      {
-        id: string;
-        phaseNum: string;
-        title: string;
-        nodes: { num: string; title: string; chapterIndex: number; time: string; description?: string; level?: string }[];
-      }
-    >();
-    chapters.forEach((ch, idx) => {
-      const title = ch.subtitle || "Main";
-      if (!map.has(title)) {
-        map.set(title, { id: title, phaseNum: `P${map.size}`, title, nodes: [] });
-      }
-      map.get(title)!.nodes.push({
-        num: String(idx + 1),
-        title: ch.title,
-        chapterIndex: idx,
-        time: `${ch.estimatedMinutes} min`,
-        level: "All",
-      });
-    });
-    return [...map.values()].map((p, i) => ({ ...p, phaseNum: `P${i}` }));
-  }, [chapters]);
+    return partGroups.map((g) => ({
+      id: g.partKey,
+      phaseNum: `P${g.index + 1}`,
+      title: displayPartTitle(g.index, g.name),
+      nodes: g.chapterIndices.map((idx) => {
+        const ch = chapters[idx];
+        return {
+          num: String(idx + 1),
+          title: ch.title,
+          chapterIndex: idx,
+          time: `${ch.estimatedMinutes} min`,
+          level: "All" as string | undefined,
+          description: undefined as string | undefined,
+        };
+      }),
+    }));
+  }, [partGroups, chapters]);
   const phasesForRoadmap = isPlaywright ? PLAYWRIGHT_ROADMAP_PHASES : roadmapParts;
-  const partCount = phasesForRoadmap.length;
+  const partCount = isPlaywright ? phasesForRoadmap.length : partGroups.length;
   const tocQueryNorm = tocQuery.trim().toLowerCase();
-  const filteredParts = React.useMemo(() => {
-    if (!tocQueryNorm) return roadmapParts;
-    return roadmapParts
-      .map((part) => {
-        const partHit = part.title.toLowerCase().includes(tocQueryNorm);
-        const nodes = partHit
-          ? part.nodes
-          : part.nodes.filter((n) => {
-              const chap = chapters[n.chapterIndex];
-              const title = (chap?.title || n.title).toLowerCase();
-              return title.includes(tocQueryNorm) || String(n.num).includes(tocQueryNorm);
+  const filteredPartGroups = React.useMemo(() => {
+    if (!tocQueryNorm) return partGroups;
+    return partGroups
+      .map((g) => {
+        const label = displayPartTitle(g.index, g.name).toLowerCase();
+        const partHit = label.includes(tocQueryNorm) || g.name.toLowerCase().includes(tocQueryNorm);
+        const chapterIndices = partHit
+          ? g.chapterIndices
+          : g.chapterIndices.filter((idx) => {
+              const chap = chapters[idx];
+              const title = (chap?.title || "").toLowerCase();
+              return title.includes(tocQueryNorm) || String(idx + 1).includes(tocQueryNorm);
             });
-        return { ...part, nodes };
+        return { ...g, chapterIndices };
       })
-      .filter((p) => p.nodes.length > 0);
-  }, [roadmapParts, chapters, tocQueryNorm]);
+      .filter((g) => g.chapterIndices.length > 0);
+  }, [partGroups, chapters, tocQueryNorm]);
 
   const toggleMarkComplete = (chapterId: string) => {
     const exists = completedChapterIds.includes(chapterId);
@@ -281,42 +330,81 @@ function GenericManualDetailPage() {
 
   // Handle Manual Details Edit
   const handleSaveManualEdits = () => {
-    const updated = {
+    let prev: Record<string, unknown> = {};
+    try {
+      prev = JSON.parse(localStorage.getItem(`hearth_manual_custom_data_${initialManual.id}`) || "{}");
+    } catch (e) {}
+    saveCustomDataToStorage({
+      ...prev,
       title: manualTitle,
       description: manualDescription,
       category: manualCategory,
       estimatedTime: manualEstimatedTime,
-      ...(isTestingTypesManual ? {} : { chapters }),
-    };
-    saveCustomDataToStorage(updated);
+    });
     setIsEditManualModalOpen(false);
     toast({ type: "success", title: "Manual Updated", description: "Saved header metadata." });
   };
 
   // Open Chapter Modal for Adding
   const openAddChapterModal = () => {
+    const host = partGroups.find((g) => g.chapterIndices.includes(activeChapterIndex)) || partGroups[partGroups.length - 1];
     setChapterModalMode("add");
     setFormChapterTitle(`Chapter ${chapters.length + 1}: New Chapter`);
-    setFormChapterSubtitle("Chapter Overview");
+    setFormChapterSubtitle(host?.name || "New Part");
     setFormChapterMinutes(15);
     setFormChapterContent("# New Chapter Title\n\nWrite your lesson content here...");
     setFormChapterCode("# Example code snippet\nprint('Hello Playwright!')");
     setFormChapterRank(chapters.length + 1);
     setContentView("write");
+    chapterEditBackup.current = {
+      title: `Chapter ${chapters.length + 1}: New Chapter`,
+      subtitle: host?.name || "New Part",
+      minutes: 15,
+      content: "# New Chapter Title\n\nWrite your lesson content here...",
+      code: "# Example code snippet\nprint('Hello Playwright!')",
+      rank: chapters.length + 1,
+    };
     setIsChapterModalOpen(true);
   };
 
-  // Open Chapter Modal for Editing
-  const openEditChapterModal = () => {
+  // Open Chapter Modal for Editing — bind to the clicked chapter, not the expanded one.
+  const openEditChapterModal = (idx: number) => {
+    const chap = chapters[idx];
+    if (!chap) return;
     setChapterModalMode("edit");
-    setFormChapterTitle(activeChapter.title);
-    setFormChapterSubtitle(activeChapter.subtitle || "");
-    setFormChapterMinutes(activeChapter.estimatedMinutes || 15);
-    setFormChapterContent(activeChapter.contentMarkdown || "");
-    setFormChapterCode(activeChapter.codeSnippet || "");
-    setFormChapterRank(activeChapterIndex + 1);
+    setEditingChapterIndex(idx);
+    setActiveChapterIndex(idx);
+    setFormChapterTitle(chap.title);
+    setFormChapterSubtitle(chap.subtitle || "");
+    setFormChapterMinutes(chap.estimatedMinutes || 15);
+    setFormChapterContent(chap.contentMarkdown || "");
+    setFormChapterCode(chap.codeSnippet || "");
+    setFormChapterRank(idx + 1);
     setContentView("write");
+    chapterEditBackup.current = {
+      title: chap.title,
+      subtitle: chap.subtitle || "",
+      minutes: chap.estimatedMinutes || 15,
+      content: chap.contentMarkdown || "",
+      code: chap.codeSnippet || "",
+      rank: idx + 1,
+    };
     setIsChapterModalOpen(true);
+  };
+
+  const handleCancelChapterEdit = () => {
+    const snap = chapterEditBackup.current;
+    if (snap) {
+      setFormChapterTitle(snap.title);
+      setFormChapterSubtitle(snap.subtitle);
+      setFormChapterMinutes(snap.minutes);
+      setFormChapterContent(snap.content);
+      setFormChapterCode(snap.code);
+      setFormChapterRank(snap.rank);
+    }
+    chapterEditBackup.current = null;
+    setIsChapterModalOpen(false);
+    setContentView("write");
   };
 
   function applyContentFormat(
@@ -366,12 +454,17 @@ function GenericManualDetailPage() {
     };
 
     if (chapterModalMode === "add") {
+      const host = partGroups.find((g) => g.chapterIndices.includes(activeChapterIndex)) || partGroups[partGroups.length - 1];
       const newChap: ManualChapter = {
         id: `custom-ch-${Date.now()}`,
         order: chapters.length + 1,
         slug: `ch-${chapters.length + 1}`,
         title: formChapterTitle,
-        subtitle: formChapterSubtitle,
+        subtitle: formChapterSubtitle || host?.name,
+        partKey:
+          host && stripPartNumber(formChapterSubtitle || host.name) === host.name
+            ? host.partKey
+            : `part-${Date.now()}`,
         estimatedMinutes: formChapterMinutes,
         contentMarkdown: formChapterContent,
         codeSnippet: formChapterCode,
@@ -384,8 +477,9 @@ function GenericManualDetailPage() {
       setActiveChapterIndex(placed.to);
       toast({ type: "success", title: "Chapter Created", description: `Added ${newChap.title}.` });
     } else {
+      const targetIdx = editingChapterIndex;
       updatedChapters = chapters.map((chap, idx) => {
-        if (idx === activeChapterIndex) {
+        if (idx === targetIdx) {
           return {
             ...chap,
             title: formChapterTitle,
@@ -397,7 +491,7 @@ function GenericManualDetailPage() {
         }
         return chap;
       });
-      const placed = placeAt(updatedChapters, activeChapterIndex, formChapterRank);
+      const placed = placeAt(updatedChapters, targetIdx, formChapterRank);
       updatedChapters = placed.list;
       setActiveChapterIndex(placed.to);
       toast({ type: "success", title: "Chapter Updated", description: "Saved chapter changes." });
@@ -410,6 +504,7 @@ function GenericManualDetailPage() {
       category: manualCategory,
       estimatedTime: manualEstimatedTime,
       chapters: updatedChapters,
+      tocManaged: true,
     });
     setIsChapterModalOpen(false);
   };
@@ -435,8 +530,86 @@ function GenericManualDetailPage() {
       category: manualCategory,
       estimatedTime: manualEstimatedTime,
       chapters: updated,
+      tocManaged: true,
     });
     toast({ type: "info", title: "Chapter Deleted", description: `Removed ${chapToDelete.title}.` });
+  };
+
+  const emptyChapter = (): ManualChapter => ({
+    id: `custom-ch-${Date.now()}`,
+    order: 1,
+    slug: "ch-1",
+    title: "New Chapter",
+    subtitle: "New Part",
+    partKey: `part-${Date.now()}`,
+    estimatedMinutes: 15,
+    contentMarkdown: "# New Chapter\n\nWrite your lesson content here...",
+    exercises: [],
+    resourceLinks: [],
+  });
+
+  const handleCreatePart = () => {
+    const after = selectedPartIndices.length ? Math.max(...selectedPartIndices) : partGroups.length - 1;
+    const newChap = emptyChapter();
+    const updated = createPart(chapters, newChap, after);
+    persistChapters(updated, newChap.id);
+    setSelectedPartIndices([]);
+    setEditingPartIndex(null);
+    toast({ type: "success", title: "Part Created", description: `Added ${displayPartTitle(after + 1, "New Part")}.` });
+  };
+
+  const handleDeleteSelectedParts = (indices: number[]) => {
+    if (indices.length === 0) return;
+    const removing = new Set(indices);
+    const gone = partGroups.filter((g) => removing.has(g.index)).reduce((n, g) => n + g.chapterIndices.length, 0);
+    if (gone >= chapters.length) {
+      const kept = emptyChapter();
+      persistChapters([kept], kept.id);
+    } else {
+      persistChapters(deleteParts(chapters, indices), activeChapter.id);
+    }
+    setSelectedPartIndices([]);
+    setEditingPartIndex(null);
+    toast({ type: "info", title: "Part Deleted", description: `Removed ${indices.length} part${indices.length === 1 ? "" : "s"}.` });
+  };
+
+  const handleMoveSelectedParts = (direction: -1 | 1) => {
+    const ids = selectedPartIndices.length ? selectedPartIndices : [];
+    if (ids.length === 0) return;
+    const result = moveParts(chapters, ids, direction);
+    persistChapters(result.chapters, activeChapter.id);
+    setSelectedPartIndices(result.selected);
+  };
+
+  const handleMergeSelectedParts = () => {
+    if (selectedPartIndices.length < 2) {
+      toast({ type: "error", title: "Select parts to merge", description: "Pick two or more parts." });
+      return;
+    }
+    const first = Math.min(...selectedPartIndices);
+    const updated = mergeParts(chapters, selectedPartIndices);
+    persistChapters(updated, activeChapter.id);
+    setSelectedPartIndices([first]);
+    setEditingPartIndex(null);
+    toast({ type: "success", title: "Parts Merged", description: `Combined into ${displayPartTitle(first, partGroups[first]?.name || "Part")}.` });
+  };
+
+  const handleSavePartRename = () => {
+    if (editingPartIndex == null) return;
+    persistChapters(renamePart(chapters, editingPartIndex, editingPartName), activeChapter.id);
+    setEditingPartIndex(null);
+    toast({ type: "success", title: "Part Updated", description: displayPartTitle(editingPartIndex, editingPartName) });
+  };
+
+  const handleCancelPartRename = () => {
+    setEditingPartIndex(null);
+    setEditingPartName("");
+  };
+
+  const togglePartSelected = (index: number) => {
+    setSelectedPartIndices((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index].sort((a, b) => a - b)
+    );
   };
 
   // Inline formatting helper for **bold** and `code` without raw Markdown tokens
@@ -831,15 +1004,55 @@ function GenericManualDetailPage() {
                   <span className="truncate">Table of Contents</span>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={openAddChapterModal}
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-[#D97706] hover:text-[#B45309] shrink-0 px-1 py-0.5"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Add Chapter
-                </button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleCreatePart}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#1C2A26] hover:text-[#D97706] px-1 py-0.5"
+                    title="Add Part"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Add Part
+                  </button>
+                  <button
+                    type="button"
+                    onClick={openAddChapterModal}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#D97706] hover:text-[#B45309] px-1 py-0.5"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Add Chapter
+                  </button>
+                </div>
               </div>
+
+              {selectedPartIndices.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1 px-2 py-1.5 border-b border-[#E7E0D3] bg-white">
+                  <span className="text-[10px] font-bold text-[#52635E] mr-1">
+                    {selectedPartIndices.length} selected
+                  </span>
+                  <button type="button" onClick={() => handleMoveSelectedParts(-1)} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md border border-[#E7E0D3] hover:border-[#D97706]" title="Move up">
+                    <ArrowUp className="w-3 h-3" /> Up
+                  </button>
+                  <button type="button" onClick={() => handleMoveSelectedParts(1)} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md border border-[#E7E0D3] hover:border-[#D97706]" title="Move down">
+                    <ArrowDown className="w-3 h-3" /> Down
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleMergeSelectedParts}
+                    disabled={selectedPartIndices.length < 2}
+                    className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md border border-[#E7E0D3] hover:border-[#D97706] disabled:opacity-40"
+                    title="Merge selected parts"
+                  >
+                    <Combine className="w-3 h-3" /> Merge
+                  </button>
+                  <button type="button" onClick={() => handleDeleteSelectedParts(selectedPartIndices)} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md border border-rose-200 text-rose-700 hover:bg-rose-50" title="Delete selected">
+                    <Trash2 className="w-3 h-3" /> Delete
+                  </button>
+                  <button type="button" onClick={() => setSelectedPartIndices([])} className="ml-auto text-[10px] font-bold text-[#8A9B95] hover:text-[#1C2A26]">
+                    Clear
+                  </button>
+                </div>
+              )}
 
               <div className="relative px-2 pt-2">
                 <Search className="w-3.5 h-3.5 text-[#8A9B95] absolute left-4 top-[1.125rem] pointer-events-none" />
@@ -863,16 +1076,108 @@ function GenericManualDetailPage() {
               </div>
 
               <div className="px-1.5 pt-2 pb-2 space-y-3 overflow-y-auto min-h-0 flex-1 scrollbar-thin">
-                {filteredParts.length === 0 && (
+                {filteredPartGroups.length === 0 && (
                   <p className="text-xs text-[#8A9B95] px-1.5">No matching chapters.</p>
                 )}
-                {filteredParts.map((part) => (
-                  <div key={part.id} className="space-y-0.5">
-                    <p className="px-1.5 pt-1 pb-0.5 text-[10px] font-bold uppercase tracking-wider text-[#D97706]">
-                      {part.title}
-                    </p>
-                    {part.nodes.map((node) => {
-                      const idx = node.chapterIndex;
+                {filteredPartGroups.map((part) => (
+                  <div key={part.partKey} className="space-y-0.5">
+                    <div className="flex items-center gap-0.5 px-1 pt-1 pb-0.5">
+                      <input
+                        type="checkbox"
+                        checked={selectedPartIndices.includes(part.index)}
+                        onChange={() => togglePartSelected(part.index)}
+                        className="rounded border-[#D4CBBB] text-[#D97706] focus:ring-[#D97706] w-3 h-3 shrink-0"
+                        aria-label={`Select ${displayPartTitle(part.index, part.name)}`}
+                      />
+                      {editingPartIndex === part.index ? (
+                        <div className="flex items-center gap-1 flex-1 min-w-0">
+                          <input
+                            autoFocus
+                            value={editingPartName}
+                            onChange={(e) => setEditingPartName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleSavePartRename();
+                              if (e.key === "Escape") handleCancelPartRename();
+                            }}
+                            className="flex-1 min-w-0 px-1.5 py-0.5 rounded border border-[#D97706] bg-white text-[10px] font-bold text-[#1C2A26]"
+                          />
+                          <button type="button" onClick={handleSavePartRename} className="p-0.5 text-emerald-700" title="Save part name">
+                            <Check className="w-3 h-3" />
+                          </button>
+                          <button type="button" onClick={handleCancelPartRename} className="p-0.5 text-[#8A9B95]" title="Cancel">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="flex-1 min-w-0 px-1 text-[10px] font-bold uppercase tracking-wider text-[#D97706] truncate" title={displayPartTitle(part.index, part.name)}>
+                            {displayPartTitle(part.index, part.name)}
+                          </p>
+                          <button
+                            type="button"
+                            disabled={part.index === 0}
+                            onClick={() => {
+                              const result = moveParts(chapters, [part.index], -1);
+                              persistChapters(result.chapters, chapters[activeChapterIndex]?.id);
+                              setSelectedPartIndices((prev) => {
+                                if (!prev.length) return prev;
+                                const next = new Set(prev);
+                                if (next.has(part.index)) {
+                                  next.delete(part.index);
+                                  result.selected.forEach((i) => next.add(i));
+                                }
+                                return [...next].sort((a, b) => a - b);
+                              });
+                            }}
+                            className="p-0.5 text-[#8A9B95] hover:text-[#D97706] disabled:opacity-30"
+                            title="Move part up"
+                          >
+                            <ArrowUp className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={part.index === partGroups.length - 1}
+                            onClick={() => {
+                              const result = moveParts(chapters, [part.index], 1);
+                              persistChapters(result.chapters, chapters[activeChapterIndex]?.id);
+                              setSelectedPartIndices((prev) => {
+                                if (!prev.length) return prev;
+                                const next = new Set(prev);
+                                if (next.has(part.index)) {
+                                  next.delete(part.index);
+                                  result.selected.forEach((i) => next.add(i));
+                                }
+                                return [...next].sort((a, b) => a - b);
+                              });
+                            }}
+                            className="p-0.5 text-[#8A9B95] hover:text-[#D97706] disabled:opacity-30"
+                            title="Move part down"
+                          >
+                            <ArrowDown className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingPartIndex(part.index);
+                              setEditingPartName(part.name);
+                            }}
+                            className="p-0.5 text-[#8A9B95] hover:text-[#D97706]"
+                            title="Edit part name"
+                          >
+                            <SquarePen className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSelectedParts([part.index])}
+                            className="p-0.5 text-[#8A9B95] hover:text-red-600"
+                            title="Delete part"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                    {part.chapterIndices.map((idx) => {
                       const chap = chapters[idx];
                       if (!chap) return null;
                       const isActive = idx === activeChapterIndex;
@@ -908,10 +1213,7 @@ function GenericManualDetailPage() {
                           <div className="flex items-center shrink-0 pr-1">
                             <button
                               type="button"
-                              onClick={() => {
-                                setActiveChapterIndex(idx);
-                                openEditChapterModal();
-                              }}
+                              onClick={() => openEditChapterModal(idx)}
                               className={`p-1 rounded-md transition-colors ${
                                 isActive
                                   ? "text-amber-400 hover:text-white"
@@ -986,7 +1288,7 @@ function GenericManualDetailPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={openEditChapterModal}
+                    onClick={() => openEditChapterModal(activeChapterIndex)}
                     leftIcon={<Edit className="w-3.5 h-3.5 text-[#D97706]" />}
                   >
                     Edit
@@ -1029,11 +1331,15 @@ function GenericManualDetailPage() {
                 <h1 className="font-serif-display text-xl sm:text-2xl lg:text-3xl font-bold text-[#1C2A26] leading-tight">
                   {stripLeadingNumber(activeChapter.title.replace(/^Chapter\s+\d+:\s*/i, ""))}
                 </h1>
-                {activeChapter.subtitle && (
+                {activePartGroup ? (
+                  <p className="font-serif-display text-xs sm:text-sm font-semibold text-[#D97706]">
+                    {displayPartTitle(activePartGroup.index, activePartGroup.name)}
+                  </p>
+                ) : activeChapter.subtitle ? (
                   <p className="font-serif-display text-xs sm:text-sm font-semibold text-[#D97706]">
                     {activeChapter.subtitle}
                   </p>
-                )}
+                ) : null}
               </div>
 
 
@@ -1060,9 +1366,9 @@ function GenericManualDetailPage() {
                   className="space-y-4"
                 >
                   {/* Overview Text */}
-                  {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.desc || activeChapter.overviewText) && (
+                  {(overlayChapter?.desc || activeChapter.overviewText) && (
                     <p className="text-xs sm:text-sm text-[#52635E] leading-relaxed font-sans">
-                      {TESTING_TYPES_CHAPTERS[activeChapterIndex]?.desc || activeChapter.overviewText}
+                      {overlayChapter?.desc || activeChapter.overviewText}
                     </p>
                   )}
 
@@ -1074,7 +1380,7 @@ function GenericManualDetailPage() {
                         <span>Why it matters</span>
                       </div>
                       <p className="text-xs sm:text-[13px] text-[#52635E] leading-relaxed">
-                        {TESTING_TYPES_CHAPTERS[activeChapterIndex]?.why || activeChapter.why}
+                        {overlayChapter?.why || activeChapter.why}
                       </p>
                     </div>
 
@@ -1084,13 +1390,13 @@ function GenericManualDetailPage() {
                         <span>When to use it</span>
                       </div>
                       <p className="text-xs sm:text-[13px] text-[#52635E] leading-relaxed">
-                        {TESTING_TYPES_CHAPTERS[activeChapterIndex]?.when || activeChapter.when}
+                        {overlayChapter?.when || activeChapter.when}
                       </p>
                     </div>
                   </div>
 
                   {/* Practical Example Block (8080 Format) */}
-                  {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.practical || activeChapter.practical) && (
+                  {(overlayChapter?.practical || activeChapter.practical) && (
                     <div className="p-4 sm:p-5 rounded-xl border border-[#D0E2FF] bg-[#F4F8FF] space-y-3 shadow-2xs">
                       <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#0062D2]">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#0062D2]" />
@@ -1099,40 +1405,40 @@ function GenericManualDetailPage() {
 
                       <p className="text-xs sm:text-sm text-[#1C2A26] leading-relaxed">
                         <strong className="font-bold text-[#0F172A]">
-                          {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.practical || activeChapter.practical)?.app}
-                        </strong> — {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.practical || activeChapter.practical)?.scenario}
+                          {(overlayChapter?.practical || activeChapter.practical)?.app}
+                        </strong> — {(overlayChapter?.practical || activeChapter.practical)?.scenario}
                       </p>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                        {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.practical || activeChapter.practical)?.fail ? (
+                        {(overlayChapter?.practical || activeChapter.practical)?.fail ? (
                         <div className="p-3.5 rounded-xl border border-rose-200 border-t-2 border-t-rose-500 bg-white space-y-1 shadow-2xs">
                           <span className="block font-mono text-[10px] uppercase tracking-wider font-bold text-rose-700">
-                            {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.practical as { failLabel?: string } | undefined)?.failLabel || "Fail Condition"}
+                            {(overlayChapter?.practical as { failLabel?: string } | undefined)?.failLabel || "Fail Condition"}
                           </span>
                           <p className="text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed">
-                            {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.practical || activeChapter.practical)?.fail}
+                            {(overlayChapter?.practical || activeChapter.practical)?.fail}
                           </p>
                         </div>
                         ) : null}
 
-                        {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.practical || activeChapter.practical)?.pass ? (
+                        {(overlayChapter?.practical || activeChapter.practical)?.pass ? (
                         <div className="p-3.5 rounded-xl border border-emerald-200 border-t-2 border-t-emerald-500 bg-white space-y-1 shadow-2xs">
                           <span className="block font-mono text-[10px] uppercase tracking-wider font-bold text-emerald-700">
-                            {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.practical as { passLabel?: string } | undefined)?.passLabel || "Pass Condition"}
+                            {(overlayChapter?.practical as { passLabel?: string } | undefined)?.passLabel || "Pass Condition"}
                           </span>
                           <p className="text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed">
-                            {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.practical || activeChapter.practical)?.pass}
+                            {(overlayChapter?.practical || activeChapter.practical)?.pass}
                           </p>
                         </div>
                         ) : null}
 
-                        {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.practical as { value?: string } | undefined)?.value ? (
+                        {(overlayChapter?.practical as { value?: string } | undefined)?.value ? (
                         <div className="p-3.5 rounded-xl border border-sky-200 border-t-2 border-t-sky-500 bg-white space-y-1 shadow-2xs sm:col-span-2">
                           <span className="block font-mono text-[10px] uppercase tracking-wider font-bold text-sky-700">
                             Value delivered
                           </span>
                           <p className="text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed">
-                            {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.practical as { value?: string }).value}
+                            {(overlayChapter?.practical as { value?: string }).value}
                           </p>
                         </div>
                         ) : null}
@@ -1141,7 +1447,7 @@ function GenericManualDetailPage() {
                   )}
 
                   {/* General Level Advantages & Limitations */}
-                  {TESTING_TYPES_CHAPTERS[activeChapterIndex]?.advantages && TESTING_TYPES_CHAPTERS[activeChapterIndex]?.limitations && (
+                  {overlayChapter?.advantages && overlayChapter?.limitations && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                       <div className="p-4 sm:p-5 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] space-y-2 shadow-2xs">
                         <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-emerald-700">
@@ -1149,7 +1455,7 @@ function GenericManualDetailPage() {
                           <span>Advantages</span>
                         </div>
                         <ul className="space-y-1.5 text-xs sm:text-[13px] text-[#52635E] pl-4 list-disc marker:text-emerald-600/70 leading-relaxed">
-                          {TESTING_TYPES_CHAPTERS[activeChapterIndex].advantages!.map((adv, ai) => (
+                          {overlayChapter.advantages!.map((adv, ai) => (
                             <li key={ai}>{adv}</li>
                           ))}
                         </ul>
@@ -1161,7 +1467,7 @@ function GenericManualDetailPage() {
                           <span>Limitations</span>
                         </div>
                         <ul className="space-y-1.5 text-xs sm:text-[13px] text-[#52635E] pl-4 list-disc marker:text-rose-600/70 leading-relaxed">
-                          {TESTING_TYPES_CHAPTERS[activeChapterIndex].limitations!.map((lim, li) => (
+                          {overlayChapter.limitations!.map((lim, li) => (
                             <li key={li}>{lim}</li>
                           ))}
                         </ul>
@@ -1170,10 +1476,10 @@ function GenericManualDetailPage() {
                   )}
 
                   {/* Interactive Tool Switcher (Exact 8080 Design) */}
-                  {(TESTING_TYPES_CHAPTERS[activeChapterIndex]?.tools || activeChapter.tools) && (
+                  {(overlayChapter?.tools || activeChapter.tools) && (
                     <div className="pt-1">
                       <ToolSwitcher
-                        tools={TESTING_TYPES_CHAPTERS[activeChapterIndex]?.tools || activeChapter.tools!}
+                        tools={overlayChapter?.tools || activeChapter.tools!}
                         onNavigateChapter={handleNavigateChapter}
                       />
                     </div>
@@ -1340,7 +1646,7 @@ function GenericManualDetailPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
-            onClick={() => setIsChapterModalOpen(false)}
+            onClick={handleCancelChapterEdit}
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
@@ -1354,7 +1660,7 @@ function GenericManualDetailPage() {
                   <BookOpen className="w-5 h-5 text-[#D97706]" />
                   <span>{chapterModalMode === "add" ? "Add New Chapter" : "Edit Chapter"}</span>
                 </h3>
-                <button onClick={() => setIsChapterModalOpen(false)} className="text-[#8A9B95] hover:text-[#1C2A26]">
+                <button onClick={handleCancelChapterEdit} className="text-[#8A9B95] hover:text-[#1C2A26]" title="Cancel">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -1516,7 +1822,7 @@ function GenericManualDetailPage() {
               </div>
 
               <div className="flex justify-end gap-3 pt-3 border-t border-[#E7E0D3]">
-                <Button variant="outline" size="sm" onClick={() => setIsChapterModalOpen(false)}>
+                <Button variant="outline" size="sm" onClick={handleCancelChapterEdit} title="Discard unsaved changes">
                   Cancel
                 </Button>
                 <Button variant="primary" size="sm" onClick={handleSaveChapter} leftIcon={<Save className="w-4 h-4" />}>

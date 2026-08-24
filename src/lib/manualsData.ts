@@ -44,6 +44,8 @@ export interface ManualChapter {
   slug: string;
   title: string;
   estimatedMinutes: number;
+  /** Stable part identity. "Part N" is never stored — it is always the part's index. */
+  partKey?: string;
   subtitle?: string;
   overviewText?: string;
   why?: string;
