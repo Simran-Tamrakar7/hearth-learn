@@ -9,18 +9,7 @@ import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import { MANUALS_DATA, findHearthManual, ManualItem } from "@/lib/manualsData";
 import { genres } from "@/lib/pathwise-data/helpers.js";
-import {
-  Compass,
-  Search,
-  Clock,
-  BookOpen,
-  ArrowRight,
-  Pin,
-  ExternalLink,
-  Code2,
-  Sparkles,
-  X,
-} from "lucide-react";
+import { Compass, Search, Clock, BookOpen, ArrowRight, Pin, ExternalLink, Code2, Sparkles, X, Trash2 } from "lucide-react";
 import {
   PinButton,
   subscribePinnedItems,
@@ -30,7 +19,7 @@ import {
   manualPinId,
 } from "@/components/ui/PinButton";
 import { TestingTypesCatalogCard } from "@/components/manuals/TestingTypesCatalogCard";
-import { getUserManual, notesToManual, saveUserManual, subscribeUserManuals } from "@/lib/userManuals";
+import { deleteUserManual, emptyManual, getUserManual, notesToManual, saveUserManual, subscribeUserManuals } from "@/lib/userManuals";
 
 const GENRE_CATEGORY: Record<string, ManualItem["category"] | "All"> = {
   all: "All",
@@ -81,11 +70,34 @@ function resolvePinnedManual(pin: PinnedItemMetadata, userManuals: ManualItem[])
   };
 }
 
-function ManualCard({ manual, pinned }: { manual: ManualItem; pinned?: boolean }) {
+function ManualCard({
+  manual,
+  pinned,
+  onDelete,
+}: {
+  manual: ManualItem;
+  pinned?: boolean;
+  onDelete?: () => void;
+}) {
   return (
     <motion.div whileHover={{ y: -6, scale: 1.02 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
       <div className="relative h-full">
-        <div className="absolute top-4 right-4 z-20">
+        <div className="absolute top-4 right-4 z-20 flex items-center gap-1">
+          {onDelete && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (window.confirm(`Delete “${manual.title}”? This cannot be undone.`)) onDelete();
+              }}
+              className="p-2 rounded-xl bg-white/90 text-[#8A9B95] hover:text-rose-700 hover:bg-rose-50 border border-[#E7E0D3]"
+              title="Delete manual"
+              aria-label={`Delete ${manual.title}`}
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
           <PinButton
             itemId={manualPinId(manual.slug)}
             itemTitle={manual.title}
@@ -168,20 +180,30 @@ function GenerateManualModal({
   async function generate() {
     setBusy(true);
     try {
-      let markdown = notes;
-      try {
-        const res = await fetch("/api/manuals/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ notes, title: title.trim() || undefined }),
-        });
-        const data = await res.json();
-        if (typeof data.markdown === "string" && data.markdown.trim()) markdown = data.markdown;
-        if (data.error) throw new Error(data.error);
-      } catch (err) {
-        if (err instanceof Error && err.message === "Paste some notes first.") throw err;
+      const titleTrim = title.trim();
+      const notesTrim = notes.trim();
+      if (!titleTrim && !notesTrim) {
+        throw new Error("Add a title or paste some notes.");
       }
-      const saved = saveUserManual(notesToManual(markdown, title.trim() || undefined));
+      let saved;
+      if (!notesTrim) {
+        saved = saveUserManual(emptyManual(titleTrim));
+      } else {
+        let markdown = notes;
+        try {
+          const res = await fetch("/api/manuals/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ notes, title: titleTrim || undefined }),
+          });
+          const data = await res.json();
+          if (typeof data.markdown === "string" && data.markdown.trim()) markdown = data.markdown;
+          if (data.error) throw new Error(data.error);
+        } catch (err) {
+          if (err instanceof Error && (err.message === "Paste some notes first." || err.message === "Add a title or paste some notes.")) throw err;
+        }
+        saved = saveUserManual(notesToManual(markdown, titleTrim || undefined));
+      }
       onCreated(saved);
       setNotes("");
       setTitle("");
@@ -194,8 +216,8 @@ function GenerateManualModal({
     } catch (e) {
       toast({
         type: "error",
-        title: "Could not generate",
-        description: e instanceof Error ? e.message : "Paste some notes first.",
+        title: "Could not create",
+        description: e instanceof Error ? e.message : "Add a title or paste some notes.",
       });
     } finally {
       setBusy(false);
@@ -208,7 +230,7 @@ function GenerateManualModal({
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#E7E0D3]">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-[#D97706]" />
-            <h2 className="font-serif-display text-lg font-bold text-[#1C2A26]">Generate a manual from notes</h2>
+            <h2 className="font-serif-display text-lg font-bold text-[#1C2A26]">New manual with AI</h2>
           </div>
           <button type="button" onClick={onClose} className="p-1.5 rounded-xl text-[#8A9B95] hover:text-[#1C2A26]" aria-label="Close">
             <X className="w-4 h-4" />
@@ -216,7 +238,7 @@ function GenerateManualModal({
         </div>
         <div className="p-5 space-y-3">
           <p className="text-xs text-[#52635E] leading-relaxed">
-            Paste raw notes. AI (or a local fallback) turns them into parts and chapters in the same format as the rest of the catalogue, then saves the manual here.
+            Paste notes for AI to structure into parts, chapters, and sub-chapters — or just a title to start a blank manual you can edit.
           </p>
           <input
             value={title}
@@ -247,7 +269,7 @@ function GenerateManualModal({
             className="h-10 px-4 rounded-xl text-xs font-semibold bg-[#1C2A26] text-[#FAF7F2] hover:bg-[#243530] disabled:opacity-50 inline-flex items-center gap-1.5"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            {busy ? "Generating…" : "Generate & add to list"}
+            {busy ? "Creating…" : notes.trim() ? "Generate & add to list" : "Create blank manual"}
           </button>
         </div>
       </div>
@@ -256,6 +278,7 @@ function GenerateManualModal({
 }
 
 export default function ManualsCatalogPage() {
+  const { toast } = useToast();
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [pinnedManuals, setPinnedManuals] = useState<ReturnType<typeof resolvePinnedManual>[]>([]);
@@ -266,6 +289,10 @@ export default function ManualsCatalogPage() {
 
   useEffect(() => {
     return subscribeUserManuals(setUserManuals);
+  }, []);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("new") === "1") setGenerateOpen(true);
   }, []);
 
   useEffect(() => {
@@ -448,7 +475,7 @@ export default function ManualsCatalogPage() {
               className="shrink-0 inline-flex items-center gap-2 h-11 px-4 rounded-2xl bg-[#1C2A26] text-[#FAF7F2] text-xs font-semibold hover:bg-[#243530] shadow-xs"
             >
               <Sparkles className="w-4 h-4 text-[#D97706]" />
-              Generate from notes
+              New with AI
             </button>
           </div>
 
@@ -496,7 +523,19 @@ export default function ManualsCatalogPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
                 {g.items.map((manual) => (
-                  <ManualCard key={manual.id} manual={manual} pinned={pinnedIds.has(manualPinId(manual.slug))} />
+                  <ManualCard
+                    key={manual.id}
+                    manual={manual}
+                    pinned={pinnedIds.has(manualPinId(manual.slug))}
+                    onDelete={
+                      userManuals.some((m) => m.slug === manual.slug)
+                        ? () => {
+                            if (!deleteUserManual(manual.slug)) return;
+                            toast({ type: "info", title: "Manual deleted", description: `Removed “${manual.title}”.` });
+                          }
+                        : undefined
+                    }
+                  />
                 ))}
               </div>
             </section>

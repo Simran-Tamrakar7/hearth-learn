@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { ensureManualHeadings, notesToManual, slugifyTitle } from "./userManuals.ts";
+import { deleteUserManual, emptyManual, ensureManualHeadings, notesToManual, slugifyTitle } from "./userManuals.ts";
 
 assert.equal(slugifyTitle("  Hello, World!! "), "hello-world");
 
@@ -60,5 +60,12 @@ const outlined = ensureManualHeadings("Only a title line that is short.\n\nSecon
 assert.match(outlined, /^# /);
 assert.match(outlined, /Part 1 · Notes/);
 assert.match(outlined, /^## /m);
+
+const blank = emptyManual("Starter");
+assert.equal(blank.title, "Starter");
+assert.ok(blank.slug.startsWith("ai-"));
+assert.ok(blank.chapters.length >= 1);
+
+assert.equal(deleteUserManual("missing"), false);
 
 console.log("userManuals.check: ok");

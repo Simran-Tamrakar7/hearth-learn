@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import { findHearthManual, ManualItem, ManualChapter } from "@/lib/manualsData";
-import { getUserManual, saveUserManual } from "@/lib/userManuals";
+import { getUserManual, saveUserManual, deleteUserManual } from "@/lib/userManuals";
 import { isTestingTypesSlug, TestingTypesGuide } from "@/components/manuals/TestingTypesGuide";
 import { PLAYWRIGHT_ROADMAP_PHASES, downloadRoadmapSVG } from "@/lib/roadmapData";
 import { stripLeadingNumber } from "@/lib/pathwise-data/helpers.js";
@@ -1176,6 +1176,29 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
             </Link>
 
             <div className="flex items-center gap-2">
+              <Link href="/manuals?new=1">
+                <Button variant="outline" size="sm" leftIcon={<Sparkles className="w-3.5 h-3.5 text-[#D97706]" />}>
+                  New with AI
+                </Button>
+              </Link>
+              {getUserManual(slug) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<Trash2 className="w-3.5 h-3.5 text-rose-600" />}
+                  onClick={() => {
+                    if (!window.confirm(`Delete “${manualTitle}”? This cannot be undone.`)) return;
+                    if (!deleteUserManual(slug)) {
+                      toast({ type: "error", title: "Could not delete", description: "Only manuals you created can be removed." });
+                      return;
+                    }
+                    toast({ type: "info", title: "Manual deleted", description: `Removed “${manualTitle}”.` });
+                    router.push("/manuals");
+                  }}
+                >
+                  Delete
+                </Button>
+              )}
               <PinButton
                 itemId={manualPinId(slug)}
                 itemTitle={manualTitle}

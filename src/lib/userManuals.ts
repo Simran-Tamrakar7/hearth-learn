@@ -190,6 +190,42 @@ export function getUserManual(slug: string): ManualItem | undefined {
   return getUserManuals().find((m) => m.slug === slug || m.id === slug || m.id === `manual-${slug}`);
 }
 
+export function emptyManual(title: string): ManualItem {
+  const t = title.trim() || "Untitled manual";
+  return notesToManual(
+    `# ${t}\n\nPart 1 · Notes\n## Getting started\nAdd parts, chapters, and sub-chapters from the table of contents — or generate from notes.\n`,
+    t
+  );
+}
+
+export function deleteUserManual(slug: string): boolean {
+  if (typeof window === "undefined") return false;
+  const found = getUserManual(slug);
+  if (!found) return false;
+  const remaining = getUserManuals().filter((m) => m.slug !== found.slug);
+  localStorage.setItem(STORE, JSON.stringify(remaining));
+  try {
+    localStorage.removeItem(`hearth_manual_custom_data_${found.id}`);
+    localStorage.removeItem(`hearth_manual_progress_${found.id}`);
+    const raw = localStorage.getItem("hearth_pinned_items_v2");
+    if (raw) {
+      const pins = JSON.parse(raw);
+      if (Array.isArray(pins)) {
+        const next = pins.filter(
+          (p: { id?: string; url?: string }) =>
+            p.id !== `man-${found.slug}` && !String(p.url || "").includes(`/manuals/${found.slug}`)
+        );
+        localStorage.setItem("hearth_pinned_items_v2", JSON.stringify(next));
+        window.dispatchEvent(new Event("hearth_pins_updated"));
+      }
+    }
+  } catch {
+    /* pin cleanup is best-effort */
+  }
+  window.dispatchEvent(new Event(EVENT));
+  return true;
+}
+
 export function saveUserManual(manual: ManualItem): ManualItem {
   const all = getUserManuals().filter((m) => m.slug !== manual.slug);
   let slug = manual.slug;
