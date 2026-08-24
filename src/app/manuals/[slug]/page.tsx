@@ -10,10 +10,11 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import { findHearthManual, ManualItem, ManualChapter } from "@/lib/manualsData";
+import { getUserManual, saveUserManual } from "@/lib/userManuals";
 import { isTestingTypesSlug, TestingTypesGuide } from "@/components/manuals/TestingTypesGuide";
 import { PLAYWRIGHT_ROADMAP_PHASES, downloadRoadmapSVG } from "@/lib/roadmapData";
 import { stripLeadingNumber } from "@/lib/pathwise-data/helpers.js";
-import { PinButton, getPinnedItems, PinnedItemMetadata } from "@/components/ui/PinButton";
+import { PinButton, getPinnedItems, PinnedItemMetadata, manualPinId } from "@/components/ui/PinButton";
 import { ToolSwitcher } from "@/components/manuals/ToolSwitcher";
 import { TestingTypesInteractiveManual, TESTING_TYPES_CHAPTERS } from "@/components/manuals/TestingTypesInteractiveManual";
 import { readerChaptersFromOverlay } from "@/components/manuals/testing-types-reader";
@@ -76,29 +77,61 @@ import {
 } from "lucide-react";
 
 export default function ManualDetailPage() {
-  return <GenericManualDetailPage />;
+  const params = useParams();
+  const slug = (params?.slug as string) || "";
+  const builtin = slug ? findHearthManual(slug) : undefined;
+  const [userManual, setUserManual] = useState<ManualItem | undefined>(undefined);
+  const [ready, setReady] = useState(() => Boolean(slug && findHearthManual(slug)));
+
+  useEffect(() => {
+    if (!slug || findHearthManual(slug)) {
+      setReady(true);
+      return;
+    }
+    setUserManual(getUserManual(slug));
+    setReady(true);
+  }, [slug]);
+
+  if (!ready) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1C2A26]">
+        <Navbar />
+        <main className="max-w-[1440px] mx-auto px-6 py-16 w-full">
+          <p className="text-[#52635E]">Loading manual…</p>
+        </main>
+      </div>
+    );
+  }
+
+  const seeded = builtin ?? userManual;
+  if (!seeded) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1C2A26]">
+        <Navbar />
+        <main className="max-w-[1440px] mx-auto px-6 py-16 w-full space-y-4">
+          <h1 className="font-serif-display text-3xl font-bold">Manual not found</h1>
+          <p className="text-[#52635E]">That slug is not in the catalogue. Open Testing Types from Manuals.</p>
+          <Link href="/manuals">
+            <Button variant="outline" size="sm" leftIcon={<ChevronLeft className="w-4 h-4" />}>
+              Back to Manuals
+            </Button>
+          </Link>
+        </main>
+      </div>
+    );
+  }
+
+  return <GenericManualDetailPage key={seeded.slug} seeded={seeded} />;
 }
 
 
-function GenericManualDetailPage() {
+function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
 
   const slug = params?.slug as string;
-  const foundManual = findHearthManual(slug);
-  const initialManual = foundManual ?? {
-    id: "manual-missing",
-    slug: slug || "missing",
-    title: "Manual not found",
-    category: "Quality Craft" as const,
-    description: "",
-    chapterCount: 0,
-    estimatedTime: "—",
-    icon: "BookOpen",
-    coverImage: "",
-    chapters: [],
-  };
+  const initialManual = seeded;
 
   // State for editable manual details
   const [manualTitle, setManualTitle] = useState<string>(initialManual.title);
@@ -242,6 +275,16 @@ function GenericManualDetailPage() {
     );
   };
 
+  const persistUserManual = (patch: Partial<ManualItem> & { chapters?: ManualChapter[] }) => {
+    const um = getUserManual(slug);
+    if (!um) return;
+    saveUserManual({
+      ...um,
+      ...patch,
+      chapterCount: (patch.chapters || um.chapters).length,
+    });
+  };
+
   const persistChapters = (updated: ManualChapter[], keepId?: string) => {
     const id = keepId ?? chapters[activeChapterIndex]?.id;
     setChapters(updated);
@@ -253,6 +296,13 @@ function GenericManualDetailPage() {
       estimatedTime: manualEstimatedTime,
       chapters: updated,
       tocManaged: true,
+    });
+    persistUserManual({
+      title: manualTitle,
+      description: manualDescription,
+      category: manualCategory as ManualItem["category"],
+      estimatedTime: manualEstimatedTime,
+      chapters: updated,
     });
   };
 
@@ -346,6 +396,12 @@ function GenericManualDetailPage() {
       title: manualTitle,
       description: manualDescription,
       category: manualCategory,
+      estimatedTime: manualEstimatedTime,
+    });
+    persistUserManual({
+      title: manualTitle,
+      description: manualDescription,
+      category: manualCategory as ManualItem["category"],
       estimatedTime: manualEstimatedTime,
     });
     setIsEditManualModalOpen(false);
@@ -937,23 +993,6 @@ function GenericManualDetailPage() {
     });
   };
 
-  if (!foundManual) {
-    return (
-      <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1C2A26]">
-        <Navbar />
-        <main className="max-w-[1440px] mx-auto px-6 py-16 w-full space-y-4">
-          <h1 className="font-serif-display text-3xl font-bold">Manual not found</h1>
-          <p className="text-[#52635E]">That slug is not in the catalogue. Open Testing Types from Manuals.</p>
-          <Link href="/manuals">
-            <Button variant="outline" size="sm" leftIcon={<ChevronLeft className="w-4 h-4" />}>
-              Back to Manuals
-            </Button>
-          </Link>
-        </main>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1C2A26]">
       <Navbar />
@@ -972,7 +1011,7 @@ function GenericManualDetailPage() {
 
             <div className="flex items-center gap-2">
               <PinButton
-                itemId={`man-${slug}`}
+                itemId={manualPinId(slug)}
                 itemTitle={manualTitle}
                 itemCategory={manualCategory}
                 itemType="manual"

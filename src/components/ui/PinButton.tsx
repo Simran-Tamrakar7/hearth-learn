@@ -49,6 +49,10 @@ export function getPinnedItems(): PinnedItemMetadata[] {
   return [];
 }
 
+export function manualPinId(slug: string) {
+  return `man-${String(slug || "").replace(/^man-/, "")}`;
+}
+
 export function isManualsCatalogPin(item: PinnedItemMetadata) {
   if (item.type === "manual" || item.type === "trail") return true;
   if (String(item.id || "").startsWith("man-") || String(item.id || "").startsWith("trail-")) return true;

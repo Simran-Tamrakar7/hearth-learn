@@ -6,17 +6,31 @@ import { motion } from "framer-motion";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { useToast } from "@/components/ui/Toast";
 import { MANUALS_DATA, findHearthManual, ManualItem } from "@/lib/manualsData";
 import { genres } from "@/lib/pathwise-data/helpers.js";
-import { Compass, Search, Clock, BookOpen, ArrowRight, Pin, ExternalLink, Code2 } from "lucide-react";
+import {
+  Compass,
+  Search,
+  Clock,
+  BookOpen,
+  ArrowRight,
+  Pin,
+  ExternalLink,
+  Code2,
+  Sparkles,
+  X,
+} from "lucide-react";
 import {
   PinButton,
   subscribePinnedItems,
   isManualsCatalogPin,
   isShowcaseCatalogPin,
   PinnedItemMetadata,
+  manualPinId,
 } from "@/components/ui/PinButton";
 import { TestingTypesCatalogCard } from "@/components/manuals/TestingTypesCatalogCard";
+import { getUserManual, notesToManual, saveUserManual, subscribeUserManuals } from "@/lib/userManuals";
 
 const GENRE_CATEGORY: Record<string, ManualItem["category"] | "All"> = {
   all: "All",
@@ -49,27 +63,31 @@ const CATALOG_GENRES: GenreRow[] = (genres as { id: string; label: string; blurb
   })
 );
 
-function resolvePinnedManual(pin: PinnedItemMetadata) {
+const FEATURED_SLUGS = new Set(["testing-types", "testing-by-level"]);
+
+function resolvePinnedManual(pin: PinnedItemMetadata, userManuals: ManualItem[]) {
   const fromUrl = pin.url?.match(/\/manuals\/([^/?#]+)/)?.[1];
   const fromId = String(pin.id || "").replace(/^man-/, "");
   const slug = fromUrl || fromId;
-  const manual = slug ? findHearthManual(slug) : undefined;
+  const builtin = slug ? findHearthManual(slug) : undefined;
+  const generated = slug ? userManuals.find((m) => m.slug === slug || m.id === `manual-${slug}`) || getUserManual(slug) : undefined;
+  const manual = builtin || generated;
   return {
     ...pin,
     title: manual?.title || pin.title,
     category: pin.category || manual?.category,
-    url: manual ? `/manuals/${manual.slug}` : pin.url,
+    url: manual ? `/manuals/${manual.slug}` : pin.url || (slug ? `/manuals/${slug}` : "/manuals"),
     coverImage: manual?.coverImage,
   };
 }
 
-function ManualCard({ manual }: { manual: ManualItem }) {
+function ManualCard({ manual, pinned }: { manual: ManualItem; pinned?: boolean }) {
   return (
     <motion.div whileHover={{ y: -6, scale: 1.02 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
       <div className="relative h-full">
         <div className="absolute top-4 right-4 z-20">
           <PinButton
-            itemId={`man-${manual.slug}`}
+            itemId={manualPinId(manual.slug)}
             itemTitle={manual.title}
             itemCategory={manual.category}
             itemType="manual"
@@ -81,7 +99,9 @@ function ManualCard({ manual }: { manual: ManualItem }) {
           <Card
             variant="default"
             hoverable={true}
-            className="h-full border-[#E7E0D3] bg-white rounded-2xl overflow-hidden flex flex-col justify-between shadow-xs hover:shadow-lg transition-all group p-0"
+            className={`h-full border-[#E7E0D3] bg-white rounded-2xl overflow-hidden flex flex-col justify-between shadow-xs hover:shadow-lg transition-all group p-0 ${
+              pinned ? "ring-2 ring-[#D97706]/70 border-[#D97706]" : ""
+            }`}
           >
             <div>
               <div className="h-40 relative overflow-hidden bg-[#FAF7F2]">
@@ -93,6 +113,11 @@ function ManualCard({ manual }: { manual: ManualItem }) {
                 <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full bg-[#1C2A26] text-[#D97706] text-[10px] font-bold uppercase tracking-wider shadow-2xs">
                   {manual.category}
                 </span>
+                {pinned && (
+                  <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#D97706] text-[10px] font-bold uppercase tracking-wider">
+                    <Pin className="w-3 h-3 fill-current" /> Pinned
+                  </span>
+                )}
               </div>
             <div className="p-4 sm:p-5 space-y-2.5">
               <div className="flex items-center justify-between text-[11px] text-[#8A9B95] font-semibold">
@@ -124,28 +149,144 @@ function ManualCard({ manual }: { manual: ManualItem }) {
   );
 }
 
+function GenerateManualModal({
+  open,
+  onClose,
+  onCreated,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCreated: (manual: ManualItem) => void;
+}) {
+  const { toast } = useToast();
+  const [notes, setNotes] = useState("");
+  const [title, setTitle] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  if (!open) return null;
+
+  async function generate() {
+    setBusy(true);
+    try {
+      let markdown = notes;
+      try {
+        const res = await fetch("/api/manuals/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ notes, title: title.trim() || undefined }),
+        });
+        const data = await res.json();
+        if (typeof data.markdown === "string" && data.markdown.trim()) markdown = data.markdown;
+        if (data.error) throw new Error(data.error);
+      } catch (err) {
+        if (err instanceof Error && err.message === "Paste some notes first.") throw err;
+      }
+      const saved = saveUserManual(notesToManual(markdown, title.trim() || undefined));
+      onCreated(saved);
+      setNotes("");
+      setTitle("");
+      onClose();
+      toast({
+        type: "success",
+        title: "Manual added",
+        description: `"${saved.title}" is now on your Manuals list.`,
+      });
+    } catch (e) {
+      toast({
+        type: "error",
+        title: "Could not generate",
+        description: e instanceof Error ? e.message : "Paste some notes first.",
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-[#1C2A26]/40">
+      <div className="w-full max-w-2xl bg-[#FAF7F2] border border-[#E7E0D3] rounded-3xl shadow-xl overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E7E0D3]">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-[#D97706]" />
+            <h2 className="font-serif-display text-lg font-bold text-[#1C2A26]">Generate a manual from notes</h2>
+          </div>
+          <button type="button" onClick={onClose} className="p-1.5 rounded-xl text-[#8A9B95] hover:text-[#1C2A26]" aria-label="Close">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="p-5 space-y-3">
+          <p className="text-xs text-[#52635E] leading-relaxed">
+            Paste raw notes. AI (or a local fallback) turns them into parts and chapters in the same format as the rest of the catalogue, then saves the manual here.
+          </p>
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Title (optional)"
+            className="w-full h-11 px-4 text-sm bg-white border border-[#E7E0D3] rounded-2xl focus:outline-none focus:border-[#D97706]"
+          />
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Paste notes, meeting dump, or markdown…"
+            rows={12}
+            className="w-full px-4 py-3 text-sm bg-white border border-[#E7E0D3] rounded-2xl focus:outline-none focus:border-[#D97706] resize-y min-h-[12rem]"
+          />
+        </div>
+        <div className="px-5 py-4 border-t border-[#E7E0D3] flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-10 px-4 rounded-xl text-xs font-semibold border border-[#E7E0D3] bg-white text-[#52635E] hover:text-[#1C2A26]"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={generate}
+            className="h-10 px-4 rounded-xl text-xs font-semibold bg-[#1C2A26] text-[#FAF7F2] hover:bg-[#243530] disabled:opacity-50 inline-flex items-center gap-1.5"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            {busy ? "Generating…" : "Generate & add to list"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ManualsCatalogPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [pinnedManuals, setPinnedManuals] = useState<ReturnType<typeof resolvePinnedManual>[]>([]);
   const [pinnedShowcase, setPinnedShowcase] = useState<PinnedItemMetadata[]>([]);
+  const [userManuals, setUserManuals] = useState<ManualItem[]>([]);
+  const [generateOpen, setGenerateOpen] = useState(false);
+  const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    return subscribeUserManuals(setUserManuals);
+  }, []);
 
   useEffect(() => {
     return subscribePinnedItems((allPins) => {
-      setPinnedManuals(allPins.filter(isManualsCatalogPin).map(resolvePinnedManual));
+      setPinnedManuals(allPins.filter(isManualsCatalogPin).map((pin) => resolvePinnedManual(pin, userManuals)));
       setPinnedShowcase(allPins.filter(isShowcaseCatalogPin));
+      setPinnedIds(new Set(allPins.filter(isManualsCatalogPin).map((p) => p.id)));
     });
-  }, []);
+  }, [userManuals]);
 
-  const filteredManuals = MANUALS_DATA.filter((manual) => {
+  const catalogSource = useMemo(() => [...userManuals, ...MANUALS_DATA], [userManuals]);
+
+  const filteredManuals = catalogSource.filter((manual) => {
     const matchesCategory = selectedCategory === "All" || manual.category === selectedCategory;
     const needle = searchQuery.trim().toLowerCase();
     const hay = `${manual.title} ${manual.description} ${manual.category} ${manual.slug}`.toLowerCase();
     const matchesSearch = needle === "" || hay.includes(needle);
     return matchesCategory && matchesSearch;
   });
-  const featuredManual = filteredManuals.find((m) => m.slug === "testing-by-level");
-  const catalogManuals = filteredManuals.filter((m) => m.slug !== "testing-by-level");
+  const featuredManual = filteredManuals.find((m) => FEATURED_SLUGS.has(m.slug));
+  const catalogManuals = filteredManuals.filter((m) => !FEATURED_SLUGS.has(m.slug));
 
   const grouped = useMemo(() => {
     return CATALOG_GENRES.filter((g) => g.id !== "all")
@@ -157,13 +298,13 @@ export default function ManualsCatalogPage() {
   }, [catalogManuals]);
 
   const sections = selectedCategory === "All" ? grouped : grouped.filter((g) => g.category === selectedCategory);
+  const totalCount = catalogSource.length;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1C2A26]">
       <Navbar />
 
       <main className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-12 py-10 sm:py-12 w-full space-y-10 flex-1">
-        {featuredManual && <TestingTypesCatalogCard />}
         {pinnedManuals.length > 0 && (
           <div className="space-y-4 bg-gradient-to-br from-white via-[#FAF7F2] to-[#FEF3C7]/40 border border-[#E7E0D3] rounded-3xl p-6 shadow-xs">
             <div className="flex items-center justify-between">
@@ -221,6 +362,8 @@ export default function ManualsCatalogPage() {
             </div>
           </div>
         )}
+
+        {featuredManual && <TestingTypesCatalogCard />}
 
         {pinnedShowcase.length > 0 && (
           <div className="space-y-4 bg-gradient-to-br from-white via-[#FAF7F2] to-[#FEF3C7]/40 border border-[#E7E0D3] rounded-3xl p-6 shadow-xs">
@@ -284,11 +427,10 @@ export default function ManualsCatalogPage() {
             <div className="space-y-4 w-full">
               <div className="flex flex-wrap items-center gap-3">
                 <Badge variant="amber" icon={<Compass className="w-3.5 h-3.5" />}>
-
                   COURSE CATALOGUE · MASTER MANUALS
                 </Badge>
                 <span className="text-xs font-semibold text-[#8A9B95]">
-                  {MANUALS_DATA.length} Manuals • {CATALOG_GENRES.length - 1} Categories
+                  {totalCount} Manuals • {CATALOG_GENRES.length - 1} Categories
                 </span>
               </div>
 
@@ -300,6 +442,14 @@ export default function ManualsCatalogPage() {
                 Pathwise paths, grouped by craft — open a category, then work it chapter by chapter.
               </p>
             </div>
+            <button
+              type="button"
+              onClick={() => setGenerateOpen(true)}
+              className="shrink-0 inline-flex items-center gap-2 h-11 px-4 rounded-2xl bg-[#1C2A26] text-[#FAF7F2] text-xs font-semibold hover:bg-[#243530] shadow-xs"
+            >
+              <Sparkles className="w-4 h-4 text-[#D97706]" />
+              Generate from notes
+            </button>
           </div>
 
           <div className="pt-1 sm:max-w-md">
@@ -335,9 +485,8 @@ export default function ManualsCatalogPage() {
           ))}
         </div>
 
-        {sections.length === 0 && !featuredManual ? (
+        {sections.length === 0 && !featuredManual && pinnedManuals.length === 0 ? (
           <p className="text-[#52635E]">Nothing matches — try another word.</p>
-
         ) : (
           sections.map((g) => (
             <section key={g.id} className="space-y-3.5">
@@ -347,7 +496,7 @@ export default function ManualsCatalogPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
                 {g.items.map((manual) => (
-                  <ManualCard key={manual.id} manual={manual} />
+                  <ManualCard key={manual.id} manual={manual} pinned={pinnedIds.has(manualPinId(manual.slug))} />
                 ))}
               </div>
             </section>
@@ -355,6 +504,13 @@ export default function ManualsCatalogPage() {
         )}
       </main>
 
+      <GenerateManualModal
+        open={generateOpen}
+        onClose={() => setGenerateOpen(false)}
+        onCreated={() => {
+          /* subscribeUserManuals already refreshes the list */
+        }}
+      />
     </div>
   );
 }
