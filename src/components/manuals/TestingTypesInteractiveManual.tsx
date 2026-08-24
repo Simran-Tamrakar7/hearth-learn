@@ -5,6 +5,8 @@ import Link from "next/link";
 import { ChevronLeft, Search, Copy, Check, ChevronRight } from "lucide-react";
 import { ToolItem } from "@/lib/manualsData";
 import { TESTING_TYPES_PARTS_17_18 } from "@/components/manuals/testing-types-part17-18";
+import { TESTING_TYPES_PARTS_19_22 } from "@/components/manuals/testing-types-part19-22";
+import { TESTING_TYPES_PARTS_23 } from "@/components/manuals/testing-types-part23";
 
 export interface PracticalExample {
   app: string;
@@ -5906,6 +5908,8 @@ export const TESTING_TYPES_CHAPTERS: TestingChapterData[] = [
     ],
   },
   ...TESTING_TYPES_PARTS_17_18,
+  ...TESTING_TYPES_PARTS_19_22,
+  ...TESTING_TYPES_PARTS_23,
 ];
 
 export function TestingTypesInteractiveManual() {
@@ -5989,7 +5993,7 @@ export function TestingTypesInteractiveManual() {
         <div className="space-y-3">
           <div className="inline-flex items-center gap-2.5 font-mono text-xs tracking-wider uppercase text-[#e8a33d]">
             <span className="w-2 h-2 rounded-full bg-[#4fd68a] shadow-[0_0_0_4px_rgba(79,214,138,0.18)]" />
-            <span>Software Testing Reference · Parts 1–18</span>
+            <span>Software Testing Reference · Parts 1–23</span>
           </div>
 
           <h1 className="font-['Space_Grotesk'] font-bold text-3xl sm:text-5xl text-white tracking-tight leading-tight">

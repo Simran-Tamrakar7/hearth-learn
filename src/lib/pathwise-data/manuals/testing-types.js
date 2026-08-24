@@ -1,5 +1,7 @@
 import { ch, r } from '../helpers.js'
 import { testingTypesPart1718Chapters } from './testing-types-part17-18.js'
+import { testingTypesPart1922Chapters } from './testing-types-part19-22.js'
+import { testingTypesPart23Chapters } from './testing-types-part23.js'
 
 /** Tools Data for Part 1: By Level */
 const UNIT_TOOLS = [
@@ -7091,6 +7093,8 @@ export const testingTypesManual = {
       ],
     }),
     ...testingTypesPart1718Chapters,
+    ...testingTypesPart1922Chapters,
+    ...testingTypesPart23Chapters,
   ],
 }
 
