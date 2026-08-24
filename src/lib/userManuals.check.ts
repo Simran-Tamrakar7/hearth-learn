@@ -41,6 +41,21 @@ npm test
 assert.equal(hashedParts.chapters[0].subtitle, "Setup");
 assert.equal(hashedParts.chapters[1].subtitle, "Run");
 
+const withSubs = notesToManual(`# Manual
+Part 1 · Core
+## Locators
+Prefer roles.
+### getByRole
+Find by name.
+### getByLabel
+Find by label.
+`);
+assert.equal(withSubs.chapters.length, 3);
+assert.equal(withSubs.chapters[0].title, "Locators");
+assert.equal(withSubs.chapters[1].title, "getByRole");
+assert.equal(withSubs.chapters[1].parentId, withSubs.chapters[0].id);
+assert.equal(withSubs.chapters[2].parentId, withSubs.chapters[0].id);
+
 const outlined = ensureManualHeadings("Only a title line that is short.\n\nSecond paragraph with the real notes.");
 assert.match(outlined, /^# /);
 assert.match(outlined, /Part 1 · Notes/);

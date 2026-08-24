@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 const SYSTEM = `You turn raw notes into a Hearth Learn study manual as Markdown.
 
-Use this exact structure (parts are a plain "Part N · Name" line, chapters are ## headings):
+Use this exact structure (parts are a plain "Part N · Name" line, chapters are ## headings, sub-chapters are ### headings):
 
 # <Manual Title>
 <one-paragraph description of the whole manual>
@@ -11,13 +11,14 @@ Part 1 · <Part name>
 ## <Chapter title>
 <overview paragraph>
 
-<any extra notes for this chapter>
+### <Sub-chapter title>
+<notes for this sub-chapter>
 
-## Why it matters
-<short paragraph>
+### <Sub-chapter title>
+<notes>
 
-## When to use it
-<short paragraph>
+Why it matters: <short paragraph>
+When to use it: <short paragraph>
 
 Part 2 · <Part name>
 ## <Chapter title>
@@ -26,7 +27,9 @@ Part 2 · <Part name>
 Rules:
 - Keep the author's facts. Do not invent tools, URLs, or product names they did not mention.
 - Split into 2–8 parts when the notes support it. Never dump everything into a single chapter if it can be grouped.
-- Every chapter is a ## heading. Never number chapters in the heading (no "Chapter 1:").
+- Every chapter is a ## heading. Sub-chapters are ### under that chapter. Never number them in the heading.
+- Use at least one ### sub-chapter when a chapter has two or more distinct ideas.
+- Write "why it matters" and "when to use it" as body text inside the chapter, not as ## headings.
 - Output markdown only. No preamble.`;
 
 export async function POST(req: Request) {

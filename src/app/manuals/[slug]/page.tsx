@@ -21,15 +21,20 @@ import { readerChaptersFromOverlay } from "@/components/manuals/testing-types-re
 import {
   chapterIndexAfter,
   createPart,
+  createSubchapter,
+  deleteChaptersWithSubs,
   deleteParts,
   displayPartTitle,
   groupChaptersIntoParts,
+  isSubchapter,
   mergeChapters,
   mergeParts,
+  moveChapterBlock,
   moveChapterToPart,
-  moveChapters,
   moveParts,
+  parentIndexOf,
   renamePart,
+  tocNumbersForPart,
 } from "@/lib/manualParts";
 
 import {
@@ -192,7 +197,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   const [isEditManualModalOpen, setIsEditManualModalOpen] = useState<boolean>(false);
   const [isRoadmapModalOpen, setIsRoadmapModalOpen] = useState<boolean>(false);
   const [isChapterModalOpen, setIsChapterModalOpen] = useState<boolean>(false);
-  const [chapterModalMode, setChapterModalMode] = useState<"add" | "edit">("add");
+  const [chapterModalMode, setChapterModalMode] = useState<"add" | "edit" | "add-sub">("add");
   const [editingChapterIndex, setEditingChapterIndex] = useState<number>(0);
   const [selectedPartIndices, setSelectedPartIndices] = useState<number[]>([]);
   const [selectedChapterIndices, setSelectedChapterIndices] = useState<number[]>([]);
@@ -355,11 +360,18 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
         const partHit = label.includes(tocQueryNorm) || g.name.toLowerCase().includes(tocQueryNorm);
         const chapterIndices = partHit
           ? g.chapterIndices
-          : g.chapterIndices.filter((idx) => {
-              const chap = chapters[idx];
-              const title = (chap?.title || "").toLowerCase();
-              return title.includes(tocQueryNorm) || String(idx + 1).includes(tocQueryNorm);
-            });
+          : (() => {
+              const matched = g.chapterIndices.filter((idx) => {
+                const chap = chapters[idx];
+                const title = (chap?.title || "").toLowerCase();
+                return title.includes(tocQueryNorm) || String(idx + 1).includes(tocQueryNorm);
+              });
+              const parentIds = new Set(matched.map((i) => chapters[i]?.parentId).filter(Boolean) as string[]);
+              const withParents = g.chapterIndices.filter(
+                (idx) => matched.includes(idx) || parentIds.has(chapters[idx]?.id || "")
+              );
+              return withParents;
+            })();
         return { ...g, chapterIndices };
       })
       .filter((g) => g.chapterIndices.length > 0);
@@ -428,6 +440,35 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       code: "# Example code snippet\nprint('Hello Playwright!')",
       rank: chapters.length + 1,
       partIndex: host?.index ?? partGroups.length,
+    };
+    setIsChapterModalOpen(true);
+  };
+
+  const openAddSubchapterModal = (parentIdx?: number) => {
+    const idx = parentIdx ?? parentIndexOf(chapters, activeChapterIndex);
+    const parent = chapters[idx] || chapters[activeChapterIndex];
+    if (!parent) return;
+    const hostIdx = parent.parentId ? parentIndexOf(chapters, idx) : idx;
+    const host = chapters[hostIdx];
+    setChapterModalMode("add-sub");
+    setEditingChapterIndex(hostIdx);
+    setFormChapterTitle("New Sub-chapter");
+    setFormChapterSubtitle(host.subtitle || "");
+    setFormChapterMinutes(10);
+    setFormChapterContent("# New Sub-chapter\n\nWrite the nested lesson here...");
+    setFormChapterCode("");
+    setFormChapterRank(hostIdx + 2);
+    const hostPart = partGroups.find((g) => g.chapterIndices.includes(hostIdx));
+    setFormChapterPartIndex(hostPart?.index ?? 0);
+    setContentView("write");
+    chapterEditBackup.current = {
+      title: "New Sub-chapter",
+      subtitle: host.subtitle || "",
+      minutes: 10,
+      content: "# New Sub-chapter\n\nWrite the nested lesson here...",
+      code: "",
+      rank: hostIdx + 2,
+      partIndex: hostPart?.index ?? 0,
     };
     setIsChapterModalOpen(true);
   };
@@ -513,6 +554,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   // Save Chapter (Add or Edit)
   const handleSaveChapter = () => {
     let updatedChapters: ManualChapter[];
+    let keepId: string | undefined;
     const placeAt = (list: ManualChapter[], from: number, rank: number) => {
       const to = Math.max(0, Math.min(list.length - 1, Math.round(rank) - 1));
       if (from === to) return { list, to };
@@ -539,18 +581,38 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       };
       const inserted = [...chapters, newChap];
       updatedChapters = moveChapterToPart(inserted, inserted.length - 1, formChapterPartIndex);
-      const keepId = newChap.id;
-      setActiveChapterIndex(chapterIndexAfter(updatedChapters, keepId, updatedChapters.length - 1));
+      keepId = newChap.id;
       toast({ type: "success", title: "Chapter Created", description: `Added ${newChap.title}.` });
+    } else if (chapterModalMode === "add-sub") {
+      const parentIdx = editingChapterIndex;
+      const parent = chapters[parentIdx];
+      const newChap: ManualChapter = {
+        id: `custom-sub-${Date.now()}`,
+        order: chapters.length + 1,
+        slug: `sub-${chapters.length + 1}`,
+        title: formChapterTitle,
+        subtitle: parent?.subtitle,
+        partKey: parent?.partKey,
+        parentId: parent?.id,
+        estimatedMinutes: formChapterMinutes,
+        contentMarkdown: formChapterContent,
+        codeSnippet: formChapterCode,
+        exercises: [],
+        resourceLinks: [],
+      };
+      updatedChapters = createSubchapter(chapters, parentIdx, newChap);
+      keepId = newChap.id;
+      toast({ type: "success", title: "Sub-chapter Created", description: `Added ${newChap.title} under ${parent?.title || "chapter"}.` });
     } else {
       const targetIdx = editingChapterIndex;
       const destPart = partGroups[formChapterPartIndex];
+      const editing = chapters[targetIdx];
       updatedChapters = chapters.map((chap, idx) => {
         if (idx === targetIdx) {
           return {
             ...chap,
             title: formChapterTitle,
-            subtitle: destPart?.name || formChapterSubtitle,
+            subtitle: chap.parentId ? chap.subtitle : destPart?.name || formChapterSubtitle,
             estimatedMinutes: formChapterMinutes,
             contentMarkdown: formChapterContent,
             codeSnippet: formChapterCode,
@@ -559,53 +621,30 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
         return chap;
       });
       const currentPart = partGroups.find((g) => g.chapterIndices.includes(targetIdx));
-      if (formChapterPartIndex !== (currentPart?.index ?? -1)) {
+      if (!editing?.parentId && formChapterPartIndex !== (currentPart?.index ?? -1)) {
         updatedChapters = moveChapterToPart(updatedChapters, targetIdx, formChapterPartIndex);
-      } else {
+      } else if (!editing?.parentId) {
         const placed = placeAt(updatedChapters, targetIdx, formChapterRank);
         updatedChapters = placed.list;
       }
-      const keepId = chapters[targetIdx]?.id;
-      setActiveChapterIndex(chapterIndexAfter(updatedChapters, keepId, 0));
-      toast({ type: "success", title: "Chapter Updated", description: "Saved chapter changes." });
+      keepId = editing?.id;
+      toast({ type: "success", title: editing?.parentId ? "Sub-chapter Updated" : "Chapter Updated", description: "Saved changes." });
     }
 
-    setChapters(updatedChapters);
-    saveCustomDataToStorage({
-      title: manualTitle,
-      description: manualDescription,
-      category: manualCategory,
-      estimatedTime: manualEstimatedTime,
-      chapters: updatedChapters,
-      tocManaged: true,
-    });
+    persistChapters(updatedChapters, keepId);
     setIsChapterModalOpen(false);
   };
 
   // Handle Delete Chapter
   const handleDeleteChapter = (idxToDelete: number) => {
-    if (chapters.length <= 1) {
+    const chapToDelete = chapters[idxToDelete];
+    const updated = deleteChaptersWithSubs(chapters, [idxToDelete]);
+    if (updated.length === 0) {
       toast({ type: "error", title: "Cannot Delete", description: "Manual must have at least one chapter." });
       return;
     }
-
-    const chapToDelete = chapters[idxToDelete];
-    const updated = chapters.filter((_, idx) => idx !== idxToDelete);
-
-    setChapters(updated);
-    if (activeChapterIndex >= updated.length) {
-      setActiveChapterIndex(updated.length - 1);
-    }
-
-    saveCustomDataToStorage({
-      title: manualTitle,
-      description: manualDescription,
-      category: manualCategory,
-      estimatedTime: manualEstimatedTime,
-      chapters: updated,
-      tocManaged: true,
-    });
-    toast({ type: "info", title: "Chapter Deleted", description: `Removed ${chapToDelete.title}.` });
+    persistChapters(updated, activeChapter.id);
+    toast({ type: "info", title: chapToDelete?.parentId ? "Sub-chapter Deleted" : "Chapter Deleted", description: `Removed ${chapToDelete.title}.` });
   };
 
   const emptyChapter = (): ManualChapter => ({
@@ -712,9 +751,25 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
 
   const handleMoveSelectedChapters = (direction: -1 | 1) => {
     if (selectedChapterIndices.length === 0) return;
-    const result = moveChapters(chapters, selectedChapterIndices, direction);
-    persistChapters(result.chapters, activeChapter.id);
-    setSelectedChapterIndices(result.selected);
+    const ids = selectedChapterIndices
+      .map((i) => chapters[i]?.id)
+      .filter((id): id is string => Boolean(id));
+    const skip = new Set(
+      ids.filter((id) => {
+        const row = chapters.find((c) => c.id === id);
+        return Boolean(row?.parentId && ids.includes(row.parentId));
+      })
+    );
+    let next = chapters;
+    const walk = direction === -1 ? ids : [...ids].reverse();
+    for (const id of walk) {
+      if (skip.has(id)) continue;
+      const idx = next.findIndex((c) => c.id === id);
+      if (idx < 0) continue;
+      next = moveChapterBlock(next, idx, direction).chapters;
+    }
+    persistChapters(next, activeChapter.id);
+    setSelectedChapterIndices(ids.map((id) => next.findIndex((c) => c.id === id)).filter((i) => i >= 0).sort((a, b) => a - b));
   };
 
   const handleMergeSelectedChapters = () => {
@@ -730,18 +785,129 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
 
   const handleDeleteSelectedChapters = (indices: number[]) => {
     if (indices.length === 0) return;
-    if (indices.length >= chapters.length) {
+    const updated = deleteChaptersWithSubs(chapters, indices);
+    if (updated.length === 0) {
       const kept = emptyChapter();
       persistChapters([kept], kept.id);
     } else {
-      const drop = new Set(indices);
-      persistChapters(
-        chapters.filter((_, i) => !drop.has(i)).map((c, i) => ({ ...c, order: i + 1 })),
-        activeChapter.id
-      );
+      persistChapters(updated, activeChapter.id);
     }
     setSelectedChapterIndices([]);
-    toast({ type: "info", title: "Chapter Deleted", description: `Removed ${indices.length} chapter${indices.length === 1 ? "" : "s"}.` });
+    toast({ type: "info", title: "Chapter Deleted", description: `Removed ${indices.length} item${indices.length === 1 ? "" : "s"}.` });
+  };
+
+  const renderTocChapterRow = (idx: number, nested: boolean, nums: Map<number, string>) => {
+    const chap = chapters[idx];
+    if (!chap) return null;
+    const isActive = idx === activeChapterIndex;
+    const displayTitle = stripLeadingNumber(chap.title.replace(/^Chapter\s+\d+:\s*/i, ""));
+    const label = nums.get(idx) || String(idx + 1);
+    const sibs = chap.parentId
+      ? chapters.map((_, i) => i).filter((i) => chapters[i].parentId === chap.parentId)
+      : [];
+    let blockEnd = idx + 1;
+    while (!chap.parentId && blockEnd < chapters.length && chapters[blockEnd].parentId === chap.id) blockEnd += 1;
+    const canUp = chap.parentId ? sibs[0] !== idx : idx > 0;
+    const canDown = chap.parentId ? sibs[sibs.length - 1] !== idx : blockEnd < chapters.length;
+
+    return (
+      <div
+        key={chap.id || idx}
+        className={`group flex items-center gap-0.5 rounded-lg ${nested ? "ml-4" : ""} ${
+          isActive ? "bg-[#1C2A26]" : "hover:bg-[#F3EDE2]"
+        }`}
+      >
+        {isEditingChapters && (
+          <input
+            type="checkbox"
+            checked={selectedChapterIndices.includes(idx)}
+            onChange={() => toggleChapterSelected(idx)}
+            className="ml-1 rounded border-[#D4CBBB] text-[#D97706] focus:ring-[#D97706] w-3.5 h-3.5 shrink-0"
+            aria-label={`Select ${displayTitle}`}
+          />
+        )}
+        <button
+          type="button"
+          onClick={() => setActiveChapterIndex(idx)}
+          className={`flex-1 min-w-0 text-left px-2 py-2 text-xs sm:text-sm transition-colors flex items-center gap-2 ${
+            isActive ? "text-[#FAF7F2] font-semibold" : "text-[#3D4D47] hover:text-[#1C2A26] font-normal"
+          } ${nested ? "py-1.5" : ""}`}
+          title={displayTitle}
+        >
+          <span className={`font-mono text-[11px] font-bold shrink-0 min-w-[1.75rem] ${isActive ? "text-[#D97706]" : "text-[#8A9B95]"}`}>
+            {label}.
+          </span>
+          <span className="truncate whitespace-nowrap flex-1 min-w-0">{displayTitle}</span>
+        </button>
+
+        {isEditingChapters && (
+          <div className="flex items-center shrink-0 pr-1">
+            {!nested && (
+              <button
+                type="button"
+                onClick={() => openAddSubchapterModal(idx)}
+                className={`p-1 rounded-md transition-colors ${
+                  isActive ? "text-amber-400 hover:text-white" : "text-[#8A9B95] hover:text-[#D97706]"
+                }`}
+                title="Add sub-chapter"
+              >
+                <Plus className="w-3 h-3" />
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={!canUp}
+              onClick={() => {
+                const result = moveChapterBlock(chapters, idx, -1);
+                persistChapters(result.chapters, chapters[activeChapterIndex]?.id);
+                setSelectedChapterIndices(result.selected);
+              }}
+              className={`p-1 rounded-md transition-colors disabled:opacity-30 ${
+                isActive ? "text-amber-400 hover:text-white" : "text-[#8A9B95] hover:text-[#D97706]"
+              }`}
+              title={nested ? "Move sub-chapter up" : "Move chapter up"}
+            >
+              <ArrowUp className="w-3 h-3" />
+            </button>
+            <button
+              type="button"
+              disabled={!canDown}
+              onClick={() => {
+                const result = moveChapterBlock(chapters, idx, 1);
+                persistChapters(result.chapters, chapters[activeChapterIndex]?.id);
+                setSelectedChapterIndices(result.selected);
+              }}
+              className={`p-1 rounded-md transition-colors disabled:opacity-30 ${
+                isActive ? "text-amber-400 hover:text-white" : "text-[#8A9B95] hover:text-[#D97706]"
+              }`}
+              title={nested ? "Move sub-chapter down" : "Move chapter down"}
+            >
+              <ArrowDown className="w-3 h-3" />
+            </button>
+            <button
+              type="button"
+              onClick={() => openEditChapterModal(idx)}
+              className={`p-1 rounded-md transition-colors ${
+                isActive ? "text-amber-400 hover:text-white" : "text-[#8A9B95] hover:text-[#D97706]"
+              }`}
+              title={nested ? "Edit Sub-chapter" : "Edit Chapter"}
+            >
+              <Edit className="w-3 h-3" />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDeleteChapter(idx)}
+              className={`p-1 rounded-md transition-colors ${
+                isActive ? "text-amber-400 hover:text-red-400" : "text-[#8A9B95] hover:text-red-600"
+              }`}
+              title={nested ? "Delete Sub-chapter" : "Delete Chapter"}
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+      </div>
+    );
   };
 
   // Inline formatting helper for **bold** and `code` without raw Markdown tokens
@@ -1154,6 +1320,14 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                     <Plus className="w-3.5 h-3.5" />
                     Add Chapter
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => openAddSubchapterModal()}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#D97706] bg-white border border-[#E7E0D3] hover:border-[#D97706] px-2 py-1 rounded-lg"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Add Sub-chapter
+                  </button>
                 </div>
               </div>
 
@@ -1228,7 +1402,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                   type="search"
                   value={tocQuery}
                   onChange={(e) => setTocQuery(e.target.value)}
-                  placeholder="Search parts and chapters…"
+                  placeholder="Search parts, chapters, sub-chapters…"
                   className="w-full pl-8 pr-7 py-2 bg-white border border-[#E7E0D3] rounded-lg text-xs text-[#1C2A26] placeholder-[#8A9B95] focus:outline-none focus:border-[#D97706]"
                 />
                 {tocQuery && (
@@ -1351,125 +1525,20 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                         </>
                       )}
                     </div>
-                    {part.chapterIndices.map((idx) => {
-                      const chap = chapters[idx];
-                      if (!chap) return null;
-                      const isActive = idx === activeChapterIndex;
-                      const displayTitle = stripLeadingNumber(
-                        chap.title.replace(/^Chapter\s+\d+:\s*/i, "")
-                      );
-
-                      return (
-                        <div
-                          key={chap.id || idx}
-                          className={`group flex items-center gap-0.5 rounded-lg ${
-                            isActive ? "bg-[#1C2A26]" : "hover:bg-[#F3EDE2]"
-                          }`}
-                        >
-                          {isEditingChapters && (
-                            <input
-                              type="checkbox"
-                              checked={selectedChapterIndices.includes(idx)}
-                              onChange={() => toggleChapterSelected(idx)}
-                              className="ml-1 rounded border-[#D4CBBB] text-[#D97706] focus:ring-[#D97706] w-3.5 h-3.5 shrink-0"
-                              aria-label={`Select ${displayTitle}`}
-                            />
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => setActiveChapterIndex(idx)}
-                            className={`flex-1 min-w-0 text-left px-2 py-2 text-xs sm:text-sm transition-colors flex items-center gap-2 ${
-                              isActive
-                                ? "text-[#FAF7F2] font-semibold"
-                                : "text-[#3D4D47] hover:text-[#1C2A26] font-normal"
-                            }`}
-                            title={displayTitle}
-                          >
-                            <span className={`font-mono text-[11px] font-bold shrink-0 w-5 ${isActive ? "text-[#D97706]" : "text-[#8A9B95]"}`}>
-                              {idx + 1}.
-                            </span>
-                            <span className="truncate whitespace-nowrap flex-1 min-w-0">
-                              {displayTitle}
-                            </span>
-                          </button>
-
-                          {isEditingChapters && (
-                          <div className="flex items-center shrink-0 pr-1">
-                            <button
-                              type="button"
-                              disabled={idx === 0}
-                              onClick={() => {
-                                const result = moveChapters(chapters, [idx], -1);
-                                persistChapters(result.chapters, chapters[activeChapterIndex]?.id);
-                                setSelectedChapterIndices((prev) => {
-                                  if (!prev.length) return prev;
-                                  const next = new Set(prev);
-                                  if (next.has(idx)) {
-                                    next.delete(idx);
-                                    result.selected.forEach((i) => next.add(i));
-                                  }
-                                  return [...next].sort((a, b) => a - b);
-                                });
-                              }}
-                              className={`p-1 rounded-md transition-colors disabled:opacity-30 ${
-                                isActive ? "text-amber-400 hover:text-white" : "text-[#8A9B95] hover:text-[#D97706]"
-                              }`}
-                              title="Move chapter up"
-                            >
-                              <ArrowUp className="w-3 h-3" />
-                            </button>
-                            <button
-                              type="button"
-                              disabled={idx === chapters.length - 1}
-                              onClick={() => {
-                                const result = moveChapters(chapters, [idx], 1);
-                                persistChapters(result.chapters, chapters[activeChapterIndex]?.id);
-                                setSelectedChapterIndices((prev) => {
-                                  if (!prev.length) return prev;
-                                  const next = new Set(prev);
-                                  if (next.has(idx)) {
-                                    next.delete(idx);
-                                    result.selected.forEach((i) => next.add(i));
-                                  }
-                                  return [...next].sort((a, b) => a - b);
-                                });
-                              }}
-                              className={`p-1 rounded-md transition-colors disabled:opacity-30 ${
-                                isActive ? "text-amber-400 hover:text-white" : "text-[#8A9B95] hover:text-[#D97706]"
-                              }`}
-                              title="Move chapter down"
-                            >
-                              <ArrowDown className="w-3 h-3" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => openEditChapterModal(idx)}
-                              className={`p-1 rounded-md transition-colors ${
-                                isActive
-                                  ? "text-amber-400 hover:text-white"
-                                  : "text-[#8A9B95] hover:text-[#D97706]"
-                              }`}
-                              title="Edit Chapter"
-                            >
-                              <Edit className="w-3 h-3" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteChapter(idx)}
-                              className={`p-1 rounded-md transition-colors ${
-                                isActive
-                                  ? "text-amber-400 hover:text-red-400"
-                                  : "text-[#8A9B95] hover:text-red-600"
-                              }`}
-                              title="Delete Chapter"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
+                    {(() => {
+                      const nums = tocNumbersForPart(chapters, part.chapterIndices);
+                      return part.chapterIndices.map((idx) => {
+                        const chap = chapters[idx];
+                        if (!chap || chap.parentId) return null;
+                        const subs = part.chapterIndices.filter((i) => chapters[i]?.parentId === chap.id);
+                        return (
+                          <div key={chap.id || idx} className="space-y-0.5">
+                            {renderTocChapterRow(idx, false, nums)}
+                            {subs.map((sIdx) => renderTocChapterRow(sIdx, true, nums))}
                           </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                        );
+                      });
+                    })()}
                   </div>
                 ))}
               </div>
@@ -1483,7 +1552,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
               <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#E7E0D3]">
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="text-xs font-serif-display font-bold text-[#D97706]">
-                    Lesson {activeChapterIndex + 1} of {totalChapters}
+                    {isSubchapter(activeChapter) ? "Sub-chapter" : "Lesson"} {activeChapterIndex + 1} of {totalChapters}
                   </span>
 
                   <div className="flex items-center bg-[#FAF7F2] border border-[#E7E0D3] rounded-lg p-0.5 text-xs">
@@ -1887,7 +1956,15 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
               <div className="flex justify-between items-center pb-3 border-b border-[#E7E0D3]">
                 <h3 className="font-serif-display font-bold text-xl text-[#1C2A26] flex items-center gap-2">
                   <BookOpen className="w-5 h-5 text-[#D97706]" />
-                  <span>{chapterModalMode === "add" ? "Add New Chapter" : "Edit Chapter"}</span>
+                  <span>
+                    {chapterModalMode === "add"
+                      ? "Add New Chapter"
+                      : chapterModalMode === "add-sub"
+                        ? "Add Sub-chapter"
+                        : isSubchapter(chapters[editingChapterIndex])
+                          ? "Edit Sub-chapter"
+                          : "Edit Chapter"}
+                  </span>
                 </h3>
                 <button onClick={handleCancelChapterEdit} className="text-[#8A9B95] hover:text-[#1C2A26]" title="Cancel">
                   <X className="w-5 h-5" />
@@ -1897,7 +1974,11 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
               <div className="space-y-4 font-sans text-xs sm:text-sm">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="sm:col-span-2">
-                    <label className="block font-bold text-[#1C2A26] mb-1">Chapter Title</label>
+                    <label className="block font-bold text-[#1C2A26] mb-1">
+                      {chapterModalMode === "add-sub" || isSubchapter(chapters[editingChapterIndex])
+                        ? "Sub-chapter Title"
+                        : "Chapter Title"}
+                    </label>
                     <input
                       type="text"
                       value={formChapterTitle}
@@ -1917,6 +1998,15 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                   </div>
                 </div>
 
+                {chapterModalMode === "add-sub" || isSubchapter(chapters[editingChapterIndex]) ? (
+                  <p className="text-xs text-[#52635E] leading-relaxed">
+                    Nested under{" "}
+                    <span className="font-bold text-[#1C2A26]">
+                      {chapters[chapterModalMode === "add-sub" ? editingChapterIndex : parentIndexOf(chapters, editingChapterIndex)]?.title}
+                    </span>
+                  </p>
+                ) : (
+                <>
                 <div>
                   <label className="block font-bold text-[#1C2A26] mb-1">Part</label>
                   <select
@@ -1977,6 +2067,8 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                     </span>
                   </div>
                 </div>
+                </>
+                )}
 
                 <div>
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
@@ -2069,7 +2161,11 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                   Cancel
                 </Button>
                 <Button variant="primary" size="sm" onClick={handleSaveChapter} leftIcon={<Save className="w-4 h-4" />}>
-                  {chapterModalMode === "add" ? "Create Chapter" : "Save Chapter"}
+                  {chapterModalMode === "add"
+                    ? "Create Chapter"
+                    : chapterModalMode === "add-sub"
+                      ? "Create Sub-chapter"
+                      : "Save"}
                 </Button>
               </div>
             </motion.div>

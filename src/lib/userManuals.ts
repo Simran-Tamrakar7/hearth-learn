@@ -57,7 +57,7 @@ function splitBlocks(text: string): { heading: string; level: number; body: stri
   return blocks;
 }
 
-function chapterFrom(title: string, subtitle: string, body: string, order: number): ManualChapter {
+function chapterFrom(title: string, subtitle: string, body: string, order: number, parentId?: string): ManualChapter {
   const paras = body.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
   const overview = paras[0] || body.slice(0, 400) || `Notes on ${title}.`;
   const why = paras[1] || `Why it matters: ${title} is part of this manual so the notes stay usable as a lesson.`;
@@ -81,6 +81,7 @@ function chapterFrom(title: string, subtitle: string, body: string, order: numbe
     summaryMarkdown: overview.slice(0, 280),
     exercises: [],
     resourceLinks: [],
+    ...(parentId ? { parentId } : {}),
   };
 }
 
@@ -142,6 +143,10 @@ export function notesToManual(raw: string, forcedTitle?: string): ManualItem {
           const chapTitle = isPartHeading(b.heading) ? partName : b.heading;
           chapters.push(chapterFrom(chapTitle, partName, b.body, order++));
         }
+      } else if (b.level >= 3 && chapters.length > 0) {
+        const last = chapters[chapters.length - 1];
+        const parentId = last.parentId || last.id;
+        chapters.push(chapterFrom(b.heading, partName, b.body || b.heading, order++, parentId));
       } else {
         chapters.push(chapterFrom(b.heading, partName, b.body || b.heading, order++));
       }
