@@ -16,8 +16,8 @@ Set **only in that type’s `_registry.ts`** (library: optional `status` on the 
 
 Structured lessons with chapters, optional tools, optional Testing Types overlay.
 
-- **Listing + flags:** `content/manuals/_registry.ts` (slug, title, tool, status, order, tags, featured, pinnable)
-- **Bodies:** `content/manuals/<slug>/data.js`, listed in `_bodies.js`, converted by `_lib/pathwiseToHearth.ts`
+- **Listing + bodies:** `content/manuals/_registry.ts` (slug, flags, and a `body:` import of `./<slug>/data.js`)
+- **Chapters:** `content/manuals/<slug>/data.js`, converted by `_lib/pathwiseToHearth.ts`
 - **Testing Types extra:** `content/manuals/testing-types/` (`overlay.ts`, `outline.ts`, `data.js`)
 - **Playwright:** `content/manuals/playwright/data.js` (merged; not split across files)
 - **User-created manuals:** `localStorage`, not the registry

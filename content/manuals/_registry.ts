@@ -1,6 +1,72 @@
 import type { CatalogStatus } from "../types";
 
-/** Builtin manuals. Listing/nav reads this file. Chapter bodies: ./<id>/data.js via _bodies.js. */
+import { pathwiseManual as testingTypes } from "./testing-types/data.js";
+import { pathwiseManual as cypress } from "./cypress/data.js";
+import { pathwiseManual as playwright } from "./playwright/data.js";
+import { pathwiseManual as apiTesting } from "./api-testing/data.js";
+import { pathwiseManual as selenium } from "./selenium/data.js";
+import { pathwiseManual as cicd } from "./cicd/data.js";
+import { pathwiseManual as accessibility } from "./accessibility/data.js";
+import { pathwiseManual as securityTesting } from "./security-testing/data.js";
+import { pathwiseManual as mobileTesting } from "./mobile-testing/data.js";
+import { pathwiseManual as dockerQa } from "./docker-qa/data.js";
+import { pathwiseManual as exploratoryTesting } from "./exploratory-testing/data.js";
+import { pathwiseManual as testPlanning } from "./test-planning/data.js";
+import { pathwiseManual as bugAdvocacy } from "./bug-advocacy/data.js";
+import { pathwiseManual as performanceTesting } from "./performance-testing/data.js";
+import { pathwiseManual as agileScrum } from "./agile-scrum/data.js";
+import { pathwiseManual as projectManagement } from "./project-management/data.js";
+import { pathwiseManual as productSense } from "./product-sense/data.js";
+import { pathwiseManual as jiraWork } from "./jira-work/data.js";
+import { pathwiseManual as graphicDesign } from "./graphic-design/data.js";
+import { pathwiseManual as figma } from "./figma/data.js";
+import { pathwiseManual as uiux } from "./uiux/data.js";
+import { pathwiseManual as designThinking } from "./design-thinking/data.js";
+import { pathwiseManual as motionDesign } from "./motion-design/data.js";
+import { pathwiseManual as presentationDesign } from "./presentation-design/data.js";
+import { pathwiseManual as promptEngineering } from "./prompt-engineering/data.js";
+import { pathwiseManual as aiCoding } from "./ai-coding/data.js";
+import { pathwiseManual as javascript } from "./javascript/data.js";
+import { pathwiseManual as typescript } from "./typescript/data.js";
+import { pathwiseManual as python } from "./python/data.js";
+import { pathwiseManual as sql } from "./sql/data.js";
+import { pathwiseManual as gitVersionControl } from "./git-version-control/data.js";
+import { pathwiseManual as linuxCli } from "./linux-cli/data.js";
+import { pathwiseManual as observability } from "./observability/data.js";
+import { pathwiseManual as cloudBasics } from "./cloud-basics/data.js";
+import { pathwiseManual as dataLiteracy } from "./data-literacy/data.js";
+import { pathwiseManual as documentationSystems } from "./documentation-systems/data.js";
+import { pathwiseManual as resumeLinkedin } from "./resume-linkedin/data.js";
+import { pathwiseManual as portfolio } from "./portfolio/data.js";
+import { pathwiseManual as jobHunt } from "./job-hunt/data.js";
+import { pathwiseManual as communication } from "./communication/data.js";
+import { pathwiseManual as problemSolving } from "./problem-solving/data.js";
+import { pathwiseManual as interviewCraft } from "./interview-craft/data.js";
+import { pathwiseManual as focus } from "./focus/data.js";
+import { pathwiseManual as emotionalIntelligence } from "./emotional-intelligence/data.js";
+import { pathwiseManual as conflictCollaboration } from "./conflict-collaboration/data.js";
+import { pathwiseManual as stakeholderManagement } from "./stakeholder-management/data.js";
+import { pathwiseManual as techWriting } from "./tech-writing/data.js";
+import { pathwiseManual as publicSpeaking } from "./public-speaking/data.js";
+import { pathwiseManual as networkingCareer } from "./networking-career/data.js";
+import { pathwiseManual as reactBasics } from "./react-basics/data.js";
+import { pathwiseManual as cssLayout } from "./css-layout/data.js";
+import { pathwiseManual as postmanApi } from "./postman-api/data.js";
+import { pathwiseManual as excelData } from "./excel-data/data.js";
+import { pathwiseManual as chatgptWorkflows } from "./chatgpt-workflows/data.js";
+import { pathwiseManual as linuxShellDaily } from "./linux-shell-daily/data.js";
+import { pathwiseManual as nocodeAutomation } from "./nocode-automation/data.js";
+import { pathwiseManual as aiAgentsWorkflows } from "./ai-agents-workflows/data.js";
+import { pathwiseManual as dataVizBasics } from "./data-viz-basics/data.js";
+import { pathwiseManual as productivitySystems } from "./productivity-systems/data.js";
+import { pathwiseManual as documentationWriting } from "./documentation-writing/data.js";
+import { pathwiseManual as uxResearchBasics } from "./ux-research-basics/data.js";
+import { pathwiseManual as gitForHumans } from "./git-for-humans/data.js";
+import { pathwiseManual as apiBasicsNondev } from "./api-basics-nondev/data.js";
+import { pathwiseManual as emailMarketingAutomation } from "./email-marketing-automation/data.js";
+import { pathwiseManual as personalBrandingPortfolio } from "./personal-branding-portfolio/data.js";
+
+/** Builtin manuals. Listing + bodies. A folder is invisible until this file imports its data.js. */
 export type ManualRegistryEntry = {
   id: string;
   title: string;
@@ -11,6 +77,8 @@ export type ManualRegistryEntry = {
   featured?: boolean;
   pinnable?: boolean;
   pinIcon?: string;
+  /** Chapter body from ./<id>/data.js — this import is what makes the folder exist to Next. */
+  body: Record<string, unknown>;
 };
 
 export const MANUALS: ManualRegistryEntry[] = [
@@ -25,7 +93,8 @@ export const MANUALS: ManualRegistryEntry[] = [
     ],
     featured: true,
     pinnable: true,
-    pinIcon: "🧪"
+    pinIcon: "🧪",
+    body: testingTypes,
   },
   {
     id: "cypress",
@@ -38,7 +107,8 @@ export const MANUALS: ManualRegistryEntry[] = [
     ],
     featured: false,
     pinnable: true,
-    pinIcon: "🌲"
+    pinIcon: "🌲",
+    body: cypress,
   },
   {
     id: "playwright",
@@ -51,7 +121,8 @@ export const MANUALS: ManualRegistryEntry[] = [
     ],
     featured: false,
     pinnable: true,
-    pinIcon: "🎭"
+    pinIcon: "🎭",
+    body: playwright,
   },
   {
     id: "api-testing",
@@ -63,7 +134,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "automation"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: apiTesting,
   },
   {
     id: "selenium",
@@ -75,7 +147,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "automation"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: selenium,
   },
   {
     id: "cicd",
@@ -87,7 +160,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "automation"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: cicd,
   },
   {
     id: "accessibility",
@@ -99,7 +173,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "quality"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: accessibility,
   },
   {
     id: "security-testing",
@@ -111,7 +186,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "quality"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: securityTesting,
   },
   {
     id: "mobile-testing",
@@ -123,7 +199,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "quality"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: mobileTesting,
   },
   {
     id: "docker-qa",
@@ -135,7 +212,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "quality"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: dockerQa,
   },
   {
     id: "exploratory-testing",
@@ -147,7 +225,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "quality"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: exploratoryTesting,
   },
   {
     id: "test-planning",
@@ -159,7 +238,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "quality"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: testPlanning,
   },
   {
     id: "bug-advocacy",
@@ -171,7 +251,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "quality"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: bugAdvocacy,
   },
   {
     id: "performance-testing",
@@ -183,7 +264,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "quality"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: performanceTesting,
   },
   {
     id: "agile-scrum",
@@ -195,7 +277,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "delivery"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: agileScrum,
   },
   {
     id: "project-management",
@@ -207,7 +290,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "delivery"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: projectManagement,
   },
   {
     id: "product-sense",
@@ -219,7 +303,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "delivery"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: productSense,
   },
   {
     id: "jira-work",
@@ -231,7 +316,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "delivery"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: jiraWork,
   },
   {
     id: "graphic-design",
@@ -243,7 +329,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "design"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: graphicDesign,
   },
   {
     id: "figma",
@@ -255,7 +342,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "design"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: figma,
   },
   {
     id: "uiux",
@@ -267,7 +355,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "design"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: uiux,
   },
   {
     id: "design-thinking",
@@ -279,7 +368,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "design"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: designThinking,
   },
   {
     id: "motion-design",
@@ -291,7 +381,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "design"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: motionDesign,
   },
   {
     id: "presentation-design",
@@ -303,7 +394,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "design"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: presentationDesign,
   },
   {
     id: "prompt-engineering",
@@ -316,7 +408,8 @@ export const MANUALS: ManualRegistryEntry[] = [
     ],
     featured: false,
     pinnable: true,
-    pinIcon: "✨"
+    pinIcon: "✨",
+    body: promptEngineering,
   },
   {
     id: "ai-coding",
@@ -328,7 +421,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "ai"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: aiCoding,
   },
   {
     id: "javascript",
@@ -341,7 +435,8 @@ export const MANUALS: ManualRegistryEntry[] = [
     ],
     featured: false,
     pinnable: true,
-    pinIcon: "📘"
+    pinIcon: "📘",
+    body: javascript,
   },
   {
     id: "typescript",
@@ -353,7 +448,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "foundations"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: typescript,
   },
   {
     id: "python",
@@ -365,7 +461,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "foundations"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: python,
   },
   {
     id: "sql",
@@ -377,7 +474,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "foundations"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: sql,
   },
   {
     id: "git-version-control",
@@ -390,7 +488,8 @@ export const MANUALS: ManualRegistryEntry[] = [
     ],
     featured: false,
     pinnable: true,
-    pinIcon: "🐙"
+    pinIcon: "🐙",
+    body: gitVersionControl,
   },
   {
     id: "linux-cli",
@@ -402,7 +501,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "ops"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: linuxCli,
   },
   {
     id: "observability",
@@ -414,7 +514,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "ops"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: observability,
   },
   {
     id: "cloud-basics",
@@ -426,7 +527,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "ops"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: cloudBasics,
   },
   {
     id: "data-literacy",
@@ -438,7 +540,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "ops"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: dataLiteracy,
   },
   {
     id: "documentation-systems",
@@ -450,7 +553,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "ops"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: documentationSystems,
   },
   {
     id: "resume-linkedin",
@@ -462,7 +566,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "career"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: resumeLinkedin,
   },
   {
     id: "portfolio",
@@ -474,7 +579,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "career"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: portfolio,
   },
   {
     id: "job-hunt",
@@ -486,7 +592,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "career"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: jobHunt,
   },
   {
     id: "communication",
@@ -498,7 +605,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "soft-skills"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: communication,
   },
   {
     id: "problem-solving",
@@ -510,7 +618,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "soft-skills"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: problemSolving,
   },
   {
     id: "interview-craft",
@@ -522,7 +631,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "soft-skills"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: interviewCraft,
   },
   {
     id: "focus",
@@ -534,7 +644,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "soft-skills"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: focus,
   },
   {
     id: "emotional-intelligence",
@@ -546,7 +657,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "soft-skills"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: emotionalIntelligence,
   },
   {
     id: "conflict-collaboration",
@@ -558,7 +670,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "soft-skills"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: conflictCollaboration,
   },
   {
     id: "stakeholder-management",
@@ -570,7 +683,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "soft-skills"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: stakeholderManagement,
   },
   {
     id: "tech-writing",
@@ -582,7 +696,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "soft-skills"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: techWriting,
   },
   {
     id: "public-speaking",
@@ -594,7 +709,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "soft-skills"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: publicSpeaking,
   },
   {
     id: "networking-career",
@@ -606,7 +722,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "soft-skills"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: networkingCareer,
   },
   {
     id: "react-basics",
@@ -618,7 +735,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "foundations"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: reactBasics,
   },
   {
     id: "css-layout",
@@ -630,7 +748,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "design"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: cssLayout,
   },
   {
     id: "postman-api",
@@ -642,7 +761,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "automation"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: postmanApi,
   },
   {
     id: "excel-data",
@@ -654,7 +774,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "foundations"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: excelData,
   },
   {
     id: "chatgpt-workflows",
@@ -666,7 +787,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "ai"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: chatgptWorkflows,
   },
   {
     id: "linux-shell-daily",
@@ -678,7 +800,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "ops"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: linuxShellDaily,
   },
   {
     id: "nocode-automation",
@@ -690,7 +813,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "automation"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: nocodeAutomation,
   },
   {
     id: "ai-agents-workflows",
@@ -702,7 +826,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "ai"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: aiAgentsWorkflows,
   },
   {
     id: "data-viz-basics",
@@ -714,7 +839,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "foundations"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: dataVizBasics,
   },
   {
     id: "productivity-systems",
@@ -726,7 +852,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "soft-skills"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: productivitySystems,
   },
   {
     id: "documentation-writing",
@@ -738,7 +865,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "ops"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: documentationWriting,
   },
   {
     id: "ux-research-basics",
@@ -750,7 +878,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "design"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: uxResearchBasics,
   },
   {
     id: "git-for-humans",
@@ -762,7 +891,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "foundations"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: gitForHumans,
   },
   {
     id: "api-basics-nondev",
@@ -774,7 +904,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "foundations"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: apiBasicsNondev,
   },
   {
     id: "email-marketing-automation",
@@ -786,7 +917,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "delivery"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: emailMarketingAutomation,
   },
   {
     id: "personal-branding-portfolio",
@@ -798,7 +930,8 @@ export const MANUALS: ManualRegistryEntry[] = [
       "career"
     ],
     featured: false,
-    pinnable: false
+    pinnable: false,
+    body: personalBrandingPortfolio,
   }
 ];
 

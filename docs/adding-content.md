@@ -6,7 +6,7 @@ Do this in a text editor. There is **no generate script**. After you save, `next
 
 This stack has **no MDX loader**. Chapter and snippet files are `.ts` (string exports), not `.mdx`.
 
-Next.js will not auto-scan folders. A new folder is invisible until `_registry.ts` mentions it (and, for manuals, until `_bodies.js` imports it; for toolkits / Life Lab, until that registry `import`s the folder).
+Next.js will not auto-scan folders. A new folder is invisible until `_registry.ts` imports it (same for toolkits / Life Lab).
 
 ---
 
@@ -16,7 +16,11 @@ One folder per slug under `content/manuals/`. Playwright is `playwright/data.js`
 
 1. Create `content/manuals/<slug>/` (kebab-case, same as the URL).
 2. Copy an existing `data.js`. Keep `pathwiseManual.id` equal to the folder name (exception: Git’s body id is `git`, folder / URL is `git-version-control`).
-3. Open `content/manuals/_registry.ts`. Copy an object into `MANUALS`:
+3. Open `content/manuals/_registry.ts`. Add one import at the top, then copy a `MANUALS` row with `body:` pointing at that import (same pattern as Cypress):
+
+```ts
+import { pathwiseManual as jest } from "./jest/data.js";
+```
 
 ```ts
 {
@@ -28,13 +32,13 @@ One folder per slug under `content/manuals/`. Playwright is `playwright/data.js`
   tags: ["automation"],
   featured: false,
   pinnable: false,
+  body: jest,
 }
 ```
 
-4. `id` **is** the URL slug (`/manuals/jest`). Do not reuse an id.
-5. Open `content/manuals/_bodies.js`. Add one import and one array entry (same pattern as the others). A folder with no `_bodies.js` line is invisible.
-6. Only if the URL must differ from the body’s `id`, add a row to `SLUG` in `src/app/manuals/_lib/pathwiseToHearth.ts` (today only `git` → `git-version-control`).
-7. Save. Open `/manuals/jest`.
+4. `id` **is** the URL slug (`/manuals/jest`). Do not reuse an id. A folder with no import + `body:` is invisible.
+5. Only if the URL must differ from the body’s `id`, add a row to `SLUG` in `src/app/manuals/_lib/pathwiseToHearth.ts` (today only `git` → `git-version-control`).
+6. Save. Open `/manuals/jest`.
 
 Pin ids: `man-<slug>`, except Git which is `man-git` (do not change that). Set `pinnable: true` and `pinIcon` if it should appear in the dashboard pin picker.
 

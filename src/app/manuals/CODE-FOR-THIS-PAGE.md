@@ -16,7 +16,7 @@ This folder **is** the Manuals page. Everything that exists only for Manuals liv
 | Chapter **text** of a builtin manual | `content/manuals/<slug>/data.js` |
 | Testing Types overlay + 15-chapter TOC | `content/manuals/testing-types/` |
 | Playwright chapters | `content/manuals/playwright/data.js` |
-| Hide / feature / pin a builtin manual | `content/manuals/_registry.ts` |
+| Hide / feature / pin a builtin, or wire a new `data.js` | `content/manuals/_registry.ts` |
 | AI “generate a manual from notes” API | `src/app/api/manuals/generate/route.ts` |
 | Top nav (every page) | `src/components/layout/Navbar.tsx` |
 
