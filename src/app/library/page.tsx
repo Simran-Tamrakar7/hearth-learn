@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import {
-  libraryBooks,
+  listedLibraryBooks,
   searchBooks,
   shelves,
   gutenbergCoverUrl,
@@ -125,7 +125,7 @@ export default function LibraryPage() {
   }, [q, shelf, savedOnly, saved]);
 
   const savedBooks = useMemo(
-    () => libraryBooks.filter((b) => saved.has(b.id)),
+    () => listedLibraryBooks().filter((b) => saved.has(b.id)),
     [saved]
   );
 
@@ -167,7 +167,7 @@ export default function LibraryPage() {
           </p>
 
           <p className="text-xs font-semibold text-[#8A9B95]">
-            {libraryBooks.length} titles · {shelves.length - 1} shelves · {saved.size} saved here
+            {listedLibraryBooks().length} titles · {shelves.length - 1} shelves · {saved.size} saved here
           </p>
 
           <div className="pt-2 sm:max-w-md flex items-center gap-3">

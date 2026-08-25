@@ -36,6 +36,8 @@ import {
 } from "lucide-react";
 import { COOKBOOK_DISHES } from "@/lib/cookbookData";
 import { ARCADIA_GAMES } from "@/lib/gamesData";
+import { findHearthManual } from "@/lib/manualsData";
+import { pinnableManuals } from "@content/manuals/_registry";
 import { PinButton, getPinnedItems, savePinnedItems, PinnedItemMetadata } from "@/components/ui/PinButton";
 
 interface DashboardData {
@@ -53,15 +55,10 @@ interface DashboardData {
   continueTrail: any;
 }
 
-// Pinnable Manuals Catalog
-const PINNABLE_MANUALS = [
-  { id: "man-testing-types", title: "Software Testing Types & Levels", category: "Quality Craft", slug: "testing-types", icon: "🧪" },
-  { id: "man-playwright", title: "Playwright Automation", category: "Automation & Testing", slug: "playwright", icon: "🎭" },
-  { id: "man-cypress", title: "Cypress", category: "Automation & Testing", slug: "cypress", icon: "🌲" },
-  { id: "man-git", title: "Pro Git & Version Control", category: "Foundations", slug: "git-version-control", icon: "🐙" },
-  { id: "man-javascript", title: "JavaScript", category: "Foundations", slug: "javascript", icon: "📘" },
-  { id: "man-prompt-engineering", title: "Prompt Engineering", category: "AI & Prompting", slug: "prompt-engineering", icon: "✨" },
-];
+const PINNABLE_MANUALS = pinnableManuals().map((m) => ({
+  ...m,
+  category: findHearthManual(m.slug)?.category ?? "",
+}));
 
 // Zodiac Signs Data
 const ZODIAC_SIGNS = [

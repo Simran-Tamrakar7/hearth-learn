@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import { MANUALS_DATA, findHearthManual, ManualItem } from "@/lib/manualsData";
+import { featuredManualIds, activeManualSlugs } from "@content/manuals/_registry";
 import { genres } from "@/lib/pathwise-data/helpers.js";
 import { Compass, Search, Clock, BookOpen, ArrowRight, Pin, ExternalLink, Code2, Sparkles, X, Trash2 } from "lucide-react";
 import {
@@ -52,7 +53,7 @@ const CATALOG_GENRES: GenreRow[] = (genres as { id: string; label: string; blurb
   })
 );
 
-const FEATURED_SLUGS = new Set(["testing-types", "testing-by-level"]);
+const FEATURED_SLUGS = featuredManualIds();
 
 function resolvePinnedManual(pin: PinnedItemMetadata, userManuals: ManualItem[]) {
   const fromUrl = pin.url?.match(/\/manuals\/([^/?#]+)/)?.[1];
@@ -303,7 +304,11 @@ export default function ManualsCatalogPage() {
     });
   }, [userManuals]);
 
-  const catalogSource = useMemo(() => [...userManuals, ...MANUALS_DATA], [userManuals]);
+  const builtinCatalog = useMemo(
+    () => MANUALS_DATA.filter((m) => activeManualSlugs().has(m.slug)),
+    []
+  );
+  const catalogSource = useMemo(() => [...userManuals, ...builtinCatalog], [userManuals, builtinCatalog]);
 
   const filteredManuals = catalogSource.filter((manual) => {
     const matchesCategory = selectedCategory === "All" || manual.category === selectedCategory;
