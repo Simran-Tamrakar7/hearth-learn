@@ -5,7 +5,7 @@ import { SHOWCASE, SHOWCASE_FEATURED } from "./showcase/_registry.ts";
 import { ARENAS } from "./life-simulator/_registry.ts";
 import { TRAILS } from "./trails/_registry.ts";
 import { libraryBooks } from "./library/_registry.ts";
-import { PATHWISE_HEARTH_MANUALS } from "../src/lib/pathwiseToHearth.ts";
+import { PATHWISE_HEARTH_MANUALS } from "../src/app/manuals/_lib/pathwiseToHearth.ts";
 
 function uniqueIds(rows: { id: string }[], label: string) {
   const ids = rows.map((r) => r.id);

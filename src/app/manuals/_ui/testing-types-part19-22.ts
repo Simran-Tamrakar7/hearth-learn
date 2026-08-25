@@ -1,4 +1,4 @@
-import type { TestingChapterData } from "@/components/manuals/TestingTypesInteractiveManual";
+import type { TestingChapterData } from "@/app/manuals/_ui/TestingTypesInteractiveManual";
 
 /** Parts 19–22 — Chapters 73–88 (final) */
 export const TESTING_TYPES_PARTS_19_22: TestingChapterData[] = [

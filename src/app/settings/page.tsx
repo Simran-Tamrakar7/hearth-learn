@@ -1,5 +1,7 @@
 "use client";
 
+/* PAGE: /settings  — this file is the screen. Map: ./CODE-FOR-THIS-PAGE.md */
+
 import React, { useState } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";

@@ -1,3 +1,5 @@
+/* API: /api/user/profile  — used by PAGE /profile. Map: ../../CODE-FOR-THIS-API.md */
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";

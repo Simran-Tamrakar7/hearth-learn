@@ -1,3 +1,5 @@
+/* API: /api/settings  — not called by PAGE /settings (that page uses localStorage). Map: ../CODE-FOR-THIS-API.md */
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";

@@ -1,3 +1,5 @@
+/* LAYOUT styles for every page. Wired from src/app/layout.tsx */
+
 @import "tailwindcss";
 
 @layer base {

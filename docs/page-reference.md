@@ -4,13 +4,13 @@
 
 Catalog of 65 builtin manuals + user manuals. Reads `MANUALS_DATA` filtered by `content/manuals/_registry.ts` (`status: "active"`). Featured cards and dashboard pins also come from that registry. Writes nothing to the server. Pins and user manuals use `localStorage`.
 
-Key UI: `src/app/manuals/page.tsx`, `TestingTypesCatalogCard`.
+Key UI: `src/app/manuals/page.tsx` (labeled **PAGE: /manuals**). Other manuals-only files sit in `src/app/manuals/_ui/`. Map: `src/app/manuals/CODE-FOR-THIS-PAGE.md`. Site-wide index: [where-to-edit.md](./where-to-edit.md).
 
 ## `/manuals/[slug]`
 
 Reader + TOC editor. Builtin: `findHearthManual`. User: `getUserManual`. Testing Types: overlay + outline. Writes `hearth_manual_custom_data_*` and progress keys.
 
-Key UI: `src/app/manuals/[slug]/page.tsx`, `ToolSwitcher`, `manualParts.ts`.
+Key UI: `src/app/manuals/[slug]/page.tsx` (labeled **PAGE: /manuals/[slug]**), `_ui/ToolSwitcher`, `_lib/manualParts.ts`.
 
 ## `/library`
 

@@ -1,5 +1,7 @@
 "use client";
 
+/* PAGE: /manuals  — catalog grid (this file). Reader: ./[slug]/page.tsx. Map: ./CODE-FOR-THIS-PAGE.md */
+
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -9,7 +11,7 @@ import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import { MANUALS_DATA, findHearthManual, ManualItem } from "@/lib/manualsData";
 import { featuredManualIds, activeManualSlugs } from "@content/manuals/_registry";
-import { genres } from "@/lib/pathwise-data/helpers.js";
+import { genres } from "@/app/manuals/_lib/pathwise-data/helpers.js";
 import { Compass, Search, Clock, BookOpen, ArrowRight, Pin, ExternalLink, Code2, Sparkles, X, Trash2 } from "lucide-react";
 import {
   PinButton,
@@ -19,7 +21,7 @@ import {
   PinnedItemMetadata,
   manualPinId,
 } from "@/components/ui/PinButton";
-import { TestingTypesCatalogCard } from "@/components/manuals/TestingTypesCatalogCard";
+import { TestingTypesCatalogCard } from "@/app/manuals/_ui/TestingTypesCatalogCard";
 import { deleteUserManual, emptyManual, getUserManual, notesToManual, saveUserManual, subscribeUserManuals } from "@/lib/userManuals";
 
 const GENRE_CATEGORY: Record<string, ManualItem["category"] | "All"> = {

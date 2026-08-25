@@ -1,5 +1,7 @@
 "use client";
 
+/* PAGE: /manuals/[slug]  — reader for one manual (this file). Catalog: ../page.tsx. Map: ../CODE-FOR-THIS-PAGE.md */
+
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -11,12 +13,12 @@ import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import { findHearthManual, ManualItem, ManualChapter } from "@/lib/manualsData";
 import { getUserManual, saveUserManual, deleteUserManual } from "@/lib/userManuals";
-import { isTestingTypesSlug, TestingTypesGuide } from "@/components/manuals/TestingTypesGuide";
-import { PLAYWRIGHT_ROADMAP_PHASES, downloadRoadmapSVG } from "@/lib/roadmapData";
-import { stripLeadingNumber } from "@/lib/pathwise-data/helpers.js";
+import { isTestingTypesSlug, TestingTypesGuide } from "@/app/manuals/_ui/TestingTypesGuide";
+import { PLAYWRIGHT_ROADMAP_PHASES, downloadRoadmapSVG } from "@/app/manuals/_lib/roadmapData";
+import { stripLeadingNumber } from "@/app/manuals/_lib/pathwise-data/helpers.js";
 import { PinButton, getPinnedItems, PinnedItemMetadata, manualPinId } from "@/components/ui/PinButton";
-import { ToolSwitcher } from "@/components/manuals/ToolSwitcher";
-import { readerChaptersFromOverlay, testingOverlayForChapter } from "@/components/manuals/testing-types-reader";
+import { ToolSwitcher } from "@/app/manuals/_ui/ToolSwitcher";
+import { readerChaptersFromOverlay, testingOverlayForChapter } from "@/app/manuals/_ui/testing-types-reader";
 import { restoreTestingTypesToc, TESTING_TYPES_TOC_VERSION } from "@/lib/testing-types-outline";
 import {
   chapterIndexAfter,

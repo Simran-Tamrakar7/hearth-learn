@@ -1,3 +1,5 @@
+/* SHARED: next-auth config. PAGE /login + every session API. Map: ./CODE-FOR-SHARED.md */
+
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";

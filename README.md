@@ -4,6 +4,7 @@ Learning cabin at [hearth-learn.vercel.app](https://hearth-learn.vercel.app). Ca
 
 ## Docs
 
+- [Where to edit](docs/where-to-edit.md) — URL → the `page.tsx` that is that screen
 - [Architecture](docs/architecture.md) — stack, folders, every route
 - [Content model](docs/content-model.md) — manuals vs library vs trails vs Life Lab vs toolkits vs showcase
 - [Page reference](docs/page-reference.md) — what each URL reads and writes

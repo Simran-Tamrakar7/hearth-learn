@@ -1,5 +1,7 @@
 "use client";
 
+/* PAGE: /notes  — this file is the screen. Map: ./CODE-FOR-THIS-PAGE.md */
+
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";

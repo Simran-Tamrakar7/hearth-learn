@@ -1,5 +1,7 @@
 "use client";
 
+/* PAGE: /showcase-wall  — this file is the screen. Featured repos: content/showcase/_registry.ts. Map: ./CODE-FOR-THIS-PAGE.md */
+
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Navbar } from "@/components/layout/Navbar";

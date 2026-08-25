@@ -1,5 +1,7 @@
 "use client";
 
+/* PAGE: /certificates/[id]  — this file is the screen. Map: ../CODE-FOR-THIS-PAGE.md */
+
 import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { motion } from "framer-motion";

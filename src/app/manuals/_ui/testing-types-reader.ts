@@ -1,5 +1,5 @@
 import type { ManualChapter } from "@/lib/manualsData";
-import { TESTING_TYPES_CHAPTERS, type TestingChapterData } from "@/components/manuals/TestingTypesInteractiveManual";
+import { TESTING_TYPES_CHAPTERS, type TestingChapterData } from "@/app/manuals/_ui/TestingTypesInteractiveManual";
 import { TESTING_TYPES_OUTLINE } from "@/lib/testing-types-outline";
 
 export { TESTING_TYPES_OUTLINE } from "@/lib/testing-types-outline";

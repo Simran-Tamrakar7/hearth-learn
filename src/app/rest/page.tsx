@@ -1,5 +1,7 @@
 "use client";
 
+/* PAGE: /rest  — timer. Games/cookbook/retro are sibling folders. Map: ./CODE-FOR-THIS-PAGE.md */
+
 import React, { useState, useEffect } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";

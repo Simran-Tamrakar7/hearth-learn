@@ -1,5 +1,7 @@
 "use client";
 
+/* PAGE: /login  — this file is the screen. Map: ./CODE-FOR-THIS-PAGE.md */
+
 import React, { useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";

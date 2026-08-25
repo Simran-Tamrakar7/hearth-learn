@@ -1,3 +1,5 @@
+/* API: /api/quote/daily  — used by PAGE /dashboard. Map: ../../CODE-FOR-THIS-API.md */
+
 import { NextResponse } from "next/server";
 
 export async function GET() {

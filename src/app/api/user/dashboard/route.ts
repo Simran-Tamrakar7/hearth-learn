@@ -1,3 +1,5 @@
+/* API: /api/user/dashboard  — used by PAGE /dashboard. Map: ../../CODE-FOR-THIS-API.md */
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
