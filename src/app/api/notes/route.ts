@@ -1,3 +1,5 @@
+/* API: /api/notes  — used by PAGE /notes and /tags. Map: ../CODE-FOR-THIS-API.md */
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";

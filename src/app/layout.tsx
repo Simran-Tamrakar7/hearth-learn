@@ -1,3 +1,5 @@
+/* LAYOUT: wraps every page (fonts, Providers). Nav is src/components/layout/Navbar.tsx */
+
 import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "@/components/Providers";

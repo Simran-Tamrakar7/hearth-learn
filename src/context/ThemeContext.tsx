@@ -1,5 +1,7 @@
 "use client";
 
+/* SHARED: theme/room toggles. UI to edit: PAGE /settings. Map: ./CODE-FOR-THIS.md */
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 
 export type ThemeId =

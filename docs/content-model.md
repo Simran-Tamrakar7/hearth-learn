@@ -17,7 +17,7 @@ Set **only in that type’s `_registry.ts`** (library: optional `status` on the 
 Structured lessons with chapters, optional tools, optional Testing Types overlay.
 
 - **Listing + flags:** `content/manuals/_registry.ts` (slug, title, tool, status, order, tags, featured, pinnable)
-- **Bodies (phase 2 still pending):** `src/lib/pathwise-data/manuals/*.js` via `src/lib/pathwiseToHearth.ts`
+- **Bodies (until per-slug split):** `src/app/manuals/_lib/pathwise-data/manuals/*.js` via `_lib/pathwiseToHearth.ts`
 - **Testing Types extra:** overlay + 15-chapter outline in `src/lib/testing-types-outline.ts` and `src/components/manuals/`
 - **User-created manuals:** `localStorage`, not the registry
 

@@ -30,7 +30,7 @@ Library books: add `status: "archived"` on that book object (they do not have st
 mv content/toolkits/my-slug content/toolkits/_archive/my-slug
 ```
 
-Do **not** leave `import "./my-slug/meta"` after the move — Next will fail to compile. Manuals whose bodies still live in `src/lib/pathwise-data/` cannot be folder-moved yet; archive them with `status: "archived"` only, or also remove them from the pathwise `catalog.js` concat.
+Do **not** leave `import "./my-slug/meta"` after the move — Next will fail to compile. Manuals whose bodies still live in `src/app/manuals/_lib/pathwise-data/` cannot be folder-moved into `_archive/` without also dropping them from `catalog.js`. Archive with `status: "archived"` in the registry instead.
 
 ## Restore
 

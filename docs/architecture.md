@@ -10,15 +10,15 @@
 ## Top-level folders
 
 ```
-/content          Catalog the app lists (manuals, library, toolkits, …)
-/docs             How the site is put together
-/prisma           Schema + seed (user-state and Prisma trails)
-/src/app          One folder per URL. `page.tsx` is that screen; `CODE-FOR-THIS-PAGE.md` maps extras
-/src/app/manuals/_ui   Pieces used only by Manuals (not their own URLs)
-/src/components/ui     Shared Button/Card/pins
-/src/components/layout Navbar (every page)
-/src/lib          Loaders (`manualsData.ts`, pathwise chapter JS, re-export shims)
-/public           Static assets (including unused testing-types HTML guide)
+/content          Catalog data. Map: content/CODE-FOR-THIS.md
+/docs             How the site is put together. Start: docs/where-to-edit.md
+/prisma           Schema + seed. Map: prisma/CODE-FOR-THIS.md
+/src/app          One folder per URL (`PAGE:` comment + CODE-FOR-THIS-PAGE.md)
+/src/app/api      Server routes (`API:` comment). Map: src/app/api/CODE-FOR-THIS-API.md
+/src/app/manuals  All Manuals code: page.tsx, _ui/, _lib/ (including chapter JS)
+/src/components   Shared UI. Map: src/components/CODE-FOR-SHARED.md
+/src/lib          Shared auth/prisma + shims. Map: src/lib/CODE-FOR-SHARED.md
+/public           Static assets
 ```
 
 ## Routing map
@@ -52,5 +52,5 @@ Navbar: Manuals, Library, Life Lab, Notes, AI, Break Room, Showcase Wall, Profil
 
 ## What is not split yet
 
-Manual chapter bodies still load from `src/lib/pathwise-data/manuals/*.js` (65 manuals, 635 chapters). Listing already uses `content/manuals/_registry.ts`. Moving chapters into `content/manuals/<slug>/` is a follow-up, one bundled JS file at a time, without changing ids.
+Manual chapter bodies live in `src/app/manuals/_lib/pathwise-data/manuals/*.js` (65 manuals, 635 chapters). Listing uses `content/manuals/_registry.ts`. Splitting into `content/manuals/<slug>/` is still a follow-up, without changing ids.
 

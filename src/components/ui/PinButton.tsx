@@ -1,5 +1,8 @@
 "use client";
 
+/* SHARED: pin to dashboard. Used by manuals, games, recipes, showcase-wall. */
+
+
 import React, { useState, useEffect } from "react";
 import { Pin } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";

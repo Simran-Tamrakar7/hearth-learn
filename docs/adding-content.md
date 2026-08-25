@@ -12,7 +12,7 @@ Next.js will not auto-scan folders. A new folder is invisible until `_registry.t
 
 ## New builtin manual
 
-Chapter bodies still live in `src/lib/pathwise-data/` (bundled JS). Do not invent a `content/manuals/<slug>/` tree until you are ready to move that manual’s chapters out of pathwise in the same change. Listing is already driven by the registry.
+Chapter bodies still live in `src/app/manuals/_lib/pathwise-data/` (bundled JS). Do not invent a `content/manuals/<slug>/` tree until you are ready to move that manual’s chapters out of pathwise in the same change. Listing is already driven by the registry.
 
 1. Open `content/manuals/_registry.ts`.
 2. Copy an existing object. Paste it at the bottom of `MANUALS` (before the closing `];`).
@@ -32,7 +32,7 @@ Chapter bodies still live in `src/lib/pathwise-data/` (bundled JS). Do not inven
 ```
 
 4. `id` **is** the URL slug (`/manuals/jest`). Keep it kebab-case. Do not reuse an id.
-5. Add a matching object with the **same `id`** in the right `src/lib/pathwise-data/manuals/*.js` file (or a new file imported from `catalog.js`) including `chapters: [...]`.
+5. Add a matching object with the **same `id`** in the right `src/app/manuals/_lib/pathwise-data/manuals/*.js` file (or a new file imported from `catalog.js`) including `chapters: [...]`.
 6. Only if the URL must differ from pathwise `id`, add a row to `SLUG` in `src/lib/pathwiseToHearth.ts` (today only `git` → `git-version-control`).
 7. Save. Open `/manuals/jest`.
 

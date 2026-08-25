@@ -1,3 +1,5 @@
+/* API: /api/auth/register  — used by PAGE /login. Map: ../../CODE-FOR-THIS-API.md */
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";

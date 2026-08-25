@@ -1,14 +1,16 @@
-# Where to edit (page → file)
+# Where to edit
 
-Every URL has a folder under `src/app/`. That folder holds a `CODE-FOR-THIS-PAGE.md` map and a `page.tsx` whose first comment says **PAGE: /that-url**.
+Rule: the file that **is** a screen is `src/app/<url>/page.tsx`. It starts with `PAGE: /that-url`. The folder also has `CODE-FOR-THIS-PAGE.md`.
 
-Want to change how a screen looks? Open that `page.tsx`. Want to change catalog **data** (add a book, hide a manual)? Open `/content`, not the page.
+Catalog **data** is `/content`. Server **APIs** are `src/app/api/` (`API:` comment). Shared chrome is `src/components/` (`SHARED:`).
+
+## Screens
 
 | URL | Code for this page |
 |---|---|
 | `/` | `src/app/page.tsx` |
 | `/manuals` | `src/app/manuals/page.tsx` |
-| `/manuals/cypress` (any manual) | `src/app/manuals/[slug]/page.tsx` |
+| `/manuals/<slug>` | `src/app/manuals/[slug]/page.tsx` |
 | `/library` | `src/app/library/page.tsx` |
 | `/life-simulator` | `src/app/life-simulator/page.tsx` |
 | `/toolkits` | `src/app/toolkits/page.tsx` |
@@ -26,8 +28,19 @@ Want to change how a screen looks? Open that `page.tsx`. Want to change catalog 
 | `/login` | `src/app/login/page.tsx` |
 | `/tags` | `src/app/tags/page.tsx` |
 | `/certificates/[id]` | `src/app/certificates/[id]/page.tsx` |
-| `/trails` | redirect only — `src/app/trails/page.tsx` |
+| `/trails` | redirect — `src/app/trails/page.tsx` |
 
-Shared (not a page): `src/components/ui/` (Button, Card, pins), `src/components/layout/Navbar.tsx`.
+## Manuals (all of it, in one folder)
 
-Manuals-only pieces now live **inside** `src/app/manuals/_ui/` so they sit next to the manuals screens.
+`src/app/manuals/` — UI in `_ui/`, loaders + chapter JS in `_lib/`. Map: `src/app/manuals/CODE-FOR-THIS-PAGE.md`.
+
+## Other maps
+
+| Kind | Open |
+|---|---|
+| Catalog data | `content/CODE-FOR-THIS.md` |
+| APIs | `src/app/api/CODE-FOR-THIS-API.md` |
+| Shared UI | `src/components/CODE-FOR-SHARED.md` |
+| Shared lib (auth, prisma, shims) | `src/lib/CODE-FOR-SHARED.md` |
+| Theme | `src/context/CODE-FOR-THIS.md` |
+| Database schema | `prisma/CODE-FOR-THIS.md` |

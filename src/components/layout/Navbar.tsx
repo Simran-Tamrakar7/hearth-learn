@@ -1,5 +1,7 @@
 "use client";
 
+/* SHARED: top nav on almost every PAGE. Map: ../CODE-FOR-SHARED.md */
+
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";

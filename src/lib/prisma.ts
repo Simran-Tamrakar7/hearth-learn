@@ -1,3 +1,5 @@
+/* SHARED: Prisma client. Map: ./CODE-FOR-SHARED.md */
+
 import { PrismaClient } from "@prisma/client";
 
 const globalForPrisma = globalThis as unknown as {

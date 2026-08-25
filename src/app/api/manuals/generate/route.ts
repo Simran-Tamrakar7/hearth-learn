@@ -1,3 +1,5 @@
+/* API: /api/manuals/generate  — AI notes→manual for PAGE /manuals. Map: ../../CODE-FOR-THIS-API.md */
+
 import { NextResponse } from "next/server";
 
 const SYSTEM = `You turn raw notes into a Hearth Learn study manual as Markdown.

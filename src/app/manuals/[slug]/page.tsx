@@ -15,7 +15,7 @@ import { findHearthManual, ManualItem, ManualChapter } from "@/lib/manualsData";
 import { getUserManual, saveUserManual, deleteUserManual } from "@/lib/userManuals";
 import { isTestingTypesSlug, TestingTypesGuide } from "@/app/manuals/_ui/TestingTypesGuide";
 import { PLAYWRIGHT_ROADMAP_PHASES, downloadRoadmapSVG } from "@/app/manuals/_lib/roadmapData";
-import { stripLeadingNumber } from "@/lib/pathwise-data/helpers.js";
+import { stripLeadingNumber } from "@/app/manuals/_lib/pathwise-data/helpers.js";
 import { PinButton, getPinnedItems, PinnedItemMetadata, manualPinId } from "@/components/ui/PinButton";
 import { ToolSwitcher } from "@/app/manuals/_ui/ToolSwitcher";
 import { readerChaptersFromOverlay, testingOverlayForChapter } from "@/app/manuals/_ui/testing-types-reader";
