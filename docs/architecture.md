@@ -13,9 +13,11 @@
 /content          Catalog the app lists (manuals, library, toolkits, …)
 /docs             How the site is put together
 /prisma           Schema + seed (user-state and Prisma trails)
-/src/app          Routes (`page.tsx` per URL)
-/src/components   UI (reader, navbar, pins)
-/src/lib          Loaders, converters, re-export shims (`gamesData.ts`, `pathwiseLibrary.ts`)
+/src/app          One folder per URL. `page.tsx` is that screen; `CODE-FOR-THIS-PAGE.md` maps extras
+/src/app/manuals/_ui   Pieces used only by Manuals (not their own URLs)
+/src/components/ui     Shared Button/Card/pins
+/src/components/layout Navbar (every page)
+/src/lib          Loaders (`manualsData.ts`, pathwise chapter JS, re-export shims)
 /public           Static assets (including unused testing-types HTML guide)
 ```
 

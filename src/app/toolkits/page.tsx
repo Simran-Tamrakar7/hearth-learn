@@ -1,5 +1,7 @@
 "use client";
 
+/* PAGE: /toolkits  — this file is the screen. Snippets: content/toolkits/<id>/meta.ts. Map: ./CODE-FOR-THIS-PAGE.md */
+
 import React, { useState } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";

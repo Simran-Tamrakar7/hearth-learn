@@ -1,5 +1,7 @@
 "use client";
 
+/* PAGE: /rest/cookbook  — this file is the screen. Catalog: content/break-room/cookbook.ts. Map: ../CODE-FOR-THIS-PAGE.md */
+
 import React, { useState, useEffect } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";

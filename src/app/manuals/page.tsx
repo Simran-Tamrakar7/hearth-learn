@@ -1,5 +1,7 @@
 "use client";
 
+/* PAGE: /manuals  — catalog grid (this file). Reader: ./[slug]/page.tsx. Map: ./CODE-FOR-THIS-PAGE.md */
+
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -19,7 +21,7 @@ import {
   PinnedItemMetadata,
   manualPinId,
 } from "@/components/ui/PinButton";
-import { TestingTypesCatalogCard } from "@/components/manuals/TestingTypesCatalogCard";
+import { TestingTypesCatalogCard } from "@/app/manuals/_ui/TestingTypesCatalogCard";
 import { deleteUserManual, emptyManual, getUserManual, notesToManual, saveUserManual, subscribeUserManuals } from "@/lib/userManuals";
 
 const GENRE_CATEGORY: Record<string, ManualItem["category"] | "All"> = {

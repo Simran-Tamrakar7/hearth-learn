@@ -1,5 +1,7 @@
 "use client";
 
+/* PAGE: /tags  — this file is the screen. Map: ./CODE-FOR-THIS-PAGE.md */
+
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";

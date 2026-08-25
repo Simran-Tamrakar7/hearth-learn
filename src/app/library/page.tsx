@@ -1,5 +1,7 @@
 "use client";
 
+/* PAGE: /library  — this file is the screen. Books: content/library/_registry.ts. Map: ./CODE-FOR-THIS-PAGE.md */
+
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Navbar } from "@/components/layout/Navbar";

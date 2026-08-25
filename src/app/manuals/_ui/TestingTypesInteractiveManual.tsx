@@ -4,9 +4,9 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, Search, Copy, Check, ChevronRight } from "lucide-react";
 import { ToolItem } from "@/lib/manualsData";
-import { TESTING_TYPES_PARTS_17_18 } from "@/components/manuals/testing-types-part17-18";
-import { TESTING_TYPES_PARTS_19_22 } from "@/components/manuals/testing-types-part19-22";
-import { TESTING_TYPES_PARTS_23 } from "@/components/manuals/testing-types-part23";
+import { TESTING_TYPES_PARTS_17_18 } from "@/app/manuals/_ui/testing-types-part17-18";
+import { TESTING_TYPES_PARTS_19_22 } from "@/app/manuals/_ui/testing-types-part19-22";
+import { TESTING_TYPES_PARTS_23 } from "@/app/manuals/_ui/testing-types-part23";
 
 export interface PracticalExample {
   app: string;

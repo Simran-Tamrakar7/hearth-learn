@@ -1,5 +1,7 @@
 "use client";
 
+/* PAGE: /showcase  — component demo (not the wall). Map: ./CODE-FOR-THIS-PAGE.md */
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";

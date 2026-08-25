@@ -1,5 +1,7 @@
 "use client";
 
+/* PAGE: /rest/games  — this file is the screen. Catalog: content/break-room/games.ts. Map: ../CODE-FOR-THIS-PAGE.md */
+
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";

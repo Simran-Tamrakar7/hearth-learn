@@ -1,5 +1,7 @@
 "use client";
 
+/* PAGE: /trails  — redirect to /manuals. Map: ./CODE-FOR-THIS-PAGE.md */
+
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 

@@ -1,5 +1,7 @@
 "use client";
 
+/* PAGE: /profile  — this file is the screen. Map: ./CODE-FOR-THIS-PAGE.md */
+
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Navbar } from "@/components/layout/Navbar";

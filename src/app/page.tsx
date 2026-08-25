@@ -1,5 +1,7 @@
 "use client";
 
+/* PAGE: /  — marketing home. Map: ./CODE-FOR-THIS-PAGE.md */
+
 import React, { useRef } from "react";
 import Link from "next/link";
 import { motion, useScroll } from "framer-motion";

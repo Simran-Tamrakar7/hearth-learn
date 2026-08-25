@@ -1,5 +1,7 @@
 "use client";
 
+/* PAGE: /life-simulator  — this file is the screen. Scenarios: content/life-simulator/. Map: ./CODE-FOR-THIS-PAGE.md */
+
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Navbar } from "@/components/layout/Navbar";
