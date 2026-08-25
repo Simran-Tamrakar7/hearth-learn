@@ -1,5 +1,14 @@
 /** 15-chapter Testing Types TOC. Overlay `no` is TESTING_TYPES_CHAPTERS id. */
 
+/** Bump when the catalog outline changes so an old localStorage TOC is not restored. */
+export const TESTING_TYPES_TOC_VERSION = 15;
+
+export function restoreTestingTypesToc(saved: unknown): boolean {
+  if (!saved || typeof saved !== "object") return false;
+  const s = saved as { tocManaged?: unknown; tocCatalogVersion?: unknown };
+  return Boolean(s.tocManaged) && s.tocCatalogVersion === TESTING_TYPES_TOC_VERSION;
+}
+
 /** One TOC row: overlay type `no`, or a folder with only children (Quality Attributes). */
 export type TestingTypesOutlineNode = {
   no?: number;

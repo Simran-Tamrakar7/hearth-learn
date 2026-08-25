@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { groupChaptersIntoParts, tocNumbersForPart } from "./manualParts.ts";
-import { TESTING_TYPES_OUTLINE, flattenTestingTypesOutline } from "./testing-types-outline.ts";
+import { TESTING_TYPES_OUTLINE, flattenTestingTypesOutline, restoreTestingTypesToc } from "./testing-types-outline.ts";
 
 const rows = flattenTestingTypesOutline();
 assert.equal(TESTING_TYPES_OUTLINE.length, 15);
@@ -52,5 +52,10 @@ assert.equal(ch4.get(rows.findIndex((r) => r.title === "Usability Testing")), "4
 const flow = rows.find((r) => r.title === "Business Flow Testing");
 assert.equal(flow?.no, 86);
 assert.equal(flow?.parentTitle, undefined);
+
+assert.equal(restoreTestingTypesToc({ tocManaged: true }), false);
+assert.equal(restoreTestingTypesToc({ tocManaged: true, tocCatalogVersion: 14 }), false);
+assert.equal(restoreTestingTypesToc({ tocManaged: true, tocCatalogVersion: 15 }), true);
+assert.equal(restoreTestingTypesToc(null), false);
 
 console.log("testing-types-reader.check: ok");
