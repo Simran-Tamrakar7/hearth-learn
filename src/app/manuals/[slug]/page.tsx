@@ -1239,12 +1239,16 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
 
               <div className="flex items-center gap-1.5 text-xs font-semibold text-[#52635E] bg-white px-3 py-1 rounded-lg border border-[#E7E0D3] shadow-2xs">
                 <Layers className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
-                <span>{partCount} Parts</span>
+                <span>{partCount} {isTestingTypesManual ? "Chapters" : "Parts"}</span>
               </div>
 
               <div className="flex items-center gap-1.5 text-xs font-semibold text-[#52635E] bg-white px-3 py-1 rounded-lg border border-[#E7E0D3] shadow-2xs">
                 <BookOpen className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
-                <span>{totalChapters} Chapters</span>
+                <span>
+                  {isTestingTypesManual
+                    ? `${chapters.filter((c) => /^ch-\d+$/.test(c.slug || "")).length} Types`
+                    : `${totalChapters} Chapters`}
+                </span>
               </div>
 
               <div className="flex items-center gap-1.5 text-xs font-semibold text-[#52635E] bg-white px-3 py-1 rounded-lg border border-[#E7E0D3] shadow-2xs">
