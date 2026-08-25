@@ -1,5 +1,5 @@
 # Manuals logic (not a URL)
 
-Chapter loaders, TOC helpers, user-manual storage, Testing Types outline, Playwright roadmap.
+Chapter loaders, TOC helpers, user-manual storage, Playwright roadmap download.
 
-Chapter bodies: `pathwise-data/manuals/*.js`
+Chapter bodies: `content/manuals/<slug>/data.js`

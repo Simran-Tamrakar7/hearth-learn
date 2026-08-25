@@ -1,5 +1,7 @@
 # Step 1 — Content audit (current state)
 
+**Later:** builtin manuals now live in `content/manuals/<slug>/data.js` (Playwright one file; Testing Types overlay/outline in that folder). This audit describes the pre-split tree.
+
 Scanned before any `/content` move. There is **no MDX**, **no CMS**, **no Contentlayer**. Catalog content is TypeScript/JavaScript object literals imported at build time, plus some Prisma models and browser `localStorage`.
 
 Next.js config (`next.config.ts`) is empty of MDX loaders. Adding `.mdx` chapter files would require a new dependency (`@next/mdx` or similar) and a compile step. That conflicts with “no codegen / no build step to register an item.” **Target format: TypeScript `meta.ts` + chapter/snippet `.ts` files**, which this stack already loads with a plain import.

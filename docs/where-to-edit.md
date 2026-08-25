@@ -34,7 +34,7 @@ Catalog **data** is `/content`. Server **APIs** are `src/app/api/` (`API:` comme
 
 ## Manuals (all of it, in one folder)
 
-`src/app/manuals/` — UI in `_ui/`, loaders + chapter JS in `_lib/`. Map: `src/app/manuals/CODE-FOR-THIS-PAGE.md`.
+`src/app/manuals/` — UI in `_ui/`, converters in `_lib/`. Chapter text: `content/manuals/<slug>/`. Map: `src/app/manuals/CODE-FOR-THIS-PAGE.md`.
 
 ## Other maps
 
