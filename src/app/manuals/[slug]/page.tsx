@@ -12,7 +12,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import { findHearthManual, ManualItem, ManualChapter } from "@/app/manuals/_lib/manualsData";
-import { getUserManual, saveUserManual, deleteUserManual } from "@/app/manuals/_lib/userManuals";
+import { getUserManual, saveUserManual, removeCatalogManual } from "@/app/manuals/_lib/userManuals";
 import { isTestingTypesSlug, TestingTypesGuide } from "@/app/manuals/_ui/TestingTypesGuide";
 import { PLAYWRIGHT_ROADMAP_PHASES, downloadRoadmapSVG } from "@/app/manuals/_lib/roadmapData";
 import { stripLeadingNumber } from "@/app/manuals/_content/_helpers.js";
@@ -1085,24 +1085,27 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                   New with AI
                 </Button>
               </Link>
-              {getUserManual(slug) && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  leftIcon={<Trash2 className="w-3.5 h-3.5 text-rose-600" />}
-                  onClick={() => {
-                    if (!window.confirm(`Delete “${manualTitle}”? This cannot be undone.`)) return;
-                    if (!deleteUserManual(slug)) {
-                      toast({ type: "error", title: "Could not delete", description: "Only manuals you created can be removed." });
-                      return;
-                    }
-                    toast({ type: "info", title: "Manual deleted", description: `Removed “${manualTitle}”.` });
-                    router.push("/manuals");
-                  }}
-                >
-                  Delete
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                size="sm"
+                leftIcon={<Trash2 className="w-3.5 h-3.5 text-rose-600" />}
+                onClick={() => {
+                  if (!window.confirm(`Delete “${manualTitle}”? This cannot be undone.`)) return;
+                  const kind = removeCatalogManual(slug);
+                  if (!kind) {
+                    toast({ type: "error", title: "Could not delete", description: "That manual could not be removed." });
+                    return;
+                  }
+                  toast({
+                    type: "info",
+                    title: kind === "deleted" ? "Manual deleted" : "Removed from catalog",
+                    description: `Removed “${manualTitle}”.`,
+                  });
+                  router.push("/manuals");
+                }}
+              >
+                Delete
+              </Button>
               <PinButton
                 itemId={manualPinId(slug)}
                 itemTitle={manualTitle}

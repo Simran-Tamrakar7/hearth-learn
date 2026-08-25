@@ -40,6 +40,7 @@ import { COOKBOOK_DISHES } from "@/app/rest/cookbook/_content";
 import { ARCADIA_GAMES } from "@/app/rest/games/_content";
 import { findHearthManual } from "@/app/manuals/_lib/manualsData";
 import { pinnableManuals } from "@/app/manuals/_content/_registry";
+import { hiddenManualSlugs, subscribeUserManuals } from "@/app/manuals/_lib/userManuals";
 import { PinButton, getPinnedItems, savePinnedItems, PinnedItemMetadata } from "@/components/ui/PinButton";
 
 interface DashboardData {
@@ -182,6 +183,7 @@ export default function DashboardPage() {
   // Pinning System State
   const [pinnedItems, setPinnedItems] = useState<PinnedItemMetadata[]>([]);
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+  const [hiddenManuals, setHiddenManuals] = useState<Set<string>>(new Set());
 
   // Zodiac & Thought State
   const [selectedZodiac, setSelectedZodiac] = useState("aries");
@@ -198,6 +200,7 @@ export default function DashboardPage() {
 
     loadPins();
     window.addEventListener("hearth_pins_updated", loadPins);
+    const unsubHidden = subscribeUserManuals(() => setHiddenManuals(hiddenManualSlugs()));
 
     // Load Saved Zodiac
     try {
@@ -209,7 +212,10 @@ export default function DashboardPage() {
       console.error("Local storage load error:", e);
     }
 
-    return () => window.removeEventListener("hearth_pins_updated", loadPins);
+    return () => {
+      window.removeEventListener("hearth_pins_updated", loadPins);
+      unsubHidden();
+    };
   }, []);
 
   const fetchLiveQuote = async () => {
@@ -758,7 +764,7 @@ export default function DashboardPage() {
                 Course Manuals
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {PINNABLE_MANUALS.map((m) => {
+                {PINNABLE_MANUALS.filter((m) => !hiddenManuals.has(m.slug)).map((m) => {
                   const isPinned = pinnedItems.some((p) => p.id === m.id);
                   return (
                     <div
