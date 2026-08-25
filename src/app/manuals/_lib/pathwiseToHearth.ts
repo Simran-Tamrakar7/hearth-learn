@@ -5,7 +5,7 @@
  * Chapter files: content/manuals/<slug>/data.js
  * ========================================================================== */
 
-import { pathwiseManuals } from "../../../../content/manuals/_bodies.js";
+import { MANUALS } from "../../../../content/manuals/_registry.ts";
 import { stripLeadingNumber } from "../../../../content/manuals/_helpers.js";
 import type { ManualChapter, ManualItem } from "./manualsData";
 
@@ -208,9 +208,7 @@ export function pathwiseToHearth(raw: Record<string, unknown>): ManualItem {
   };
 }
 
-export const PATHWISE_HEARTH_MANUALS: ManualItem[] = (pathwiseManuals as Record<string, unknown>[]).map(
-  pathwiseToHearth
-);
+export const PATHWISE_HEARTH_MANUALS: ManualItem[] = MANUALS.map((m) => pathwiseToHearth(m.body));
 
 export function findHearthManual(slug: string): ManualItem | undefined {
   const aliases: Record<string, string> = {

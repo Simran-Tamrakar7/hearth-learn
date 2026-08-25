@@ -48,6 +48,11 @@ for (const slug of hearthSlugs) {
 }
 for (const row of MANUALS) {
   assert.ok(hearthSlugs.includes(row.id), `registry id ${row.id} has no pathwise manual`);
+  assert.ok(row.body && typeof row.body === "object", `registry id ${row.id} missing body`);
+  assert.ok(
+    Array.isArray((row.body as { chapters?: unknown }).chapters),
+    `registry id ${row.id} body has no chapters`
+  );
   assert.ok(
     existsSync(new URL(`./manuals/${row.id}/data.js`, import.meta.url)),
     `registry id ${row.id} missing content/manuals/${row.id}/data.js`

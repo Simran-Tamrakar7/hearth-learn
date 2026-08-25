@@ -23,14 +23,14 @@ Library books: add `status: "archived"` on that book object (they do not have st
 ## Soft-delete
 
 1. Delete that object from `_registry.ts`.
-2. If that registry file `import`s the folder (toolkits, Life Lab arenas), delete that import line too. For a builtin manual, delete its import and array row in `content/manuals/_bodies.js`.
+2. If that registry file `import`s the folder (manuals, toolkits, Life Lab arenas), delete that import line too.
 3. Move the folder:
 
 ```bash
 mv content/toolkits/my-slug content/toolkits/_archive/my-slug
 ```
 
-Do **not** leave `import "./my-slug/meta"` (or a `_bodies.js` import) after the move — Next will fail to compile. For a builtin manual, also delete its import and array row in `content/manuals/_bodies.js`, then:
+Do **not** leave `import "./my-slug/meta"` or `import "./my-slug/data.js"` after the move — Next will fail to compile. For a builtin manual, delete its import and `MANUALS` row in `_registry.ts`, then:
 
 ```bash
 mv content/manuals/my-slug content/manuals/_archive/my-slug

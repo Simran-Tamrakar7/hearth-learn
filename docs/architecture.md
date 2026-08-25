@@ -15,7 +15,7 @@
 /prisma           Schema + seed. Map: prisma/CODE-FOR-THIS.md
 /src/app          One folder per URL (`PAGE:` comment + CODE-FOR-THIS-PAGE.md)
 /src/app/api      Server routes (`API:` comment). Map: src/app/api/CODE-FOR-THIS-API.md
-/src/app/manuals  Manuals UI + converters (page.tsx, _ui/, _lib/). Bodies are /content/manuals.
+/src/app/manuals  One reader UI + converters. Chapter text is /content/manuals (not a page per book).
 /src/components   Shared UI. Map: src/components/CODE-FOR-SHARED.md
 /src/lib          Shared auth/prisma + shims. Map: src/lib/CODE-FOR-SHARED.md
 /public           Static assets
@@ -50,7 +50,11 @@
 
 Navbar: Manuals, Library, Life Lab, Notes, AI, Break Room, Showcase Wall, Profile, Settings. Dashboard is the logo target. Toolkits is linked from home, not the nav.
 
+## Why `/src` and `/content` stay separate
+
+Next.js App Router only treats `src/app/**/page.tsx` as a URL. Catalog text is not a route. Putting `src/` inside `content/manuals/<name>/` would copy the reader 65 times. One page at `/manuals/[slug]` reads every book; `_registry.ts` is the single list that both hides/features a manual and statically imports its `data.js`.
+
 ## Manual bodies
 
-65 manuals live in `content/manuals/<slug>/data.js` (635 chapters). Listing is `content/manuals/_registry.ts`. Playwright is one file; Testing Types keeps overlay + outline in that same folder. Ids/slugs are unchanged.
+65 manuals live in `content/manuals/<slug>/data.js` (635 chapters). Listing + those imports are `content/manuals/_registry.ts`. Playwright is one file; Testing Types keeps overlay + outline in that same folder. Ids/slugs are unchanged.
 
