@@ -1,67 +1,115 @@
 import type { ManualChapter } from "@/lib/manualsData";
-import { TESTING_TYPES_CHAPTERS } from "@/components/manuals/TestingTypesInteractiveManual";
+import { TESTING_TYPES_CHAPTERS, type TestingChapterData } from "@/components/manuals/TestingTypesInteractiveManual";
+import { TESTING_TYPES_OUTLINE } from "@/lib/testing-types-outline";
 
-/** Map chapter number → TOC part label when pathwise metadata is missing. */
-export function testingTypesPartFromNo(n: number): string {
-  if (n <= 4) return "Part 1 · By Level";
-  if (n <= 6) return "Part 2 · Execution Method";
-  if (n <= 8) return "Part 2 · Functional";
-  if (n <= 12) return "Part 3 · Functional";
-  if (n <= 16) return "Part 4 · Non-Functional";
-  if (n <= 20) return "Part 5 · Non-Functional";
-  if (n <= 24) return "Part 6 · Other Testing Types";
-  if (n <= 28) return "Part 7 · By Knowledge";
-  if (n <= 32) return "Part 8 · Release & Quality";
-  if (n <= 36) return "Part 9 · Modern Engineering & Integrations";
-  if (n <= 40) return "Part 10 · Device, Platform & Security";
-  if (n <= 44) return "Part 11 · Operational, Infrastructure & Site Health";
-  if (n <= 48) return "Part 12 · Code Quality, Techniques & Visual UI";
-  if (n <= 52) return "Part 13 · Test Design Techniques & Partitioning";
-  if (n <= 56) return "Part 14 · Advanced Resilience, Chaos & Contracts";
-  if (n <= 60) return "Part 15 · Environment, Migration & Disaster Recovery";
-  if (n <= 64) return "Part 16 · Governance, Deployment Strategies & Integration";
-  if (n <= 68) return "Part 17 · Data-Driven, Keyword, Model & Risk";
-  if (n <= 72) return "Part 18 · Backend, Network, Snapshot & Soak";
-  if (n <= 76) return "Part 19 · Continuous, Interop, Conformance & Globalization";
-  if (n <= 80) return "Part 20 · Baseline, Comparative, Domain & Error Guessing";
-  if (n <= 84) return "Part 21 · Coverage, OAT, Cloud & Golden Master";
-  if (n <= 88) return "Part 22 · Content, Session, OO & PWA";
-  return "Part 23 · Incremental Integration, Spike, Session & Voice";
+export { TESTING_TYPES_OUTLINE } from "@/lib/testing-types-outline";
+
+function overlayByNo(n: number): TestingChapterData | undefined {
+  return TESTING_TYPES_CHAPTERS.find((t) => Number(t.no) === n);
 }
 
-/** TOC + body always follow TESTING_TYPES_CHAPTERS — never a shorter localStorage snapshot. */
-export function readerChaptersFromOverlay(pathwise: ManualChapter[]): ManualChapter[] {
-  if (!TESTING_TYPES_CHAPTERS.length) return pathwise;
-  return TESTING_TYPES_CHAPTERS.map((tt, i) => {
-    const pw = pathwise[i];
-    const no = Number(tt.no) || i + 1;
-    if (pw) {
-      return {
-        ...pw,
-        title: tt.title,
-        overviewText: tt.desc || pw.overviewText,
-        why: tt.why ?? pw.why,
-        when: tt.when ?? pw.when,
-        practical: tt.practical ?? pw.practical,
-        tools: tt.tools ?? pw.tools,
-        subtitle: pw.subtitle || testingTypesPartFromNo(no),
-      };
-    }
-    return {
-      id: `tt-ch-${tt.no}`,
-      order: i + 1,
-      slug: `ch-${tt.no}`,
-      title: tt.title,
-      estimatedMinutes: 25,
-      subtitle: testingTypesPartFromNo(no),
-      overviewText: tt.desc,
-      why: tt.why,
-      when: tt.when,
-      practical: tt.practical,
-      tools: tt.tools,
-      contentMarkdown: tt.desc,
+function partSlug(name: string): string {
+  return `tt-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+}
+
+function findPathwise(pathwise: ManualChapter[], tt: TestingChapterData): ManualChapter | undefined {
+  return pathwise.find((p) => p.title === tt.title);
+}
+
+function chapterFromOverlay(
+  tt: TestingChapterData,
+  pathwise: ManualChapter[],
+  title: string,
+  subtitle: string,
+  partKey: string,
+  parentId: string | undefined,
+  order: number
+): ManualChapter {
+  const pw = findPathwise(pathwise, tt);
+  return {
+    ...(pw || {
       exercises: [],
       resourceLinks: [],
-    };
-  });
+    }),
+    id: pw?.id || `tt-ch-${tt.no}`,
+    order,
+    slug: `ch-${tt.no}`,
+    title,
+    estimatedMinutes: pw?.estimatedMinutes || 25,
+    subtitle,
+    partKey,
+    parentId,
+    overviewText: tt.desc || pw?.overviewText,
+    why: tt.why ?? pw?.why,
+    when: tt.when ?? pw?.when,
+    practical: tt.practical ?? pw?.practical,
+    tools: tt.tools ?? pw?.tools,
+    contentMarkdown: pw?.contentMarkdown || tt.desc,
+    exercises: pw?.exercises || [],
+    resourceLinks: pw?.resourceLinks || [],
+  };
+}
+
+function folderChapter(
+  id: string,
+  title: string,
+  subtitle: string,
+  partKey: string,
+  order: number
+): ManualChapter {
+  const overview =
+    "Quality attributes beside functional correctness: usability, accessibility, compliance, SEO / site health, and security.";
+  return {
+    id,
+    order,
+    slug: "quality-attributes",
+    title,
+    estimatedMinutes: 5,
+    subtitle,
+    partKey,
+    overviewText: overview,
+    contentMarkdown: overview,
+    exercises: [],
+    resourceLinks: [],
+  };
+}
+
+/** Overlay body for a TOC row — by `ch-{no}` slug, then title. */
+export function testingOverlayForChapter(ch: { id?: string; slug?: string; title?: string }): TestingChapterData | undefined {
+  const fromSlug = /^ch-(\d+)$/.exec(ch.slug || "");
+  const fromId = /(?:^|-)ch-(\d+)$/.exec(ch.id || "");
+  const n = Number(fromSlug?.[1] || fromId?.[1] || 0);
+  if (n) {
+    const hit = overlayByNo(n);
+    if (hit) return hit;
+  }
+  return TESTING_TYPES_CHAPTERS.find((t) => t.title === ch.title);
+}
+
+/** TOC + body follow the 15-chapter outline, not pathwise order or a shorter localStorage snapshot. */
+export function readerChaptersFromOverlay(pathwise: ManualChapter[]): ManualChapter[] {
+  if (!TESTING_TYPES_CHAPTERS.length) return pathwise;
+  const out: ManualChapter[] = [];
+  for (const part of TESTING_TYPES_OUTLINE) {
+    const subtitle = part.name;
+    const partKey = partSlug(part.name);
+    for (const item of part.items) {
+      const tt = item.no != null ? overlayByNo(item.no) : undefined;
+      let parent: ManualChapter;
+      if (tt) {
+        parent = chapterFromOverlay(tt, pathwise, item.title, subtitle, partKey, undefined, out.length + 1);
+      } else {
+        parent = folderChapter("tt-folder-quality-attributes", item.title, subtitle, partKey, out.length + 1);
+      }
+      out.push(parent);
+      for (const child of item.children || []) {
+        const childTt = overlayByNo(child.no);
+        if (!childTt) continue;
+        out.push(
+          chapterFromOverlay(childTt, pathwise, child.title, subtitle, partKey, parent.id, out.length + 1)
+        );
+      }
+    }
+  }
+  return out;
 }

@@ -5993,7 +5993,7 @@ export function TestingTypesInteractiveManual() {
         <div className="space-y-3">
           <div className="inline-flex items-center gap-2.5 font-mono text-xs tracking-wider uppercase text-[#e8a33d]">
             <span className="w-2 h-2 rounded-full bg-[#4fd68a] shadow-[0_0_0_4px_rgba(79,214,138,0.18)]" />
-            <span>Software Testing Reference · Parts 1–23</span>
+            <span>Software Testing Reference · 15 Chapters</span>
           </div>
 
           <h1 className="font-['Space_Grotesk'] font-bold text-3xl sm:text-5xl text-white tracking-tight leading-tight">
@@ -6012,7 +6012,7 @@ export function TestingTypesInteractiveManual() {
               {String(TESTING_TYPES_CHAPTERS.length).padStart(2, "0")}
             </span>
             <span className="text-[11px] text-[#5c667a] uppercase tracking-wider">
-              Chapters
+              Types
             </span>
           </div>
 
