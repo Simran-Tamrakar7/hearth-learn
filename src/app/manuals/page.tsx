@@ -21,7 +21,7 @@ import {
   PinnedItemMetadata,
   manualPinId,
 } from "@/components/ui/PinButton";
-import { deleteUserManual, emptyManual, getUserManual, notesToManual, saveUserManual, subscribeUserManuals } from "@/app/manuals/_lib/userManuals";
+import { emptyManual, getUserManual, hiddenManualSlugs, notesToManual, removeCatalogManual, saveUserManual, subscribeUserManuals } from "@/app/manuals/_lib/userManuals";
 
 const GENRE_CATEGORY: Record<string, ManualItem["category"] | "All"> = {
   all: "All",
@@ -150,7 +150,7 @@ function ManualCard({
           </div>
           <div className="p-4 sm:p-5 pt-0 border-t border-transparent group-hover:border-[#FAF7F2] transition-colors">
             <div className="pt-2.5 flex items-center justify-between text-xs font-bold text-[#1C2A26] group-hover:text-[#D97706]">
-              <span>Open Master Manualsssss</span>
+              <span>Open Manual</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
@@ -284,11 +284,15 @@ export default function ManualsCatalogPage() {
   const [pinnedManuals, setPinnedManuals] = useState<ReturnType<typeof resolvePinnedManual>[]>([]);
   const [pinnedShowcase, setPinnedShowcase] = useState<PinnedItemMetadata[]>([]);
   const [userManuals, setUserManuals] = useState<ManualItem[]>([]);
+  const [hiddenSlugs, setHiddenSlugs] = useState<Set<string>>(new Set());
   const [generateOpen, setGenerateOpen] = useState(false);
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    return subscribeUserManuals(setUserManuals);
+    return subscribeUserManuals((items) => {
+      setUserManuals(items);
+      setHiddenSlugs(hiddenManualSlugs());
+    });
   }, []);
 
   useEffect(() => {
@@ -304,8 +308,8 @@ export default function ManualsCatalogPage() {
   }, [userManuals]);
 
   const builtinCatalog = useMemo(
-    () => MANUALS_DATA.filter((m) => activeManualSlugs().has(m.slug)),
-    []
+    () => MANUALS_DATA.filter((m) => activeManualSlugs().has(m.slug) && !hiddenSlugs.has(m.slug)),
+    [hiddenSlugs]
   );
   const catalogSource = useMemo(() => [...userManuals, ...builtinCatalog], [userManuals, builtinCatalog]);
 
@@ -528,14 +532,15 @@ export default function ManualsCatalogPage() {
                     key={manual.id}
                     manual={manual}
                     pinned={pinnedIds.has(manualPinId(manual.slug))}
-                    onDelete={
-                      userManuals.some((m) => m.slug === manual.slug)
-                        ? () => {
-                            if (!deleteUserManual(manual.slug)) return;
-                            toast({ type: "info", title: "Manual deleted", description: `Removed “${manual.title}”.` });
-                          }
-                        : undefined
-                    }
+                    onDelete={() => {
+                      const kind = removeCatalogManual(manual.slug);
+                      if (!kind) return;
+                      toast({
+                        type: "info",
+                        title: kind === "deleted" ? "Manual deleted" : "Removed from catalog",
+                        description: `Removed “${manual.title}”.`,
+                      });
+                    }}
                   />
                 ))}
               </div>

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { deleteUserManual, emptyManual, ensureManualHeadings, notesToManual, slugifyTitle } from "./userManuals.ts";
+import { deleteUserManual, emptyManual, ensureManualHeadings, mergeHiddenSlug, notesToManual, slugifyTitle } from "./userManuals.ts";
 
 assert.equal(slugifyTitle("  Hello, World!! "), "hello-world");
 
@@ -67,5 +67,8 @@ assert.ok(blank.slug.startsWith("ai-"));
 assert.ok(blank.chapters.length >= 1);
 
 assert.equal(deleteUserManual("missing"), false);
+assert.deepEqual(mergeHiddenSlug(["cypress"], "git-version-control"), ["cypress", "git-version-control"]);
+assert.deepEqual(mergeHiddenSlug(["cypress"], "cypress"), ["cypress"]);
+assert.deepEqual(mergeHiddenSlug(["cypress"], "  "), ["cypress"]);
 
 console.log("userManuals.check: ok");

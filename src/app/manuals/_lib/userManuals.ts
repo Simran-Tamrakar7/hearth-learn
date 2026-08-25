@@ -9,6 +9,7 @@
 import type { ManualChapter, ManualItem } from "@/app/manuals/_lib/manualsData";
 
 const STORE = "hearth_user_manuals_v1";
+const HIDDEN = "hearth_hidden_manual_slugs";
 const EVENT = "hearth_user_manuals_updated";
 
 const COVERS = [
@@ -206,6 +207,57 @@ export function emptyManual(title: string): ManualItem {
   );
 }
 
+export function mergeHiddenSlug(ids: string[], slug: string): string[] {
+  const s = slug.trim();
+  if (!s || ids.includes(s)) return ids;
+  return [...ids, s];
+}
+
+export function hiddenManualSlugs(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = localStorage.getItem(HIDDEN);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return new Set(Array.isArray(parsed) ? parsed.filter((x) => typeof x === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function unpinSlug(slug: string) {
+  try {
+    const raw = localStorage.getItem("hearth_pinned_items_v2");
+    if (!raw) return;
+    const pins = JSON.parse(raw);
+    if (!Array.isArray(pins)) return;
+    const ids = new Set([`man-${slug}`]);
+    if (slug === "git-version-control") ids.add("man-git");
+    const next = pins.filter(
+      (p: { id?: string; url?: string }) =>
+        !ids.has(String(p.id || "")) && !String(p.url || "").includes(`/manuals/${slug}`)
+    );
+    localStorage.setItem("hearth_pinned_items_v2", JSON.stringify(next));
+    window.dispatchEvent(new Event("hearth_pins_updated"));
+  } catch {
+    /* pin cleanup is best-effort */
+  }
+}
+
+export function hideManual(slug: string): boolean {
+  if (typeof window === "undefined") return false;
+  const next = mergeHiddenSlug([...hiddenManualSlugs()], slug);
+  localStorage.setItem(HIDDEN, JSON.stringify(next));
+  unpinSlug(slug);
+  window.dispatchEvent(new Event(EVENT));
+  return true;
+}
+
+/** User manuals are deleted. Builtin manuals are hidden from this browser’s catalog. */
+export function removeCatalogManual(slug: string): "deleted" | "hidden" | false {
+  if (getUserManual(slug)) return deleteUserManual(slug) ? "deleted" : false;
+  return hideManual(slug) ? "hidden" : false;
+}
+
 export function deleteUserManual(slug: string): boolean {
   if (typeof window === "undefined") return false;
   const found = getUserManual(slug);
@@ -215,18 +267,7 @@ export function deleteUserManual(slug: string): boolean {
   try {
     localStorage.removeItem(`hearth_manual_custom_data_${found.id}`);
     localStorage.removeItem(`hearth_manual_progress_${found.id}`);
-    const raw = localStorage.getItem("hearth_pinned_items_v2");
-    if (raw) {
-      const pins = JSON.parse(raw);
-      if (Array.isArray(pins)) {
-        const next = pins.filter(
-          (p: { id?: string; url?: string }) =>
-            p.id !== `man-${found.slug}` && !String(p.url || "").includes(`/manuals/${found.slug}`)
-        );
-        localStorage.setItem("hearth_pinned_items_v2", JSON.stringify(next));
-        window.dispatchEvent(new Event("hearth_pins_updated"));
-      }
-    }
+    unpinSlug(found.slug);
   } catch {
     /* pin cleanup is best-effort */
   }
