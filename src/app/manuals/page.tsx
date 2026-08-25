@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import { MANUALS_DATA, findHearthManual, ManualItem } from "@/app/manuals/_lib/manualsData";
-import { featuredManualIds, activeManualSlugs } from "@/app/manuals/_content/_registry";
+import { activeManualSlugs } from "@/app/manuals/_content/_registry";
 import { genres } from "@/app/manuals/_content/_helpers.js";
 import { Compass, Search, Clock, BookOpen, ArrowRight, Pin, ExternalLink, Code2, Sparkles, X, Trash2 } from "lucide-react";
 import {
@@ -21,7 +21,6 @@ import {
   PinnedItemMetadata,
   manualPinId,
 } from "@/components/ui/PinButton";
-import { TestingTypesCatalogCard } from "@/app/manuals/_ui/TestingTypesCatalogCard";
 import { deleteUserManual, emptyManual, getUserManual, notesToManual, saveUserManual, subscribeUserManuals } from "@/app/manuals/_lib/userManuals";
 
 const GENRE_CATEGORY: Record<string, ManualItem["category"] | "All"> = {
@@ -54,8 +53,6 @@ const CATALOG_GENRES: GenreRow[] = (genres as { id: string; label: string; blurb
     category: GENRE_CATEGORY[g.id] || "Foundations",
   })
 );
-
-const FEATURED_SLUGS = featuredManualIds();
 
 function resolvePinnedManual(pin: PinnedItemMetadata, userManuals: ManualItem[]) {
   const fromUrl = pin.url?.match(/\/manuals\/([^/?#]+)/)?.[1];
@@ -319,8 +316,7 @@ export default function ManualsCatalogPage() {
     const matchesSearch = needle === "" || hay.includes(needle);
     return matchesCategory && matchesSearch;
   });
-  const featuredManual = filteredManuals.find((m) => FEATURED_SLUGS.has(m.slug));
-  const catalogManuals = filteredManuals.filter((m) => !FEATURED_SLUGS.has(m.slug));
+  const catalogManuals = filteredManuals;
 
   const grouped = useMemo(() => {
     return CATALOG_GENRES.filter((g) => g.id !== "all")
@@ -396,8 +392,6 @@ export default function ManualsCatalogPage() {
             </div>
           </div>
         )}
-
-        {featuredManual && <TestingTypesCatalogCard />}
 
         {pinnedShowcase.length > 0 && (
           <div className="space-y-4 bg-gradient-to-br from-white via-[#FAF7F2] to-[#FEF3C7]/40 border border-[#E7E0D3] rounded-3xl p-6 shadow-xs">
@@ -519,7 +513,7 @@ export default function ManualsCatalogPage() {
           ))}
         </div>
 
-        {sections.length === 0 && !featuredManual && pinnedManuals.length === 0 ? (
+        {sections.length === 0 && pinnedManuals.length === 0 ? (
           <p className="text-[#52635E]">Nothing matches — try another word.</p>
         ) : (
           sections.map((g) => (
