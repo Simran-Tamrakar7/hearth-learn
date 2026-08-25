@@ -1,5 +1,14 @@
 "use client";
 
+/* ============================================================================
+ * HEADING: SHARED — Button
+ * Not a page. These pages all use this same file:
+ *   /  /manuals/[slug]  /library  /life-simulator  /toolkits  /notes  /ai
+ *   /rest  /rest/games  /rest/cookbook  /rest/retro  /showcase-wall  /showcase
+ *   /dashboard  /profile  /settings  /login  /tags  /certificates/[id]
+ * Changing this file changes all of those pages at once.
+ * ========================================================================== */
+
 import React, { forwardRef } from "react";
 import { motion, HTMLMotionProps } from "framer-motion";
 import { Loader2 } from "lucide-react";

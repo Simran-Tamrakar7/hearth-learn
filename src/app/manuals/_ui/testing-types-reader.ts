@@ -1,8 +1,8 @@
 import type { ManualChapter } from "@/lib/manualsData";
-import { TESTING_TYPES_CHAPTERS, type TestingChapterData } from "@/app/manuals/_ui/TestingTypesInteractiveManual";
-import { TESTING_TYPES_OUTLINE } from "@/lib/testing-types-outline";
+import { TESTING_TYPES_CHAPTERS, type TestingChapterData } from "@content/manuals/testing-types/overlay";
+import { TESTING_TYPES_OUTLINE } from "@content/manuals/testing-types/outline";
 
-export { TESTING_TYPES_OUTLINE } from "@/lib/testing-types-outline";
+export { TESTING_TYPES_OUTLINE } from "@content/manuals/testing-types/outline";
 
 function overlayByNo(n: number): TestingChapterData | undefined {
   return TESTING_TYPES_CHAPTERS.find((t) => Number(t.no) === n);

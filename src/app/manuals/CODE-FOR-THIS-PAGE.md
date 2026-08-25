@@ -12,9 +12,10 @@ This folder **is** the Manuals page. Everything that exists only for Manuals liv
 | Playwright roadmap download | `_lib/roadmapData.ts` |
 | TOC part helpers | `_lib/manualParts.ts` |
 | User / AI manuals (`localStorage`) | `_lib/userManuals.ts` |
-| Testing Types 15-chapter outline | `_lib/testing-types-outline.ts` |
-| Convert pathwise JS → Hearth shape | `_lib/pathwiseToHearth.ts` |
-| Chapter **text** of a builtin manual | `_lib/pathwise-data/manuals/` |
+| Convert body JS → Hearth shape | `_lib/pathwiseToHearth.ts` |
+| Chapter **text** of a builtin manual | `content/manuals/<slug>/data.js` |
+| Testing Types overlay + 15-chapter TOC | `content/manuals/testing-types/` |
+| Playwright chapters | `content/manuals/playwright/data.js` |
 | Hide / feature / pin a builtin manual | `content/manuals/_registry.ts` |
 | AI “generate a manual from notes” API | `src/app/api/manuals/generate/route.ts` |
 | Top nav (every page) | `src/components/layout/Navbar.tsx` |

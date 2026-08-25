@@ -1,6 +1,12 @@
 "use client";
 
-/* SHARED: session + theme + toasts. Wired from src/app/layout.tsx */
+/* ============================================================================
+ * HEADING: SHARED — Providers
+ * Not a page. These pages all use this same file:
+ *   EVERY page (wired from src/app/layout.tsx)
+ * Session + theme + toasts.
+ * Changing this file changes all of those pages at once.
+ * ========================================================================== */
 
 import { SessionProvider } from "next-auth/react";
 import { ReactNode } from "react";

@@ -1,5 +1,13 @@
 "use client";
 
+/* ============================================================================
+ * HEADING: SHARED — WatchDesk
+ * Not a page. These pages all use this same file:
+ *   /
+ * Only the home page uses this. Still in ui/ because it is a widget, not a route.
+ * Changing this file changes all of those pages at once.
+ * ========================================================================== */
+
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/Card";

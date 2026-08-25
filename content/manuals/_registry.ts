@@ -1,6 +1,6 @@
 import type { CatalogStatus } from "../types";
 
-/** Builtin manuals. Listing/nav reads this file. Chapter bodies still load via pathwiseToHearth until each slug has its own folder. */
+/** Builtin manuals. Listing/nav reads this file. Chapter bodies: ./<id>/data.js via _bodies.js. */
 export type ManualRegistryEntry = {
   id: string;
   title: string;

@@ -1,6 +1,14 @@
 "use client";
 
-/* SHARED: top nav on almost every PAGE. Map: ../CODE-FOR-SHARED.md */
+/* ============================================================================
+ * HEADING: SHARED — Navbar
+ * Not a page. These pages all use this same file:
+ *   /  /manuals  /manuals/[slug]  /library  /life-simulator  /toolkits
+ *   /notes  /ai  /rest  /rest/games  /rest/cookbook  /rest/retro
+ *   /showcase-wall  /dashboard  /profile  /settings  /tags  /certificates/[id]
+ * Not used by /login or /showcase.
+ * Changing this file changes all of those pages at once.
+ * ========================================================================== */
 
 import React, { useState } from "react";
 import Link from "next/link";

@@ -17,11 +17,12 @@ Set **only in that type’s `_registry.ts`** (library: optional `status` on the 
 Structured lessons with chapters, optional tools, optional Testing Types overlay.
 
 - **Listing + flags:** `content/manuals/_registry.ts` (slug, title, tool, status, order, tags, featured, pinnable)
-- **Bodies (until per-slug split):** `src/app/manuals/_lib/pathwise-data/manuals/*.js` via `_lib/pathwiseToHearth.ts`
-- **Testing Types extra:** overlay + 15-chapter outline in `src/lib/testing-types-outline.ts` and `src/components/manuals/`
+- **Bodies:** `content/manuals/<slug>/data.js`, listed in `_bodies.js`, converted by `_lib/pathwiseToHearth.ts`
+- **Testing Types extra:** `content/manuals/testing-types/` (`overlay.ts`, `outline.ts`, `data.js`)
+- **Playwright:** `content/manuals/playwright/data.js` (merged; not split across files)
 - **User-created manuals:** `localStorage`, not the registry
 
-Splitting 65 manuals × 635 chapters into per-slug folders is a follow-up. Do it one bundled JS file at a time. Do not change manual / chapter ids.
+Do not change manual / chapter ids.
 
 Trails in the URL sense **are manuals**. Prisma `Trail` rows are a separate catalog (dashboard/API only).
 

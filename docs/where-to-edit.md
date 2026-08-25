@@ -2,6 +2,8 @@
 
 Rule: the file that **is** a screen is `src/app/<url>/page.tsx`. It starts with `PAGE: /that-url`. The folder also has `CODE-FOR-THIS-PAGE.md`.
 
+If **several pages share one file**, that file starts with `HEADING: SHARED` and lists every page that uses it (Navbar, Button, auth, …). Changing a SHARED file changes all of those pages.
+
 Catalog **data** is `/content`. Server **APIs** are `src/app/api/` (`API:` comment). Shared chrome is `src/components/` (`SHARED:`).
 
 ## Screens
@@ -32,7 +34,7 @@ Catalog **data** is `/content`. Server **APIs** are `src/app/api/` (`API:` comme
 
 ## Manuals (all of it, in one folder)
 
-`src/app/manuals/` — UI in `_ui/`, loaders + chapter JS in `_lib/`. Map: `src/app/manuals/CODE-FOR-THIS-PAGE.md`.
+`src/app/manuals/` — UI in `_ui/`, converters in `_lib/`. Chapter text: `content/manuals/<slug>/`. Map: `src/app/manuals/CODE-FOR-THIS-PAGE.md`.
 
 ## Other maps
 

@@ -6,17 +6,17 @@ Do this in a text editor. There is **no generate script**. After you save, `next
 
 This stack has **no MDX loader**. Chapter and snippet files are `.ts` (string exports), not `.mdx`.
 
-Next.js will not auto-scan folders. A new folder is invisible until `_registry.ts` mentions it (and, for toolkits / Life Lab, until that file also `import`s the folder).
+Next.js will not auto-scan folders. A new folder is invisible until `_registry.ts` mentions it (and, for manuals, until `_bodies.js` imports it; for toolkits / Life Lab, until that registry `import`s the folder).
 
 ---
 
 ## New builtin manual
 
-Chapter bodies still live in `src/app/manuals/_lib/pathwise-data/` (bundled JS). Do not invent a `content/manuals/<slug>/` tree until you are ready to move that manual’s chapters out of pathwise in the same change. Listing is already driven by the registry.
+One folder per slug under `content/manuals/`. Playwright is `playwright/data.js` (one file). Testing Types is `testing-types/` (body + overlay + outline).
 
-1. Open `content/manuals/_registry.ts`.
-2. Copy an existing object. Paste it at the bottom of `MANUALS` (before the closing `];`).
-3. Set these fields, same order as the others:
+1. Create `content/manuals/<slug>/` (kebab-case, same as the URL).
+2. Copy an existing `data.js`. Keep `pathwiseManual.id` equal to the folder name (exception: Git’s body id is `git`, folder / URL is `git-version-control`).
+3. Open `content/manuals/_registry.ts`. Copy an object into `MANUALS`:
 
 ```ts
 {
@@ -31,14 +31,14 @@ Chapter bodies still live in `src/app/manuals/_lib/pathwise-data/` (bundled JS).
 }
 ```
 
-4. `id` **is** the URL slug (`/manuals/jest`). Keep it kebab-case. Do not reuse an id.
-5. Add a matching object with the **same `id`** in the right `src/app/manuals/_lib/pathwise-data/manuals/*.js` file (or a new file imported from `catalog.js`) including `chapters: [...]`.
-6. Only if the URL must differ from pathwise `id`, add a row to `SLUG` in `src/lib/pathwiseToHearth.ts` (today only `git` → `git-version-control`).
+4. `id` **is** the URL slug (`/manuals/jest`). Do not reuse an id.
+5. Open `content/manuals/_bodies.js`. Add one import and one array entry (same pattern as the others). A folder with no `_bodies.js` line is invisible.
+6. Only if the URL must differ from the body’s `id`, add a row to `SLUG` in `src/app/manuals/_lib/pathwiseToHearth.ts` (today only `git` → `git-version-control`).
 7. Save. Open `/manuals/jest`.
 
 Pin ids: `man-<slug>`, except Git which is `man-git` (do not change that). Set `pinnable: true` and `pinIcon` if it should appear in the dashboard pin picker.
 
-### Snippets (when a manual is later split into its own folder)
+### Snippets (optional)
 
 Put runnable examples in `content/manuals/<slug>/snippets/intercept-network-request.ts`:
 

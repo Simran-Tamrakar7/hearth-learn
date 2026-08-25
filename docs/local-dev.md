@@ -36,4 +36,5 @@ node --experimental-strip-types src/app/manuals/_lib/testing-types-reader.check.
 node --experimental-strip-types src/app/manuals/_lib/userManuals.check.ts
 node --experimental-strip-types src/app/manuals/_ui/lessonFormat.check.ts
 node --experimental-strip-types scripts/check-library.ts
+node --experimental-strip-types scripts/check-pathwise-manuals.ts
 ```

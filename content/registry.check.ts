@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readdirSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { MANUALS } from "./manuals/_registry.ts";
 import { SHOWCASE, SHOWCASE_FEATURED } from "./showcase/_registry.ts";
 import { ARENAS } from "./life-simulator/_registry.ts";
@@ -48,6 +48,26 @@ for (const slug of hearthSlugs) {
 }
 for (const row of MANUALS) {
   assert.ok(hearthSlugs.includes(row.id), `registry id ${row.id} has no pathwise manual`);
+  assert.ok(
+    existsSync(new URL(`./manuals/${row.id}/data.js`, import.meta.url)),
+    `registry id ${row.id} missing content/manuals/${row.id}/data.js`
+  );
+}
+
+const playwrightFiles = readdirSync(new URL("./manuals/playwright", import.meta.url)).sort();
+assert.deepEqual(playwrightFiles, ["data.js"], "Playwright body must be one file in content/manuals/playwright/");
+
+const testingTypesFiles = readdirSync(new URL("./manuals/testing-types", import.meta.url));
+for (const name of [
+  "data.js",
+  "overlay.ts",
+  "outline.ts",
+  "types.ts",
+  "overlay-part17-18.ts",
+  "overlay-part19-22.ts",
+  "overlay-part23.ts",
+]) {
+  assert.ok(testingTypesFiles.includes(name), `testing-types missing ${name}`);
 }
 
 const featuredBodies = new Set(SHOWCASE_FEATURED.map((p) => p.id));
