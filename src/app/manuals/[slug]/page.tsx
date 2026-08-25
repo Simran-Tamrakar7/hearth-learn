@@ -201,10 +201,13 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   const [editingChapterIndex, setEditingChapterIndex] = useState<number>(0);
   const [selectedPartIndices, setSelectedPartIndices] = useState<number[]>([]);
   const [selectedChapterIndices, setSelectedChapterIndices] = useState<number[]>([]);
-  const [isEditingParts, setIsEditingParts] = useState<boolean>(false);
-  const [isEditingChapters, setIsEditingChapters] = useState<boolean>(false);
+  const [tocEdit, setTocEdit] = useState<null | "part" | "chapter" | "sub">(null);
+  const [tocEditOpen, setTocEditOpen] = useState(false);
   const [editingPartIndex, setEditingPartIndex] = useState<number | null>(null);
   const [editingPartName, setEditingPartName] = useState<string>("");
+  const isEditingParts = tocEdit === "part";
+  const isEditingChapters = tocEdit === "chapter";
+  const isEditingSubs = tocEdit === "sub";
 
   // Form State for Chapter Modal
   const [formChapterTitle, setFormChapterTitle] = useState<string>("");
@@ -730,23 +733,20 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     );
   };
 
-  const toggleEditParts = () => {
-    if (isEditingParts) {
-      setSelectedPartIndices([]);
-      setEditingPartIndex(null);
-      setIsEditingParts(false);
-    } else {
-      setIsEditingParts(true);
-    }
+  const enterTocEdit = (mode: "part" | "chapter" | "sub") => {
+    setSelectedPartIndices([]);
+    setSelectedChapterIndices([]);
+    setEditingPartIndex(null);
+    setTocEdit(mode);
+    setTocEditOpen(true);
   };
 
-  const toggleEditChapters = () => {
-    if (isEditingChapters) {
-      setSelectedChapterIndices([]);
-      setIsEditingChapters(false);
-    } else {
-      setIsEditingChapters(true);
-    }
+  const exitTocEdit = () => {
+    setSelectedPartIndices([]);
+    setSelectedChapterIndices([]);
+    setEditingPartIndex(null);
+    setTocEdit(null);
+    setTocEditOpen(false);
   };
 
   const handleMoveSelectedChapters = (direction: -1 | 1) => {
@@ -810,6 +810,10 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     const canUp = chap.parentId ? sibs[0] !== idx : idx > 0;
     const canDown = chap.parentId ? sibs[sibs.length - 1] !== idx : blockEnd < chapters.length;
 
+    const showChapterTools = !nested && tocEdit === "chapter";
+    const showSubTools = nested && tocEdit === "sub";
+    const showRowTools = showChapterTools || showSubTools;
+
     return (
       <div
         key={chap.id || idx}
@@ -817,7 +821,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
           isActive ? "bg-[#1C2A26]" : "hover:bg-[#F3EDE2]"
         }`}
       >
-        {isEditingChapters && (
+        {showRowTools && (
           <input
             type="checkbox"
             checked={selectedChapterIndices.includes(idx)}
@@ -840,9 +844,9 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
           <span className="truncate whitespace-nowrap flex-1 min-w-0">{displayTitle}</span>
         </button>
 
-        {isEditingChapters && (
+        {(showRowTools || (!nested && tocEdit === "sub")) && (
           <div className="flex items-center shrink-0 pr-1">
-            {!nested && (
+            {!nested && tocEdit === "sub" && (
               <button
                 type="button"
                 onClick={() => openAddSubchapterModal(idx)}
@@ -854,6 +858,8 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                 <Plus className="w-3 h-3" />
               </button>
             )}
+            {showRowTools && (
+            <>
             <button
               type="button"
               disabled={!canUp}
@@ -904,6 +910,8 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
             >
               <Trash2 className="w-3 h-3" />
             </button>
+            </>
+            )}
           </div>
         )}
       </div>
@@ -1309,48 +1317,41 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-1.5 shrink-0 justify-end">
-                  <button
-                    type="button"
-                    onClick={toggleEditParts}
-                    className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-lg ${
-                      isEditingParts
-                        ? "text-white bg-[#1C2A26]"
-                        : "text-[#1C2A26] bg-white border border-[#E7E0D3] hover:border-[#D97706]"
-                    }`}
-                    title="Edit parts"
-                  >
-                    <SquarePen className="w-3.5 h-3.5 text-[#D97706]" />
-                    Edit Part
-                  </button>
-                  <button
-                    type="button"
-                    onClick={toggleEditChapters}
-                    className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-lg ${
-                      isEditingChapters
-                        ? "text-white bg-[#1C2A26]"
-                        : "text-[#D97706] bg-white border border-[#E7E0D3] hover:border-[#D97706]"
-                    }`}
-                    title="Edit chapters"
-                  >
-                    <SquarePen className="w-3.5 h-3.5" />
-                    Edit Chapter
-                  </button>
-                  <button
-                    type="button"
-                    onClick={openAddChapterModal}
-                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#D97706] bg-white border border-[#E7E0D3] hover:border-[#D97706] px-2 py-1 rounded-lg"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    Add Chapter
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => openAddSubchapterModal()}
-                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#D97706] bg-white border border-[#E7E0D3] hover:border-[#D97706] px-2 py-1 rounded-lg"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    Add Sub-chapter
-                  </button>
+                  {tocEditOpen ? (
+                    <>
+                      {(["part", "chapter", "sub"] as const).map((mode) => (
+                        <button
+                          key={mode}
+                          type="button"
+                          onClick={() => enterTocEdit(mode)}
+                          className={`inline-flex items-center text-[11px] font-bold px-2 py-1 rounded-lg ${
+                            tocEdit === mode
+                              ? "text-white bg-[#1C2A26]"
+                              : "text-[#52635E] bg-white border border-[#E7E0D3] hover:border-[#D97706] hover:text-[#1C2A26]"
+                          }`}
+                        >
+                          {mode === "part" ? "Part" : mode === "chapter" ? "Chapter" : "Sub-chapter"}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={exitTocEdit}
+                        className="inline-flex items-center text-[11px] font-bold px-2 py-1 rounded-lg text-[#8A9B95] bg-white border border-[#E7E0D3] hover:text-[#1C2A26]"
+                      >
+                        Done
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setTocEditOpen(true)}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-lg text-[#1C2A26] bg-white border border-[#E7E0D3] hover:border-[#D97706]"
+                      title="Edit table of contents"
+                    >
+                      <SquarePen className="w-3.5 h-3.5 text-[#D97706]" />
+                      Edit
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -1393,6 +1394,9 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                 <span className="text-[10px] font-bold text-[#52635E] mr-1">
                   {selectedChapterIndices.length > 0 ? `${selectedChapterIndices.length} chapters` : "Select chapters"}
                 </span>
+                <button type="button" onClick={openAddChapterModal} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#1C2A26] text-white" title="Add chapter">
+                  <Plus className="w-3 h-3 text-[#D97706]" /> Chapter
+                </button>
                 <button type="button" onClick={() => handleMoveSelectedChapters(-1)} disabled={selectedChapterIndices.length === 0} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#FAF7F2] hover:border-[#D97706] disabled:opacity-40" title="Move up">
                   <ArrowUp className="w-3 h-3" /> Up
                 </button>
@@ -1407,6 +1411,31 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                   title="Merge selected chapters"
                 >
                   <Combine className="w-3 h-3" /> Merge
+                </button>
+                <button type="button" onClick={() => handleDeleteSelectedChapters(selectedChapterIndices)} disabled={selectedChapterIndices.length === 0} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-rose-200 text-rose-700 bg-rose-50 hover:bg-rose-100 disabled:opacity-40" title="Delete selected">
+                  <Trash2 className="w-3 h-3" /> Delete
+                </button>
+                {selectedChapterIndices.length > 0 && (
+                  <button type="button" onClick={() => setSelectedChapterIndices([])} className="ml-auto text-[10px] font-bold text-[#8A9B95] hover:text-[#1C2A26]">
+                    Clear
+                  </button>
+                )}
+              </div>
+              )}
+
+              {isEditingSubs && (
+              <div className="flex flex-wrap items-center gap-1 px-2 py-1.5 border-b border-[#E7E0D3] bg-white">
+                <span className="text-[10px] font-bold text-[#52635E] mr-1">
+                  {selectedChapterIndices.length > 0 ? `${selectedChapterIndices.length} sub-chapters` : "Select sub-chapters"}
+                </span>
+                <button type="button" onClick={() => openAddSubchapterModal()} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#1C2A26] text-white" title="Add sub-chapter">
+                  <Plus className="w-3 h-3 text-[#D97706]" /> Sub-chapter
+                </button>
+                <button type="button" onClick={() => handleMoveSelectedChapters(-1)} disabled={selectedChapterIndices.length === 0} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#FAF7F2] hover:border-[#D97706] disabled:opacity-40" title="Move up">
+                  <ArrowUp className="w-3 h-3" /> Up
+                </button>
+                <button type="button" onClick={() => handleMoveSelectedChapters(1)} disabled={selectedChapterIndices.length === 0} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#FAF7F2] hover:border-[#D97706] disabled:opacity-40" title="Move down">
+                  <ArrowDown className="w-3 h-3" /> Down
                 </button>
                 <button type="button" onClick={() => handleDeleteSelectedChapters(selectedChapterIndices)} disabled={selectedChapterIndices.length === 0} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-rose-200 text-rose-700 bg-rose-50 hover:bg-rose-100 disabled:opacity-40" title="Delete selected">
                   <Trash2 className="w-3 h-3" /> Delete
