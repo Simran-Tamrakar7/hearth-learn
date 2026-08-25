@@ -7,6 +7,12 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
+import { listedArenas, type ArenaId } from "@content/life-simulator/_registry";
+import { bugsList } from "@content/life-simulator/bughunt/meta";
+import { crisisScenarios } from "@content/life-simulator/crisis/meta";
+import { interviewQuestion as defaultInterviewQuestion, interviewRoles, sampleAnswers } from "@content/life-simulator/interview/meta";
+import { negotiationStrategies } from "@content/life-simulator/negotiation/meta";
+import { refactorExamples } from "@content/life-simulator/refactor/meta";
 import {
   BrainCircuit,
   Briefcase,
@@ -52,33 +58,19 @@ export default function LifeLabInteractivePage() {
   // Gamification Level & XP
   const [userXP, setUserXP] = useState(820);
   const [userLevel, setUserLevel] = useState(4);
-  const [activeArena, setActiveArena] = useState<
-    "interview" | "bughunt" | "founder" | "crisis" | "negotiation" | "refactor"
-  >("interview");
+  const arenas = listedArenas();
+  const [activeArena, setActiveArena] = useState<ArenaId>(arenas[0]?.id ?? "interview");
 
   // -------------------------------------------------------------
   // ARENA 1: AI STAR INTERVIEW SIMULATOR
   // -------------------------------------------------------------
   const [interviewRole, setInterviewRole] = useState("Senior QA Automation Engineer");
-  const [interviewQuestion, setInterviewQuestion] = useState(
-    "Tell me about a time you resolved a critical test automation suite flakiness or performance bottleneck."
-  );
+  const interviewQuestion = defaultInterviewQuestion;
   const [interviewAnswer, setInterviewAnswer] = useState(
     "In my previous role at a fintech startup, our nightly Playwright CI suite took 45 minutes to run and had a 15% flakiness rate due to slow API dependencies. I refactored the test suite to use storageState for pre-authenticated sessions and mocked third-party payment APIs using page.route. This reduced run times to 8 minutes and dropped flake rate to under 1%."
   );
   const [isEvaluatingInterview, setIsEvaluatingInterview] = useState(false);
   const [starScores, setStarScores] = useState({ situation: 88, task: 92, action: 96, result: 90 });
-
-  const sampleAnswers: Record<string, string> = {
-    "Senior QA Automation Engineer":
-      "In my previous role, our nightly Playwright suite took 45 minutes with a 15% flakiness rate. I introduced storageState session reuse and mocked 3rd party endpoints via page.route, dropping runtime to 8 min and flakiness under 1%.",
-    "Lead SDET Architect":
-      "Our multi-repo team lacked standardized E2E testing. I architected a shared Playwright TypeScript framework with custom fixtures, automatic video artifact uploads, and parallel sharding on GitHub Actions, cutting developer feedback loops from 2 hours to 6 minutes.",
-    "DevOps / Infrastructure Engineer":
-      "During peak traffic, K8s pods hit memory limits due to unindexed DB queries. I implemented Redis caching, established autoscaling policies, and set up Prometheus alert triggers, maintaining 99.99% uptime through Cyber Monday.",
-    "Engineering Manager":
-      "Two senior developers disagreed on migrating from REST to GraphQL. I organized a 2-day proof-of-concept sprint to evaluate latency and developer ergonomics empirical data, reaching alignment on a hybrid gateway approach.",
-  };
 
   const handleSelectRole = (role: string) => {
     setInterviewRole(role);
@@ -111,50 +103,6 @@ export default function LifeLabInteractivePage() {
   // ARENA 2: QA BUG-HUNTING INTERACTIVE MOCKUP
   // -------------------------------------------------------------
   const [foundBugs, setFoundBugs] = useState<string[]>([]);
-  const bugsList = [
-    {
-      id: "b1",
-      title: "Unescaped SQL Parameter in Search Input",
-      type: "Security Vulnerability",
-      code: "SELECT * FROM users WHERE name = '" + "admin' OR '1'='1" + "'",
-      fix: "await page.fill('#search', 'admin'); expect(page.locator('.user-card')).toHaveCount(1);",
-    },
-    {
-      id: "b2",
-      title: "Non-functional Disabled Checkout Button",
-      type: "UI / UX Bug",
-      code: "<button disabled onclick='submitOrder()'>Submit</button>",
-      fix: "await expect(page.locator('#checkout-btn')).toBeDisabled();",
-    },
-    {
-      id: "b3",
-      title: "Missing Accessibility Role on Icon Button",
-      type: "A11y Flaw",
-      code: "<div onclick='closeModal()'><svg></svg></div>",
-      fix: "await expect(page.getByRole('button', { name: 'Close' })).toBeVisible();",
-    },
-    {
-      id: "b4",
-      title: "Z-Index Overlay Blocking Inputs",
-      type: "Layout Flaw",
-      code: "style='position: absolute; z-index: 9999; pointer-events: auto;'",
-      fix: "await page.locator('#overlay').evaluate(el => el.style.pointerEvents = 'none');",
-    },
-    {
-      id: "b5",
-      title: "Unhandled Promise Rejection on Payment API",
-      type: "Backend Async Bug",
-      code: "fetch('/api/pay').then(res => res.json()); // Missing .catch()",
-      fix: "await page.route('**/api/pay', route => route.fulfill({ status: 500 }));",
-    },
-    {
-      id: "b6",
-      title: "Race Condition on Rapid Double-Click Submit",
-      type: "Concurrency Bug",
-      code: "btn.addEventListener('click', sendOrder); // No debouncing",
-      fix: "await Promise.all([page.waitForResponse('**/api/order'), page.click('#submit')]);",
-    },
-  ];
 
   const handleFindBug = (bugId: string, title: string) => {
     if (foundBugs.includes(bugId)) return;
@@ -192,45 +140,6 @@ export default function LifeLabInteractivePage() {
   // -------------------------------------------------------------
   // ARENA 4: P0 PRODUCTION OUTAGE CRISIS WAR ROOM
   // -------------------------------------------------------------
-  const crisisScenarios = [
-    {
-      id: "c1",
-      title: "Production Postgres DB Connection Lock on Black Friday",
-      desc: "Primary database connection pool exhausted at 4,000 req/sec peak. Read queries blocking write transactions.",
-      options: [
-        "Failover to read replica immediately and enable query caching in Redis.",
-        "Restart primary database server to drop all active socket connections.",
-        "Roll back recent migration script and disable new user registrations.",
-      ],
-      bestIndex: 0,
-      postMortem: "Read replica failover restored write availability in 42 seconds. Redis query caching dropped DB load by 68%.",
-    },
-    {
-      id: "c2",
-      title: "Critical Zero-Day JWT Auth Bypass Exploit Discovered",
-      desc: "Security researcher reported an unauthenticated JWT signature verification flaw via algorithm 'none'.",
-      options: [
-        "Rotate JWT signing keys, enforce HS256 algorithm validation, and revoke active sessions.",
-        "Block client IP addresses sending suspicious requests via Cloudflare WAF.",
-        "Send email blast to all registered users requesting password resets.",
-      ],
-      bestIndex: 0,
-      postMortem: "Enforcing HS256 algorithm validation patched the vulnerability across all microservices instantly.",
-    },
-    {
-      id: "c3",
-      title: "AWS US-East-1 S3 Outage Blocking Image Uploads",
-      desc: "Primary cloud storage bucket returning HTTP 503 Service Unavailable errors for user image assets.",
-      options: [
-        "Switch image storage route to fallback EU region multi-bucket CDN with automatic retry.",
-        "Disable image upload functionality until AWS resolves regional outage.",
-        "Increase HTTP client timeout from 5 seconds to 60 seconds.",
-      ],
-      bestIndex: 0,
-      postMortem: "Multi-region CDN failover routed uploads seamlessly, avoiding user downtime.",
-    },
-  ];
-
   const [currentCrisisIdx, setCurrentCrisisIdx] = useState(0);
   const [selectedCrisisOption, setSelectedCrisisOption] = useState<number | null>(null);
 
@@ -277,23 +186,6 @@ export default function LifeLabInteractivePage() {
   // ARENA 6: CODE REFACTORING & ARCHITECTURE SANDBOX
   // -------------------------------------------------------------
   const [selectedRefactorPattern, setSelectedRefactorPattern] = useState("Page Object Model");
-  const refactorExamples: Record<string, { legacy: string; clean: string; benefit: string }> = {
-    "Page Object Model": {
-      legacy: `// Messy Legacy Test: Hardcoded selectors everywhere\ntest('login', async ({ page }) => {\n  await page.goto('https://app.com/login');\n  await page.fill('#usr-12', 'admin');\n  await page.fill('#pwd-99', 'secret');\n  await page.click('button.btn-primary-33');\n});`,
-      clean: `// Clean POM Architecture\nexport class LoginPage {\n  constructor(private page: Page) {}\n  async login(user: string, pass: string) {\n    await this.page.goto('/login');\n    await this.page.getByLabel('Username').fill(user);\n    await this.page.getByLabel('Password').fill(pass);\n    await this.page.getByRole('button', { name: 'Sign in' }).click();\n  }\n}`,
-      benefit: "90% reduction in selector maintenance cost when UI elements change.",
-    },
-    "Circuit Breaker Pattern": {
-      legacy: `// Legacy API Call: Infinite retry loop blocking thread\nasync function getData() {\n  while(true) {\n    try { return await fetch('/api/data'); }\n    catch(e) { /* wait 1s */ }\n  }\n}`,
-      clean: `// Clean Circuit Breaker Pattern\nconst breaker = new CircuitBreaker(fetchData, {\n  timeout: 3000,\n  errorThresholdPercentage: 50,\n  resetTimeout: 10000\n});\nbreaker.fallback(() => getCachedData());`,
-      benefit: "Prevents cascading failures and protects database connection pools under load.",
-    },
-    "Dependency Injection": {
-      legacy: `// Tight Coupling\nclass UserService {\n  private db = new PostgresDatabase('localhost:5432');\n}`,
-      clean: `// Loose Coupling via DI\nclass UserService {\n  constructor(private db: DatabaseProvider) {}\n}`,
-      benefit: "Enables instant unit testing with mock databases without touching production network.",
-    },
-  };
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1C2A26]">
@@ -337,17 +229,10 @@ export default function LifeLabInteractivePage() {
 
           {/* 6 Arena Switcher Navigation Pills */}
           <div className="flex flex-wrap gap-2 pt-2 border-t border-[#E7E0D3]">
-            {[
-              { id: "interview", label: "🎙️ STAR Interview Radar", icon: Mic },
-              { id: "bughunt", label: "🐛 QA Bug-Hunting Sandbox", icon: Bug },
-              { id: "founder", label: "🚀 Founder Strategy Engine", icon: Rocket },
-              { id: "crisis", label: "🛡️ P0 Outage War Room", icon: ShieldAlert },
-              { id: "negotiation", label: "💼 Offer Negotiation Sim", icon: MoneyIcon },
-              { id: "refactor", label: "⚡ Code Architecture Refactor", icon: Code },
-            ].map((arena) => (
+            {arenas.map((arena) => (
               <button
                 key={arena.id}
-                onClick={() => setActiveArena(arena.id as any)}
+                onClick={() => setActiveArena(arena.id)}
                 className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                   activeArena === arena.id
                     ? "bg-[#1C2A26] text-[#FAF7F2] shadow-xs scale-105"
@@ -375,12 +260,7 @@ export default function LifeLabInteractivePage() {
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {[
-                      "Senior QA Automation Engineer",
-                      "Lead SDET Architect",
-                      "DevOps / Infrastructure Engineer",
-                      "Engineering Manager",
-                    ].map((role) => (
+                    {interviewRoles.map((role) => (
                       <button
                         key={role}
                         onClick={() => handleSelectRole(role)}
@@ -801,9 +681,9 @@ export default function LifeLabInteractivePage() {
                     onChange={(e) => setStrategy(e.target.value)}
                     className="w-full h-10 px-3 text-xs font-bold bg-white border border-[#E7E0D3] rounded-xl focus:outline-none"
                   >
-                    <option>Balanced Value Counter</option>
-                    <option>Aggressive Base Salary Max</option>
-                    <option>Equity & Upside Heavy</option>
+                    {negotiationStrategies.map((s) => (
+                      <option key={s}>{s}</option>
+                    ))}
                   </select>
                 </div>
               </div>

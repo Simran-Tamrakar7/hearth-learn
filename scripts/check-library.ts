@@ -1,4 +1,4 @@
-import { libraryBooks, searchBooks, booksOnShelf } from "../src/lib/pathwiseLibrary.ts";
+import { libraryBooks, searchBooks, booksOnShelf } from "../content/library/_registry.ts";
 
 const romance = booksOnShelf("romance");
 if (romance.length < 5) throw new Error("romance shelf too small");
