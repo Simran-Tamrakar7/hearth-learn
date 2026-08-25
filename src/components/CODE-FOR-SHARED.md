@@ -1,14 +1,16 @@
 # Shared UI (not a page)
 
-Buttons, cards, pins, toasts. Used on **many** URLs. Changing `Button.tsx` changes every page.
+Every file here starts with a **HEADING: SHARED** comment that lists the pages that use it.
 
-| File | What |
+Changing a SHARED file changes **all of those pages at once**. Page-only UI lives next to the page (`src/app/manuals/_ui/`).
+
+| File | Pages |
 |---|---|
-| `layout/Navbar.tsx` | Top nav on almost every screen |
-| `layout/PageTransition.tsx` | Route animation |
-| `Providers.tsx` | Session + theme + toast (wired from `src/app/layout.tsx`) |
-| `ui/Button.tsx` `Card.tsx` `Badge.tsx` | Common controls |
-| `ui/PinButton.tsx` | Pin to dashboard (`localStorage`) |
-| `ui/Toast.tsx` `ProgressBar.tsx` `Checkmark.tsx` `WatchDesk.tsx` | The rest |
-
-Page-specific UI lives next to the page (example: `src/app/manuals/_ui/`).
+| `layout/Navbar.tsx` | almost every screen except `/login` and `/showcase` |
+| `Providers.tsx` | every page (via `layout.tsx`) |
+| `ui/Button.tsx` `Card.tsx` `Badge.tsx` `Toast.tsx` | most screens |
+| `ui/PinButton.tsx` | `/manuals` `/dashboard` `/showcase-wall` `/rest/games` `/rest/cookbook` |
+| `ui/ProgressBar.tsx` | `/` `/dashboard` `/showcase` |
+| `ui/WatchDesk.tsx` | `/` only |
+| `ui/Checkmark.tsx` | `/showcase` only |
+| `layout/PageTransition.tsx` | not mounted yet |

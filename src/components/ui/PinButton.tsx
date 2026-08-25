@@ -1,7 +1,11 @@
 "use client";
 
-/* SHARED: pin to dashboard. Used by manuals, games, recipes, showcase-wall. */
-
+/* ============================================================================
+ * HEADING: SHARED — PinButton
+ * Not a page. These pages all use this same file:
+ *   /manuals  /manuals/[slug]  /dashboard  /showcase-wall  /rest/games  /rest/cookbook
+ * Changing this file changes all of those pages at once.
+ * ========================================================================== */
 
 import React, { useState, useEffect } from "react";
 import { Pin } from "lucide-react";

@@ -1,4 +1,10 @@
-/* LAYOUT: wraps every page (fonts, Providers). Nav is src/components/layout/Navbar.tsx */
+/* ============================================================================
+ * HEADING: SHARED — Root layout
+ * Not a page. These pages all use this same file:
+ *   EVERY page
+ * Fonts + Providers. Nav is Navbar.tsx. Styles: globals.css
+ * Changing this file changes all of those pages at once.
+ * ========================================================================== */
 
 import type { Metadata } from "next";
 import "./globals.css";

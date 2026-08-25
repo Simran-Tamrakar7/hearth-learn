@@ -1,5 +1,13 @@
 "use client";
 
+/* ============================================================================
+ * HEADING: SHARED — PageTransition
+ * Not a page. These pages all use this same file:
+ *   (no page imports this yet)
+ * Shared animation wrapper. Not mounted.
+ * Changing this file changes all of those pages at once.
+ * ========================================================================== */
+
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";

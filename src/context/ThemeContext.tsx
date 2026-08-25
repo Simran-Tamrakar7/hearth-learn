@@ -1,6 +1,12 @@
 "use client";
 
-/* SHARED: theme/room toggles. UI to edit: PAGE /settings. Map: ./CODE-FOR-THIS.md */
+/* ============================================================================
+ * HEADING: SHARED — ThemeContext
+ * Not a page. These pages all use this same file:
+ *   EVERY page (via Providers). Settings UI: /settings. Navbar reads room toggles.
+ * Map: ./CODE-FOR-THIS.md
+ * Changing this file changes all of those pages at once.
+ * ========================================================================== */
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 

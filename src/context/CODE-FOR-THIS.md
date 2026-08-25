@@ -1,7 +1,7 @@
 # Theme (settings + every page)
 
-`ThemeContext.tsx` is the light/dark/accent/font/room-toggle state.
+`ThemeContext.tsx` starts with **HEADING: SHARED** listing the pages.
 
-- **UI to change it:** `src/app/settings/page.tsx`
-- **Wired globally from:** `src/components/Providers.tsx`
-- **Navbar** reads room toggles from here to hide Library / Life Lab / etc.
+- **Every page** gets theme via `Providers` in `src/app/layout.tsx`
+- **UI to change it:** `/settings` (`src/app/settings/page.tsx`)
+- **Navbar** reads room toggles to hide Library / Life Lab / etc.

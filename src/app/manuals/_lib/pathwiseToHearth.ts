@@ -1,3 +1,10 @@
+/* ============================================================================
+ * HEADING: SHARED — pathwise JS → Hearth manuals
+ * Not a page. Used by:
+ *   /manuals  /manuals/[slug]  /dashboard   (via manualsData.ts)
+ * Chapter files: content/manuals/<slug>/data.js
+ * ========================================================================== */
+
 import { pathwiseManuals } from "../../../../content/manuals/_bodies.js";
 import { stripLeadingNumber } from "../../../../content/manuals/_helpers.js";
 import type { ManualChapter, ManualItem } from "./manualsData";
