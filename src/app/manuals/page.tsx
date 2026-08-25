@@ -134,10 +134,10 @@ function ManualCard({
                   </span>
                 )}
               </div>
-            <div className="p-4 sm:p-5 space-y-2.5">
+            <div className="p-4 sm:p-5 space-y-112.5">
               <div className="flex items-center justify-between text-[11px] text-[#8A9B95] font-semibold">
                 <span className="flex items-center gap-1.5">
-                  <BookOpen className="w-3.5 h-3.5 text-[#D97706]" /> {manual.chapterCount} Chapters
+                  <BookOpen className="w-3.5 h-3.5 text-[#D97706]" /> {manual.chapterCount} Chapterssss
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-[#D97706]" /> {manual.estimatedTime}
@@ -153,7 +153,7 @@ function ManualCard({
           </div>
           <div className="p-4 sm:p-5 pt-0 border-t border-transparent group-hover:border-[#FAF7F2] transition-colors">
             <div className="pt-2.5 flex items-center justify-between text-xs font-bold text-[#1C2A26] group-hover:text-[#D97706]">
-              <span>Open Master Manual</span>
+              <span>Open Master Manualsssss</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
