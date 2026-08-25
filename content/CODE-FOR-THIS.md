@@ -4,7 +4,7 @@ Hand-editable registries. Add/hide items here. Screen layout stays in `src/app/<
 
 | Folder | Page that lists it |
 |---|---|
-| `manuals/` | `/manuals` |
+| `manuals/` | `/manuals` — one folder per slug (`CODE-FOR-THIS.md` in that folder) |
 | `library/` | `/library` |
 | `toolkits/` | `/toolkits` |
 | `life-simulator/` | `/life-simulator` |

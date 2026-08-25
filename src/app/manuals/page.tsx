@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import { MANUALS_DATA, findHearthManual, ManualItem } from "@/lib/manualsData";
 import { featuredManualIds, activeManualSlugs } from "@content/manuals/_registry";
-import { genres } from "@/app/manuals/_lib/pathwise-data/helpers.js";
+import { genres } from "@content/manuals/_helpers.js";
 import { Compass, Search, Clock, BookOpen, ArrowRight, Pin, ExternalLink, Code2, Sparkles, X, Trash2 } from "lucide-react";
 import {
   PinButton,

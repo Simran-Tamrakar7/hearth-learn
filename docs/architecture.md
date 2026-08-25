@@ -15,7 +15,7 @@
 /prisma           Schema + seed. Map: prisma/CODE-FOR-THIS.md
 /src/app          One folder per URL (`PAGE:` comment + CODE-FOR-THIS-PAGE.md)
 /src/app/api      Server routes (`API:` comment). Map: src/app/api/CODE-FOR-THIS-API.md
-/src/app/manuals  All Manuals code: page.tsx, _ui/, _lib/ (including chapter JS)
+/src/app/manuals  Manuals UI + converters (page.tsx, _ui/, _lib/). Bodies are /content/manuals.
 /src/components   Shared UI. Map: src/components/CODE-FOR-SHARED.md
 /src/lib          Shared auth/prisma + shims. Map: src/lib/CODE-FOR-SHARED.md
 /public           Static assets
@@ -50,7 +50,7 @@
 
 Navbar: Manuals, Library, Life Lab, Notes, AI, Break Room, Showcase Wall, Profile, Settings. Dashboard is the logo target. Toolkits is linked from home, not the nav.
 
-## What is not split yet
+## Manual bodies
 
-Manual chapter bodies live in `src/app/manuals/_lib/pathwise-data/manuals/*.js` (65 manuals, 635 chapters). Listing uses `content/manuals/_registry.ts`. Splitting into `content/manuals/<slug>/` is still a follow-up, without changing ids.
+65 manuals live in `content/manuals/<slug>/data.js` (635 chapters). Listing is `content/manuals/_registry.ts`. Playwright is one file; Testing Types keeps overlay + outline in that same folder. Ids/slugs are unchanged.
 
