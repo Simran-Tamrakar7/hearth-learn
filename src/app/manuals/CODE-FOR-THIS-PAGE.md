@@ -6,7 +6,6 @@ This folder **is** Manuals. Screen, helpers, and chapter text all live here.
 |---|---|
 | The catalog grid (search, categories, cards) | `page.tsx` ← **this is the `/manuals` screen** |
 | The reader after you click a manual | `[slug]/page.tsx` ← **this is `/manuals/cypress` etc.** |
-| Testing Types featured card | `_ui/TestingTypesCatalogCard.tsx` |
 | Tool chips inside a chapter | `_ui/ToolSwitcher.tsx` |
 | Inline chapter editor (write/preview toolbar) | `_ui/LessonContentEditor.tsx` |
 | Playwright roadmap download | `_lib/roadmapData.ts` |

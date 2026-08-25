@@ -91,7 +91,7 @@ export const MANUALS: ManualRegistryEntry[] = [
     tags: [
       "automation"
     ],
-    featured: true,
+    featured: false,
     pinnable: true,
     pinIcon: "🧪",
     body: testingTypes,
@@ -937,7 +937,6 @@ export const MANUALS: ManualRegistryEntry[] = [
 
 export const activeManuals = () => MANUALS.filter((m) => m.status === "active");
 export const activeManualSlugs = () => new Set(activeManuals().map((m) => m.id));
-export const featuredManualIds = () => new Set(activeManuals().filter((m) => m.featured).map((m) => m.id));
 export const pinnableManuals = () =>
   activeManuals()
     .filter((m) => m.pinnable)
