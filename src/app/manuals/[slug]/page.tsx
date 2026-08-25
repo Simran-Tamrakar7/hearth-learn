@@ -17,6 +17,7 @@ import { stripLeadingNumber } from "@/lib/pathwise-data/helpers.js";
 import { PinButton, getPinnedItems, PinnedItemMetadata, manualPinId } from "@/components/ui/PinButton";
 import { ToolSwitcher } from "@/components/manuals/ToolSwitcher";
 import { readerChaptersFromOverlay, testingOverlayForChapter } from "@/components/manuals/testing-types-reader";
+import { restoreTestingTypesToc, TESTING_TYPES_TOC_VERSION } from "@/lib/testing-types-outline";
 import {
   chapterIndexAfter,
   createPart,
@@ -251,29 +252,27 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     }
 
     const savedCustomData = localStorage.getItem(`hearth_manual_custom_data_${initialManual.id}`);
+    let parsed: Record<string, unknown> | null = null;
     if (savedCustomData) {
       try {
-        const parsed = JSON.parse(savedCustomData);
-        if (parsed.title) setManualTitle(parsed.title);
-        if (parsed.description) setManualDescription(parsed.description);
-        if (parsed.category) setManualCategory(parsed.category);
-        if (parsed.estimatedTime) setManualEstimatedTime(parsed.estimatedTime);
-        if (parsed.chapters && Array.isArray(parsed.chapters) && parsed.chapters.length > 0 && (parsed.tocManaged || !isTestingTypesManual)) {
-          setChapters(parsed.chapters);
-        }
+        parsed = JSON.parse(savedCustomData);
       } catch (e) {}
     }
+    if (parsed) {
+      if (parsed.title) setManualTitle(String(parsed.title));
+      if (parsed.description) setManualDescription(String(parsed.description));
+      if (parsed.category) setManualCategory(String(parsed.category));
+      if (parsed.estimatedTime) setManualEstimatedTime(String(parsed.estimatedTime));
+    }
     if (isTestingTypesManual) {
-      const saved = localStorage.getItem(`hearth_manual_custom_data_${initialManual.id}`);
-      let tocManaged = false;
-      if (saved) {
-        try {
-          tocManaged = Boolean(JSON.parse(saved).tocManaged);
-        } catch (e) {}
-      }
-      if (!tocManaged) {
+      const chaptersSaved = parsed?.chapters;
+      if (restoreTestingTypesToc(parsed) && Array.isArray(chaptersSaved) && chaptersSaved.length > 0) {
+        setChapters(chaptersSaved as ManualChapter[]);
+      } else {
         setChapters(readerChaptersFromOverlay(initialManual.chapters));
       }
+    } else if (parsed && Array.isArray(parsed.chapters) && parsed.chapters.length > 0) {
+      setChapters(parsed.chapters as ManualChapter[]);
     }
   }, [initialManual.id]);
 
@@ -306,6 +305,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       estimatedTime: manualEstimatedTime,
       chapters: updated,
       tocManaged: true,
+      ...(isTestingTypesManual ? { tocCatalogVersion: TESTING_TYPES_TOC_VERSION } : {}),
     });
     persistUserManual({
       title: manualTitle,
