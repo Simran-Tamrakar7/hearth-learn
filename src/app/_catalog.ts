@@ -1,3 +1,4 @@
+/** Catalog status used by each page’s `_content/_registry.ts`. */
 export type CatalogStatus = "active" | "archived" | "deleted";
 
 export type CatalogEntry = {

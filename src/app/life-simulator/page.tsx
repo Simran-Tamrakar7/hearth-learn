@@ -1,6 +1,6 @@
 "use client";
 
-/* PAGE: /life-simulator  — this file is the screen. Scenarios: content/life-simulator/. Map: ./CODE-FOR-THIS-PAGE.md */
+/* PAGE: /life-simulator  — this file is the screen. Scenarios: ./_content/. Map: ./CODE-FOR-THIS-PAGE.md */
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,12 +9,12 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
-import { listedArenas, type ArenaId } from "@content/life-simulator/_registry";
-import { bugsList } from "@content/life-simulator/bughunt/meta";
-import { crisisScenarios } from "@content/life-simulator/crisis/meta";
-import { interviewQuestion as defaultInterviewQuestion, interviewRoles, sampleAnswers } from "@content/life-simulator/interview/meta";
-import { negotiationStrategies } from "@content/life-simulator/negotiation/meta";
-import { refactorExamples } from "@content/life-simulator/refactor/meta";
+import { listedArenas, type ArenaId } from "@/app/life-simulator/_content/_registry";
+import { bugsList } from "@/app/life-simulator/_content/bughunt/meta";
+import { crisisScenarios } from "@/app/life-simulator/_content/crisis/meta";
+import { interviewQuestion as defaultInterviewQuestion, interviewRoles, sampleAnswers } from "@/app/life-simulator/_content/interview/meta";
+import { negotiationStrategies } from "@/app/life-simulator/_content/negotiation/meta";
+import { refactorExamples } from "@/app/life-simulator/_content/refactor/meta";
 import {
   BrainCircuit,
   Briefcase,

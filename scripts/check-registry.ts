@@ -1,11 +1,14 @@
 import assert from "node:assert/strict";
 import { existsSync, readdirSync } from "node:fs";
-import { MANUALS } from "./manuals/_registry.ts";
-import { SHOWCASE, SHOWCASE_FEATURED } from "./showcase/_registry.ts";
-import { ARENAS } from "./life-simulator/_registry.ts";
-import { TRAILS } from "./trails/_registry.ts";
-import { libraryBooks } from "./library/_registry.ts";
+import { MANUALS } from "../src/app/manuals/_content/_registry.ts";
+import { SHOWCASE, SHOWCASE_FEATURED } from "../src/app/showcase-wall/_content/_registry.ts";
+import { ARENAS } from "../src/app/life-simulator/_content/_registry.ts";
+import { TRAILS } from "../src/app/trails/_content/_registry.ts";
+import { libraryBooks } from "../src/app/library/_content/_registry.ts";
 import { PATHWISE_HEARTH_MANUALS } from "../src/app/manuals/_lib/pathwiseToHearth.ts";
+
+const manualsRoot = new URL("../src/app/manuals/_content/", import.meta.url);
+const toolkitsRoot = new URL("../src/app/toolkits/_content/", import.meta.url);
 
 function uniqueIds(rows: { id: string }[], label: string) {
   const ids = rows.map((r) => r.id);
@@ -26,13 +29,12 @@ assert.equal(ARENAS.length, 6);
 assert.equal(TRAILS.length, 8);
 assert.ok(libraryBooks.length >= 30);
 
-const toolkitDirs = readdirSync(new URL("./toolkits", import.meta.url)).filter(
-  (name) => !name.startsWith("_") && !name.endsWith(".ts")
+const toolkitDirs = readdirSync(toolkitsRoot).filter(
+  (name) => !name.startsWith("_") && !name.endsWith(".ts") && !name.endsWith(".md")
 );
 assert.equal(toolkitDirs.length, 4, `expected 4 toolkit folders, got ${toolkitDirs.join(",")}`);
 for (const dir of toolkitDirs) {
-  assert.ok(MANUALS, "registry loaded");
-  const names = readdirSync(new URL(`./toolkits/${dir}`, import.meta.url));
+  const names = readdirSync(new URL(dir, toolkitsRoot));
   assert.ok(names.includes("meta.ts"), `${dir} missing meta.ts`);
 }
 
@@ -54,15 +56,15 @@ for (const row of MANUALS) {
     `registry id ${row.id} body has no chapters`
   );
   assert.ok(
-    existsSync(new URL(`./manuals/${row.id}/data.js`, import.meta.url)),
-    `registry id ${row.id} missing content/manuals/${row.id}/data.js`
+    existsSync(new URL(`./${row.id}/data.js`, manualsRoot)),
+    `registry id ${row.id} missing src/app/manuals/_content/${row.id}/data.js`
   );
 }
 
-const playwrightFiles = readdirSync(new URL("./manuals/playwright", import.meta.url)).sort();
-assert.deepEqual(playwrightFiles, ["data.js"], "Playwright body must be one file in content/manuals/playwright/");
+const playwrightFiles = readdirSync(new URL("./playwright", manualsRoot)).sort();
+assert.deepEqual(playwrightFiles, ["data.js"], "Playwright body must be one file in src/app/manuals/_content/playwright/");
 
-const testingTypesFiles = readdirSync(new URL("./manuals/testing-types", import.meta.url));
+const testingTypesFiles = readdirSync(new URL("./testing-types", manualsRoot));
 for (const name of [
   "data.js",
   "overlay.ts",
@@ -82,4 +84,4 @@ for (const row of SHOWCASE) {
 
 assert.ok(MANUALS.every((m) => m.status === "active" || m.status === "archived" || m.status === "deleted"));
 
-console.log("content/registry.check: ok");
+console.log("scripts/check-registry: ok");

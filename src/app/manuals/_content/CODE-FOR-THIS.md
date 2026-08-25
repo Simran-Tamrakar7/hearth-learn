@@ -1,8 +1,6 @@
-# Builtin manuals
+# Builtin manuals (this folder)
 
-One folder per URL slug. Listing, status, and the static `data.js` import all live in `_registry.ts` (no glob; a folder is invisible until imported).
-
-Do **not** put a `src/` page inside each manual folder. Next.js needs routes under `src/app/`. One reader at `/manuals/[slug]` serves every book.
+Chapter text for `/manuals`. The screen is the sibling `page.tsx` / `[slug]/page.tsx`. `_content` is not a URL (underscore folder).
 
 | File | What it is |
 |---|---|
@@ -13,4 +11,4 @@ Do **not** put a `src/` page inside each manual folder. Next.js needs routes und
 | `playwright/data.js` | Merged Playwright manual (not split across files) |
 | `_archive/` | Soft-deleted or unused bodies |
 
-Converter (not data): `src/app/manuals/_lib/pathwiseToHearth.ts`.
+Converter (not data): `../_lib/pathwiseToHearth.ts`.

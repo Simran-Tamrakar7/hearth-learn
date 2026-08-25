@@ -6,7 +6,7 @@
  * Changing this file changes all of those pages at once.
  * ========================================================================== */
 
-import type { ManualChapter, ManualItem } from "@/lib/manualsData";
+import type { ManualChapter, ManualItem } from "@/app/manuals/_lib/manualsData";
 
 const STORE = "hearth_user_manuals_v1";
 const EVENT = "hearth_user_manuals_updated";

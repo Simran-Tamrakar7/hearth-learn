@@ -1,4 +1,4 @@
-import type { CatalogStatus } from "../types";
+import type { CatalogStatus } from "../../_catalog";
 import { meta as promptJson, snippet as promptJsonSnippet } from "./prompt-json/meta";
 import { meta as rscOptimistic, snippet as rscOptimisticSnippet } from "./rsc-optimistic/meta";
 import { meta as framerSprings, snippet as framerSpringsSnippet } from "./framer-springs/meta";

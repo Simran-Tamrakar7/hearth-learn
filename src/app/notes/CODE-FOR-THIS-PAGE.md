@@ -6,4 +6,4 @@
 | Save/load notes | `src/app/api/notes/route.ts` |
 | Tag cloud `/tags` | `src/app/tags/page.tsx` |
 
-There are no note templates in `/content`. Notes are per-user in the database.
+There are no note templates in this folder. Notes are per-user in the database.

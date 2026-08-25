@@ -3,9 +3,9 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, Search, Copy, Check, ChevronRight } from "lucide-react";
-import { TESTING_TYPES_CHAPTERS } from "@content/manuals/testing-types/overlay";
+import { TESTING_TYPES_CHAPTERS } from "@/app/manuals/_content/testing-types/overlay";
 
-export type { TestingChapterData } from "@content/manuals/testing-types/overlay";
+export type { TestingChapterData } from "@/app/manuals/_content/testing-types/overlay";
 export { TESTING_TYPES_CHAPTERS };
 
 export function TestingTypesInteractiveManual() {

@@ -1,48 +1,45 @@
 # Where to edit
 
-Rule: the file that **is** a screen is `src/app/<url>/page.tsx`. It starts with `PAGE: /that-url`. The folder also has `CODE-FOR-THIS-PAGE.md`.
+Open `src/app/<url>/`. That folder **is** the page: `page.tsx` (the screen) plus `_content` (copy/data for that page). `_content` is not a URL — underscore folders are private in the App Router.
 
-If **several pages share one file**, that file starts with `HEADING: SHARED` and lists every page that uses it (Navbar, Button, auth, …). Changing a SHARED file changes all of those pages.
+If **several pages share one file**, that file starts with `HEADING: SHARED` and lists every page that uses it (Navbar, Button, auth). Changing a SHARED file changes all of those pages.
 
-Catalog **data** is `/content`. Server **APIs** are `src/app/api/` (`API:` comment). Shared chrome is `src/components/` (`SHARED:`).
+Server **APIs** stay under `src/app/api/` (URLs). Shared chrome is `src/components/`.
 
 ## Screens
 
-| URL | Code for this page |
+| URL | Folder |
 |---|---|
-| `/` | `src/app/page.tsx` |
-| `/manuals` | `src/app/manuals/page.tsx` |
-| `/manuals/<slug>` | `src/app/manuals/[slug]/page.tsx` |
-| `/library` | `src/app/library/page.tsx` |
-| `/life-simulator` | `src/app/life-simulator/page.tsx` |
-| `/toolkits` | `src/app/toolkits/page.tsx` |
-| `/notes` | `src/app/notes/page.tsx` |
-| `/ai` | `src/app/ai/page.tsx` |
-| `/rest` | `src/app/rest/page.tsx` |
-| `/rest/games` | `src/app/rest/games/page.tsx` |
-| `/rest/cookbook` | `src/app/rest/cookbook/page.tsx` |
-| `/rest/retro` | `src/app/rest/retro/page.tsx` |
-| `/showcase-wall` | `src/app/showcase-wall/page.tsx` |
-| `/showcase` | `src/app/showcase/page.tsx` |
-| `/dashboard` | `src/app/dashboard/page.tsx` |
-| `/profile` | `src/app/profile/page.tsx` |
-| `/settings` | `src/app/settings/page.tsx` |
-| `/login` | `src/app/login/page.tsx` |
-| `/tags` | `src/app/tags/page.tsx` |
-| `/certificates/[id]` | `src/app/certificates/[id]/page.tsx` |
-| `/trails` | redirect — `src/app/trails/page.tsx` |
+| `/` | `src/app/` (`page.tsx`) |
+| `/manuals` | `src/app/manuals/` |
+| `/manuals/<slug>` | `src/app/manuals/[slug]/` |
+| `/library` | `src/app/library/` |
+| `/life-simulator` | `src/app/life-simulator/` |
+| `/toolkits` | `src/app/toolkits/` |
+| `/notes` | `src/app/notes/` |
+| `/ai` | `src/app/ai/` |
+| `/rest` | `src/app/rest/` |
+| `/rest/games` | `src/app/rest/games/` |
+| `/rest/cookbook` | `src/app/rest/cookbook/` |
+| `/rest/retro` | `src/app/rest/retro/` |
+| `/showcase-wall` | `src/app/showcase-wall/` |
+| `/showcase` | `src/app/showcase/` |
+| `/dashboard` | `src/app/dashboard/` |
+| `/profile` | `src/app/profile/` |
+| `/settings` | `src/app/settings/` |
+| `/login` | `src/app/login/` |
+| `/tags` | `src/app/tags/` |
+| `/certificates/[id]` | `src/app/certificates/[id]/` |
+| `/trails` | `src/app/trails/` (redirects to manuals) |
 
-## Manuals (all of it, in one folder)
-
-`src/app/manuals/` — UI in `_ui/`, converters in `_lib/`. Chapter text: `content/manuals/<slug>/`. Map: `src/app/manuals/CODE-FOR-THIS-PAGE.md`.
+Each of those folders has `CODE-FOR-THIS-PAGE.md`.
 
 ## Other maps
 
 | Kind | Open |
 |---|---|
-| Catalog data | `content/CODE-FOR-THIS.md` |
 | APIs | `src/app/api/CODE-FOR-THIS-API.md` |
 | Shared UI | `src/components/CODE-FOR-SHARED.md` |
-| Shared lib (auth, prisma, shims) | `src/lib/CODE-FOR-SHARED.md` |
+| Auth / Prisma | `src/lib/CODE-FOR-SHARED.md` |
 | Theme | `src/context/CODE-FOR-THIS.md` |
 | Database schema | `prisma/CODE-FOR-THIS.md` |

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { groupChaptersIntoParts, tocNumbersForPart } from "./manualParts.ts";
-import { TESTING_TYPES_OUTLINE, flattenTestingTypesOutline, restoreTestingTypesToc } from "../../../../content/manuals/testing-types/outline.ts";
+import { TESTING_TYPES_OUTLINE, flattenTestingTypesOutline, restoreTestingTypesToc } from "../_content/testing-types/outline.ts";
 
 const rows = flattenTestingTypesOutline();
 assert.equal(TESTING_TYPES_OUTLINE.length, 15);

@@ -1,6 +1,6 @@
 # Code for this page: `/manuals`
 
-This folder **is** the Manuals page. Everything that exists only for Manuals lives here (`page.tsx`, `_ui/`, `_lib/`).
+This folder **is** Manuals. Screen, helpers, and chapter text all live here.
 
 | What you want to change | Open this file |
 |---|---|
@@ -13,11 +13,9 @@ This folder **is** the Manuals page. Everything that exists only for Manuals liv
 | TOC part helpers | `_lib/manualParts.ts` |
 | User / AI manuals (`localStorage`) | `_lib/userManuals.ts` |
 | Convert body JS → Hearth shape | `_lib/pathwiseToHearth.ts` |
-| Chapter **text** of a builtin manual | `content/manuals/<slug>/data.js` |
-| Testing Types overlay + 15-chapter TOC | `content/manuals/testing-types/` |
-| Playwright chapters | `content/manuals/playwright/data.js` |
-| Hide / feature / pin a builtin, or wire a new `data.js` | `content/manuals/_registry.ts` |
+| Chapter **text** of a builtin manual | `_content/<slug>/data.js` |
+| Testing Types overlay + 15-chapter TOC | `_content/testing-types/` |
+| Playwright chapters | `_content/playwright/data.js` |
+| Hide / feature / pin a builtin, or wire a new `data.js` | `_content/_registry.ts` |
 | AI “generate a manual from notes” API | `src/app/api/manuals/generate/route.ts` |
 | Top nav (every page) | `src/components/layout/Navbar.tsx` |
-
-`src/lib/manualsData.ts` (and a few other `src/lib/*` files) are **one-line shims** so old imports still work. Edit the real files in this folder, not the shim.

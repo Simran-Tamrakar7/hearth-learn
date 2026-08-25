@@ -1,6 +1,6 @@
 /** Pathwise catalog — Gutenberg, Standard Ebooks, Open Library, authors' free editions. */
 
-import type { CatalogStatus } from "../types";
+import type { CatalogStatus } from "../../_catalog";
 
 export type LibraryBook = {
   id: string

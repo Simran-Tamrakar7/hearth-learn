@@ -1,6 +1,6 @@
 "use client";
 
-/* PAGE: /toolkits  — this file is the screen. Snippets: content/toolkits/<id>/meta.ts. Map: ./CODE-FOR-THIS-PAGE.md */
+/* PAGE: /toolkits  — this file is the screen. Snippets: ./_content/<id>/meta.ts. Map: ./CODE-FOR-THIS-PAGE.md */
 
 import React, { useState } from "react";
 import { Navbar } from "@/components/layout/Navbar";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
-import { listedToolkits } from "@content/toolkits/_registry";
+import { listedToolkits } from "@/app/toolkits/_content/_registry";
 import { Code, Copy, Check } from "lucide-react";
 
 export default function ToolkitsPage() {

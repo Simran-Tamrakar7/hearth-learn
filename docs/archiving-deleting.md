@@ -27,18 +27,18 @@ Library books: add `status: "archived"` on that book object (they do not have st
 3. Move the folder:
 
 ```bash
-mv content/toolkits/my-slug content/toolkits/_archive/my-slug
+mv src/app/toolkits/_content/my-slug src/app/toolkits/_content/_archive/my-slug
 ```
 
 Do **not** leave `import "./my-slug/meta"` or `import "./my-slug/data.js"` after the move — Next will fail to compile. For a builtin manual, delete its import and `MANUALS` row in `_registry.ts`, then:
 
 ```bash
-mv content/manuals/my-slug content/manuals/_archive/my-slug
+mv src/app/manuals/_content/my-slug src/app/manuals/_content/_archive/my-slug
 ```
 
 ## Restore
 
-1. `mv content/<type>/_archive/my-slug content/<type>/my-slug`
+1. `mv src/app/<page>/_content/_archive/my-slug src/app/<page>/_content/my-slug`
 2. Paste the registry object back with `status: "active"`.
 3. Restore the static import if that type uses one.
 

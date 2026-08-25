@@ -1,6 +1,6 @@
 "use client";
 
-/* PAGE: /rest/cookbook  — this file is the screen. Catalog: content/break-room/cookbook.ts. Map: ../CODE-FOR-THIS-PAGE.md */
+/* PAGE: /rest/cookbook  — this file is the screen. Catalog: ./_content.ts. Map: ./CODE-FOR-THIS-PAGE.md */
 
 import React, { useState, useEffect } from "react";
 import { Navbar } from "@/components/layout/Navbar";
@@ -22,7 +22,7 @@ import {
   FDANutrition,
   RecipeVideo,
   TransformedRecipeDetails,
-} from "@/lib/cookbookData";
+} from "@/app/rest/cookbook/_content";
 import {
   Utensils,
   BookOpen,

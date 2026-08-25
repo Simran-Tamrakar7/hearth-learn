@@ -12,11 +12,11 @@ Next.js will not auto-scan folders. A new folder is invisible until `_registry.t
 
 ## New builtin manual
 
-One folder per slug under `content/manuals/`. Playwright is `playwright/data.js` (one file). Testing Types is `testing-types/` (body + overlay + outline).
+One folder per slug under `src/app/manuals/_content/`. Playwright is `playwright/data.js` (one file). Testing Types is `testing-types/` (body + overlay + outline).
 
-1. Create `content/manuals/<slug>/` (kebab-case, same as the URL).
+1. Create `src/app/manuals/_content/<slug>/` (kebab-case, same as the URL).
 2. Copy an existing `data.js`. Keep `pathwiseManual.id` equal to the folder name (exception: Git’s body id is `git`, folder / URL is `git-version-control`).
-3. Open `content/manuals/_registry.ts`. Add one import at the top, then copy a `MANUALS` row with `body:` pointing at that import (same pattern as Cypress):
+3. Open `src/app/manuals/_content/_registry.ts`. Add one import at the top, then copy a `MANUALS` row with `body:` pointing at that import (same pattern as Cypress):
 
 ```ts
 import { pathwiseManual as jest } from "./jest/data.js";
@@ -44,7 +44,7 @@ Pin ids: `man-<slug>`, except Git which is `man-git` (do not change that). Set `
 
 ### Snippets (optional)
 
-Put runnable examples in `content/manuals/<slug>/snippets/intercept-network-request.ts`:
+Put runnable examples in `src/app/manuals/_content/<slug>/snippets/intercept-network-request.ts`:
 
 ```ts
 export const interceptNetworkRequest = `cy.intercept("GET", "/api/users", { fixture: "users.json" });`;
@@ -56,7 +56,7 @@ Import that export from the chapter file. Searching the repo for `cy.intercept` 
 
 ## New library book
 
-1. Open `content/library/_registry.ts`.
+1. Open `src/app/library/_content/_registry.ts`.
 2. Copy a book object. Set a unique kebab-case `id` (this is what `hearth_library_saved` stores).
 3. Set `url` to the public page (Gutenberg, Standard Ebooks, …).
 4. Use a `shelf` / `shelves` that exists in `shelves` at the top of the same file, or add a shelf object there too.
@@ -69,7 +69,7 @@ Import that export from the chapter file. Searching the repo for `cy.intercept` 
 These are **not** manuals. They show up via `/api/trails` (notes picker, dashboard). `/trails/<slug>` still redirects to `/manuals/<slug>` and will 404 unless a manual has that slug.
 
 1. Add a row in `prisma/seed.ts` (slug, title, chapters with markdown `content`).
-2. Copy a line in `content/trails/_registry.ts` so the human-readable list stays in sync.
+2. Copy a line in `src/app/trails/_content/_registry.ts` so the human-readable list stays in sync.
 3. Run `npx prisma db seed` locally. That **resets** local SQLite seed data. Do not run it against a database you care about.
 
 ---
@@ -78,18 +78,18 @@ These are **not** manuals. They show up via `/api/trails` (notes picker, dashboa
 
 The page still has one UI block per arena id. A registry row without that block will show a pill that opens an empty main area.
 
-1. Create `content/life-simulator/<arena-id>/meta.ts`. Copy `interview/meta.ts`. Keep `meta` fields in this order: `id`, `title`, `description`, `icon`.
+1. Create `src/app/life-simulator/_content/<arena-id>/meta.ts`. Copy `interview/meta.ts`. Keep `meta` fields in this order: `id`, `title`, `description`, `icon`.
 2. Put scenario lists in that same file (see `bughunt/meta.ts` / `crisis/meta.ts`) or a `logic.ts` next to it.
-3. Open `content/life-simulator/_registry.ts`. Copy an `ARENAS` row. Set `id` (kebab-case, same as the folder), `title`, `label` (pill text), `tool`, `status: "active"`, `order`.
+3. Open `src/app/life-simulator/_content/_registry.ts`. Copy an `ARENAS` row. Set `id` (kebab-case, same as the folder), `title`, `label` (pill text), `tool`, `status: "active"`, `order`.
 4. Open `src/app/life-simulator/page.tsx`. Import the new data and add `{activeArena === "<id>" && ( ... )}` by copying an existing arena block. Also extend `ArenaId` in the registry if you added a new id.
 
 ---
 
 ## New toolkit
 
-1. Create folder `content/toolkits/<id>/` (kebab-case, same as the registry `id`).
-2. Copy `content/toolkits/prompt-json/meta.ts` into that folder. Same fields, same order: `id`, `title`, `description`, `icon`, `category`. Keep the cheat sheet in `export const snippet = \`...\`;` in that file.
-3. Open `content/toolkits/_registry.ts`.
+1. Create folder `src/app/toolkits/_content/<id>/` (kebab-case, same as the registry `id`).
+2. Copy `src/app/toolkits/_content/prompt-json/meta.ts` into that folder. Same fields, same order: `id`, `title`, `description`, `icon`, `category`. Keep the cheat sheet in `export const snippet = \`...\`;` in that file.
+3. Open `src/app/toolkits/_content/_registry.ts`.
 4. Add one import at the top:
 
 ```ts
@@ -103,7 +103,7 @@ import { meta as jestKit, snippet as jestSnippet } from "./jest/meta";
 
 ## New showcase featured repo
 
-1. Open `content/showcase/_registry.ts`.
+1. Open `src/app/showcase-wall/_content/_registry.ts`.
 2. Copy a `SHOWCASE` row (`id` like `gh-my-repo`, `status: "active"`).
 3. Copy a matching object in `SHOWCASE_FEATURED` (description, GitHub URL, stars, …). Both `id`s must match.
 4. User-uploaded wall items are Prisma, not this file.
@@ -112,4 +112,4 @@ import { meta as jestKit, snippet as jestSnippet } from "./jest/meta";
 
 ## New Break Room game or recipe
 
-Do **not** create a folder per game or dish (500+ items). Open `content/break-room/games.ts` or `content/break-room/cookbook.ts` and copy an existing object. Pin ids: `g-{normalizedTitle}` for games, `dish-{id}` for recipes.
+Do **not** create a folder per game or dish (500+ items). Open `src/app/rest/games/_content.ts` or `src/app/rest/cookbook/_content.ts` and copy an existing object. Pin ids: `g-{normalizedTitle}` for games, `dish-{id}` for recipes.

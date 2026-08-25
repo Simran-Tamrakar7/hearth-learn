@@ -7,4 +7,4 @@ These files only **redirect** to Manuals. There is no trail reader UI.
 | `/trails` | `page.tsx` → `/manuals` |
 | `/trails/[slug]` | `[slug]/page.tsx` → `/manuals/[slug]` |
 
-Prisma trail rows (notes picker, dashboard) live in `prisma/seed.ts` and `content/trails/_registry.ts`.
+Prisma trail rows (notes picker, dashboard) live in `prisma/seed.ts` and `_content/_registry.ts`.

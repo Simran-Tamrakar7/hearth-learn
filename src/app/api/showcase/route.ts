@@ -1,6 +1,6 @@
 /* API: /api/showcase  — used by PAGE /showcase-wall. Map: ./CODE-FOR-THIS-API.md */
 
-import { listedShowcaseFeatured } from "@content/showcase/_registry";
+import { listedShowcaseFeatured } from "@/app/showcase-wall/_content/_registry";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";

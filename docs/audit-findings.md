@@ -1,6 +1,6 @@
 # Step 1 — Content audit (current state)
 
-**Later:** builtin manuals now live in `content/manuals/<slug>/data.js` (Playwright one file; Testing Types overlay/outline in that folder). This audit describes the pre-split tree.
+**Later:** builtin manuals live in `src/app/manuals/_content/<slug>/data.js`. This audit describes the pre-split tree.
 
 Scanned before any `/content` move. There is **no MDX**, **no CMS**, **no Contentlayer**. Catalog content is TypeScript/JavaScript object literals imported at build time, plus some Prisma models and browser `localStorage`.
 
