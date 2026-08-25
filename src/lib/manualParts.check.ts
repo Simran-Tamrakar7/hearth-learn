@@ -132,6 +132,14 @@ assert.equal(nums.get(1), "1.1");
 assert.equal(nums.get(2), "1.2");
 assert.equal(nums.get(3), "2");
 
+const prefixed = tocNumbersForPart(nested, [0, 1, 2, 3], 1);
+assert.equal(prefixed.get(0), "1.1");
+assert.equal(prefixed.get(1), "1.1.1");
+assert.equal(prefixed.get(2), "1.1.2");
+assert.equal(prefixed.get(3), "1.2");
+assert.equal(displayPartTitle(0, "Testing by Level", "chapter"), "Chapter 1 — Testing by Level");
+assert.equal(stripPartNumber("Chapter 4 — Non-Functional Testing"), "Non-Functional Testing");
+
 const movedParent = moveChapterBlock(nested, 0, 1);
 assert.equal(movedParent.chapters.map((c) => c.id).join(""), "qps1s2");
 assert.equal(movedParent.chapters[2].parentId, "p");

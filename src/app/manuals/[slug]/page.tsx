@@ -16,8 +16,7 @@ import { PLAYWRIGHT_ROADMAP_PHASES, downloadRoadmapSVG } from "@/lib/roadmapData
 import { stripLeadingNumber } from "@/lib/pathwise-data/helpers.js";
 import { PinButton, getPinnedItems, PinnedItemMetadata, manualPinId } from "@/components/ui/PinButton";
 import { ToolSwitcher } from "@/components/manuals/ToolSwitcher";
-import { TestingTypesInteractiveManual, TESTING_TYPES_CHAPTERS } from "@/components/manuals/TestingTypesInteractiveManual";
-import { readerChaptersFromOverlay } from "@/components/manuals/testing-types-reader";
+import { readerChaptersFromOverlay, testingOverlayForChapter } from "@/components/manuals/testing-types-reader";
 import {
   chapterIndexAfter,
   createPart,
@@ -148,6 +147,9 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     slug === "testing-types" ||
     slug === "testing-types-manual" ||
     isTestingTypesSlug(slug);
+
+  const groupTitle = (index: number, name: string) =>
+    displayPartTitle(index, name, isTestingTypesManual ? "chapter" : "part");
 
   // Testing Types TOC must follow TESTING_TYPES_CHAPTERS, not a stale localStorage snapshot (was freezing at 64).
   const catalogChapters = isTestingTypesManual
@@ -331,14 +333,14 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   const partGroups = React.useMemo(() => groupChaptersIntoParts(chapters), [chapters]);
   const overlayChapter = React.useMemo(() => {
     if (!isTestingTypesManual) return undefined;
-    return TESTING_TYPES_CHAPTERS.find((t) => t.title === activeChapter.title);
-  }, [isTestingTypesManual, activeChapter.title]);
+    return testingOverlayForChapter(activeChapter);
+  }, [isTestingTypesManual, activeChapter]);
   const activePartGroup = partGroups.find((g) => g.chapterIndices.includes(activeChapterIndex));
   const roadmapParts = React.useMemo(() => {
     return partGroups.map((g) => ({
       id: g.partKey,
       phaseNum: `P${g.index + 1}`,
-      title: displayPartTitle(g.index, g.name),
+      title: groupTitle(g.index, g.name),
       nodes: g.chapterIndices.map((idx) => {
         const ch = chapters[idx];
         return {
@@ -359,7 +361,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     if (!tocQueryNorm) return partGroups;
     return partGroups
       .map((g) => {
-        const label = displayPartTitle(g.index, g.name).toLowerCase();
+        const label = groupTitle(g.index, g.name).toLowerCase();
         const partHit = label.includes(tocQueryNorm) || g.name.toLowerCase().includes(tocQueryNorm);
         const chapterIndices = partHit
           ? g.chapterIndices
@@ -670,7 +672,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     persistChapters(updated, newChap.id);
     setSelectedPartIndices([]);
     setEditingPartIndex(null);
-    toast({ type: "success", title: "Part Created", description: `Added ${displayPartTitle(after + 1, "New Part")}.` });
+    toast({ type: "success", title: "Part Created", description: `Added ${groupTitle(after + 1, "New Part")}.` });
   };
 
   const handleDeleteSelectedParts = (indices: number[]) => {
@@ -706,14 +708,14 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     persistChapters(updated, activeChapter.id);
     setSelectedPartIndices([first]);
     setEditingPartIndex(null);
-    toast({ type: "success", title: "Parts Merged", description: `Combined into ${displayPartTitle(first, partGroups[first]?.name || "Part")}.` });
+    toast({ type: "success", title: "Parts Merged", description: `Combined into ${groupTitle(first, partGroups[first]?.name || "Part")}.` });
   };
 
   const handleSavePartRename = () => {
     if (editingPartIndex == null) return;
     persistChapters(renamePart(chapters, editingPartIndex, editingPartName), activeChapter.id);
     setEditingPartIndex(null);
-    toast({ type: "success", title: "Part Updated", description: displayPartTitle(editingPartIndex, editingPartName) });
+    toast({ type: "success", title: "Part Updated", description: groupTitle(editingPartIndex, editingPartName) });
   };
 
   const handleCancelPartRename = () => {
@@ -801,6 +803,8 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     if (!chap) return null;
     const isActive = idx === activeChapterIndex;
     const displayTitle = stripLeadingNumber(chap.title.replace(/^Chapter\s+\d+:\s*/i, ""));
+    const overlayNo = isTestingTypesManual ? /^ch-(\d+)$/.exec(chap.slug || "") : null;
+    const tocTitle = overlayNo ? `${displayTitle} (#${Number(overlayNo[1])})` : displayTitle;
     const label = nums.get(idx) || String(idx + 1);
     const sibs = chap.parentId
       ? chapters.map((_, i) => i).filter((i) => chapters[i].parentId === chap.parentId)
@@ -827,7 +831,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
             checked={selectedChapterIndices.includes(idx)}
             onChange={() => toggleChapterSelected(idx)}
             className="ml-1 rounded border-[#D4CBBB] text-[#D97706] focus:ring-[#D97706] w-3.5 h-3.5 shrink-0"
-            aria-label={`Select ${displayTitle}`}
+            aria-label={`Select ${tocTitle}`}
           />
         )}
         <button
@@ -836,12 +840,12 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
           className={`flex-1 min-w-0 text-left px-2 py-2 text-xs sm:text-sm transition-colors flex items-center gap-2 ${
             isActive ? "text-[#FAF7F2] font-semibold" : "text-[#3D4D47] hover:text-[#1C2A26] font-normal"
           } ${nested ? "py-1.5" : ""}`}
-          title={displayTitle}
+          title={tocTitle}
         >
-          <span className={`font-mono text-[11px] font-bold shrink-0 min-w-[1.75rem] ${isActive ? "text-[#D97706]" : "text-[#8A9B95]"}`}>
+          <span className={`font-mono text-[11px] font-bold shrink-0 min-w-[2.85rem] ${isActive ? "text-[#D97706]" : "text-[#8A9B95]"}`}>
             {label}.
           </span>
-          <span className="truncate whitespace-nowrap flex-1 min-w-0">{displayTitle}</span>
+          <span className="truncate whitespace-nowrap flex-1 min-w-0">{tocTitle}</span>
         </button>
 
         {(showRowTools || (!nested && tocEdit === "sub")) && (
@@ -1243,12 +1247,16 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
 
               <div className="flex items-center gap-1.5 text-xs font-semibold text-[#52635E] bg-white px-3 py-1 rounded-lg border border-[#E7E0D3] shadow-2xs">
                 <Layers className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
-                <span>{partCount} Parts</span>
+                <span>{partCount} {isTestingTypesManual ? "Chapters" : "Parts"}</span>
               </div>
 
               <div className="flex items-center gap-1.5 text-xs font-semibold text-[#52635E] bg-white px-3 py-1 rounded-lg border border-[#E7E0D3] shadow-2xs">
                 <BookOpen className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
-                <span>{totalChapters} Chapters</span>
+                <span>
+                  {isTestingTypesManual
+                    ? `${chapters.filter((c) => /^ch-\d+$/.test(c.slug || "")).length} Types`
+                    : `${totalChapters} Chapters`}
+                </span>
               </div>
 
               <div className="flex items-center gap-1.5 text-xs font-semibold text-[#52635E] bg-white px-3 py-1 rounded-lg border border-[#E7E0D3] shadow-2xs">
@@ -1482,7 +1490,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                         checked={selectedPartIndices.includes(part.index)}
                         onChange={() => togglePartSelected(part.index)}
                         className="rounded border-[#D4CBBB] text-[#D97706] focus:ring-[#D97706] w-3.5 h-3.5 shrink-0"
-                        aria-label={`Select ${displayPartTitle(part.index, part.name)}`}
+                        aria-label={`Select ${groupTitle(part.index, part.name)}`}
                       />
                       )}
                       {editingPartIndex === part.index ? (
@@ -1506,8 +1514,8 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                         </div>
                       ) : (
                         <>
-                          <p className="flex-1 min-w-0 px-1 text-[11px] font-bold tracking-wide text-[#D97706] truncate" title={displayPartTitle(part.index, part.name)}>
-                            {displayPartTitle(part.index, part.name)}
+                          <p className="flex-1 min-w-0 px-1 text-[11px] font-bold tracking-wide text-[#D97706] truncate" title={groupTitle(part.index, part.name)}>
+                            {groupTitle(part.index, part.name)}
                           </p>
                           {isEditingParts && (
                           <>
@@ -1578,7 +1586,11 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                       )}
                     </div>
                     {(() => {
-                      const nums = tocNumbersForPart(chapters, part.chapterIndices);
+                      const nums = tocNumbersForPart(
+                        chapters,
+                        part.chapterIndices,
+                        isTestingTypesManual ? part.index + 1 : undefined
+                      );
                       return part.chapterIndices.map((idx) => {
                         const chap = chapters[idx];
                         if (!chap || chap.parentId) return null;
@@ -1683,7 +1695,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                 </h1>
                 {activePartGroup ? (
                   <p className="font-serif-display text-xs sm:text-sm font-semibold text-[#D97706]">
-                    {displayPartTitle(activePartGroup.index, activePartGroup.name)}
+                    {groupTitle(activePartGroup.index, activePartGroup.name)}
                   </p>
                 ) : activeChapter.subtitle ? (
                   <p className="font-serif-display text-xs sm:text-sm font-semibold text-[#D97706]">
@@ -2073,7 +2085,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                   >
                     {partGroups.map((g) => (
                       <option key={g.partKey} value={g.index}>
-                        {displayPartTitle(g.index, g.name)}
+                        {groupTitle(g.index, g.name)}
                       </option>
                     ))}
                     <option value={partGroups.length}>New part</option>

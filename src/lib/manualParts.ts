@@ -18,15 +18,16 @@ export type PartGroup<T extends PartishChapter = PartishChapter> = {
   chapters: T[];
 };
 
-const PART_NUM_RE = /^Part\s+\d+\s*[·•\-\u2013\u2014:]\s*/i;
+const PART_NUM_RE = /^(?:Part|Chapter)\s+\d+\s*[·•\-\u2013\u2014:]\s*/i;
 
 export function stripPartNumber(subtitle?: string): string {
   const s = (subtitle || "Untitled").trim() || "Untitled";
   return s.replace(PART_NUM_RE, "").trim() || "Untitled";
 }
 
-export function displayPartTitle(index: number, name: string): string {
-  return `Part ${index + 1} · ${stripPartNumber(name)}`;
+export function displayPartTitle(index: number, name: string, kind: "part" | "chapter" = "part"): string {
+  const label = stripPartNumber(name);
+  return kind === "chapter" ? `Chapter ${index + 1} — ${label}` : `Part ${index + 1} · ${label}`;
 }
 
 function identity<T extends PartishChapter>(ch: T): string {
@@ -324,10 +325,11 @@ export function parentIndexOf<T extends { id?: string; parentId?: string }>(chap
   return p >= 0 ? p : index;
 }
 
-/** Display numbers in a part: 1, 1.1, 1.2, 2, … */
+/** Display numbers in a part: 1, 1.1, 1.2, 2, … — or 1.1, 1.2.1 when `prefix` is the chapter/part number. */
 export function tocNumbersForPart<T extends { id?: string; parentId?: string }>(
   chapters: T[],
-  indices: number[]
+  indices: number[],
+  prefix?: number
 ): Map<number, string> {
   const map = new Map<number, string>();
   let n = 0;
@@ -335,12 +337,13 @@ export function tocNumbersForPart<T extends { id?: string; parentId?: string }>(
     const ch = chapters[idx];
     if (!ch || ch.parentId) continue;
     n += 1;
-    map.set(idx, String(n));
+    const head = prefix != null ? `${prefix}.${n}` : String(n);
+    map.set(idx, head);
     let s = 0;
     for (const j of indices) {
       if (chapters[j]?.parentId === ch.id) {
         s += 1;
-        map.set(j, `${n}.${s}`);
+        map.set(j, `${head}.${s}`);
       }
     }
   }
