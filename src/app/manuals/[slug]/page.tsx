@@ -18,6 +18,7 @@ import { PLAYWRIGHT_ROADMAP_PHASES, downloadRoadmapSVG } from "@/app/manuals/_li
 import { stripLeadingNumber } from "@content/manuals/_helpers.js";
 import { PinButton, getPinnedItems, PinnedItemMetadata, manualPinId } from "@/components/ui/PinButton";
 import { ToolSwitcher } from "@/app/manuals/_ui/ToolSwitcher";
+import { LessonContentEditor } from "@/app/manuals/_ui/LessonContentEditor";
 import { readerChaptersFromOverlay, testingOverlayForChapter } from "@/app/manuals/_ui/testing-types-reader";
 import { restoreTestingTypesToc, TESTING_TYPES_TOC_VERSION } from "@content/manuals/testing-types/outline";
 import {
@@ -49,7 +50,6 @@ import {
   Code,
   Sparkles,
   Check,
-  RotateCcw,
   Compass,
   HelpCircle,
   ChevronDown,
@@ -59,19 +59,10 @@ import {
   Trash2,
   Plus,
   X,
-  Save,
   ArrowUp,
   ArrowDown,
   Combine,
   FileText,
-  Heading1,
-  Heading2,
-  Heading3,
-  Bold,
-  List,
-  ListOrdered,
-  Quote,
-  Eye,
   Zap,
   Download,
   MapPin,
@@ -198,12 +189,11 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   // View Mode State: 'full' (exhaustive content) vs 'summary' (AI quick summary)
   const [viewMode, setViewMode] = useState<"full" | "summary">("full");
 
-  // Modals State
-  const [isEditManualModalOpen, setIsEditManualModalOpen] = useState<boolean>(false);
+  // Overlay + chapter edit (no dialogs)
   const [isRoadmapModalOpen, setIsRoadmapModalOpen] = useState<boolean>(false);
-  const [isChapterModalOpen, setIsChapterModalOpen] = useState<boolean>(false);
-  const [chapterModalMode, setChapterModalMode] = useState<"add" | "edit" | "add-sub">("add");
-  const [editingChapterIndex, setEditingChapterIndex] = useState<number>(0);
+  const [chapterEdit, setChapterEdit] = useState(false);
+  const [saveHint, setSaveHint] = useState<"" | "Saving…" | "Saved">("");
+  const [armedDeleteId, setArmedDeleteId] = useState<string | null>(null);
   const [selectedPartIndices, setSelectedPartIndices] = useState<number[]>([]);
   const [selectedChapterIndices, setSelectedChapterIndices] = useState<number[]>([]);
   const [tocEdit, setTocEdit] = useState<null | "part" | "chapter" | "sub">(null);
@@ -214,25 +204,9 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   const isEditingChapters = tocEdit === "chapter";
   const isEditingSubs = tocEdit === "sub";
 
-  // Form State for Chapter Modal
-  const [formChapterTitle, setFormChapterTitle] = useState<string>("");
-  const [formChapterSubtitle, setFormChapterSubtitle] = useState<string>("");
-  const [formChapterMinutes, setFormChapterMinutes] = useState<number>(15);
-  const [formChapterContent, setFormChapterContent] = useState<string>("");
-  const [formChapterCode, setFormChapterCode] = useState<string>("");
-  const [formChapterRank, setFormChapterRank] = useState<number>(1);
-  const [formChapterPartIndex, setFormChapterPartIndex] = useState<number>(0);
-  const [contentView, setContentView] = useState<"write" | "preview">("write");
-  const contentRef = useRef<HTMLTextAreaElement>(null);
-  const chapterEditBackup = useRef<{
-    title: string;
-    subtitle: string;
-    minutes: number;
-    content: string;
-    code: string;
-    rank: number;
-    partIndex: number;
-  } | null>(null);
+  const persistTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingSave = useRef<ManualChapter[] | null>(null);
+  const pendingMeta = useRef<{ title: string; description: string; category: string; estimatedTime: string } | null>(null);
   const [pinnedShowcase, setPinnedShowcase] = useState<PinnedItemMetadata[]>([]);
 
   useEffect(() => {
@@ -297,25 +271,93 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   };
 
   const persistChapters = (updated: ManualChapter[], keepId?: string) => {
+    if (persistTimer.current) {
+      clearTimeout(persistTimer.current);
+      persistTimer.current = null;
+    }
+    pendingSave.current = null;
+    const meta = pendingMeta.current;
+    pendingMeta.current = null;
     const id = keepId ?? chapters[activeChapterIndex]?.id;
     setChapters(updated);
     setActiveChapterIndex((prev) => chapterIndexAfter(updated, id, prev));
+    const title = meta?.title ?? manualTitle;
+    const description = meta?.description ?? manualDescription;
+    const category = meta?.category ?? manualCategory;
+    const estimatedTime = meta?.estimatedTime ?? manualEstimatedTime;
     saveCustomDataToStorage({
-      title: manualTitle,
-      description: manualDescription,
-      category: manualCategory,
-      estimatedTime: manualEstimatedTime,
+      title,
+      description,
+      category,
+      estimatedTime,
       chapters: updated,
       tocManaged: true,
       ...(isTestingTypesManual ? { tocCatalogVersion: TESTING_TYPES_TOC_VERSION } : {}),
     });
     persistUserManual({
-      title: manualTitle,
-      description: manualDescription,
-      category: manualCategory as ManualItem["category"],
-      estimatedTime: manualEstimatedTime,
+      title,
+      description,
+      category: category as ManualItem["category"],
+      estimatedTime,
       chapters: updated,
     });
+    setSaveHint("Saved");
+  };
+
+  const commitPending = () => {
+    if (persistTimer.current) {
+      clearTimeout(persistTimer.current);
+      persistTimer.current = null;
+    }
+    const nextChapters = pendingSave.current;
+    const meta = pendingMeta.current;
+    pendingSave.current = null;
+    pendingMeta.current = null;
+    if (!nextChapters && !meta) return;
+    const ch = nextChapters || chapters;
+    const m = meta || {
+      title: manualTitle,
+      description: manualDescription,
+      category: manualCategory,
+      estimatedTime: manualEstimatedTime,
+    };
+    saveCustomDataToStorage({
+      ...m,
+      chapters: ch,
+      tocManaged: true,
+      ...(isTestingTypesManual ? { tocCatalogVersion: TESTING_TYPES_TOC_VERSION } : {}),
+    });
+    persistUserManual({
+      title: m.title,
+      description: m.description,
+      category: m.category as ManualItem["category"],
+      estimatedTime: m.estimatedTime,
+      chapters: ch,
+    });
+    setSaveHint("Saved");
+  };
+
+  const scheduleChapterSave = (updated: ManualChapter[]) => {
+    pendingSave.current = updated;
+    setSaveHint("Saving…");
+    if (persistTimer.current) clearTimeout(persistTimer.current);
+    persistTimer.current = setTimeout(() => {
+      persistTimer.current = null;
+      commitPending();
+    }, 400);
+  };
+
+  const patchActiveChapter = (patch: Partial<ManualChapter>) => {
+    const idx = activeChapterIndex;
+    const updated = chapters.map((chap, i) => (i === idx ? { ...chap, ...patch } : chap));
+    setChapters(updated);
+    scheduleChapterSave(updated);
+  };
+
+  const setChapterEditMode = (on: boolean) => {
+    if (!on) commitPending();
+    setArmedDeleteId(null);
+    setChapterEdit(on);
   };
 
   const activeChapter: ManualChapter = chapters[activeChapterIndex] || chapters[0] || {
@@ -338,6 +380,21 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     return testingOverlayForChapter(activeChapter);
   }, [isTestingTypesManual, activeChapter]);
   const activePartGroup = partGroups.find((g) => g.chapterIndices.includes(activeChapterIndex));
+  const activeMove = React.useMemo(() => {
+    const chap = chapters[activeChapterIndex];
+    if (!chap) return { canUp: false, canDown: false };
+    const sibs = chap.parentId
+      ? chapters.map((_, i) => i).filter((i) => chapters[i].parentId === chap.parentId)
+      : [];
+    let blockEnd = activeChapterIndex + 1;
+    while (!chap.parentId && blockEnd < chapters.length && chapters[blockEnd].parentId === chap.id) {
+      blockEnd += 1;
+    }
+    return {
+      canUp: chap.parentId ? sibs[0] !== activeChapterIndex : activeChapterIndex > 0,
+      canDown: chap.parentId ? sibs[sibs.length - 1] !== activeChapterIndex : blockEnd < chapters.length,
+    };
+  }, [chapters, activeChapterIndex]);
   const roadmapParts = React.useMemo(() => {
     return partGroups.map((g) => ({
       id: g.partKey,
@@ -404,242 +461,77 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     localStorage.setItem(`hearth_manual_progress_${initialManual.id}`, JSON.stringify(updated));
   };
 
-  // Handle Manual Details Edit
-  const handleSaveManualEdits = () => {
-    let prev: Record<string, unknown> = {};
-    try {
-      prev = JSON.parse(localStorage.getItem(`hearth_manual_custom_data_${initialManual.id}`) || "{}");
-    } catch (e) {}
-    saveCustomDataToStorage({
-      ...prev,
-      title: manualTitle,
-      description: manualDescription,
-      category: manualCategory,
-      estimatedTime: manualEstimatedTime,
-    });
-    persistUserManual({
-      title: manualTitle,
-      description: manualDescription,
-      category: manualCategory as ManualItem["category"],
-      estimatedTime: manualEstimatedTime,
-    });
-    setIsEditManualModalOpen(false);
-    toast({ type: "success", title: "Manual Updated", description: "Saved header metadata." });
+  const persistManualMeta = (
+    title: string,
+    description: string,
+    category: string,
+    estimatedTime: string
+  ) => {
+    pendingMeta.current = { title, description, category, estimatedTime };
+    setSaveHint("Saving…");
+    if (persistTimer.current) clearTimeout(persistTimer.current);
+    persistTimer.current = setTimeout(() => {
+      persistTimer.current = null;
+      commitPending();
+    }, 400);
   };
 
-  // Open Chapter Modal for Adding
-  const openAddChapterModal = () => {
-    const host = partGroups.find((g) => g.chapterIndices.includes(activeChapterIndex)) || partGroups[partGroups.length - 1];
-    setChapterModalMode("add");
-    setFormChapterTitle(`Chapter ${chapters.length + 1}: New Chapter`);
-    setFormChapterSubtitle(host?.name || "New Part");
-    setFormChapterMinutes(15);
-    setFormChapterContent("# New Chapter Title\n\nWrite your lesson content here...");
-    setFormChapterCode("# Example code snippet\nprint('Hello Playwright!')");
-    setFormChapterRank(chapters.length + 1);
-    setFormChapterPartIndex(host?.index ?? partGroups.length);
-    setContentView("write");
-    chapterEditBackup.current = {
-      title: `Chapter ${chapters.length + 1}: New Chapter`,
+  const enterChapterEdit = (idx: number) => {
+    setActiveChapterIndex(idx);
+    setArmedDeleteId(null);
+    setChapterEdit(true);
+  };
+
+  const addChapterInPart = (partIndex?: number) => {
+    const host =
+      partIndex != null
+        ? partGroups[partIndex]
+        : partGroups.find((g) => g.chapterIndices.includes(activeChapterIndex)) || partGroups[partGroups.length - 1];
+    const newChap: ManualChapter = {
+      id: `custom-ch-${Date.now()}`,
+      order: chapters.length + 1,
+      slug: `ch-${chapters.length + 1}`,
+      title: "New Chapter",
       subtitle: host?.name || "New Part",
-      minutes: 15,
-      content: "# New Chapter Title\n\nWrite your lesson content here...",
-      code: "# Example code snippet\nprint('Hello Playwright!')",
-      rank: chapters.length + 1,
-      partIndex: host?.index ?? partGroups.length,
+      partKey: host?.partKey || `part-${Date.now()}`,
+      estimatedMinutes: 15,
+      contentMarkdown: "# New Chapter\n\nWrite your lesson content here...",
+      codeSnippet: "",
+      exercises: [],
+      resourceLinks: [],
     };
-    setIsChapterModalOpen(true);
+    const inserted = [...chapters, newChap];
+    const dest = host?.index ?? partGroups.length;
+    const updated = moveChapterToPart(inserted, inserted.length - 1, dest);
+    persistChapters(updated, newChap.id);
+    setChapterEdit(true);
+    toast({ type: "success", title: "Chapter Created", description: `Added ${newChap.title}.` });
   };
 
-  const openAddSubchapterModal = (parentIdx?: number) => {
+  const addSubchapter = (parentIdx?: number) => {
     const idx = parentIdx ?? parentIndexOf(chapters, activeChapterIndex);
     const parent = chapters[idx] || chapters[activeChapterIndex];
     if (!parent) return;
     const hostIdx = parent.parentId ? parentIndexOf(chapters, idx) : idx;
     const host = chapters[hostIdx];
-    setChapterModalMode("add-sub");
-    setEditingChapterIndex(hostIdx);
-    setFormChapterTitle("New Sub-chapter");
-    setFormChapterSubtitle(host.subtitle || "");
-    setFormChapterMinutes(10);
-    setFormChapterContent("# New Sub-chapter\n\nWrite the nested lesson here...");
-    setFormChapterCode("");
-    setFormChapterRank(hostIdx + 2);
-    const hostPart = partGroups.find((g) => g.chapterIndices.includes(hostIdx));
-    setFormChapterPartIndex(hostPart?.index ?? 0);
-    setContentView("write");
-    chapterEditBackup.current = {
+    const newChap: ManualChapter = {
+      id: `custom-sub-${Date.now()}`,
+      order: chapters.length + 1,
+      slug: `sub-${chapters.length + 1}`,
       title: "New Sub-chapter",
-      subtitle: host.subtitle || "",
-      minutes: 10,
-      content: "# New Sub-chapter\n\nWrite the nested lesson here...",
-      code: "",
-      rank: hostIdx + 2,
-      partIndex: hostPart?.index ?? 0,
+      subtitle: host.subtitle,
+      partKey: host.partKey,
+      parentId: host.id,
+      estimatedMinutes: 10,
+      contentMarkdown: "# New Sub-chapter\n\nWrite the nested lesson here...",
+      codeSnippet: "",
+      exercises: [],
+      resourceLinks: [],
     };
-    setIsChapterModalOpen(true);
-  };
-
-  // Open Chapter Modal for Editing — bind to the clicked chapter, not the expanded one.
-  const openEditChapterModal = (idx: number) => {
-    const chap = chapters[idx];
-    if (!chap) return;
-    setChapterModalMode("edit");
-    setEditingChapterIndex(idx);
-    setActiveChapterIndex(idx);
-    setFormChapterTitle(chap.title);
-    setFormChapterSubtitle(chap.subtitle || "");
-    setFormChapterMinutes(chap.estimatedMinutes || 15);
-    setFormChapterContent(chap.contentMarkdown || "");
-    setFormChapterCode(chap.codeSnippet || "");
-    setFormChapterRank(idx + 1);
-    const host = partGroups.find((g) => g.chapterIndices.includes(idx));
-    setFormChapterPartIndex(host?.index ?? 0);
-    setContentView("write");
-    chapterEditBackup.current = {
-      title: chap.title,
-      subtitle: chap.subtitle || "",
-      minutes: chap.estimatedMinutes || 15,
-      content: chap.contentMarkdown || "",
-      code: chap.codeSnippet || "",
-      rank: idx + 1,
-      partIndex: host?.index ?? 0,
-    };
-    setIsChapterModalOpen(true);
-  };
-
-  const handleCancelChapterEdit = () => {
-    const snap = chapterEditBackup.current;
-    if (snap) {
-      setFormChapterTitle(snap.title);
-      setFormChapterSubtitle(snap.subtitle);
-      setFormChapterMinutes(snap.minutes);
-      setFormChapterContent(snap.content);
-      setFormChapterCode(snap.code);
-      setFormChapterRank(snap.rank);
-      setFormChapterPartIndex(snap.partIndex);
-    }
-    chapterEditBackup.current = null;
-    setIsChapterModalOpen(false);
-    setContentView("write");
-  };
-
-  function applyContentFormat(
-    kind: "h1" | "h2" | "h3" | "bold" | "list" | "num" | "quote" | "code" | "inline"
-  ) {
-    const el = contentRef.current;
-    const value = formChapterContent;
-    const start = el?.selectionStart ?? value.length;
-    const end = el?.selectionEnd ?? value.length;
-    const selected = value.slice(start, end);
-    const map = {
-      h1: { pre: "# ", post: "", ph: "Heading" },
-      h2: { pre: "## ", post: "", ph: "Heading" },
-      h3: { pre: "### ", post: "", ph: "Heading" },
-      bold: { pre: "**", post: "**", ph: "bold" },
-      list: { pre: "- ", post: "", ph: "List item" },
-      num: { pre: "1. ", post: "", ph: "Step" },
-      quote: { pre: "> ", post: "", ph: "Note" },
-      code: { pre: "```\n", post: "\n```", ph: "code here" },
-      inline: { pre: "`", post: "`", ph: "code" },
-    } as const;
-    const { pre, post, ph } = map[kind];
-    const inner = selected || ph;
-    const block = kind !== "bold" && kind !== "inline";
-    const lead = block && start > 0 && value[start - 1] !== "\n" ? "\n" : "";
-    const insert = lead + pre + inner + post;
-    setFormChapterContent(value.slice(0, start) + insert + value.slice(end));
-    requestAnimationFrame(() => {
-      const node = contentRef.current;
-      if (!node) return;
-      node.focus();
-      const innerStart = start + lead.length + pre.length;
-      node.setSelectionRange(innerStart, innerStart + inner.length);
-    });
-  }
-
-  // Save Chapter (Add or Edit)
-  const handleSaveChapter = () => {
-    let updatedChapters: ManualChapter[];
-    let keepId: string | undefined;
-    const placeAt = (list: ManualChapter[], from: number, rank: number) => {
-      const to = Math.max(0, Math.min(list.length - 1, Math.round(rank) - 1));
-      if (from === to) return { list, to };
-      const next = [...list];
-      const [item] = next.splice(from, 1);
-      next.splice(to, 0, item);
-      return { list: next.map((c, i) => ({ ...c, order: i + 1 })), to };
-    };
-
-    if (chapterModalMode === "add") {
-      const destPart = partGroups[formChapterPartIndex];
-      const newChap: ManualChapter = {
-        id: `custom-ch-${Date.now()}`,
-        order: chapters.length + 1,
-        slug: `ch-${chapters.length + 1}`,
-        title: formChapterTitle,
-        subtitle: destPart?.name || formChapterSubtitle || "New Part",
-        partKey: destPart?.partKey || `part-${Date.now()}`,
-        estimatedMinutes: formChapterMinutes,
-        contentMarkdown: formChapterContent,
-        codeSnippet: formChapterCode,
-        exercises: [],
-        resourceLinks: [],
-      };
-      const inserted = [...chapters, newChap];
-      updatedChapters = moveChapterToPart(inserted, inserted.length - 1, formChapterPartIndex);
-      keepId = newChap.id;
-      toast({ type: "success", title: "Chapter Created", description: `Added ${newChap.title}.` });
-    } else if (chapterModalMode === "add-sub") {
-      const parentIdx = editingChapterIndex;
-      const parent = chapters[parentIdx];
-      const newChap: ManualChapter = {
-        id: `custom-sub-${Date.now()}`,
-        order: chapters.length + 1,
-        slug: `sub-${chapters.length + 1}`,
-        title: formChapterTitle,
-        subtitle: parent?.subtitle,
-        partKey: parent?.partKey,
-        parentId: parent?.id,
-        estimatedMinutes: formChapterMinutes,
-        contentMarkdown: formChapterContent,
-        codeSnippet: formChapterCode,
-        exercises: [],
-        resourceLinks: [],
-      };
-      updatedChapters = createSubchapter(chapters, parentIdx, newChap);
-      keepId = newChap.id;
-      toast({ type: "success", title: "Sub-chapter Created", description: `Added ${newChap.title} under ${parent?.title || "chapter"}.` });
-    } else {
-      const targetIdx = editingChapterIndex;
-      const destPart = partGroups[formChapterPartIndex];
-      const editing = chapters[targetIdx];
-      updatedChapters = chapters.map((chap, idx) => {
-        if (idx === targetIdx) {
-          return {
-            ...chap,
-            title: formChapterTitle,
-            subtitle: chap.parentId ? chap.subtitle : destPart?.name || formChapterSubtitle,
-            estimatedMinutes: formChapterMinutes,
-            contentMarkdown: formChapterContent,
-            codeSnippet: formChapterCode,
-          };
-        }
-        return chap;
-      });
-      const currentPart = partGroups.find((g) => g.chapterIndices.includes(targetIdx));
-      if (!editing?.parentId && formChapterPartIndex !== (currentPart?.index ?? -1)) {
-        updatedChapters = moveChapterToPart(updatedChapters, targetIdx, formChapterPartIndex);
-      } else if (!editing?.parentId) {
-        const placed = placeAt(updatedChapters, targetIdx, formChapterRank);
-        updatedChapters = placed.list;
-      }
-      keepId = editing?.id;
-      toast({ type: "success", title: editing?.parentId ? "Sub-chapter Updated" : "Chapter Updated", description: "Saved changes." });
-    }
-
-    persistChapters(updatedChapters, keepId);
-    setIsChapterModalOpen(false);
+    const updated = createSubchapter(chapters, hostIdx, newChap);
+    persistChapters(updated, newChap.id);
+    setChapterEdit(true);
+    toast({ type: "success", title: "Sub-chapter Created", description: `Added ${newChap.title} under ${host?.title || "chapter"}.` });
   };
 
   // Handle Delete Chapter
@@ -855,7 +747,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
             {!nested && tocEdit === "sub" && (
               <button
                 type="button"
-                onClick={() => openAddSubchapterModal(idx)}
+                onClick={() => addSubchapter(idx)}
                 className={`p-1 rounded-md transition-colors ${
                   isActive ? "text-amber-400 hover:text-white" : "text-[#8A9B95] hover:text-[#D97706]"
                 }`}
@@ -898,7 +790,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
             </button>
             <button
               type="button"
-              onClick={() => openEditChapterModal(idx)}
+              onClick={() => enterChapterEdit(idx)}
               className={`p-1 rounded-md transition-colors ${
                 isActive ? "text-amber-400 hover:text-white" : "text-[#8A9B95] hover:text-[#D97706]"
               }`}
@@ -1227,12 +1119,38 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
 
           {/* Title & Description Block */}
           <div className="space-y-1 mb-3 w-full">
-            <h1 className="font-serif-display text-xl sm:text-2xl lg:text-3xl font-bold text-[#1C2A26] leading-tight">
-              {manualTitle}
-            </h1>
-            <p className="text-xs sm:text-sm text-[#52635E] leading-relaxed w-full">
-              {manualDescription}
-            </p>
+            {chapterEdit ? (
+              <>
+                <input
+                  value={manualTitle}
+                  onChange={(e) => {
+                    const title = e.target.value;
+                    setManualTitle(title);
+                    persistManualMeta(title, manualDescription, manualCategory, manualEstimatedTime);
+                  }}
+                  className="w-full bg-transparent font-serif-display text-xl sm:text-2xl lg:text-3xl font-bold text-[#1C2A26] leading-tight focus:outline-none border-b border-transparent focus:border-[#D97706]"
+                />
+                <textarea
+                  rows={2}
+                  value={manualDescription}
+                  onChange={(e) => {
+                    const description = e.target.value;
+                    setManualDescription(description);
+                    persistManualMeta(manualTitle, description, manualCategory, manualEstimatedTime);
+                  }}
+                  className="w-full bg-transparent text-xs sm:text-sm text-[#52635E] leading-relaxed focus:outline-none resize-none border-b border-transparent focus:border-[#D97706]"
+                />
+              </>
+            ) : (
+              <>
+                <h1 className="font-serif-display text-xl sm:text-2xl lg:text-3xl font-bold text-[#1C2A26] leading-tight">
+                  {manualTitle}
+                </h1>
+                <p className="text-xs sm:text-sm text-[#52635E] leading-relaxed w-full">
+                  {manualDescription}
+                </p>
+              </>
+            )}
           </div>
 
           {/* Metadata Footer Row */}
@@ -1263,17 +1181,21 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
 
               <div className="flex items-center gap-1.5 text-xs font-semibold text-[#52635E] bg-white px-3 py-1 rounded-lg border border-[#E7E0D3] shadow-2xs">
                 <Clock className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
-                <span>{manualEstimatedTime} Total</span>
+                {chapterEdit ? (
+                  <input
+                    value={manualEstimatedTime}
+                    onChange={(e) => {
+                      const estimatedTime = e.target.value;
+                      setManualEstimatedTime(estimatedTime);
+                      persistManualMeta(manualTitle, manualDescription, manualCategory, estimatedTime);
+                    }}
+                    className="w-24 bg-transparent font-semibold focus:outline-none"
+                    aria-label="Total estimated time"
+                  />
+                ) : (
+                  <span>{manualEstimatedTime} Total</span>
+                )}
               </div>
-
-              <button
-                type="button"
-                onClick={() => setIsEditManualModalOpen(true)}
-                className="flex items-center gap-1.5 text-xs font-semibold text-[#52635E] bg-white px-3 py-1 rounded-lg border border-[#E7E0D3] hover:text-[#1C2A26] hover:border-[#D4CBBB] transition-all shadow-2xs"
-              >
-                <SquarePen className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
-                <span>Edit Manual</span>
-              </button>
             </div>
 
             <div className="flex items-center gap-3 w-full sm:w-60">
@@ -1404,7 +1326,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                 <span className="text-[10px] font-bold text-[#52635E] mr-1">
                   {selectedChapterIndices.length > 0 ? `${selectedChapterIndices.length} chapters` : "Select chapters"}
                 </span>
-                <button type="button" onClick={openAddChapterModal} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#1C2A26] text-white" title="Add chapter">
+                <button type="button" onClick={() => addChapterInPart()} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#1C2A26] text-white" title="Add chapter">
                   <Plus className="w-3 h-3 text-[#D97706]" /> Chapter
                 </button>
                 <button type="button" onClick={() => handleMoveSelectedChapters(-1)} disabled={selectedChapterIndices.length === 0} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#FAF7F2] hover:border-[#D97706] disabled:opacity-40" title="Move up">
@@ -1438,7 +1360,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                 <span className="text-[10px] font-bold text-[#52635E] mr-1">
                   {selectedChapterIndices.length > 0 ? `${selectedChapterIndices.length} sub-chapters` : "Select sub-chapters"}
                 </span>
-                <button type="button" onClick={() => openAddSubchapterModal()} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#1C2A26] text-white" title="Add sub-chapter">
+                <button type="button" onClick={() => addSubchapter()} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#1C2A26] text-white" title="Add sub-chapter">
                   <Plus className="w-3 h-3 text-[#D97706]" /> Sub-chapter
                 </button>
                 <button type="button" onClick={() => handleMoveSelectedChapters(-1)} disabled={selectedChapterIndices.length === 0} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#FAF7F2] hover:border-[#D97706] disabled:opacity-40" title="Move up">
@@ -1605,6 +1527,15 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                         );
                       });
                     })()}
+                    {(isEditingChapters || chapterEdit) && (
+                      <button
+                        type="button"
+                        onClick={() => addChapterInPart(part.index)}
+                        className="mt-1 ml-2 inline-flex items-center gap-1 text-[11px] font-bold text-[#8A9B95] hover:text-[#D97706]"
+                      >
+                        <Plus className="w-3 h-3" /> Add chapter
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -1649,13 +1580,16 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  {saveHint ? (
+                    <span className="text-[11px] font-bold text-[#8A9B95]">{saveHint}</span>
+                  ) : null}
                   <Button
-                    variant="outline"
+                    variant={chapterEdit ? "primary" : "outline"}
                     size="sm"
-                    onClick={() => openEditChapterModal(activeChapterIndex)}
+                    onClick={() => setChapterEditMode(!chapterEdit)}
                     leftIcon={<Edit className="w-3.5 h-3.5 text-[#D97706]" />}
                   >
-                    Edit
+                    {chapterEdit ? "Done editing" : "Edit"}
                   </Button>
 
                   <Button
@@ -1692,10 +1626,98 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
 
               {/* Title & Subtitle */}
               <div className="space-y-1 pb-1">
-                <h1 className="font-serif-display text-xl sm:text-2xl lg:text-3xl font-bold text-[#1C2A26] leading-tight">
-                  {stripLeadingNumber(activeChapter.title.replace(/^Chapter\s+\d+:\s*/i, ""))}
-                </h1>
-                {activePartGroup ? (
+                {chapterEdit ? (
+                  <input
+                    value={activeChapter.title}
+                    onChange={(e) => patchActiveChapter({ title: e.target.value })}
+                    className="w-full bg-transparent font-serif-display text-xl sm:text-2xl lg:text-3xl font-bold text-[#1C2A26] leading-tight focus:outline-none border-b border-transparent focus:border-[#D97706]"
+                    aria-label="Chapter title"
+                  />
+                ) : (
+                  <h1 className="font-serif-display text-xl sm:text-2xl lg:text-3xl font-bold text-[#1C2A26] leading-tight">
+                    {stripLeadingNumber(activeChapter.title.replace(/^Chapter\s+\d+:\s*/i, ""))}
+                  </h1>
+                )}
+                {chapterEdit ? (
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    {!isSubchapter(activeChapter) ? (
+                      <select
+                        value={activePartGroup?.index ?? 0}
+                        onChange={(e) => {
+                          persistChapters(moveChapterToPart(chapters, activeChapterIndex, Number(e.target.value)));
+                        }}
+                        className="font-serif-display text-xs sm:text-sm font-semibold text-[#D97706] bg-transparent border-b border-[#E7E0D3] focus:outline-none focus:border-[#D97706] py-0.5"
+                        aria-label="Part"
+                      >
+                        {partGroups.map((g) => (
+                          <option key={g.partKey} value={g.index}>
+                            {groupTitle(g.index, g.name)}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <p className="font-serif-display text-xs sm:text-sm font-semibold text-[#D97706]">
+                        Nested under {chapters[parentIndexOf(chapters, activeChapterIndex)]?.title || "chapter"}
+                      </p>
+                    )}
+                    <label className="inline-flex items-center gap-1 text-[11px] font-bold text-[#8A9B95]">
+                      <Clock className="w-3 h-3 text-[#D97706]" />
+                      <input
+                        type="number"
+                        min={1}
+                        value={activeChapter.estimatedMinutes || 15}
+                        onChange={(e) => patchActiveChapter({ estimatedMinutes: Number(e.target.value) || 15 })}
+                        className="w-14 bg-transparent border-b border-[#E7E0D3] focus:outline-none focus:border-[#D97706] text-[#1C2A26]"
+                        aria-label="Minutes"
+                      />
+                      min
+                    </label>
+                    <button
+                      type="button"
+                      disabled={!activeMove.canUp}
+                      onClick={() => {
+                        const result = moveChapterBlock(chapters, activeChapterIndex, -1);
+                        persistChapters(result.chapters, activeChapter.id);
+                      }}
+                      className="p-1 rounded-md text-[#8A9B95] hover:text-[#D97706] disabled:opacity-30"
+                      title="Move up"
+                    >
+                      <ArrowUp className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!activeMove.canDown}
+                      onClick={() => {
+                        const result = moveChapterBlock(chapters, activeChapterIndex, 1);
+                        persistChapters(result.chapters, activeChapter.id);
+                      }}
+                      className="p-1 rounded-md text-[#8A9B95] hover:text-[#D97706] disabled:opacity-30"
+                      title="Move down"
+                    >
+                      <ArrowDown className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (armedDeleteId !== activeChapter.id) {
+                          setArmedDeleteId(activeChapter.id);
+                          return;
+                        }
+                        setArmedDeleteId(null);
+                        handleDeleteChapter(activeChapterIndex);
+                      }}
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-bold ${
+                        armedDeleteId === activeChapter.id
+                          ? "bg-rose-600 text-white"
+                          : "text-[#8A9B95] hover:text-rose-600"
+                      }`}
+                      title="Delete chapter"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      {armedDeleteId === activeChapter.id ? "Click again" : "Delete"}
+                    </button>
+                  </div>
+                ) : activePartGroup ? (
                   <p className="font-serif-display text-xs sm:text-sm font-semibold text-[#D97706]">
                     {groupTitle(activePartGroup.index, activePartGroup.name)}
                   </p>
@@ -1708,7 +1730,33 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
 
 
               {/* CONTENT VIEW OR AI SUMMARY VIEW */}
-              {viewMode === "summary" ? (
+              {chapterEdit ? (
+                <div className="space-y-3">
+                  <LessonContentEditor
+                    value={activeChapter.contentMarkdown || ""}
+                    onChange={(next) => patchActiveChapter({ contentMarkdown: next })}
+                    preview={(text) => renderFormattedMarkdown(text)}
+                  />
+                  <div className="space-y-1.5 pt-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#52635E] flex items-center gap-1.5 font-sans">
+                      <Code className="w-3 h-3 text-[#D97706]" /> CODE EXAMPLE
+                    </span>
+                    <textarea
+                      value={activeChapter.codeSnippet || ""}
+                      onChange={(e) => patchActiveChapter({ codeSnippet: e.target.value })}
+                      rows={4}
+                      className="w-full p-3.5 sm:p-4 bg-[#1C2A26] text-[#A7F3D0] rounded-xl font-mono text-xs sm:text-[13px] leading-relaxed border border-[#2D3F3A] focus:outline-none focus:border-[#D97706]"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => addChapterInPart(activePartGroup?.index)}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1C2A26] px-3 py-2 rounded-xl border border-dashed border-[#E7E0D3] hover:border-[#D97706]"
+                  >
+                    <Plus className="w-3.5 h-3.5 text-[#D97706]" /> Add chapter
+                  </button>
+                </div>
+              ) : viewMode === "summary" ? (
                 <motion.div
                   initial={{ opacity: 0, y: 3 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -1919,324 +1967,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       </main>
 
 
-      {/* EDIT MANUAL MODAL */}
       <AnimatePresence>
-        {isEditManualModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
-            onClick={() => setIsEditManualModalOpen(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-3xl p-6 sm:p-8 max-w-xl w-full space-y-6 shadow-2xl border border-[#E7E0D3]"
-            >
-              <div className="flex justify-between items-center pb-3 border-b border-[#E7E0D3]">
-                <h3 className="font-serif-display font-bold text-xl text-[#1C2A26] flex items-center gap-2">
-                  <Edit className="w-5 h-5 text-[#D97706]" />
-                  <span>Edit Manual Metadata</span>
-                </h3>
-                <button onClick={() => setIsEditManualModalOpen(false)} className="text-[#8A9B95] hover:text-[#1C2A26]">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="space-y-4 font-sans text-xs sm:text-sm">
-                <div>
-                  <label className="block font-bold text-[#1C2A26] mb-1">Manual Title</label>
-                  <input
-                    type="text"
-                    value={manualTitle}
-                    onChange={(e) => setManualTitle(e.target.value)}
-                    className="w-full p-3 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] focus:outline-none focus:border-[#D97706]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-[#1C2A26] mb-1">Category</label>
-                  <input
-                    type="text"
-                    value={manualCategory}
-                    onChange={(e) => setManualCategory(e.target.value)}
-                    className="w-full p-3 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] focus:outline-none focus:border-[#D97706]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-[#1C2A26] mb-1">Total Estimated Time</label>
-                  <input
-                    type="text"
-                    value={manualEstimatedTime}
-                    onChange={(e) => setManualEstimatedTime(e.target.value)}
-                    className="w-full p-3 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] focus:outline-none focus:border-[#D97706]"
-                    placeholder="e.g. 8.5 hours"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-[#1C2A26] mb-1">Description</label>
-                  <textarea
-                    rows={3}
-                    value={manualDescription}
-                    onChange={(e) => setManualDescription(e.target.value)}
-                    className="w-full p-3 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] focus:outline-none focus:border-[#D97706]"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-3 border-t border-[#E7E0D3]">
-                <Button variant="outline" size="sm" onClick={() => setIsEditManualModalOpen(false)}>
-                  Cancel
-                </Button>
-                <Button variant="primary" size="sm" onClick={handleSaveManualEdits} leftIcon={<Save className="w-4 h-4" />}>
-                  Save Manual Changes
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ADD / EDIT CHAPTER MODAL */}
-      <AnimatePresence>
-        {isChapterModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
-            onClick={handleCancelChapterEdit}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-3xl p-6 sm:p-8 max-w-3xl w-full space-y-6 shadow-2xl border border-[#E7E0D3] my-8"
-            >
-              <div className="flex justify-between items-center pb-3 border-b border-[#E7E0D3]">
-                <h3 className="font-serif-display font-bold text-xl text-[#1C2A26] flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-[#D97706]" />
-                  <span>
-                    {chapterModalMode === "add"
-                      ? "Add New Chapter"
-                      : chapterModalMode === "add-sub"
-                        ? "Add Sub-chapter"
-                        : isSubchapter(chapters[editingChapterIndex])
-                          ? "Edit Sub-chapter"
-                          : "Edit Chapter"}
-                  </span>
-                </h3>
-                <button onClick={handleCancelChapterEdit} className="text-[#8A9B95] hover:text-[#1C2A26]" title="Cancel">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="space-y-4 font-sans text-xs sm:text-sm">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="sm:col-span-2">
-                    <label className="block font-bold text-[#1C2A26] mb-1">
-                      {chapterModalMode === "add-sub" || isSubchapter(chapters[editingChapterIndex])
-                        ? "Sub-chapter Title"
-                        : "Chapter Title"}
-                    </label>
-                    <input
-                      type="text"
-                      value={formChapterTitle}
-                      onChange={(e) => setFormChapterTitle(e.target.value)}
-                      className="w-full p-3 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] focus:outline-none focus:border-[#D97706]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-[#1C2A26] mb-1">Minutes</label>
-                    <input
-                      type="number"
-                      value={formChapterMinutes}
-                      onChange={(e) => setFormChapterMinutes(Number(e.target.value))}
-                      className="w-full p-3 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] focus:outline-none focus:border-[#D97706]"
-                    />
-                  </div>
-                </div>
-
-                {chapterModalMode === "add-sub" || isSubchapter(chapters[editingChapterIndex]) ? (
-                  <p className="text-xs text-[#52635E] leading-relaxed">
-                    Nested under{" "}
-                    <span className="font-bold text-[#1C2A26]">
-                      {chapters[chapterModalMode === "add-sub" ? editingChapterIndex : parentIndexOf(chapters, editingChapterIndex)]?.title}
-                    </span>
-                  </p>
-                ) : (
-                <>
-                <div>
-                  <label className="block font-bold text-[#1C2A26] mb-1">Part</label>
-                  <select
-                    value={formChapterPartIndex}
-                    onChange={(e) => {
-                      const next = Number(e.target.value);
-                      setFormChapterPartIndex(next);
-                      const dest = partGroups[next];
-                      setFormChapterSubtitle(dest?.name || "New Part");
-                    }}
-                    className="w-full p-3 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] focus:outline-none focus:border-[#D97706]"
-                  >
-                    {partGroups.map((g) => (
-                      <option key={g.partKey} value={g.index}>
-                        {groupTitle(g.index, g.name)}
-                      </option>
-                    ))}
-                    <option value={partGroups.length}>New part</option>
-                  </select>
-                  <p className="mt-1 text-[11px] text-[#8A9B95]">
-                    Move this chapter into another part. Numbers update from the new order.
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block font-bold text-[#1C2A26] mb-1">Chapter number</label>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      className="px-3 py-2 rounded-xl border border-[#E7E0D3] bg-white text-[#52635E] disabled:opacity-40"
-                      disabled={formChapterRank <= 1}
-                      onClick={() => setFormChapterRank((n) => Math.max(1, n - 1))}
-                    >
-                      Move up
-                    </button>
-                    <input
-                      type="number"
-                      min={1}
-                      max={chapterModalMode === "add" ? chapters.length + 1 : chapters.length}
-                      value={formChapterRank}
-                      onChange={(e) => setFormChapterRank(Number(e.target.value) || 1)}
-                      className="w-24 p-3 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] focus:outline-none focus:border-[#D97706]"
-                    />
-                    <button
-                      type="button"
-                      className="px-3 py-2 rounded-xl border border-[#E7E0D3] bg-white text-[#52635E] disabled:opacity-40"
-                      disabled={formChapterRank >= (chapterModalMode === "add" ? chapters.length + 1 : chapters.length)}
-                      onClick={() =>
-                        setFormChapterRank((n) =>
-                          Math.min(chapterModalMode === "add" ? chapters.length + 1 : chapters.length, n + 1)
-                        )
-                      }
-                    >
-                      Move down
-                    </button>
-                    <span className="text-[11px] text-[#8A9B95]">
-                      Put this chapter in front of another — e.g. 4 → 3.
-                    </span>
-                  </div>
-                </div>
-                </>
-                )}
-
-                <div>
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
-                    <label className="block font-bold text-[#1C2A26]">Lesson Content</label>
-                    <div className="flex items-center bg-[#FAF7F2] border border-[#E7E0D3] rounded-lg p-0.5 text-[11px]">
-                      <button
-                        type="button"
-                        onClick={() => setContentView("write")}
-                        className={`px-2.5 py-1 rounded-md font-bold ${
-                          contentView === "write" ? "bg-[#1C2A26] text-white" : "text-[#52635E]"
-                        }`}
-                      >
-                        Write
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setContentView("preview")}
-                        className={`px-2.5 py-1 rounded-md font-bold flex items-center gap-1 ${
-                          contentView === "preview" ? "bg-[#1C2A26] text-white" : "text-[#52635E]"
-                        }`}
-                      >
-                        <Eye className="w-3 h-3" />
-                        Preview
-                      </button>
-                    </div>
-                  </div>
-
-                  {contentView === "write" ? (
-                    <>
-                      <div className="flex flex-wrap gap-1.5 mb-2">
-                        {(
-                          [
-                            { kind: "h1", label: "H1", Icon: Heading1 },
-                            { kind: "h2", label: "H2", Icon: Heading2 },
-                            { kind: "h3", label: "H3", Icon: Heading3 },
-                            { kind: "bold", label: "Bold", Icon: Bold },
-                            { kind: "list", label: "List", Icon: List },
-                            { kind: "num", label: "Steps", Icon: ListOrdered },
-                            { kind: "quote", label: "Note", Icon: Quote },
-                            { kind: "code", label: "Code block", Icon: Code },
-                            { kind: "inline", label: "Inline code", Icon: FileText },
-                          ] as const
-                        ).map(({ kind, label, Icon }) => (
-                          <button
-                            key={kind}
-                            type="button"
-                            title={label}
-                            onMouseDown={(e) => e.preventDefault()}
-                            onClick={() => applyContentFormat(kind)}
-                            className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg border border-[#E7E0D3] bg-white text-[11px] font-bold text-[#52635E] hover:border-[#D97706] hover:text-[#1C2A26]"
-                          >
-                            <Icon className="w-3.5 h-3.5" />
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                      <textarea
-                        ref={contentRef}
-                        rows={14}
-                        value={formChapterContent}
-                        onChange={(e) => setFormChapterContent(e.target.value)}
-                        placeholder={"# Heading\n\nLesson text…\n\n```\ncode\n```"}
-                        className="w-full p-3 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] font-sans text-xs sm:text-sm leading-relaxed focus:outline-none focus:border-[#D97706]"
-                      />
-                    </>
-                  ) : (
-                    <div className="min-h-[16rem] p-4 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2]">
-                      {formChapterContent.trim()
-                        ? renderFormattedMarkdown(formChapterContent)
-                        : (
-                          <p className="text-xs text-[#8A9B95]">Nothing to preview yet.</p>
-                        )}
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block font-bold text-[#1C2A26] mb-1">Code Snippet (Optional)</label>
-                  <textarea
-                    rows={3}
-                    value={formChapterCode}
-                    onChange={(e) => setFormChapterCode(e.target.value)}
-                    className="w-full p-3 rounded-xl border border-[#E7E0D3] bg-[#1C2A26] text-[#A7F3D0] font-mono text-xs focus:outline-none focus:border-[#D97706]"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-3 border-t border-[#E7E0D3]">
-                <Button variant="outline" size="sm" onClick={handleCancelChapterEdit} title="Discard unsaved changes">
-                  Cancel
-                </Button>
-                <Button variant="primary" size="sm" onClick={handleSaveChapter} leftIcon={<Save className="w-4 h-4" />}>
-                  {chapterModalMode === "add"
-                    ? "Create Chapter"
-                    : chapterModalMode === "add-sub"
-                      ? "Create Sub-chapter"
-                      : "Save"}
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
         {/* LEARNING ROADMAP MODAL */}
         {isRoadmapModalOpen && (
           <motion.div

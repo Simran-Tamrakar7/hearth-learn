@@ -8,6 +8,7 @@ This folder **is** the Manuals page. Everything that exists only for Manuals liv
 | The reader after you click a manual | `[slug]/page.tsx` ← **this is `/manuals/cypress` etc.** |
 | Testing Types featured card | `_ui/TestingTypesCatalogCard.tsx` |
 | Tool chips inside a chapter | `_ui/ToolSwitcher.tsx` |
+| Inline chapter editor (write/preview toolbar) | `_ui/LessonContentEditor.tsx` |
 | Playwright roadmap download | `_lib/roadmapData.ts` |
 | TOC part helpers | `_lib/manualParts.ts` |
 | User / AI manuals (`localStorage`) | `_lib/userManuals.ts` |

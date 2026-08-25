@@ -8,9 +8,9 @@ Key UI: `src/app/manuals/page.tsx` (labeled **PAGE: /manuals**). Other manuals-o
 
 ## `/manuals/[slug]`
 
-Reader + TOC editor. Builtin: `findHearthManual`. User: `getUserManual`. Testing Types: overlay + outline. Writes `hearth_manual_custom_data_*` and progress keys.
+Reader + TOC editor + inline chapter edit (no dialog). Builtin: `findHearthManual`. User: `getUserManual`. Testing Types: overlay + outline. Writes `hearth_manual_custom_data_*` (debounced while editing) and progress keys.
 
-Key UI: `src/app/manuals/[slug]/page.tsx` (labeled **PAGE: /manuals/[slug]**), `_ui/ToolSwitcher`, `_lib/manualParts.ts`.
+Key UI: `src/app/manuals/[slug]/page.tsx` (labeled **PAGE: /manuals/[slug]**), `_ui/LessonContentEditor`, `_ui/ToolSwitcher`, `_lib/manualParts.ts`.
 
 ## `/library`
 
