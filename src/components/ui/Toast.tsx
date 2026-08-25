@@ -1,5 +1,15 @@
 "use client";
 
+/* ============================================================================
+ * HEADING: SHARED — Toast
+ * Not a page. These pages all use this same file:
+ *   /manuals  /manuals/[slug]  /library  /life-simulator  /toolkits  /notes  /ai
+ *   /rest  /rest/cookbook  /rest/retro  /showcase-wall  /showcase
+ *   /dashboard  /profile  /settings  /login  + PinButton
+ * ToastContainer is mounted for every page via Providers.
+ * Changing this file changes all of those pages at once.
+ * ========================================================================== */
+
 import React, { createContext, useContext, useState, ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, Sparkles, AlertCircle, Info, X } from "lucide-react";

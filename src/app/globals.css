@@ -1,4 +1,10 @@
-/* LAYOUT styles for every page. Wired from src/app/layout.tsx */
+/* ============================================================================
+ * HEADING: SHARED — Global CSS
+ * Not a page. These pages all use this same file:
+ *   EVERY page
+ * Wired from layout.tsx
+ * Changing this file changes all of those pages at once.
+ * ========================================================================== */
 
 @import "tailwindcss";
 

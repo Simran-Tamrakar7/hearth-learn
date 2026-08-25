@@ -1,5 +1,14 @@
 "use client";
 
+/* ============================================================================
+ * HEADING: SHARED — Card
+ * Not a page. These pages all use this same file:
+ *   /  /manuals  /manuals/[slug]  /life-simulator  /toolkits  /notes  /ai
+ *   /rest  /rest/cookbook  /rest/retro  /showcase-wall  /showcase
+ *   /dashboard  /profile  /settings  /login  /tags  /certificates/[id]
+ * Changing this file changes all of those pages at once.
+ * ========================================================================== */
+
 import React from "react";
 import { motion, HTMLMotionProps } from "framer-motion";
 import { clsx } from "clsx";

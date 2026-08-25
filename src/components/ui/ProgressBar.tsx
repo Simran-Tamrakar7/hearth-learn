@@ -1,5 +1,12 @@
 "use client";
 
+/* ============================================================================
+ * HEADING: SHARED — ProgressBar
+ * Not a page. These pages all use this same file:
+ *   /  /dashboard  /showcase
+ * Changing this file changes all of those pages at once.
+ * ========================================================================== */
+
 import React from "react";
 import { motion } from "framer-motion";
 import { clsx } from "clsx";
