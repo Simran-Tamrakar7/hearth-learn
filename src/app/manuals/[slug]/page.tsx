@@ -697,8 +697,6 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     if (!chap) return null;
     const isActive = idx === activeChapterIndex;
     const displayTitle = stripLeadingNumber(chap.title.replace(/^Chapter\s+\d+:\s*/i, ""));
-    const overlayNo = isTestingTypesManual ? /^ch-(\d+)$/.exec(chap.slug || "") : null;
-    const tocTitle = overlayNo ? `${displayTitle} (#${Number(overlayNo[1])})` : displayTitle;
     const label = nums.get(idx) || String(idx + 1);
     const sibs = chap.parentId
       ? chapters.map((_, i) => i).filter((i) => chapters[i].parentId === chap.parentId)
@@ -725,7 +723,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
             checked={selectedChapterIndices.includes(idx)}
             onChange={() => toggleChapterSelected(idx)}
             className="ml-1 rounded border-[#D4CBBB] text-[#D97706] focus:ring-[#D97706] w-3.5 h-3.5 shrink-0"
-            aria-label={`Select ${tocTitle}`}
+            aria-label={`Select ${displayTitle}`}
           />
         )}
         <button
@@ -734,12 +732,12 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
           className={`flex-1 min-w-0 text-left px-2 py-2 text-xs sm:text-sm transition-colors flex items-center gap-2 ${
             isActive ? "text-[#FAF7F2] font-semibold" : "text-[#3D4D47] hover:text-[#1C2A26] font-normal"
           } ${nested ? "py-1.5" : ""}`}
-          title={tocTitle}
+          title={displayTitle}
         >
           <span className={`font-mono text-[11px] font-bold shrink-0 min-w-[2.85rem] ${isActive ? "text-[#D97706]" : "text-[#8A9B95]"}`}>
             {label}.
           </span>
-          <span className="truncate whitespace-nowrap flex-1 min-w-0">{tocTitle}</span>
+          <span className="truncate whitespace-nowrap flex-1 min-w-0">{displayTitle}</span>
         </button>
 
         {(showRowTools || (!nested && tocEdit === "sub")) && (
