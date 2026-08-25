@@ -1,3 +1,10 @@
+/* ============================================================================
+ * HEADING: SHARED — Testing Types 15-chapter outline
+ * Not a page. Used by:
+ *   /manuals/[slug]  (Testing Types reader)  +  src/app/manuals/_ui/testing-types-reader.ts
+ * Changing this file changes that reader.
+ * ========================================================================== */
+
 /** 15-chapter Testing Types TOC. Overlay `no` is TESTING_TYPES_CHAPTERS id. */
 
 /** Bump when the catalog outline changes so an old localStorage TOC is not restored. */

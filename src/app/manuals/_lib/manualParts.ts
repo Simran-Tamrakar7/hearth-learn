@@ -1,3 +1,10 @@
+/* ============================================================================
+ * HEADING: SHARED — TOC part helpers
+ * Not a page. Used by:
+ *   /manuals/[slug]  (reader + TOC editor)
+ * Changing this file changes that page.
+ * ========================================================================== */
+
 /** Part grouping + CRUD. "Part N" is always index+1 — never stored as a number. */
 
 export type PartishChapter = {

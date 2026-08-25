@@ -1,4 +1,11 @@
-/* SHARED: next-auth config. PAGE /login + every session API. Map: ./CODE-FOR-SHARED.md */
+/* ============================================================================
+ * HEADING: SHARED — Auth (next-auth)
+ * Not a page. These pages all use this same file:
+ *   /login  + APIs: /api/auth/*  /api/notes  /api/user/*  /api/settings
+ *   /api/showcase  /api/trails  /api/progress  /api/certificates  /api/chapters/*
+ * Map: ./CODE-FOR-SHARED.md
+ * Changing this file changes all of those pages at once.
+ * ========================================================================== */
 
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";

@@ -1,5 +1,14 @@
 "use client";
 
+/* ============================================================================
+ * HEADING: SHARED — Badge
+ * Not a page. These pages all use this same file:
+ *   /  /manuals  /manuals/[slug]  /library  /life-simulator  /toolkits  /notes  /ai
+ *   /rest  /rest/games  /rest/cookbook  /rest/retro  /showcase-wall  /showcase
+ *   /dashboard  /profile  /tags  /certificates/[id]
+ * Changing this file changes all of those pages at once.
+ * ========================================================================== */
+
 import React from "react";
 import { motion } from "framer-motion";
 import { clsx } from "clsx";

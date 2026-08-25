@@ -1,3 +1,11 @@
+/* ============================================================================
+ * HEADING: SHARED — Manual catalog types + findHearthManual
+ * Not a page. These pages all use this same file:
+ *   /manuals  /manuals/[slug]  /dashboard
+ * Chapter bodies: ./pathwise-data/. Real home for manuals data.
+ * Changing this file changes all of those pages at once.
+ * ========================================================================== */
+
 export interface GoDeeperResource {
   title: string;
   url: string;

@@ -1,3 +1,11 @@
+/* ============================================================================
+ * HEADING: SHARED — User/AI manuals storage
+ * Not a page. These pages all use this same file:
+ *   /manuals  /manuals/[slug]
+ * localStorage. Not a page.
+ * Changing this file changes all of those pages at once.
+ * ========================================================================== */
+
 import type { ManualChapter, ManualItem } from "@/lib/manualsData";
 
 const STORE = "hearth_user_manuals_v1";
