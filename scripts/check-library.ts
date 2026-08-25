@@ -1,4 +1,4 @@
-import { libraryBooks, searchBooks, booksOnShelf } from "../content/library/_registry.ts";
+import { libraryBooks, searchBooks, booksOnShelf } from "../src/app/library/_content/_registry.ts";
 
 const romance = booksOnShelf("romance");
 if (romance.length < 5) throw new Error("romance shelf too small");

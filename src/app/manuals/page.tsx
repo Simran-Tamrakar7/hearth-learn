@@ -9,9 +9,9 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
-import { MANUALS_DATA, findHearthManual, ManualItem } from "@/lib/manualsData";
-import { featuredManualIds, activeManualSlugs } from "@content/manuals/_registry";
-import { genres } from "@content/manuals/_helpers.js";
+import { MANUALS_DATA, findHearthManual, ManualItem } from "@/app/manuals/_lib/manualsData";
+import { featuredManualIds, activeManualSlugs } from "@/app/manuals/_content/_registry";
+import { genres } from "@/app/manuals/_content/_helpers.js";
 import { Compass, Search, Clock, BookOpen, ArrowRight, Pin, ExternalLink, Code2, Sparkles, X, Trash2 } from "lucide-react";
 import {
   PinButton,
@@ -22,7 +22,7 @@ import {
   manualPinId,
 } from "@/components/ui/PinButton";
 import { TestingTypesCatalogCard } from "@/app/manuals/_ui/TestingTypesCatalogCard";
-import { deleteUserManual, emptyManual, getUserManual, notesToManual, saveUserManual, subscribeUserManuals } from "@/lib/userManuals";
+import { deleteUserManual, emptyManual, getUserManual, notesToManual, saveUserManual, subscribeUserManuals } from "@/app/manuals/_lib/userManuals";
 
 const GENRE_CATEGORY: Record<string, ManualItem["category"] | "All"> = {
   all: "All",

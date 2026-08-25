@@ -1,4 +1,4 @@
-import type { CatalogStatus } from "../types";
+import type { CatalogStatus } from "../../_catalog";
 
 export type TrailRegistryEntry = {
   id: string;

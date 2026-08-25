@@ -1,6 +1,6 @@
 "use client";
 
-/* PAGE: /library  — this file is the screen. Books: content/library/_registry.ts. Map: ./CODE-FOR-THIS-PAGE.md */
+/* PAGE: /library  — this file is the screen. Books: ./_content/_registry.ts. Map: ./CODE-FOR-THIS-PAGE.md */
 
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
@@ -14,7 +14,7 @@ import {
   shelves,
   gutenbergCoverUrl,
   type LibraryBook,
-} from "@/lib/pathwiseLibrary";
+} from "@/app/library/_content/_registry";
 import {
   BookOpen,
   Search,

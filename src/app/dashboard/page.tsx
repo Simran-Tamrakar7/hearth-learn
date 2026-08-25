@@ -36,10 +36,10 @@ import {
   ExternalLink,
   Star,
 } from "lucide-react";
-import { COOKBOOK_DISHES } from "@/lib/cookbookData";
-import { ARCADIA_GAMES } from "@/lib/gamesData";
-import { findHearthManual } from "@/lib/manualsData";
-import { pinnableManuals } from "@content/manuals/_registry";
+import { COOKBOOK_DISHES } from "@/app/rest/cookbook/_content";
+import { ARCADIA_GAMES } from "@/app/rest/games/_content";
+import { findHearthManual } from "@/app/manuals/_lib/manualsData";
+import { pinnableManuals } from "@/app/manuals/_content/_registry";
 import { PinButton, getPinnedItems, savePinnedItems, PinnedItemMetadata } from "@/components/ui/PinButton";
 
 interface DashboardData {

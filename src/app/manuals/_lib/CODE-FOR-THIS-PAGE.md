@@ -2,4 +2,4 @@
 
 Chapter loaders, TOC helpers, user-manual storage, Playwright roadmap download.
 
-Chapter bodies: `content/manuals/<slug>/data.js`
+Chapter bodies: `_content/<slug>/data.js`

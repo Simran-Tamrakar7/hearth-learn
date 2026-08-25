@@ -1,6 +1,6 @@
 "use client";
 
-/* PAGE: /rest/games  — this file is the screen. Catalog: content/break-room/games.ts. Map: ../CODE-FOR-THIS-PAGE.md */
+/* PAGE: /rest/games  — this file is the screen. Catalog: ./_content.ts. Map: ./CODE-FOR-THIS-PAGE.md */
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
@@ -13,7 +13,7 @@ import {
   ARCADIA_CATEGORIES,
   ARCADIA_GENRES,
   ArcadiaGame,
-} from "@/lib/gamesData";
+} from "@/app/rest/games/_content";
 import { PinButton, getPinnedItems, PinnedItemMetadata } from "@/components/ui/PinButton";
 import {
   Gamepad2,

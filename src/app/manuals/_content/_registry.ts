@@ -1,4 +1,4 @@
-import type { CatalogStatus } from "../types";
+import type { CatalogStatus } from "../../_catalog";
 
 import { pathwiseManual as testingTypes } from "./testing-types/data.js";
 import { pathwiseManual as cypress } from "./cypress/data.js";

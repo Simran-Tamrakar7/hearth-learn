@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { ExternalLink, ChevronRight, Copy, Check, Terminal, ArrowRight, BookOpen } from "lucide-react";
-import { ToolItem } from "@/lib/manualsData";
+import { ToolItem } from "@/app/manuals/_lib/manualsData";
 
 interface ToolSwitcherProps {
   tools: ToolItem[];

@@ -30,7 +30,7 @@ The app still runs much of the catalog without a signed-in user (demo fallbacks)
 ## Checks (no extra test runner)
 
 ```bash
-node --experimental-strip-types content/registry.check.ts
+node --experimental-strip-types scripts/check-registry.ts
 node --experimental-strip-types src/app/manuals/_lib/manualParts.check.ts
 node --experimental-strip-types src/app/manuals/_lib/testing-types-reader.check.ts
 node --experimental-strip-types src/app/manuals/_lib/userManuals.check.ts

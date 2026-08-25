@@ -1,6 +1,6 @@
 "use client";
 
-/* PAGE: /manuals/[slug]  — reader for one manual (this file). Catalog: ../page.tsx. Map: ../CODE-FOR-THIS-PAGE.md */
+/* PAGE: /manuals/[slug]  — reader for one manual (this file). Catalog: ../_content/. Map: ../CODE-FOR-THIS-PAGE.md */
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
@@ -11,16 +11,16 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
-import { findHearthManual, ManualItem, ManualChapter } from "@/lib/manualsData";
-import { getUserManual, saveUserManual, deleteUserManual } from "@/lib/userManuals";
+import { findHearthManual, ManualItem, ManualChapter } from "@/app/manuals/_lib/manualsData";
+import { getUserManual, saveUserManual, deleteUserManual } from "@/app/manuals/_lib/userManuals";
 import { isTestingTypesSlug, TestingTypesGuide } from "@/app/manuals/_ui/TestingTypesGuide";
 import { PLAYWRIGHT_ROADMAP_PHASES, downloadRoadmapSVG } from "@/app/manuals/_lib/roadmapData";
-import { stripLeadingNumber } from "@content/manuals/_helpers.js";
+import { stripLeadingNumber } from "@/app/manuals/_content/_helpers.js";
 import { PinButton, getPinnedItems, PinnedItemMetadata, manualPinId } from "@/components/ui/PinButton";
 import { ToolSwitcher } from "@/app/manuals/_ui/ToolSwitcher";
 import { LessonContentEditor } from "@/app/manuals/_ui/LessonContentEditor";
 import { readerChaptersFromOverlay, testingOverlayForChapter } from "@/app/manuals/_ui/testing-types-reader";
-import { restoreTestingTypesToc, TESTING_TYPES_TOC_VERSION } from "@content/manuals/testing-types/outline";
+import { restoreTestingTypesToc, TESTING_TYPES_TOC_VERSION } from "@/app/manuals/_content/testing-types/outline";
 import {
   chapterIndexAfter,
   createPart,
@@ -38,7 +38,7 @@ import {
   parentIndexOf,
   renamePart,
   tocNumbersForPart,
-} from "@/lib/manualParts";
+} from "@/app/manuals/_lib/manualParts";
 
 import {
   ChevronLeft,

@@ -2,7 +2,7 @@
  * HEADING: SHARED — Manual catalog types + findHearthManual
  * Not a page. These pages all use this same file:
  *   /manuals  /manuals/[slug]  /dashboard
- * Chapter bodies: content/manuals/<slug>/data.js (listed in _registry.ts).
+ * Chapter bodies: src/app/manuals/_content/<slug>/data.js (listed in _registry.ts).
  * Changing this file changes all of those pages at once.
  * ========================================================================== */
 

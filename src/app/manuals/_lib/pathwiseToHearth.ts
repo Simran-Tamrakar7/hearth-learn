@@ -2,11 +2,11 @@
  * HEADING: SHARED — pathwise JS → Hearth manuals
  * Not a page. Used by:
  *   /manuals  /manuals/[slug]  /dashboard   (via manualsData.ts)
- * Chapter files: content/manuals/<slug>/data.js
+ * Chapter files: src/app/manuals/_content/<slug>/data.js
  * ========================================================================== */
 
-import { MANUALS } from "../../../../content/manuals/_registry.ts";
-import { stripLeadingNumber } from "../../../../content/manuals/_helpers.js";
+import { MANUALS } from "../_content/_registry.ts";
+import { stripLeadingNumber } from "../_content/_helpers.js";
 import type { ManualChapter, ManualItem } from "./manualsData";
 
 const CATEGORY: Record<string, ManualItem["category"]> = {
