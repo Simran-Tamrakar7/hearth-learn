@@ -33,6 +33,7 @@ import {
   BrainCircuit,
   Globe,
   Sparkles,
+  Shield,
 } from "lucide-react";
 
 export function Navbar() {
@@ -65,9 +66,10 @@ export function Navbar() {
     { href: "/settings", label: "Settings", icon: SettingsIcon, featureKey: null },
   ];
 
-  const navLinks = allNavLinks.filter(
-    (link) => link.featureKey === null || features[link.featureKey]
-  );
+  const navLinks = [
+    ...allNavLinks.filter((link) => link.featureKey === null || features[link.featureKey]),
+    ...(session?.user?.role === "ADMIN" ? [{ href: "/admin", label: "Admin", icon: Shield, featureKey: null }] : []),
+  ];
 
   return (
     <header className="sticky top-0 z-40 bg-[#FAF7F2]/90 backdrop-blur-md border-b border-[#E7E0D3] transition-colors">

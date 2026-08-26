@@ -1,7 +1,7 @@
 /* API: /api/manuals/generate  — AI notes→manual for PAGE /manuals. Map: ../../CODE-FOR-THIS-API.md */
 
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/roles";
+import { requirePermission } from "@/lib/roles";
 
 const SYSTEM = `You are a manual-formatting assistant. Convert raw, unstructured content into a structured manual:
 
@@ -29,9 +29,9 @@ Rules:
 - Output the structured manual only. No preamble.`;
 
 export async function POST(req: Request) {
-  const gate = await requireAdmin();
+  const gate = await requirePermission("canUseAI");
   if (!gate.ok) {
-    return NextResponse.json({ error: "Admin only." }, { status: 403 });
+    return NextResponse.json({ error: "You do not have permission to generate manuals." }, { status: gate.status || 403 });
   }
 
   let notes = "";

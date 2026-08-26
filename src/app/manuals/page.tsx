@@ -23,8 +23,8 @@ import {
 } from "@/components/ui/PinButton";
 import { emptyManual, getUserManual, hiddenManualSlugs, notesToManual, removeCatalogManual, saveUserManual, subscribeUserManuals } from "@/app/manuals/_lib/userManuals";
 import { chapterAiSummary, chapterCustomSummary } from "@/app/manuals/_lib/manualsData";
-import { KebabMenu } from "@/app/manuals/_ui/KebabMenu";
-import { useIsAdmin } from "@/lib/useAuthz";
+import { kebabItems, KebabMenu } from "@/app/manuals/_ui/KebabMenu";
+import { usePermissions } from "@/lib/useAuthz";
 
 const GENRE_CATEGORY: Record<string, ManualItem["category"] | "All"> = {
   all: "All",
@@ -77,37 +77,37 @@ function ManualCard({
   manual,
   pinned,
   onDelete,
-  isAdmin,
+  canEdit,
+  canDelete,
 }: {
   manual: ManualItem;
   pinned?: boolean;
   onDelete?: () => void;
-  isAdmin?: boolean;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }) {
   return (
     <motion.div whileHover={{ y: -6, scale: 1.02 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
       <div className="relative h-full">
         <div className="absolute top-4 right-4 z-20 flex items-center gap-1">
-          {isAdmin ? (
-            <KebabMenu
-              label={`Actions for ${manual.title}`}
-              items={[
-                {
-                  label: "Edit",
-                  onClick: () => {
-                    window.location.href = `/manuals/${manual.slug}?edit=1`;
-                  },
+          <KebabMenu
+            label={`Actions for ${manual.title}`}
+            items={kebabItems([
+              canEdit && {
+                label: "Edit",
+                onClick: () => {
+                  window.location.href = `/manuals/${manual.slug}?edit=1`;
                 },
-                {
-                  label: "Delete",
-                  danger: true,
-                  onClick: () => {
-                    if (window.confirm(`Delete “${manual.title}”? This cannot be undone.`)) onDelete?.();
-                  },
+              },
+              canDelete && {
+                label: "Delete",
+                danger: true,
+                onClick: () => {
+                  if (window.confirm(`Delete “${manual.title}”? This cannot be undone.`)) onDelete?.();
                 },
-              ]}
-            />
-          ) : null}
+              },
+            ])}
+          />
           <PinButton
             itemId={manualPinId(manual.slug)}
             itemTitle={manual.title}
@@ -385,7 +385,7 @@ function GenerateManualModal({
 
 export default function ManualsCatalogPage() {
   const { toast } = useToast();
-  const isAdmin = useIsAdmin();
+  const perms = usePermissions();
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [pinnedManuals, setPinnedManuals] = useState<ReturnType<typeof resolvePinnedManual>[]>([]);
@@ -581,14 +581,14 @@ export default function ManualsCatalogPage() {
                 Pathwise paths, grouped by craft — open a category, then work it chapter by chapter.
               </p>
             </div>
-            {isAdmin ? (
+            {perms.canUseAI || perms.canCreate ? (
             <button
               type="button"
               onClick={() => setGenerateOpen(true)}
               className="shrink-0 inline-flex items-center gap-2 h-11 px-4 rounded-2xl bg-[#1C2A26] text-[#FAF7F2] text-xs font-semibold hover:bg-[#243530] shadow-xs"
             >
               <Sparkles className="w-4 h-4 text-[#D97706]" />
-              New with AI
+              {perms.canUseAI ? "New with AI" : "New manual"}
             </button>
             ) : null}
           </div>
@@ -641,7 +641,8 @@ export default function ManualsCatalogPage() {
                     key={manual.id}
                     manual={manual}
                     pinned={pinnedIds.has(manualPinId(manual.slug))}
-                    isAdmin={isAdmin}
+                    canEdit={perms.canEdit}
+                    canDelete={perms.canDelete}
                     onDelete={() => {
                       const kind = removeCatalogManual(manual.slug);
                       if (!kind) return;
@@ -659,7 +660,7 @@ export default function ManualsCatalogPage() {
         )}
       </main>
 
-      {isAdmin ? (
+      {perms.canUseAI || perms.canCreate ? (
       <GenerateManualModal
         open={generateOpen}
         onClose={() => setGenerateOpen(false)}

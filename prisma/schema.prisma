@@ -17,6 +17,9 @@ model User {
   featureToggles String     @default("{\"toolkits\":true,\"showcaseWall\":true,\"gamesShelf\":true}")
   pulseCheck     String     @default("{}")
   role           String     @default("USER")
+  status         String     @default("ACTIVE")
+  mustChangePassword Boolean @default(false)
+  permissions    String     @default("{\"canCreate\":false,\"canEdit\":false,\"canDelete\":false,\"canMerge\":false,\"canReorder\":false,\"canUseAI\":false}")
   createdAt      DateTime   @default(now())
 
   progress            Progress[]
@@ -225,4 +228,12 @@ model Highlight {
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }

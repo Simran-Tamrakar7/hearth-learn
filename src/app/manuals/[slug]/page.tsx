@@ -19,7 +19,7 @@ import { stripLeadingNumber } from "@/app/manuals/_content/_helpers.js";
 import { PinButton, getPinnedItems, PinnedItemMetadata, manualPinId } from "@/components/ui/PinButton";
 import { ToolSwitcher } from "@/app/manuals/_ui/ToolSwitcher";
 import { LessonContentEditor } from "@/app/manuals/_ui/LessonContentEditor";
-import { KebabMenu } from "@/app/manuals/_ui/KebabMenu";
+import { kebabItems, KebabMenu } from "@/app/manuals/_ui/KebabMenu";
 import { Highlightable, HighlightsList } from "@/app/manuals/_ui/Highlightable";
 import {
   addHighlight,
@@ -30,7 +30,7 @@ import {
   type HighlightStore,
   wrapHighlightHtml,
 } from "@/app/manuals/_lib/highlights";
-import { useIsAdmin, useAppUserId } from "@/lib/useAuthz";
+import { usePermissions, useAppUserId } from "@/lib/useAuthz";
 import { highlightsStoreKey, isScopeReady, progressStoreKey, readScopedRaw, writeScopedRaw } from "@/lib/userScope";
 import { readerChaptersFromOverlay, testingOverlayForChapter } from "@/app/manuals/_ui/testing-types-reader";
 import { restoreTestingTypesToc, TESTING_TYPES_TOC_VERSION } from "@/app/manuals/_content/testing-types/outline";
@@ -140,7 +140,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const isAdmin = useIsAdmin();
+  const perms = usePermissions();
   const userId = useAppUserId();
 
   const slug = params?.slug as string;
@@ -294,7 +294,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   };
 
   const persistChapters = (updated: ManualChapter[], keepId?: string) => {
-    if (!isAdmin) return;
+    if (!perms.canStructure) return;
     if (persistTimer.current) {
       clearTimeout(persistTimer.current);
       persistTimer.current = null;
@@ -514,7 +514,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     category: string,
     estimatedTime: string
   ) => {
-    if (!isAdmin) return;
+    if (!perms.canEdit) return;
     pendingMeta.current = { title, description, category, estimatedTime };
     setSaveHint("Saving…");
     if (persistTimer.current) clearTimeout(persistTimer.current);
@@ -530,7 +530,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   };
 
   const enterChapterEdit = (idx: number) => {
-    if (!isAdmin) return;
+    if (!perms.canEdit) return;
     commitPending();
     chapterEditSnapshot.current = {
       chapters: JSON.parse(JSON.stringify(chapters)),
@@ -546,10 +546,10 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   };
 
   useEffect(() => {
-    if (isAdmin && searchParams.get("edit") === "1") enterChapterEdit(0);
+    if (perms.canEdit && searchParams.get("edit") === "1") enterChapterEdit(0);
     // ponytail: open edit once when arriving from catalog kebab
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAdmin]);
+  }, [perms.canEdit]);
 
   const addChapterInPart = (partIndex?: number) => {
     const host =
@@ -815,7 +815,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
 
         {(showRowTools || (!nested && tocEdit === "sub")) && (
           <div className="flex items-center shrink-0 pr-1">
-            {!nested && tocEdit === "sub" && (
+            {!nested && tocEdit === "sub" && perms.canEdit && (
               <button
                 type="button"
                 onClick={() => addSubchapter(idx)}
@@ -831,9 +831,9 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
             <KebabMenu
               compact
               label={nested ? "Sub-chapter actions" : "Chapter actions"}
-              items={[
-                { label: "Edit", onClick: () => enterChapterEdit(idx) },
-                {
+              items={kebabItems([
+                perms.canEdit && { label: "Edit", onClick: () => enterChapterEdit(idx) },
+                perms.canReorder && {
                   label: "Move Up",
                   disabled: !canUp,
                   onClick: () => {
@@ -842,7 +842,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                     setSelectedChapterIndices(result.selected);
                   },
                 },
-                {
+                perms.canReorder && {
                   label: "Move Down",
                   disabled: !canDown,
                   onClick: () => {
@@ -851,9 +851,9 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                     setSelectedChapterIndices(result.selected);
                   },
                 },
-                { label: "Merge", disabled: selectedChapterIndices.length < 2, onClick: handleMergeSelectedChapters },
-                { label: "Delete", danger: true, onClick: () => handleDeleteChapter(idx) },
-              ]}
+                perms.canMerge && { label: "Merge", disabled: selectedChapterIndices.length < 2, onClick: handleMergeSelectedChapters },
+                perms.canDelete && { label: "Delete", danger: true, onClick: () => handleDeleteChapter(idx) },
+              ])}
             />
             )}
           </div>
@@ -1154,19 +1154,18 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
             </Link>
 
             <div className="flex items-center gap-2">
-              {isAdmin ? (
+              {perms.canUseAI ? (
               <Link href="/manuals?new=1">
                 <Button variant="outline" size="sm" leftIcon={<Sparkles className="w-3.5 h-3.5 text-[#D97706]" />}>
                   New with AI
                 </Button>
               </Link>
               ) : null}
-              {isAdmin ? (
               <KebabMenu
                 label="Manual actions"
-                items={[
-                  { label: "Edit", onClick: () => enterChapterEdit(activeChapterIndex) },
-                  {
+                items={kebabItems([
+                  perms.canEdit && { label: "Edit", onClick: () => enterChapterEdit(activeChapterIndex) },
+                  perms.canDelete && {
                     label: "Delete",
                     danger: true,
                     onClick: () => {
@@ -1184,9 +1183,8 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                       router.push("/manuals");
                     },
                   },
-                ]}
+                ])}
               />
-              ) : null}
               <PinButton
                 itemId={manualPinId(slug)}
                 itemTitle={manualTitle}
@@ -1331,7 +1329,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-1.5 shrink-0 justify-end">
-                  {isAdmin ? (
+                  {perms.canStructure ? (
                   tocEditOpen ? (
                     <>
                       {(["part", "chapter", "sub"] as const).map((mode) => (
@@ -1376,15 +1374,22 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                 <span className="text-[10px] font-bold text-[#52635E] mr-1">
                   {selectedPartIndices.length > 0 ? `${selectedPartIndices.length} parts` : "Select parts"}
                 </span>
+                {perms.canEdit ? (
                 <button type="button" onClick={handleCreatePart} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#1C2A26] text-white" title="Add part">
                   <Plus className="w-3 h-3 text-[#D97706]" /> Part
                 </button>
+                ) : null}
+                {perms.canReorder ? (
+                <>
                 <button type="button" onClick={() => handleMoveSelectedParts(-1)} disabled={selectedPartIndices.length === 0} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#FAF7F2] hover:border-[#D97706] disabled:opacity-40" title="Move up">
                   <ArrowUp className="w-3 h-3" /> Up
                 </button>
                 <button type="button" onClick={() => handleMoveSelectedParts(1)} disabled={selectedPartIndices.length === 0} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#FAF7F2] hover:border-[#D97706] disabled:opacity-40" title="Move down">
                   <ArrowDown className="w-3 h-3" /> Down
                 </button>
+                </>
+                ) : null}
+                {perms.canMerge ? (
                 <button
                   type="button"
                   onClick={handleMergeSelectedParts}
@@ -1394,9 +1399,12 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                 >
                   <Combine className="w-3 h-3" /> Merge
                 </button>
+                ) : null}
+                {perms.canDelete ? (
                 <button type="button" onClick={() => handleDeleteSelectedParts(selectedPartIndices)} disabled={selectedPartIndices.length === 0} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-rose-200 text-rose-700 bg-rose-50 hover:bg-rose-100 disabled:opacity-40" title="Delete selected">
                   <Trash2 className="w-3 h-3" /> Delete
                 </button>
+                ) : null}
                 {selectedPartIndices.length > 0 && (
                   <button type="button" onClick={() => setSelectedPartIndices([])} className="ml-auto text-[10px] font-bold text-[#8A9B95] hover:text-[#1C2A26]">
                     Clear
@@ -1410,15 +1418,22 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                 <span className="text-[10px] font-bold text-[#52635E] mr-1">
                   {selectedChapterIndices.length > 0 ? `${selectedChapterIndices.length} chapters` : "Select chapters"}
                 </span>
+                {perms.canEdit ? (
                 <button type="button" onClick={() => addChapterInPart()} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#1C2A26] text-white" title="Add chapter">
                   <Plus className="w-3 h-3 text-[#D97706]" /> Chapter
                 </button>
+                ) : null}
+                {perms.canReorder ? (
+                <>
                 <button type="button" onClick={() => handleMoveSelectedChapters(-1)} disabled={selectedChapterIndices.length === 0} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#FAF7F2] hover:border-[#D97706] disabled:opacity-40" title="Move up">
                   <ArrowUp className="w-3 h-3" /> Up
                 </button>
                 <button type="button" onClick={() => handleMoveSelectedChapters(1)} disabled={selectedChapterIndices.length === 0} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#FAF7F2] hover:border-[#D97706] disabled:opacity-40" title="Move down">
                   <ArrowDown className="w-3 h-3" /> Down
                 </button>
+                </>
+                ) : null}
+                {perms.canMerge ? (
                 <button
                   type="button"
                   onClick={handleMergeSelectedChapters}
@@ -1428,9 +1443,12 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                 >
                   <Combine className="w-3 h-3" /> Merge
                 </button>
+                ) : null}
+                {perms.canDelete ? (
                 <button type="button" onClick={() => handleDeleteSelectedChapters(selectedChapterIndices)} disabled={selectedChapterIndices.length === 0} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-rose-200 text-rose-700 bg-rose-50 hover:bg-rose-100 disabled:opacity-40" title="Delete selected">
                   <Trash2 className="w-3 h-3" /> Delete
                 </button>
+                ) : null}
                 {selectedChapterIndices.length > 0 && (
                   <button type="button" onClick={() => setSelectedChapterIndices([])} className="ml-auto text-[10px] font-bold text-[#8A9B95] hover:text-[#1C2A26]">
                     Clear
@@ -1444,18 +1462,26 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                 <span className="text-[10px] font-bold text-[#52635E] mr-1">
                   {selectedChapterIndices.length > 0 ? `${selectedChapterIndices.length} sub-chapters` : "Select sub-chapters"}
                 </span>
+                {perms.canEdit ? (
                 <button type="button" onClick={() => addSubchapter()} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#1C2A26] text-white" title="Add sub-chapter">
                   <Plus className="w-3 h-3 text-[#D97706]" /> Sub-chapter
                 </button>
+                ) : null}
+                {perms.canReorder ? (
+                <>
                 <button type="button" onClick={() => handleMoveSelectedChapters(-1)} disabled={selectedChapterIndices.length === 0} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#FAF7F2] hover:border-[#D97706] disabled:opacity-40" title="Move up">
                   <ArrowUp className="w-3 h-3" /> Up
                 </button>
                 <button type="button" onClick={() => handleMoveSelectedChapters(1)} disabled={selectedChapterIndices.length === 0} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-[#E7E0D3] bg-[#FAF7F2] hover:border-[#D97706] disabled:opacity-40" title="Move down">
                   <ArrowDown className="w-3 h-3" /> Down
                 </button>
+                </>
+                ) : null}
+                {perms.canDelete ? (
                 <button type="button" onClick={() => handleDeleteSelectedChapters(selectedChapterIndices)} disabled={selectedChapterIndices.length === 0} className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-1 rounded-md border border-rose-200 text-rose-700 bg-rose-50 hover:bg-rose-100 disabled:opacity-40" title="Delete selected">
                   <Trash2 className="w-3 h-3" /> Delete
                 </button>
+                ) : null}
                 {selectedChapterIndices.length > 0 && (
                   <button type="button" onClick={() => setSelectedChapterIndices([])} className="ml-auto text-[10px] font-bold text-[#8A9B95] hover:text-[#1C2A26]">
                     Clear
@@ -1529,15 +1555,15 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                           <KebabMenu
                             compact
                             label="Part actions"
-                            items={[
-                              {
+                            items={kebabItems([
+                              perms.canEdit && {
                                 label: "Edit",
                                 onClick: () => {
                                   setEditingPartIndex(part.index);
                                   setEditingPartName(part.name);
                                 },
                               },
-                              {
+                              perms.canReorder && {
                                 label: "Move Up",
                                 disabled: part.index === 0,
                                 onClick: () => {
@@ -1554,7 +1580,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                                   });
                                 },
                               },
-                              {
+                              perms.canReorder && {
                                 label: "Move Down",
                                 disabled: part.index === partGroups.length - 1,
                                 onClick: () => {
@@ -1571,9 +1597,9 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                                   });
                                 },
                               },
-                              { label: "Merge", disabled: selectedPartIndices.length < 2, onClick: handleMergeSelectedParts },
-                              { label: "Delete", danger: true, onClick: () => handleDeleteSelectedParts([part.index]) },
-                            ]}
+                              perms.canMerge && { label: "Merge", disabled: selectedPartIndices.length < 2, onClick: handleMergeSelectedParts },
+                              perms.canDelete && { label: "Delete", danger: true, onClick: () => handleDeleteSelectedParts([part.index]) },
+                            ])}
                           />
                           )}
                         </>
@@ -1597,7 +1623,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                         );
                       });
                     })()}
-                    {(isEditingChapters || chapterEdit) && (
+                    {(isEditingChapters || chapterEdit) && perms.canEdit && (
                       <button
                         type="button"
                         onClick={() => addChapterInPart(part.index)}
@@ -1662,7 +1688,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                   {saveHint ? (
                     <span className="text-[11px] font-bold text-[#8A9B95]">{saveHint}</span>
                   ) : null}
-                  {isAdmin && chapterEdit ? (
+                  {chapterEdit ? (
                     <>
                       <Button variant="outline" size="sm" onClick={cancelChapterEdit}>
                         Cancel
@@ -1671,17 +1697,17 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                         Done editing
                       </Button>
                     </>
-                  ) : isAdmin ? (
+                  ) : (
                     <KebabMenu
                       label="Chapter actions"
-                      items={[
-                        { label: "Edit", onClick: () => enterChapterEdit(activeChapterIndex) },
-                        { label: "Move Up", disabled: !activeMove.canUp, onClick: () => persistChapters(moveChapterBlock(chapters, activeChapterIndex, -1).chapters, activeChapter.id) },
-                        { label: "Move Down", disabled: !activeMove.canDown, onClick: () => persistChapters(moveChapterBlock(chapters, activeChapterIndex, 1).chapters, activeChapter.id) },
-                        { label: "Delete", danger: true, onClick: () => handleDeleteChapter(activeChapterIndex) },
-                      ]}
+                      items={kebabItems([
+                        perms.canEdit && { label: "Edit", onClick: () => enterChapterEdit(activeChapterIndex) },
+                        perms.canReorder && { label: "Move Up", disabled: !activeMove.canUp, onClick: () => persistChapters(moveChapterBlock(chapters, activeChapterIndex, -1).chapters, activeChapter.id) },
+                        perms.canReorder && { label: "Move Down", disabled: !activeMove.canDown, onClick: () => persistChapters(moveChapterBlock(chapters, activeChapterIndex, 1).chapters, activeChapter.id) },
+                        perms.canDelete && { label: "Delete", danger: true, onClick: () => handleDeleteChapter(activeChapterIndex) },
+                      ])}
                     />
-                  ) : null}
+                  )}
 
                   <Button
                     variant={completedChapterIds.includes(activeChapter.id) ? "outline" : "primary"}
