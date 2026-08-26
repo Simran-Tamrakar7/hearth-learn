@@ -19,3 +19,4 @@ These are server routes, not screens. Each `route.ts` has a `API:` comment at th
 | `manuals/generate/route.ts` | AI notes → manual (needs `OPENAI_API_KEY`) |
 | `chapters/feedback/route.ts` | manual reader feedback |
 | `chapters/margin-notes/route.ts` | manual reader margin notes |
+| `highlights/route.ts` | `/manuals/[slug]` chapter highlights (Full Content / Summary / AI Summary) |

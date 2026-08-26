@@ -3,7 +3,7 @@
 ## Stack
 
 - **Next.js 16** (App Router), **React 19**, **Tailwind 4**
-- **Prisma + SQLite** for users, notes, Prisma-trails, showcase posts, certificates, streaks/badges
+- **Prisma + SQLite** for users, notes, Prisma-trails, showcase posts, certificates, streaks/badges, **manual chapter highlights**
 - **next-auth** for sessions
 - Catalog learning content is **imported TypeScript/JavaScript**, not a CMS and not MDX. There is no glob indexer: each `_registry.ts` is an explicit array you edit by hand.
 
@@ -31,7 +31,8 @@ Find a page: open `src/app/<url>/`. Example: dashboard is `src/app/dashboard/`. 
 | `/manuals/[slug]` | Manual reader / TOC editor |
 | `/trails` | Redirect → `/manuals` |
 | `/trails/[slug]` | Redirect → `/manuals/[slug]` |
-| `/library` | Outbound book list |
+| `/library` | Outbound book list **and** manuals catalog (add / pin / kebab) |
+| `/admin` | Signup approvals, permissions, manage categories |
 | `/life-simulator` | Life Lab arenas |
 | `/notes` | User notes (Prisma) |
 | `/ai` | Coach + CV maker (session UI) |
@@ -48,7 +49,7 @@ Find a page: open `src/app/<url>/`. Example: dashboard is `src/app/dashboard/`. 
 | `/certificates/[id]` | Printable certificate |
 | `/login` | Auth |
 
-Navbar: Manuals, Library, Life Lab, Notes, AI, Break Room, Showcase Wall, Profile, Settings. Dashboard is the logo target. Toolkits is linked from home, not the nav.
+Navbar: Manuals, Library, Life Lab, Notes, AI, Break Room, Showcase Wall, Profile, Settings. Dashboard is the logo target. Toolkits is linked from home, not the nav. `/admin` is admin-only.
 
 ## Manual bodies
 

@@ -24,6 +24,18 @@ import {
   ExternalLink,
   Play,
 } from "lucide-react";
+import { MANUALS_DATA, type ManualItem } from "@/app/manuals/_lib/manualsData";
+import { activeManualSlugs } from "@/app/manuals/_content/_registry";
+import {
+  applyManualOverlay,
+  hiddenManualSlugs,
+  removeCatalogManual,
+  subscribeUserManuals,
+} from "@/app/manuals/_lib/userManuals";
+import { AddManualControl } from "@/app/manuals/_ui/AddManualControl";
+import { ManualCard } from "@/app/manuals/_ui/ManualCard";
+import { isManualsCatalogPin, manualPinId, subscribePinnedItems } from "@/components/ui/PinButton";
+import { usePermissions } from "@/lib/useAuthz";
 
 const SAVED_KEY = "hearth_library_saved";
 
@@ -110,15 +122,40 @@ function BookCover({ book, compact = false }: { book: LibraryBook; compact?: boo
 
 export default function LibraryPage() {
   const { toast } = useToast();
+  const perms = usePermissions();
   const [shelf, setShelf] = useState("all");
   const [q, setQ] = useState("");
   const [savedOnly, setSavedOnly] = useState(false);
   const [saved, setSaved] = useState<Set<string>>(new Set());
   const [detail, setDetail] = useState<LibraryBook | null>(null);
+  const [userManuals, setUserManuals] = useState<ManualItem[]>([]);
+  const [hiddenSlugs, setHiddenSlugs] = useState<Set<string>>(new Set());
+  const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
+  const [selectedTag, setSelectedTag] = useState("");
 
   useEffect(() => {
     setSaved(loadSaved());
   }, []);
+
+  useEffect(() => {
+    return subscribeUserManuals((items) => {
+      setUserManuals(items);
+      setHiddenSlugs(hiddenManualSlugs());
+    });
+  }, []);
+
+  useEffect(() => {
+    return subscribePinnedItems((all) => {
+      setPinnedIds(new Set(all.filter(isManualsCatalogPin).map((p) => p.id)));
+    });
+  }, []);
+
+  const libraryManuals = useMemo(() => {
+    const builtin = MANUALS_DATA.filter((m) => activeManualSlugs().has(m.slug) && !hiddenSlugs.has(m.slug));
+    const all = [...userManuals, ...builtin].map(applyManualOverlay);
+    if (!selectedTag) return all;
+    return all.filter((m) => (m.tags || []).includes(selectedTag));
+  }, [userManuals, hiddenSlugs, selectedTag]);
 
   const books = useMemo(() => {
     let list = searchBooks(q, shelf);
@@ -194,6 +231,46 @@ export default function LibraryPage() {
             </label>
           </div>
         </div>
+
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="font-serif-display text-xl sm:text-2xl font-bold text-[#1C2A26]">Manuals</h2>
+              <p className="text-xs text-[#8A9B95] mt-0.5">Create, pin, and edit the same catalog as /manuals.</p>
+            </div>
+            {perms.canCreate ? <AddManualControl /> : null}
+          </div>
+          {selectedTag ? (
+            <button
+              type="button"
+              onClick={() => setSelectedTag("")}
+              className="px-2 py-0.5 rounded-full bg-[#1C2A26] text-[#FAF7F2] text-[10px] font-bold"
+            >
+              {selectedTag} ×
+            </button>
+          ) : null}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+            {libraryManuals.map((manual) => (
+              <ManualCard
+                key={manual.id}
+                manual={manual}
+                pinned={pinnedIds.has(manualPinId(manual.slug))}
+                canEdit={perms.canEdit}
+                canDelete={perms.canDelete}
+                onTagClick={setSelectedTag}
+                onDelete={() => {
+                  const kind = removeCatalogManual(manual.slug);
+                  if (!kind) return;
+                  toast({
+                    type: "info",
+                    title: kind === "deleted" ? "Manual deleted" : "Removed from catalog",
+                    description: `Removed “${manual.title}”.`,
+                  });
+                }}
+              />
+            ))}
+          </div>
+        </section>
 
         {savedBooks.length > 0 && !savedOnly && (
           <div className="space-y-3">
