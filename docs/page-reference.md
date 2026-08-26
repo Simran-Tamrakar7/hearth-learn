@@ -2,19 +2,19 @@
 
 ## `/manuals`
 
-Catalog of 65 builtin manuals + user manuals. Reads `MANUALS_DATA` filtered by `src/app/manuals/_content/_registry.ts` (`status: "active"`). Featured cards and dashboard pins also come from that registry. Writes nothing to the server. Pins and user manuals use `localStorage`.
+Catalog of 65 builtin manuals + user manuals. Reads `MANUALS_DATA` filtered by `src/app/manuals/_content/_registry.ts` (`status: "active"`). Featured cards and dashboard pins also come from that registry. Writes nothing to the server. Pins, user manuals, categories, and tags use `localStorage`. `+` add is `AddManualControl` (name + category + tags).
 
 Key UI: `src/app/manuals/page.tsx` (labeled **PAGE: /manuals**). Other manuals-only files sit in `src/app/manuals/_ui/`. Map: `src/app/manuals/CODE-FOR-THIS-PAGE.md`. Site-wide index: [where-to-edit.md](./where-to-edit.md).
 
 ## `/manuals/[slug]`
 
-Reader + TOC editor + inline chapter edit (no dialog). Builtin: `findHearthManual`. User: `getUserManual`. Testing Types: overlay + outline. Writes `hearth_manual_custom_data_*` (debounced while editing) and progress keys.
+Reader + TOC editor + inline chapter edit (no dialog). Builtin: `findHearthManual`. User: `getUserManual`. Testing Types: overlay + outline. Writes `hearth_manual_custom_data_*` (debounced while editing) and progress keys. Highlights: localStorage plus `POST /api/highlights` (userId, chapterId, tabType, text, start). Three tabs (Full Content / Summary / AI Summary) keep highlights separate.
 
-Key UI: `src/app/manuals/[slug]/page.tsx` (labeled **PAGE: /manuals/[slug]**), `_ui/LessonContentEditor`, `_ui/ToolSwitcher`, `_lib/manualParts.ts`.
+Key UI: `src/app/manuals/[slug]/page.tsx` (labeled **PAGE: /manuals/[slug]**), `_ui/LessonContentEditor`, `_ui/ToolSwitcher`, `_ui/Highlightable`, `_lib/manualParts.ts`.
 
 ## `/library`
 
-Reads `listedLibraryBooks()` from `src/app/library/_content/_registry.ts`. Writes `hearth_library_saved`. Opens `book.url` in a new tab.
+Reads `listedLibraryBooks()` from `src/app/library/_content/_registry.ts`. Writes `hearth_library_saved`. Opens `book.url` in a new tab. Also lists the manuals catalog with the same `+` / pin / kebab Edit as `/manuals`.
 
 ## `/trails`, `/trails/[slug]`
 
@@ -55,6 +55,10 @@ GET `/api/user/profile`.
 ## `/settings`
 
 `ThemeContext` + localStorage. Prisma `/api/settings` is unused by this page.
+
+## `/admin`
+
+Admin-only. Signup approvals, per-user permission checkboxes, and Manage categories (add / rename / delete → Uncategorized). Map: `src/app/admin/CODE-FOR-THIS-PAGE.md`.
 
 ## `/dashboard`
 

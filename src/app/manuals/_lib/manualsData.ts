@@ -81,16 +81,8 @@ export interface ManualItem {
   id: string;
   slug: string;
   title: string;
-  category:
-    | "Automation & Testing"
-    | "Quality Craft"
-    | "Delivery & Process"
-    | "Design"
-    | "AI & Prompting"
-    | "Foundations"
-    | "Ops & Systems"
-    | "Career"
-    | "Soft Skills";
+  category: string;
+  tags?: string[];
   description: string;
   chapterCount: number;
   estimatedTime: string;

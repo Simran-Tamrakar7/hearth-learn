@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PERMISSION_KEYS, PERMISSION_LABELS, type PermissionKey, type Permissions } from "@/lib/permissions";
 import { usePermissions } from "@/lib/useAuthz";
+import { CategoryManager } from "@/app/manuals/_ui/CategoryManager";
 
 type AdminUser = {
   id: string;
@@ -82,9 +83,11 @@ export default function AdminPage() {
       <main className="max-w-4xl mx-auto px-6 py-10 space-y-8">
         <div>
           <h1 className="font-serif-display text-3xl font-bold">User requests</h1>
-          <p className="text-sm text-[#52635E] mt-1">Approve signups, then grant permissions per person.</p>
+          <p className="text-sm text-[#52635E] mt-1">Approve signups, then grant permissions per person. Categories for the manuals catalog live here too.</p>
         </div>
         {error ? <p className="text-xs text-red-700">{error}</p> : null}
+
+        <CategoryManager />
 
         <section className="space-y-3">
           <h2 className="font-serif-display text-xl font-bold">Pending approvals ({pending.length})</h2>

@@ -33,6 +33,7 @@ model User {
   readingProgress     ReadingProgress[]
   bookmarks           Bookmark[]
   highlights          Highlight[]
+  manualHighlights    ManualHighlight[]
 }
 
 model Trail {
@@ -228,6 +229,22 @@ model Highlight {
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+}
+
+// Manual chapter highlights (Full Content / Summary / AI Summary). Dual-written with localStorage.
+model ManualHighlight {
+  id        String   @id
+  userId    String
+  chapterId String
+  tabType   String   // fullContent | summary | aiSummary
+  text      String
+  color     String   @default("yellow")
+  start     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, chapterId])
 }
 
 model PasswordResetToken {

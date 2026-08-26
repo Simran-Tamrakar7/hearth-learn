@@ -211,7 +211,7 @@ export function getUserManual(slug: string): ManualItem | undefined {
   return getUserManuals().find((m) => m.slug === slug || m.id === slug || m.id === `manual-${slug}`);
 }
 
-export function emptyManual(title: string): ManualItem {
+export function emptyManual(title: string, opts?: { category?: string; tags?: string[] }): ManualItem {
   const t = title.trim() || "Untitled manual";
   const slug = `user-${slugifyTitle(t)}`;
   const chapter: ManualChapter = {
@@ -234,7 +234,8 @@ export function emptyManual(title: string): ManualItem {
     id: `manual-${slug}`,
     slug,
     title: t,
-    category: "Foundations",
+    category: opts?.category?.trim() || "Foundations",
+    tags: (opts?.tags || []).map((x) => x.trim()).filter(Boolean),
     description: "",
     chapterCount: 1,
     estimatedTime: "15 min",
@@ -242,6 +243,30 @@ export function emptyManual(title: string): ManualItem {
     coverImage: COVERS[Math.abs(t.length) % COVERS.length],
     chapters: [chapter],
   };
+}
+
+const CUSTOM_PREFIX = "hearth_manual_custom_data_";
+
+/** Overlay category/tags/title from the reader’s custom-data blob onto a catalog row. */
+export function applyManualOverlay(manual: ManualItem): ManualItem {
+  if (typeof window === "undefined") return { ...manual, tags: manual.tags || [] };
+  try {
+    const raw = localStorage.getItem(`${CUSTOM_PREFIX}${manual.id}`);
+    if (!raw) return { ...manual, tags: manual.tags || [] };
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return { ...manual, tags: manual.tags || [] };
+    return {
+      ...manual,
+      title: typeof parsed.title === "string" && parsed.title ? parsed.title : manual.title,
+      description: typeof parsed.description === "string" ? parsed.description : manual.description,
+      category: typeof parsed.category === "string" && parsed.category ? parsed.category : manual.category,
+      tags: Array.isArray(parsed.tags)
+        ? parsed.tags.filter((t: unknown) => typeof t === "string" && t.trim()).map((t: string) => t.trim())
+        : manual.tags || [],
+    };
+  } catch {
+    return { ...manual, tags: manual.tags || [] };
+  }
 }
 
 export function mergeHiddenSlug(ids: string[], slug: string): string[] {
@@ -310,6 +335,13 @@ export function deleteUserManual(slug: string): boolean {
   }
   window.dispatchEvent(new Event(EVENT));
   return true;
+}
+
+export function mapUserManuals(fn: (m: ManualItem) => ManualItem) {
+  if (typeof window === "undefined") return;
+  const next = getUserManuals().map(fn);
+  localStorage.setItem(STORE, JSON.stringify(next));
+  window.dispatchEvent(new Event(EVENT));
 }
 
 export function saveUserManual(manual: ManualItem): ManualItem {

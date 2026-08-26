@@ -2,18 +2,15 @@
 
 /* PAGE: /manuals  — catalog grid (this file). Reader: ./[slug]/page.tsx. Map: ./CODE-FOR-THIS-PAGE.md */
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { Navbar } from "@/components/layout/Navbar";
-import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import { MANUALS_DATA, findHearthManual, ManualItem } from "@/app/manuals/_lib/manualsData";
 import { activeManualSlugs } from "@/app/manuals/_content/_registry";
 import { genres } from "@/app/manuals/_content/_helpers.js";
-import { Compass, Search, Clock, BookOpen, ArrowRight, Pin, ExternalLink, Code2, Plus } from "lucide-react";
+import { Compass, Search, BookOpen, ArrowRight, Pin, ExternalLink, Code2 } from "lucide-react";
 import {
   PinButton,
   subscribePinnedItems,
@@ -22,11 +19,13 @@ import {
   PinnedItemMetadata,
   manualPinId,
 } from "@/components/ui/PinButton";
-import { emptyManual, getUserManual, hiddenManualSlugs, removeCatalogManual, saveUserManual, subscribeUserManuals } from "@/app/manuals/_lib/userManuals";
-import { kebabItems, KebabMenu } from "@/app/manuals/_ui/KebabMenu";
+import { applyManualOverlay, getUserManual, hiddenManualSlugs, removeCatalogManual, subscribeUserManuals } from "@/app/manuals/_lib/userManuals";
+import { subscribeCategories } from "@/app/manuals/_lib/categories";
+import { AddManualControl } from "@/app/manuals/_ui/AddManualControl";
+import { ManualCard } from "@/app/manuals/_ui/ManualCard";
 import { usePermissions } from "@/lib/useAuthz";
 
-const GENRE_CATEGORY: Record<string, ManualItem["category"] | "All"> = {
+const GENRE_CATEGORY: Record<string, string> = {
   all: "All",
   automation: "Automation & Testing",
   quality: "Quality Craft",
@@ -44,7 +43,7 @@ type GenreRow = {
   label: string;
   blurb: string;
   color: string;
-  category: ManualItem["category"] | "All";
+  category: string;
 };
 
 const CATALOG_GENRES: GenreRow[] = (genres as { id: string; label: string; blurb: string; color: string }[]).map(
@@ -73,117 +72,17 @@ function resolvePinnedManual(pin: PinnedItemMetadata, userManuals: ManualItem[])
   };
 }
 
-function ManualCard({
-  manual,
-  pinned,
-  onDelete,
-  canEdit,
-  canDelete,
-}: {
-  manual: ManualItem;
-  pinned?: boolean;
-  onDelete?: () => void;
-  canEdit?: boolean;
-  canDelete?: boolean;
-}) {
-  return (
-    <motion.div whileHover={{ y: -6, scale: 1.02 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
-      <div className="relative h-full">
-        <div className="absolute top-4 right-4 z-20 flex items-center gap-1">
-          <KebabMenu
-            label={`Actions for ${manual.title}`}
-            items={kebabItems([
-              canEdit && {
-                label: "Edit",
-                onClick: () => {
-                  window.location.href = `/manuals/${manual.slug}?edit=1`;
-                },
-              },
-              canDelete && {
-                label: "Delete",
-                danger: true,
-                onClick: () => {
-                  if (window.confirm(`Delete “${manual.title}”? This cannot be undone.`)) onDelete?.();
-                },
-              },
-            ])}
-          />
-          <PinButton
-            itemId={manualPinId(manual.slug)}
-            itemTitle={manual.title}
-            itemCategory={manual.category}
-            itemType="manual"
-            itemUrl={`/manuals/${manual.slug}`}
-            variant="icon"
-          />
-        </div>
-        <Link href={`/manuals/${manual.slug}`} className="block h-full">
-          <Card
-            variant="default"
-            hoverable={true}
-            className={`h-full border-[#E7E0D3] bg-white rounded-2xl overflow-hidden flex flex-col justify-between shadow-xs hover:shadow-lg transition-all group p-0 ${
-              pinned ? "ring-2 ring-[#D97706]/70 border-[#D97706]" : ""
-            }`}
-          >
-            <div>
-              <div className="h-40 relative overflow-hidden bg-[#FAF7F2]">
-                <img
-                  src={manual.coverImage}
-                  alt={manual.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full bg-[#1C2A26] text-[#D97706] text-[10px] font-bold uppercase tracking-wider shadow-2xs">
-                  {manual.category}
-                </span>
-                {pinned && (
-                  <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#D97706] text-[10px] font-bold uppercase tracking-wider">
-                    <Pin className="w-3 h-3 fill-current" /> Pinned
-                  </span>
-                )}
-              </div>
-            <div className="p-4 sm:p-5 space-y-2.5">
-              <div className="flex items-center justify-between text-[11px] text-[#8A9B95] font-semibold">
-                <span className="flex items-center gap-1.5">
-                  <BookOpen className="w-3.5 h-3.5 text-[#D97706]" /> {manual.chapterCount} Chapters
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-[#D97706]" /> {manual.estimatedTime}
-                </span>
-              </div>
-              <div className="space-y-1">
-                <h2 className="font-serif-display text-lg font-bold text-[#1C2A26] group-hover:text-[#D97706] transition-colors leading-snug">
-                  {manual.title}
-                </h2>
-                <p className="text-xs text-[#52635E] line-clamp-2 leading-relaxed">{manual.description}</p>
-              </div>
-            </div>
-          </div>
-          <div className="p-4 sm:p-5 pt-0 border-t border-transparent group-hover:border-[#FAF7F2] transition-colors">
-            <div className="pt-2.5 flex items-center justify-between text-xs font-bold text-[#1C2A26] group-hover:text-[#D97706]">
-              <span>Open Manual</span>
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </div>
-        </Card>
-      </Link>
-    </div>
-    </motion.div>
-  );
-}
-
 export default function ManualsCatalogPage() {
   const { toast } = useToast();
-  const router = useRouter();
   const perms = usePermissions();
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [selectedTag, setSelectedTag] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [pinnedManuals, setPinnedManuals] = useState<ReturnType<typeof resolvePinnedManual>[]>([]);
   const [pinnedShowcase, setPinnedShowcase] = useState<PinnedItemMetadata[]>([]);
   const [userManuals, setUserManuals] = useState<ManualItem[]>([]);
   const [hiddenSlugs, setHiddenSlugs] = useState<Set<string>>(new Set());
-  const [naming, setNaming] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
-  const nameRef = useRef<HTMLInputElement>(null);
+  const [categories, setCategories] = useState<string[]>([]);
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -193,9 +92,7 @@ export default function ManualsCatalogPage() {
     });
   }, []);
 
-  useEffect(() => {
-    if (naming) nameRef.current?.focus();
-  }, [naming]);
+  useEffect(() => subscribeCategories(setCategories), []);
 
   useEffect(() => {
     return subscribePinnedItems((allPins) => {
@@ -209,41 +106,50 @@ export default function ManualsCatalogPage() {
     () => MANUALS_DATA.filter((m) => activeManualSlugs().has(m.slug) && !hiddenSlugs.has(m.slug)),
     [hiddenSlugs]
   );
-  const catalogSource = useMemo(() => [...userManuals, ...builtinCatalog], [userManuals, builtinCatalog]);
+  const catalogSource = useMemo(
+    () => [...userManuals, ...builtinCatalog].map(applyManualOverlay),
+    [userManuals, builtinCatalog]
+  );
 
   const filteredManuals = catalogSource.filter((manual) => {
     const matchesCategory = selectedCategory === "All" || manual.category === selectedCategory;
+    const matchesTag = !selectedTag || (manual.tags || []).includes(selectedTag);
     const needle = searchQuery.trim().toLowerCase();
-    const hay = `${manual.title} ${manual.description} ${manual.category} ${manual.slug}`.toLowerCase();
+    const hay = `${manual.title} ${manual.description} ${manual.category} ${(manual.tags || []).join(" ")} ${manual.slug}`.toLowerCase();
     const matchesSearch = needle === "" || hay.includes(needle);
-    return matchesCategory && matchesSearch;
+    return matchesCategory && matchesTag && matchesSearch;
   });
   const catalogManuals = filteredManuals;
 
-  function addManual(e: React.FormEvent) {
-    e.preventDefault();
-    const title = newTitle.trim();
-    if (!title) {
-      nameRef.current?.focus();
-      return;
-    }
-    const saved = saveUserManual(emptyManual(title));
-    setNaming(false);
-    setNewTitle("");
-    router.push(`/manuals/${saved.slug}?edit=1`);
-  }
+  const genreByCategory = useMemo(
+    () => Object.fromEntries(CATALOG_GENRES.filter((g) => g.id !== "all").map((g) => [g.category, g])),
+    []
+  );
 
   const grouped = useMemo(() => {
-    return CATALOG_GENRES.filter((g) => g.id !== "all")
-      .map((g) => ({
-        ...g,
-        items: catalogManuals.filter((m) => m.category === g.category),
-      }))
+    const known = new Set(categories);
+    const fromList = categories
+      .map((c) => {
+        const g = genreByCategory[c];
+        return {
+          id: g?.id || c,
+          label: g?.label || c,
+          blurb: g?.blurb || "",
+          category: c,
+          items: catalogManuals.filter((m) => m.category === c),
+        };
+      })
       .filter((g) => g.items.length > 0);
-  }, [catalogManuals]);
+    const leftover = catalogManuals.filter((m) => !known.has(m.category));
+    if (leftover.length) {
+      fromList.push({ id: "other", label: "Other", blurb: "", category: "Other", items: leftover });
+    }
+    return fromList;
+  }, [catalogManuals, categories, genreByCategory]);
 
   const sections = selectedCategory === "All" ? grouped : grouped.filter((g) => g.category === selectedCategory);
   const totalCount = catalogSource.length;
+  const categoryTabs = [{ id: "all", label: "All", category: "All" }, ...categories.map((c) => ({ id: c, label: genreByCategory[c]?.label || c, category: c }))];
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1C2A26]">
@@ -373,7 +279,7 @@ export default function ManualsCatalogPage() {
                   COURSE CATALOGUE · MASTER MANUALS
                 </Badge>
                 <span className="text-xs font-semibold text-[#8A9B95]">
-                  {totalCount} Manuals • {CATALOG_GENRES.length - 1} Categories
+                  {totalCount} Manuals • {categories.length} Categories
                 </span>
               </div>
 
@@ -385,41 +291,7 @@ export default function ManualsCatalogPage() {
                 Pathwise paths, grouped by craft — open a category, then work it chapter by chapter.
               </p>
             </div>
-            {perms.canCreate ? (
-              naming ? (
-                <form onSubmit={addManual} className="shrink-0 flex items-center gap-2">
-                  <input
-                    ref={nameRef}
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Escape") {
-                        setNaming(false);
-                        setNewTitle("");
-                      }
-                    }}
-                    placeholder="Manual name"
-                    aria-label="Manual name"
-                    className="h-11 w-52 sm:w-64 px-3 text-sm bg-white border border-[#E7E0D3] rounded-2xl focus:outline-none focus:border-[#D97706] shadow-xs"
-                  />
-                  <button
-                    type="submit"
-                    className="h-11 px-4 rounded-2xl bg-[#1C2A26] text-[#FAF7F2] text-xs font-semibold hover:bg-[#243530] shadow-xs"
-                  >
-                    Open
-                  </button>
-                </form>
-              ) : (
-                <button
-                  type="button"
-                  aria-label="Add manual"
-                  onClick={() => setNaming(true)}
-                  className="shrink-0 inline-flex items-center justify-center h-11 w-11 rounded-2xl bg-[#1C2A26] text-[#FAF7F2] hover:bg-[#243530] shadow-xs"
-                >
-                  <Plus className="w-5 h-5" />
-                </button>
-              )
-            ) : null}
+            {perms.canCreate ? <AddManualControl /> : null}
           </div>
 
           <div className="pt-1 sm:max-w-md">
@@ -436,8 +308,8 @@ export default function ManualsCatalogPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 border-b border-[#E7E0D3] pb-3 overflow-x-auto" role="tablist" aria-label="Genres">
-          {CATALOG_GENRES.map((cat) => (
+        <div className="flex flex-wrap items-center gap-2 border-b border-[#E7E0D3] pb-3 overflow-x-auto" role="tablist" aria-label="Categories">
+          {categoryTabs.map((cat) => (
             <button
               key={cat.id}
               type="button"
@@ -454,6 +326,18 @@ export default function ManualsCatalogPage() {
             </button>
           ))}
         </div>
+        {selectedTag ? (
+          <div className="flex items-center gap-2 -mt-6">
+            <span className="text-xs text-[#52635E]">Filtered by tag</span>
+            <button
+              type="button"
+              onClick={() => setSelectedTag("")}
+              className="px-2 py-0.5 rounded-full bg-[#1C2A26] text-[#FAF7F2] text-[10px] font-bold"
+            >
+              {selectedTag} ×
+            </button>
+          </div>
+        ) : null}
 
         {sections.length === 0 && pinnedManuals.length === 0 ? (
           <p className="text-[#52635E]">Nothing matches — try another word.</p>
@@ -472,6 +356,7 @@ export default function ManualsCatalogPage() {
                     pinned={pinnedIds.has(manualPinId(manual.slug))}
                     canEdit={perms.canEdit}
                     canDelete={perms.canDelete}
+                    onTagClick={setSelectedTag}
                     onDelete={() => {
                       const kind = removeCatalogManual(manual.slug);
                       if (!kind) return;

@@ -28,6 +28,7 @@ Server **APIs** stay under `src/app/api/` (URLs). Shared chrome is `src/componen
 | `/profile` | `src/app/profile/` |
 | `/settings` | `src/app/settings/` |
 | `/login` | `src/app/login/` |
+| `/admin` | `src/app/admin/` |
 | `/tags` | `src/app/tags/` |
 | `/certificates/[id]` | `src/app/certificates/[id]/` |
 | `/trails` | `src/app/trails/` (redirects to manuals) |

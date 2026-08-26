@@ -3,7 +3,7 @@
 /* ============================================================================
  * HEADING: SHARED — PinButton
  * Not a page. These pages all use this same file:
- *   /manuals  /manuals/[slug]  /dashboard  /showcase-wall  /rest/games  /rest/cookbook
+ *   /manuals  /manuals/[slug]  /library  /dashboard  /showcase-wall  /rest/games  /rest/cookbook
  * Changing this file changes all of those pages at once.
  * ========================================================================== */
 
@@ -95,6 +95,17 @@ export function savePinnedItems(items: PinnedItemMetadata[]) {
   }
 }
 
+export function togglePinnedItem(item: Omit<PinnedItemMetadata, "pinnedAt">): boolean {
+  const items = getPinnedItems();
+  const existingIndex = items.findIndex((p) => p.id === item.id);
+  if (existingIndex >= 0) {
+    savePinnedItems(items.filter((p) => p.id !== item.id));
+    return false;
+  }
+  savePinnedItems([...items, { ...item, pinnedAt: Date.now() }]);
+  return true;
+}
+
 export function PinButton({
   itemId,
   itemTitle,
@@ -123,31 +134,14 @@ export function PinButton({
     e.preventDefault();
     e.stopPropagation();
 
-    const items = getPinnedItems();
-    const existingIndex = items.findIndex((p) => p.id === itemId);
-
-    let nextItems: PinnedItemMetadata[];
-    let pinnedNow = false;
-
-    if (existingIndex >= 0) {
-      nextItems = items.filter((p) => p.id !== itemId);
-    } else {
-      nextItems = [
-        ...items,
-        {
-          id: itemId,
-          title: itemTitle,
-          category: itemCategory,
-          type: itemType,
-          url: itemUrl,
-          icon: itemIcon,
-          pinnedAt: Date.now(),
-        },
-      ];
-      pinnedNow = true;
-    }
-
-    savePinnedItems(nextItems);
+    const pinnedNow = togglePinnedItem({
+      id: itemId,
+      title: itemTitle,
+      category: itemCategory,
+      type: itemType,
+      url: itemUrl,
+      icon: itemIcon,
+    });
     setIsPinned(pinnedNow);
 
     toast({

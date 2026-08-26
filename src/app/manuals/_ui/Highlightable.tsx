@@ -36,47 +36,57 @@ export function Highlightable({
   onAdd,
 }: {
   children: ReactNode;
-  onAdd: (text: string, color: HighlightColor) => void;
+  onAdd: (text: string, color: HighlightColor, start: number) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [bar, setBar] = useState<{ x: number; y: number; text: string } | null>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  const [bar, setBar] = useState<{ x: number; y: number; text: string; start: number } | null>(null);
 
   useEffect(() => {
-    const hide = () => setBar(null);
+    // ponytail: React 17+ delegates to root, so stopPropagation on the toolbar never reaches this native listener.
+    const hide = (e: Event) => {
+      if (barRef.current?.contains(e.target as Node)) return;
+      setBar(null);
+    };
     document.addEventListener("mousedown", hide);
     return () => document.removeEventListener("mousedown", hide);
   }, []);
 
+  function showFromSelection() {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !ref.current) {
+      setBar(null);
+      return;
+    }
+    const text = sel.toString().trim();
+    if (!text || text.length > 500) return;
+    const node = sel.anchorNode;
+    if (!node || !ref.current.contains(node)) return;
+    const range = sel.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    const host = ref.current.getBoundingClientRect();
+    const full = ref.current.textContent || "";
+    const start = Math.max(0, full.indexOf(text));
+    setBar({
+      x: Math.min(Math.max(rect.left - host.left + rect.width / 2, 24), Math.max(host.width - 24, 24)),
+      y: Math.max(rect.top - host.top - 8, 8),
+      text,
+      start,
+    });
+  }
+
   return (
-    <div
-      ref={ref}
-      className="relative"
-      onMouseUp={() => {
-        const sel = window.getSelection();
-        if (!sel || sel.isCollapsed || !ref.current) {
-          setBar(null);
-          return;
-        }
-        const text = sel.toString().trim();
-        if (!text || text.length > 500) return;
-        const node = sel.anchorNode;
-        if (!node || !ref.current.contains(node)) return;
-        const range = sel.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
-        const host = ref.current.getBoundingClientRect();
-        setBar({
-          x: Math.min(Math.max(rect.left - host.left + rect.width / 2, 24), host.width - 24),
-          y: Math.max(rect.top - host.top - 8, 8),
-          text,
-        });
-      }}
-    >
+    <div ref={ref} className="relative" onMouseUp={showFromSelection}>
       {children}
       {bar ? (
         <div
+          ref={barRef}
           className="absolute z-20 flex items-center gap-1 px-1.5 py-1 rounded-full bg-[#1C2A26] shadow-lg"
           style={{ left: bar.x, top: bar.y, transform: "translate(-50%, -100%)" }}
-          onMouseDown={(e) => e.stopPropagation()}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
         >
           <Highlighter className="w-3 h-3 text-[#FAF7F2] ml-1" />
           {COLORS.map((color) => (
@@ -85,8 +95,9 @@ export function Highlightable({
               type="button"
               title={`Highlight ${color}`}
               aria-label={`Highlight ${color}`}
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => {
-                onAdd(bar.text, color);
+                onAdd(bar.text, color, bar.start);
                 setBar(null);
                 window.getSelection()?.removeAllRanges();
               }}

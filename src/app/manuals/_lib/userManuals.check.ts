@@ -68,6 +68,12 @@ assert.equal(blank.chapters.length, 1);
 assert.equal(blank.chapters[0].contentMarkdown, "");
 assert.equal(blank.chapters[0].customSummary, "");
 assert.equal(blank.chapters[0].aiSummary, "");
+assert.equal(blank.category, "Foundations");
+assert.deepEqual(blank.tags, []);
+
+const tagged = emptyManual("Cabin", { category: "Automation & Testing", tags: ["qa", "draft"] });
+assert.equal(tagged.category, "Automation & Testing");
+assert.deepEqual(tagged.tags, ["qa", "draft"]);
 
 assert.equal(deleteUserManual("missing"), false);
 assert.deepEqual(mergeHiddenSlug(["cypress"], "git-version-control"), ["cypress", "git-version-control"]);

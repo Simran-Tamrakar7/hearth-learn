@@ -20,16 +20,23 @@ import { PinButton, getPinnedItems, PinnedItemMetadata, manualPinId } from "@/co
 import { ToolSwitcher } from "@/app/manuals/_ui/ToolSwitcher";
 import { LessonContentEditor } from "@/app/manuals/_ui/LessonContentEditor";
 import { kebabItems, KebabMenu } from "@/app/manuals/_ui/KebabMenu";
-import { Highlightable, HighlightsList } from "@/app/manuals/_ui/Highlightable";
+import { Highlightable, HighlightsList, MarkedText } from "@/app/manuals/_ui/Highlightable";
 import {
   addHighlight,
   allHighlights,
+  deleteManualHighlight,
+  fetchManualHighlights,
   highlightsForField,
+  lastAdded,
+  mergeHighlightStores,
   parseHighlightStore,
+  postManualHighlight,
   removeHighlight,
   type HighlightStore,
   wrapHighlightHtml,
 } from "@/app/manuals/_lib/highlights";
+import { listedCategories, subscribeCategories } from "@/app/manuals/_lib/categories";
+import { TagInput } from "@/app/manuals/_ui/TagInput";
 import { usePermissions, useAppUserId } from "@/lib/useAuthz";
 import { highlightsStoreKey, isScopeReady, progressStoreKey, readScopedRaw, writeScopedRaw } from "@/lib/userScope";
 import { readerChaptersFromOverlay, testingOverlayForChapter } from "@/app/manuals/_ui/testing-types-reader";
@@ -150,7 +157,9 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   const [manualTitle, setManualTitle] = useState<string>(initialManual.title);
   const [manualDescription, setManualDescription] = useState<string>(initialManual.description);
   const [manualCategory, setManualCategory] = useState<string>(initialManual.category);
+  const [manualTags, setManualTags] = useState<string[]>(initialManual.tags || []);
   const [manualEstimatedTime, setManualEstimatedTime] = useState<string>(initialManual.estimatedTime);
+  const [categoryOptions, setCategoryOptions] = useState<string[]>(() => listedCategories());
 
   const isTestingTypesManual =
     slug === "testing-types" ||
@@ -220,13 +229,15 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
 
   const persistTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingSave = useRef<ManualChapter[] | null>(null);
-  const pendingMeta = useRef<{ title: string; description: string; category: string; estimatedTime: string } | null>(null);
+  const pendingMeta = useRef<{ title: string; description: string; category: string; estimatedTime: string; tags: string[] } | null>(null);
   const chapterEditSnapshot = useRef<{
     chapters: ManualChapter[];
-    meta: { title: string; description: string; category: string; estimatedTime: string };
+    meta: { title: string; description: string; category: string; estimatedTime: string; tags: string[] };
   } | null>(null);
   const [pinnedShowcase, setPinnedShowcase] = useState<PinnedItemMetadata[]>([]);
   const [highlights, setHighlights] = useState<HighlightStore>({});
+
+  useEffect(() => subscribeCategories(setCategoryOptions), []);
 
   useEffect(() => {
     const updatePins = () => {
@@ -249,6 +260,14 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       setCompletedChapterIds([]);
     }
     setHighlights(parseHighlightStore(readScopedRaw(highlightsStoreKey(initialManual.id))));
+    void fetchManualHighlights(catalogChapters.map((c) => c.id).concat(chapters.map((c) => c.id))).then((remote) => {
+      if (Object.keys(remote).length === 0) return;
+      setHighlights((local) => {
+        const merged = mergeHighlightStores(local, remote);
+        writeScopedRaw(highlightsStoreKey(initialManual.id), JSON.stringify(merged));
+        return merged;
+      });
+    });
 
     const savedCustomData = localStorage.getItem(`hearth_manual_custom_data_${initialManual.id}`);
     let parsed: Record<string, unknown> | null = null;
@@ -261,6 +280,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       if (parsed.title) setManualTitle(String(parsed.title));
       if (parsed.description) setManualDescription(String(parsed.description));
       if (parsed.category) setManualCategory(String(parsed.category));
+      if (Array.isArray(parsed.tags)) setManualTags(parsed.tags.filter((t) => typeof t === "string"));
       if (parsed.estimatedTime) setManualEstimatedTime(String(parsed.estimatedTime));
     }
     if (isTestingTypesManual) {
@@ -309,11 +329,13 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     const description = meta?.description ?? manualDescription;
     const category = meta?.category ?? manualCategory;
     const estimatedTime = meta?.estimatedTime ?? manualEstimatedTime;
+    const tags = meta?.tags ?? manualTags;
     saveCustomDataToStorage({
       title,
       description,
       category,
       estimatedTime,
+      tags,
       chapters: updated,
       tocManaged: true,
       ...(isTestingTypesManual ? { tocCatalogVersion: TESTING_TYPES_TOC_VERSION } : {}),
@@ -321,8 +343,9 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     persistUserManual({
       title,
       description,
-      category: category as ManualItem["category"],
+      category,
       estimatedTime,
+      tags,
       chapters: updated,
     });
     setSaveHint("Saved");
@@ -344,6 +367,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       description: manualDescription,
       category: manualCategory,
       estimatedTime: manualEstimatedTime,
+      tags: manualTags,
     };
     saveCustomDataToStorage({
       ...m,
@@ -354,8 +378,9 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     persistUserManual({
       title: m.title,
       description: m.description,
-      category: m.category as ManualItem["category"],
+      category: m.category,
       estimatedTime: m.estimatedTime,
+      tags: m.tags,
       chapters: ch,
     });
     setSaveHint("Saved");
@@ -401,6 +426,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       setManualDescription(snap.meta.description);
       setManualCategory(snap.meta.category);
       setManualEstimatedTime(snap.meta.estimatedTime);
+      setManualTags(snap.meta.tags || []);
       persistChapters(snap.chapters);
     }
     chapterEditSnapshot.current = null;
@@ -512,10 +538,11 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     title: string,
     description: string,
     category: string,
-    estimatedTime: string
+    estimatedTime: string,
+    tags: string[] = manualTags
   ) => {
     if (!perms.canEdit) return;
-    pendingMeta.current = { title, description, category, estimatedTime };
+    pendingMeta.current = { title, description, category, estimatedTime, tags };
     setSaveHint("Saving…");
     if (persistTimer.current) clearTimeout(persistTimer.current);
     persistTimer.current = setTimeout(() => {
@@ -529,6 +556,19 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     writeScopedRaw(highlightsStoreKey(initialManual.id), JSON.stringify(next));
   };
 
+  const applyHighlight = (text: string, color: Parameters<typeof addHighlight>[3], start: number) => {
+    const field = viewMode === "aiSummary" ? "aiSummary" : viewMode === "summary" ? "summary" : "full";
+    const next = addHighlight(highlights, activeChapter.id, text, color, field, start);
+    persistHighlights(next);
+    const row = lastAdded(next, activeChapter.id);
+    if (row) void postManualHighlight(row);
+  };
+
+  const dropHighlight = (row: { id: string; chapterId: string }) => {
+    persistHighlights(removeHighlight(highlights, row.chapterId, row.id));
+    void deleteManualHighlight(row.id);
+  };
+
   const enterChapterEdit = (idx: number) => {
     if (!perms.canEdit) return;
     commitPending();
@@ -539,6 +579,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
         description: manualDescription,
         category: manualCategory,
         estimatedTime: manualEstimatedTime,
+        tags: manualTags,
       },
     };
     setActiveChapterIndex(idx);
@@ -1186,7 +1227,26 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                 itemUrl={`/manuals/${slug}`}
                 variant="button"
               />
-              <Badge variant="amber">{manualCategory}</Badge>
+              {chapterEdit ? (
+                <select
+                  value={manualCategory}
+                  onChange={(e) => {
+                    const category = e.target.value;
+                    setManualCategory(category);
+                    persistManualMeta(manualTitle, manualDescription, category, manualEstimatedTime, manualTags);
+                  }}
+                  aria-label="Category"
+                  className="h-8 px-2 text-[11px] font-bold uppercase tracking-wider bg-[#FEF3C7] border border-[#D97706]/40 rounded-lg text-[#D97706] focus:outline-none"
+                >
+                  {(categoryOptions.includes(manualCategory) ? categoryOptions : [manualCategory, ...categoryOptions]).map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <Badge variant="amber">{manualCategory}</Badge>
+              )}
             </div>
           </div>
 
@@ -1213,6 +1273,13 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                   }}
                   className="w-full bg-transparent text-xs sm:text-sm text-[#52635E] leading-relaxed focus:outline-none resize-none border-b border-transparent focus:border-[#D97706]"
                 />
+                <TagInput
+                  tags={manualTags}
+                  onChange={(tags) => {
+                    setManualTags(tags);
+                    persistManualMeta(manualTitle, manualDescription, manualCategory, manualEstimatedTime, tags);
+                  }}
+                />
               </>
             ) : (
               <>
@@ -1222,6 +1289,15 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                 <p className="text-xs sm:text-sm text-[#52635E] leading-relaxed w-full">
                   {manualDescription}
                 </p>
+                {manualTags.length > 0 ? (
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    {manualTags.map((tag) => (
+                      <span key={tag} className="px-2 py-0.5 rounded-full bg-[#FAF7F2] border border-[#E7E0D3] text-[10px] font-bold text-[#52635E]">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
               </>
             )}
           </div>
@@ -1844,19 +1920,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                 </div>
               ) : (
               <>
-              <Highlightable
-                onAdd={(text, color) =>
-                  persistHighlights(
-                    addHighlight(
-                      highlights,
-                      activeChapter.id,
-                      text,
-                      color,
-                      viewMode === "aiSummary" ? "aiSummary" : viewMode === "summary" ? "summary" : "full"
-                    )
-                  )
-                }
-              >
+              <Highlightable onAdd={applyHighlight}>
               {viewMode === "summary" ? (
                 <motion.div
                   initial={{ opacity: 0, y: 3 }}
@@ -1897,7 +1961,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                   {/* Overview Text */}
                   {(overlayChapter?.desc || activeChapter.overviewText) && (
                     <p className="text-xs sm:text-sm text-[#52635E] leading-relaxed font-sans">
-                      {overlayChapter?.desc || activeChapter.overviewText}
+                      <MarkedText text={overlayChapter?.desc || activeChapter.overviewText || ""} highlights={activeFieldHighlights} />
                     </p>
                   )}
 
@@ -1909,7 +1973,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                         <span>Why it matters</span>
                       </div>
                       <p className="text-xs sm:text-[13px] text-[#52635E] leading-relaxed">
-                        {overlayChapter?.why || activeChapter.why}
+                        <MarkedText text={overlayChapter?.why || activeChapter.why || ""} highlights={activeFieldHighlights} />
                       </p>
                     </div>
 
@@ -1919,7 +1983,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                         <span>When to use it</span>
                       </div>
                       <p className="text-xs sm:text-[13px] text-[#52635E] leading-relaxed">
-                        {overlayChapter?.when || activeChapter.when}
+                        <MarkedText text={overlayChapter?.when || activeChapter.when || ""} highlights={activeFieldHighlights} />
                       </p>
                     </div>
                   </div>
@@ -1934,8 +1998,10 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
 
                       <p className="text-xs sm:text-sm text-[#1C2A26] leading-relaxed">
                         <strong className="font-bold text-[#0F172A]">
-                          {(overlayChapter?.practical || activeChapter.practical)?.app}
-                        </strong> — {(overlayChapter?.practical || activeChapter.practical)?.scenario}
+                          <MarkedText text={(overlayChapter?.practical || activeChapter.practical)?.app || ""} highlights={activeFieldHighlights} />
+                        </strong>{" "}
+                        —{" "}
+                        <MarkedText text={(overlayChapter?.practical || activeChapter.practical)?.scenario || ""} highlights={activeFieldHighlights} />
                       </p>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
@@ -1945,7 +2011,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                             {(overlayChapter?.practical as { failLabel?: string } | undefined)?.failLabel || "Fail Condition"}
                           </span>
                           <p className="text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed">
-                            {(overlayChapter?.practical || activeChapter.practical)?.fail}
+                            <MarkedText text={(overlayChapter?.practical || activeChapter.practical)?.fail || ""} highlights={activeFieldHighlights} />
                           </p>
                         </div>
                         ) : null}
@@ -1956,7 +2022,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                             {(overlayChapter?.practical as { passLabel?: string } | undefined)?.passLabel || "Pass Condition"}
                           </span>
                           <p className="text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed">
-                            {(overlayChapter?.practical || activeChapter.practical)?.pass}
+                            <MarkedText text={(overlayChapter?.practical || activeChapter.practical)?.pass || ""} highlights={activeFieldHighlights} />
                           </p>
                         </div>
                         ) : null}
@@ -1967,7 +2033,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                             Value delivered
                           </span>
                           <p className="text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed">
-                            {(overlayChapter?.practical as { value?: string }).value}
+                            <MarkedText text={(overlayChapter?.practical as { value?: string } | undefined)?.value || ""} highlights={activeFieldHighlights} />
                           </p>
                         </div>
                         ) : null}
@@ -1985,7 +2051,9 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                         </div>
                         <ul className="space-y-1.5 text-xs sm:text-[13px] text-[#52635E] pl-4 list-disc marker:text-emerald-600/70 leading-relaxed">
                           {overlayChapter.advantages!.map((adv, ai) => (
-                            <li key={ai}>{adv}</li>
+                            <li key={ai}>
+                              <MarkedText text={adv} highlights={activeFieldHighlights} />
+                            </li>
                           ))}
                         </ul>
                       </div>
@@ -1997,7 +2065,9 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                         </div>
                         <ul className="space-y-1.5 text-xs sm:text-[13px] text-[#52635E] pl-4 list-disc marker:text-rose-600/70 leading-relaxed">
                           {overlayChapter.limitations!.map((lim, li) => (
-                            <li key={li}>{lim}</li>
+                            <li key={li}>
+                              <MarkedText text={lim} highlights={activeFieldHighlights} />
+                            </li>
                           ))}
                         </ul>
                       </div>
@@ -2033,7 +2103,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                             <Layers className="w-3.5 h-3.5 text-[#D97706]" /> {sec.title}
                           </h4>
                           <div className="text-xs sm:text-[13px] text-[#52635E] leading-relaxed whitespace-pre-line font-sans">
-                            {sec.body}
+                            <MarkedText text={sec.body} highlights={activeFieldHighlights} />
                           </div>
                         </div>
                       ))}
@@ -2063,7 +2133,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                   <HighlightsList
                     rows={highlights[activeChapter.id] || []}
                     emptyLabel="No highlights in this chapter. Select text in Full Content, Summary, or AI Summary."
-                    onRemove={(row) => persistHighlights(removeHighlight(highlights, row.chapterId, row.id))}
+                    onRemove={dropHighlight}
                   />
                   {allHighlights(highlights).length > (highlights[activeChapter.id] || []).length ? (
                     <div>
@@ -2071,7 +2141,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                       <HighlightsList
                         rows={allHighlights(highlights)}
                         emptyLabel=""
-                        onRemove={(row) => persistHighlights(removeHighlight(highlights, row.chapterId, row.id))}
+                        onRemove={dropHighlight}
                       />
                     </div>
                   ) : null}
