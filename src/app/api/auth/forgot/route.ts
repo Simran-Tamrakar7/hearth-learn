@@ -3,7 +3,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { purgeExpiredResetTokens, sendAppEmail } from "@/lib/mail";
-import { issueResetCode, recentResetToken, resendTooSoon } from "@/lib/resetCode";
+import { issueResetCode, recentResetToken, resendTooSoon, claimResendSlot, releaseResendSlot } from "@/lib/resetCode";
 
 export async function POST(req: Request) {
   let email = "";
@@ -31,7 +31,20 @@ export async function POST(req: Request) {
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) return NextResponse.json(generic);
 
-  const code = await issueResetCode(user.email);
+  if (!claimResendSlot(user.email)) {
+    return NextResponse.json(
+      { error: "Please wait a minute before requesting another code." },
+      { status: 429 }
+    );
+  }
+
+  let code: string;
+  try {
+    code = await issueResetCode(user.email);
+  } catch (err) {
+    releaseResendSlot(user.email);
+    throw err;
+  }
   const mailed = await sendAppEmail({
     to: user.email,
     subject: "Your Hearth verification code",

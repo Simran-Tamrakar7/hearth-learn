@@ -22,6 +22,20 @@ export function resendTooSoon(createdAt: Date) {
   return Date.now() - createdAt.getTime() < RESET_RESEND_COOLDOWN_MS;
 }
 
+// ponytail: in-memory lock so two parallel POSTs can't issue two codes (last-write-wins vs UI).
+const claimedAt = new Map<string, number>();
+
+export function claimResendSlot(email: string) {
+  const prev = claimedAt.get(email);
+  if (prev && Date.now() - prev < RESET_RESEND_COOLDOWN_MS) return false;
+  claimedAt.set(email, Date.now());
+  return true;
+}
+
+export function releaseResendSlot(email: string) {
+  claimedAt.delete(email);
+}
+
 export async function issueResetCode(email: string) {
   const code = sixDigitCode();
   const token = await bcrypt.hash(code, 10);

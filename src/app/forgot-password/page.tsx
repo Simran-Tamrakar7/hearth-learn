@@ -2,7 +2,7 @@
 
 /* PAGE: /forgot-password  — this file is the screen. Map: ./CODE-FOR-THIS-PAGE.md */
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Mail } from "lucide-react";
@@ -27,6 +27,7 @@ function ForgotForm() {
   const [devCode, setDevCode] = useState("");
   const [resendAt, setResendAt] = useState(0);
   const [now, setNow] = useState(Date.now());
+  const sending = useRef(false);
 
   useEffect(() => {
     if (resendAt <= Date.now()) return;
@@ -35,6 +36,8 @@ function ForgotForm() {
   }, [resendAt]);
 
   async function sendCode() {
+    if (sending.current) return false;
+    sending.current = true;
     setBusy(true);
     setError("");
     setMessage("");
@@ -55,11 +58,16 @@ function ForgotForm() {
         return false;
       }
       setMessage(data.message || "If that account exists, we sent a verification code.");
-      if (typeof data.code === "string") setDevCode(data.code);
-      setCode("");
+      if (typeof data.code === "string") {
+        setDevCode(data.code);
+        setCode(data.code);
+      } else {
+        setCode("");
+      }
       setResendAt(Date.now() + 60_000);
       return true;
     } finally {
+      sending.current = false;
       setBusy(false);
     }
   }
@@ -161,7 +169,7 @@ function ForgotForm() {
             required
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-            placeholder="123456"
+            placeholder="6-digit code"
             className="w-full h-11 px-3 text-sm tracking-[0.3em] text-center bg-[#FAF7F2] border border-[#E7E0D3] rounded-xl focus:outline-none focus:border-[#D97706]"
           />
           {error ? <p className="text-xs text-red-700">{error}</p> : null}
