@@ -2,8 +2,9 @@
 
 /* PAGE: /manuals  — catalog grid (this file). Reader: ./[slug]/page.tsx. Map: ./CODE-FOR-THIS-PAGE.md */
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card } from "@/components/ui/Card";
@@ -12,7 +13,7 @@ import { useToast } from "@/components/ui/Toast";
 import { MANUALS_DATA, findHearthManual, ManualItem } from "@/app/manuals/_lib/manualsData";
 import { activeManualSlugs } from "@/app/manuals/_content/_registry";
 import { genres } from "@/app/manuals/_content/_helpers.js";
-import { Compass, Search, Clock, BookOpen, ArrowRight, Pin, ExternalLink, Code2, Sparkles, X } from "lucide-react";
+import { Compass, Search, Clock, BookOpen, ArrowRight, Pin, ExternalLink, Code2, Plus } from "lucide-react";
 import {
   PinButton,
   subscribePinnedItems,
@@ -21,8 +22,7 @@ import {
   PinnedItemMetadata,
   manualPinId,
 } from "@/components/ui/PinButton";
-import { emptyManual, getUserManual, hiddenManualSlugs, notesToManual, removeCatalogManual, saveUserManual, subscribeUserManuals } from "@/app/manuals/_lib/userManuals";
-import { chapterAiSummary, chapterCustomSummary } from "@/app/manuals/_lib/manualsData";
+import { emptyManual, getUserManual, hiddenManualSlugs, removeCatalogManual, saveUserManual, subscribeUserManuals } from "@/app/manuals/_lib/userManuals";
 import { kebabItems, KebabMenu } from "@/app/manuals/_ui/KebabMenu";
 import { usePermissions } from "@/lib/useAuthz";
 
@@ -171,220 +171,9 @@ function ManualCard({
   );
 }
 
-function GenerateManualModal({
-  open,
-  onClose,
-  onCreated,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onCreated: (manual: ManualItem) => void;
-}) {
-  const { toast } = useToast();
-  const [notes, setNotes] = useState("");
-  const [title, setTitle] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [draft, setDraft] = useState<ManualItem | null>(null);
-  const [editTab, setEditTab] = useState<"full" | "summary" | "aiSummary">("full");
-
-  if (!open) return null;
-
-  function patchDraftChapter(idx: number, patch: Partial<ManualItem["chapters"][number]>) {
-    if (!draft) return;
-    setDraft({
-      ...draft,
-      chapters: draft.chapters.map((ch, i) => (i === idx ? { ...ch, ...patch } : ch)),
-    });
-  }
-
-  function addToList(manual: ManualItem) {
-    const saved = saveUserManual(manual);
-    onCreated(saved);
-    setNotes("");
-    setTitle("");
-    setDraft(null);
-    onClose();
-    toast({
-      type: "success",
-      title: "Manual added",
-      description: `"${saved.title}" is now on your Manuals list.`,
-    });
-  }
-
-  async function generate() {
-    setBusy(true);
-    try {
-      const titleTrim = title.trim();
-      const notesTrim = notes.trim();
-      if (!titleTrim && !notesTrim) {
-        throw new Error("Add a title or paste some notes.");
-      }
-      if (!notesTrim) {
-        setDraft(emptyManual(titleTrim));
-        return;
-      }
-      let markdown = notes;
-      try {
-        const res = await fetch("/api/manuals/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ notes, title: titleTrim || undefined }),
-        });
-        const data = await res.json();
-        if (res.status === 403) throw new Error(data.error || "Admin only.");
-        if (typeof data.markdown === "string" && data.markdown.trim()) markdown = data.markdown;
-        if (data.error) throw new Error(data.error);
-      } catch (err) {
-        if (err instanceof Error && (err.message === "Admin only." || err.message === "Paste some notes first." || err.message === "Add a title or paste some notes.")) throw err;
-      }
-      setDraft(notesToManual(markdown, titleTrim || undefined));
-    } catch (e) {
-      toast({
-        type: "error",
-        title: "Could not create",
-        description: e instanceof Error ? e.message : "Add a title or paste some notes.",
-      });
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-[#1C2A26]/40">
-      <div className="w-full max-w-2xl max-h-[90vh] bg-[#FAF7F2] border border-[#E7E0D3] rounded-3xl shadow-xl overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E7E0D3]">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-[#D97706]" />
-            <h2 className="font-serif-display text-lg font-bold text-[#1C2A26]">
-              {draft ? "Review chapters" : "New manual with AI"}
-            </h2>
-          </div>
-          <button type="button" onClick={onClose} className="p-1.5 rounded-xl text-[#8A9B95] hover:text-[#1C2A26]" aria-label="Close">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-        {draft ? (
-          <>
-            <div className="p-5 space-y-3 overflow-y-auto">
-              <input
-                value={draft.title}
-                onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-                className="w-full h-11 px-4 text-sm bg-white border border-[#E7E0D3] rounded-2xl focus:outline-none focus:border-[#D97706]"
-              />
-              <p className="text-xs text-[#52635E]">
-                {draft.chapters.length} chapter{draft.chapters.length === 1 ? "" : "s"} · edit Full Content, Summary, and AI Summary before adding to the list.
-              </p>
-              <div className="flex items-center bg-white border border-[#E7E0D3] rounded-lg p-0.5 text-[11px] w-fit">
-                {(["full", "summary", "aiSummary"] as const).map((tab) => (
-                  <button
-                    key={tab}
-                    type="button"
-                    onClick={() => setEditTab(tab)}
-                    className={`px-2.5 py-1 rounded-md font-bold ${editTab === tab ? "bg-[#1C2A26] text-white" : "text-[#52635E]"}`}
-                  >
-                    {tab === "full" ? "Full Content" : tab === "summary" ? "Summary" : "AI Summary"}
-                  </button>
-                ))}
-              </div>
-              {draft.chapters.map((ch, idx) => (
-                <div key={ch.id} className="space-y-1.5 p-3 rounded-2xl bg-white border border-[#E7E0D3]">
-                  <div className="text-[11px] font-bold text-[#D97706]">{ch.subtitle || "Part"} · {ch.title}</div>
-                  <input
-                    value={ch.title}
-                    onChange={(e) => patchDraftChapter(idx, { title: e.target.value })}
-                    className="w-full h-9 px-3 text-sm bg-[#FAF7F2] border border-[#E7E0D3] rounded-xl focus:outline-none focus:border-[#D97706]"
-                  />
-                  {editTab === "full" ? (
-                    <textarea
-                      value={ch.contentMarkdown}
-                      onChange={(e) => patchDraftChapter(idx, { contentMarkdown: e.target.value })}
-                      rows={6}
-                      className="w-full px-3 py-2 text-xs bg-[#FAF7F2] border border-[#E7E0D3] rounded-xl focus:outline-none focus:border-[#D97706]"
-                    />
-                  ) : editTab === "summary" ? (
-                    <textarea
-                      value={chapterCustomSummary(ch)}
-                      onChange={(e) => patchDraftChapter(idx, { customSummary: e.target.value })}
-                      rows={5}
-                      placeholder="Your summary for this chapter"
-                      className="w-full px-3 py-2 text-xs bg-[#FAF7F2] border border-[#E7E0D3] rounded-xl focus:outline-none focus:border-[#D97706]"
-                    />
-                  ) : (
-                    <textarea
-                      value={chapterAiSummary(ch)}
-                      onChange={(e) => patchDraftChapter(idx, { aiSummary: e.target.value, summaryMarkdown: e.target.value })}
-                      rows={5}
-                      placeholder="AI summary"
-                      className="w-full px-3 py-2 text-xs bg-[#FAF7F2] border border-[#E7E0D3] rounded-xl focus:outline-none focus:border-[#D97706]"
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-            <div className="px-5 py-4 border-t border-[#E7E0D3] flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setDraft(null)}
-                className="h-10 px-4 rounded-xl text-xs font-semibold border border-[#E7E0D3] bg-white text-[#52635E]"
-              >
-                Back
-              </button>
-              <button
-                type="button"
-                onClick={() => addToList(draft)}
-                className="h-10 px-4 rounded-xl text-xs font-semibold bg-[#1C2A26] text-[#FAF7F2] inline-flex items-center gap-1.5"
-              >
-                Add to manuals list
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="p-5 space-y-3">
-              <p className="text-xs text-[#52635E] leading-relaxed">
-                Paste notes for AI to structure into parts and chapters — or just a title to start a blank manual you can edit.
-              </p>
-              <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Title (optional)"
-                className="w-full h-11 px-4 text-sm bg-white border border-[#E7E0D3] rounded-2xl focus:outline-none focus:border-[#D97706]"
-              />
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Paste notes, meeting dump, or markdown…"
-                rows={12}
-                className="w-full px-4 py-3 text-sm bg-white border border-[#E7E0D3] rounded-2xl focus:outline-none focus:border-[#D97706] resize-y min-h-[12rem]"
-              />
-            </div>
-            <div className="px-5 py-4 border-t border-[#E7E0D3] flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={onClose}
-                className="h-10 px-4 rounded-xl text-xs font-semibold border border-[#E7E0D3] bg-white text-[#52635E] hover:text-[#1C2A26]"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={generate}
-                className="h-10 px-4 rounded-xl text-xs font-semibold bg-[#1C2A26] text-[#FAF7F2] hover:bg-[#243530] disabled:opacity-50 inline-flex items-center gap-1.5"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                {busy ? "Creating…" : notes.trim() ? "Generate" : "Create blank manual"}
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export default function ManualsCatalogPage() {
   const { toast } = useToast();
+  const router = useRouter();
   const perms = usePermissions();
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -392,7 +181,9 @@ export default function ManualsCatalogPage() {
   const [pinnedShowcase, setPinnedShowcase] = useState<PinnedItemMetadata[]>([]);
   const [userManuals, setUserManuals] = useState<ManualItem[]>([]);
   const [hiddenSlugs, setHiddenSlugs] = useState<Set<string>>(new Set());
-  const [generateOpen, setGenerateOpen] = useState(false);
+  const [naming, setNaming] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const nameRef = useRef<HTMLInputElement>(null);
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -403,8 +194,8 @@ export default function ManualsCatalogPage() {
   }, []);
 
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("new") === "1") setGenerateOpen(true);
-  }, []);
+    if (naming) nameRef.current?.focus();
+  }, [naming]);
 
   useEffect(() => {
     return subscribePinnedItems((allPins) => {
@@ -428,6 +219,19 @@ export default function ManualsCatalogPage() {
     return matchesCategory && matchesSearch;
   });
   const catalogManuals = filteredManuals;
+
+  function addManual(e: React.FormEvent) {
+    e.preventDefault();
+    const title = newTitle.trim();
+    if (!title) {
+      nameRef.current?.focus();
+      return;
+    }
+    const saved = saveUserManual(emptyManual(title));
+    setNaming(false);
+    setNewTitle("");
+    router.push(`/manuals/${saved.slug}?edit=1`);
+  }
 
   const grouped = useMemo(() => {
     return CATALOG_GENRES.filter((g) => g.id !== "all")
@@ -581,15 +385,40 @@ export default function ManualsCatalogPage() {
                 Pathwise paths, grouped by craft — open a category, then work it chapter by chapter.
               </p>
             </div>
-            {perms.canUseAI || perms.canCreate ? (
-            <button
-              type="button"
-              onClick={() => setGenerateOpen(true)}
-              className="shrink-0 inline-flex items-center gap-2 h-11 px-4 rounded-2xl bg-[#1C2A26] text-[#FAF7F2] text-xs font-semibold hover:bg-[#243530] shadow-xs"
-            >
-              <Sparkles className="w-4 h-4 text-[#D97706]" />
-              {perms.canUseAI ? "New with AI" : "New manual"}
-            </button>
+            {perms.canCreate ? (
+              naming ? (
+                <form onSubmit={addManual} className="shrink-0 flex items-center gap-2">
+                  <input
+                    ref={nameRef}
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") {
+                        setNaming(false);
+                        setNewTitle("");
+                      }
+                    }}
+                    placeholder="Manual name"
+                    aria-label="Manual name"
+                    className="h-11 w-52 sm:w-64 px-3 text-sm bg-white border border-[#E7E0D3] rounded-2xl focus:outline-none focus:border-[#D97706] shadow-xs"
+                  />
+                  <button
+                    type="submit"
+                    className="h-11 px-4 rounded-2xl bg-[#1C2A26] text-[#FAF7F2] text-xs font-semibold hover:bg-[#243530] shadow-xs"
+                  >
+                    Open
+                  </button>
+                </form>
+              ) : (
+                <button
+                  type="button"
+                  aria-label="Add manual"
+                  onClick={() => setNaming(true)}
+                  className="shrink-0 inline-flex items-center justify-center h-11 w-11 rounded-2xl bg-[#1C2A26] text-[#FAF7F2] hover:bg-[#243530] shadow-xs"
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
+              )
             ) : null}
           </div>
 
@@ -659,16 +488,6 @@ export default function ManualsCatalogPage() {
           ))
         )}
       </main>
-
-      {perms.canUseAI || perms.canCreate ? (
-      <GenerateManualModal
-        open={generateOpen}
-        onClose={() => setGenerateOpen(false)}
-        onCreated={() => {
-          /* subscribeUserManuals already refreshes the list */
-        }}
-      />
-      ) : null}
     </div>
   );
 }

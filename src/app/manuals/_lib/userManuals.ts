@@ -213,10 +213,35 @@ export function getUserManual(slug: string): ManualItem | undefined {
 
 export function emptyManual(title: string): ManualItem {
   const t = title.trim() || "Untitled manual";
-  return notesToManual(
-    `# ${t}\n\nPart 1 · Notes\n## Getting started\nAdd parts, chapters, and sub-chapters from the table of contents — or generate from notes.\n`,
-    t
-  );
+  const slug = `user-${slugifyTitle(t)}`;
+  const chapter: ManualChapter = {
+    id: `ch-${slug}`,
+    order: 1,
+    slug: "ch-1",
+    title: "Untitled chapter",
+    subtitle: "Untitled part",
+    estimatedMinutes: 15,
+    contentMarkdown: "",
+    customSummary: "",
+    aiSummary: "",
+    overviewText: "",
+    why: "",
+    when: "",
+    exercises: [],
+    resourceLinks: [],
+  };
+  return {
+    id: `manual-${slug}`,
+    slug,
+    title: t,
+    category: "Foundations",
+    description: "",
+    chapterCount: 1,
+    estimatedTime: "15 min",
+    icon: "BookOpen",
+    coverImage: COVERS[Math.abs(t.length) % COVERS.length],
+    chapters: [chapter],
+  };
 }
 
 export function mergeHiddenSlug(ids: string[], slug: string): string[] {

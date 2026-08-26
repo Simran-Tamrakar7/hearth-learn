@@ -11,11 +11,11 @@ This folder **is** Manuals. Screen, helpers, and chapter text all live here.
 | Playwright roadmap download | `_lib/roadmapData.ts` |
 | TOC part helpers | `_lib/manualParts.ts` |
 | User / AI manuals (`localStorage`) | `_lib/userManuals.ts` |
-| Remove a manual from the catalog (trash on every card) | `_lib/userManuals.ts` (`removeCatalogManual`) |
+| Add a blank manual (`+` on this page) | `page.tsx` (saves via `emptyManual`, opens `[slug]/page.tsx`) |
 | Convert body JS → Hearth shape | `_lib/pathwiseToHearth.ts` |
 | Chapter **text** of a builtin manual | `_content/<slug>/data.js` |
 | Testing Types overlay + 15-chapter TOC | `_content/testing-types/` |
 | Playwright chapters | `_content/playwright/data.js` |
 | Hide / feature / pin a builtin, or wire a new `data.js` | `_content/_registry.ts` |
-| AI “generate a manual from notes” API | `src/app/api/manuals/generate/route.ts` |
+| Remove a manual from the catalog | `_lib/userManuals.ts` (`removeCatalogManual`) |
 | Top nav (every page) | `src/components/layout/Navbar.tsx` |

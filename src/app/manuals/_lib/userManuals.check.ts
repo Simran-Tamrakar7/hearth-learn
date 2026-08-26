@@ -63,8 +63,11 @@ assert.match(outlined, /^## /m);
 
 const blank = emptyManual("Starter");
 assert.equal(blank.title, "Starter");
-assert.ok(blank.slug.startsWith("ai-"));
-assert.ok(blank.chapters.length >= 1);
+assert.ok(blank.slug.startsWith("user-"));
+assert.equal(blank.chapters.length, 1);
+assert.equal(blank.chapters[0].contentMarkdown, "");
+assert.equal(blank.chapters[0].customSummary, "");
+assert.equal(blank.chapters[0].aiSummary, "");
 
 assert.equal(deleteUserManual("missing"), false);
 assert.deepEqual(mergeHiddenSlug(["cypress"], "git-version-control"), ["cypress", "git-version-control"]);

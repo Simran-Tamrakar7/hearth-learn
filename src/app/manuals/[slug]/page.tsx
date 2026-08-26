@@ -1154,13 +1154,6 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
             </Link>
 
             <div className="flex items-center gap-2">
-              {perms.canUseAI ? (
-              <Link href="/manuals?new=1">
-                <Button variant="outline" size="sm" leftIcon={<Sparkles className="w-3.5 h-3.5 text-[#D97706]" />}>
-                  New with AI
-                </Button>
-              </Link>
-              ) : null}
               <KebabMenu
                 label="Manual actions"
                 items={kebabItems([
