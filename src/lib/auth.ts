@@ -75,44 +75,53 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email and password are required");
-        }
+        try {
+          if (!credentials?.email || !credentials?.password) {
+            throw new Error("Email and password are required");
+          }
 
-        await ensureSeedAdmin();
+          await ensureSeedAdmin();
 
-        const email = credentials.email.trim();
-        const user = await prisma.user.findUnique({
-          where: { email },
-        });
-
-        if (!user || !user.passwordHash) {
-          throw new Error("No account found with this email");
-        }
-
-        const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
-        if (!isValid) {
-          throw new Error("Incorrect password");
-        }
-
-        if (user.status === STATUS_PENDING) {
-          throw new Error("Your account is waiting for admin approval");
-        }
-        if (user.status === STATUS_REJECTED) {
-          throw new Error("Your signup was not approved");
-        }
-        if (user.status !== STATUS_ACTIVE) {
-          throw new Error("This account cannot sign in");
-        }
-
-        if (emailIsAdmin(user.email) && user.role !== ADMIN_ROLE) {
-          await prisma.user.update({
-            where: { id: user.id },
-            data: { role: ADMIN_ROLE, permissions: stringifyPermissions(ADMIN_PERMISSIONS) },
+          const email = credentials.email.trim();
+          const user = await prisma.user.findUnique({
+            where: { email },
           });
-        }
 
-        return sessionFields(user);
+          if (!user || !user.passwordHash) {
+            throw new Error("No account found with this email");
+          }
+
+          const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
+          if (!isValid) {
+            throw new Error("Incorrect password");
+          }
+
+          if (user.status === STATUS_PENDING) {
+            throw new Error("Your account is waiting for admin approval");
+          }
+          if (user.status === STATUS_REJECTED) {
+            throw new Error("Your signup was not approved");
+          }
+          if (user.status !== STATUS_ACTIVE) {
+            throw new Error("This account cannot sign in");
+          }
+
+          if (emailIsAdmin(user.email) && user.role !== ADMIN_ROLE) {
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { role: ADMIN_ROLE, permissions: stringifyPermissions(ADMIN_PERMISSIONS) },
+            });
+          }
+
+          return sessionFields(user);
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : "";
+          if (msg && !/prisma|DATABASE_URL|invocation|Environment variable/i.test(msg) && msg.length < 140) {
+            throw e;
+          }
+          console.error("credentials authorize", e);
+          throw new Error("Could not sign in. Please try again.");
+        }
       },
     }),
   ],

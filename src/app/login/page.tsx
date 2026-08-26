@@ -18,6 +18,14 @@ function GoogleIcon() {
   );
 }
 
+function loginError(raw?: string | null) {
+  const msg = raw || "Invalid email or password";
+  if (/prisma|DATABASE_URL|invocation|Environment variable/i.test(msg)) {
+    return "Could not sign in. Please try again.";
+  }
+  return msg;
+}
+
 function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -48,7 +56,7 @@ function LoginFormContent() {
         router.push(callbackUrl);
         router.refresh();
       } else {
-        setErrorMsg(result?.error || "Invalid email or password");
+        setErrorMsg(loginError(result?.error));
       }
     } catch {
       setErrorMsg("An unexpected error occurred. Please try again.");
