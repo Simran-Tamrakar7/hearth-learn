@@ -4,6 +4,7 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { ArrowLeft, Mail } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -118,6 +119,7 @@ function ForgotForm() {
         setError(data.error || "Could not reset password.");
         return;
       }
+      await signOut({ redirect: false });
       router.push("/login?reset=1");
     } finally {
       setBusy(false);
