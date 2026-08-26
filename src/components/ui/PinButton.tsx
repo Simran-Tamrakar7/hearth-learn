@@ -10,6 +10,7 @@
 import React, { useState, useEffect } from "react";
 import { Pin } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
+import { isScopeReady, pinsStoreKey, readScopedRaw, writeScopedRaw } from "@/lib/userScope";
 
 interface PinButtonProps {
   itemId: string;
@@ -33,9 +34,9 @@ export interface PinnedItemMetadata {
 }
 
 export function getPinnedItems(): PinnedItemMetadata[] {
-  if (typeof window === "undefined") return [];
+  if (typeof window === "undefined" || !isScopeReady()) return [];
   try {
-    const raw = localStorage.getItem("hearth_pinned_items_v2");
+    const raw = readScopedRaw(pinsStoreKey());
     if (raw) return JSON.parse(raw);
 
     // Fallback migration from old string array
@@ -85,9 +86,9 @@ export function subscribePinnedItems(onChange: (items: PinnedItemMetadata[]) => 
 }
 
 export function savePinnedItems(items: PinnedItemMetadata[]) {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || !isScopeReady()) return;
   try {
-    localStorage.setItem("hearth_pinned_items_v2", JSON.stringify(items));
+    writeScopedRaw(pinsStoreKey(), JSON.stringify(items));
     window.dispatchEvent(new Event("hearth_pins_updated"));
   } catch (e) {
     console.error("Failed to save pinned items:", e);

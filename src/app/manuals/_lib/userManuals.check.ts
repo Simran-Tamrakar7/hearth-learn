@@ -71,4 +71,22 @@ assert.deepEqual(mergeHiddenSlug(["cypress"], "git-version-control"), ["cypress"
 assert.deepEqual(mergeHiddenSlug(["cypress"], "cypress"), ["cypress"]);
 assert.deepEqual(mergeHiddenSlug(["cypress"], "  "), ["cypress"]);
 
+const numbered = notesToManual(`# Locators Manual
+Part 1: Foundations
+Roles and labels.
+
+[1.1] Prefer roles
+Use getByRole.
+
+[1.2] Labels
+Use getByLabel.
+`);
+assert.equal(numbered.title, "Locators Manual");
+assert.equal(numbered.chapters.length, 2);
+assert.equal(numbered.chapters[0].title, "Prefer roles");
+assert.equal(numbered.chapters[0].subtitle, "Foundations");
+assert.equal(numbered.chapters[1].title, "Labels");
+assert.ok(numbered.chapters[0].aiSummary);
+assert.equal(numbered.chapters[0].customSummary, "");
+
 console.log("userManuals.check: ok");

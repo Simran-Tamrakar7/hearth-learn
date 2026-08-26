@@ -7,6 +7,7 @@
  * ========================================================================== */
 
 import type { ManualChapter, ManualItem } from "@/app/manuals/_lib/manualsData";
+import { pinsStoreKey, progressStoreKey, readScopedRaw, removeScopedRaw, writeScopedRaw } from "../../../lib/userScope.ts";
 
 const STORE = "hearth_user_manuals_v1";
 const HIDDEN = "hearth_hidden_manual_slugs";
@@ -50,6 +51,7 @@ function splitBlocks(text: string): { heading: string; level: number; body: stri
   for (const line of lines) {
     const m = /^(#{1,3})\s+(.+)$/.exec(line.trim());
     const part = /^Part\s+\d+\s*[·•:\-–—]\s*(.+)$/i.exec(line.trim());
+    const numbered = /^\[?(\d+)\.(\d+)\]?\s+(.+)$/.exec(line.trim());
     if (m) {
       flush();
       level = m[1].length;
@@ -58,6 +60,10 @@ function splitBlocks(text: string): { heading: string; level: number; body: stri
       flush();
       level = 1;
       heading = part[1].trim();
+    } else if (numbered) {
+      flush();
+      level = 2;
+      heading = numbered[3].trim();
     } else {
       body.push(line);
     }
@@ -88,6 +94,8 @@ function chapterFrom(title: string, subtitle: string, body: string, order: numbe
     when,
     contentMarkdown: md,
     summaryMarkdown: overview.slice(0, 280),
+    aiSummary: overview.slice(0, 280),
+    customSummary: "",
     exercises: [],
     resourceLinks: [],
     ...(parentId ? { parentId } : {}),
@@ -149,8 +157,12 @@ export function notesToManual(raw: string, forcedTitle?: string): ManualItem {
       if (b.level === 1 || isPartHeading(b.heading)) {
         partName = partLabel(b.heading);
         if (b.body.trim()) {
-          const chapTitle = isPartHeading(b.heading) ? partName : b.heading;
-          chapters.push(chapterFrom(chapTitle, partName, b.body, order++));
+          const body = b.body.trim();
+          const isSummaryOnly = !body.includes("\n") && body.length < 200;
+          if (!isSummaryOnly) {
+            const chapTitle = isPartHeading(b.heading) ? partName : b.heading;
+            chapters.push(chapterFrom(chapTitle, partName, b.body, order++));
+          }
         }
       } else if (b.level >= 3 && chapters.length > 0) {
         const last = chapters[chapters.length - 1];
@@ -226,7 +238,7 @@ export function hiddenManualSlugs(): Set<string> {
 
 function unpinSlug(slug: string) {
   try {
-    const raw = localStorage.getItem("hearth_pinned_items_v2");
+    const raw = readScopedRaw(pinsStoreKey());
     if (!raw) return;
     const pins = JSON.parse(raw);
     if (!Array.isArray(pins)) return;
@@ -236,7 +248,7 @@ function unpinSlug(slug: string) {
       (p: { id?: string; url?: string }) =>
         !ids.has(String(p.id || "")) && !String(p.url || "").includes(`/manuals/${slug}`)
     );
-    localStorage.setItem("hearth_pinned_items_v2", JSON.stringify(next));
+    writeScopedRaw(pinsStoreKey(), JSON.stringify(next));
     window.dispatchEvent(new Event("hearth_pins_updated"));
   } catch {
     /* pin cleanup is best-effort */
@@ -266,7 +278,7 @@ export function deleteUserManual(slug: string): boolean {
   localStorage.setItem(STORE, JSON.stringify(remaining));
   try {
     localStorage.removeItem(`hearth_manual_custom_data_${found.id}`);
-    localStorage.removeItem(`hearth_manual_progress_${found.id}`);
+    removeScopedRaw(progressStoreKey(found.id));
     unpinSlug(found.slug);
   } catch {
     /* pin cleanup is best-effort */

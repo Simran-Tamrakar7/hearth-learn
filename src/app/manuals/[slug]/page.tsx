@@ -4,14 +4,14 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
-import { findHearthManual, ManualItem, ManualChapter } from "@/app/manuals/_lib/manualsData";
+import { findHearthManual, ManualItem, ManualChapter, chapterAiSummary, chapterCustomSummary } from "@/app/manuals/_lib/manualsData";
 import { getUserManual, saveUserManual, removeCatalogManual } from "@/app/manuals/_lib/userManuals";
 import { isTestingTypesSlug, TestingTypesGuide } from "@/app/manuals/_ui/TestingTypesGuide";
 import { PLAYWRIGHT_ROADMAP_PHASES, downloadRoadmapSVG } from "@/app/manuals/_lib/roadmapData";
@@ -19,6 +19,19 @@ import { stripLeadingNumber } from "@/app/manuals/_content/_helpers.js";
 import { PinButton, getPinnedItems, PinnedItemMetadata, manualPinId } from "@/components/ui/PinButton";
 import { ToolSwitcher } from "@/app/manuals/_ui/ToolSwitcher";
 import { LessonContentEditor } from "@/app/manuals/_ui/LessonContentEditor";
+import { KebabMenu } from "@/app/manuals/_ui/KebabMenu";
+import { Highlightable, HighlightsList } from "@/app/manuals/_ui/Highlightable";
+import {
+  addHighlight,
+  allHighlights,
+  highlightsForField,
+  parseHighlightStore,
+  removeHighlight,
+  type HighlightStore,
+  wrapHighlightHtml,
+} from "@/app/manuals/_lib/highlights";
+import { useIsAdmin, useAppUserId } from "@/lib/useAuthz";
+import { highlightsStoreKey, isScopeReady, progressStoreKey, readScopedRaw, writeScopedRaw } from "@/lib/userScope";
 import { readerChaptersFromOverlay, testingOverlayForChapter } from "@/app/manuals/_ui/testing-types-reader";
 import { restoreTestingTypesToc, TESTING_TYPES_TOC_VERSION } from "@/app/manuals/_content/testing-types/outline";
 import {
@@ -54,7 +67,6 @@ import {
   HelpCircle,
   ChevronDown,
   Layers,
-  Edit,
   SquarePen,
   Trash2,
   Plus,
@@ -126,7 +138,10 @@ export default function ManualDetailPage() {
 function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
+  const isAdmin = useIsAdmin();
+  const userId = useAppUserId();
 
   const slug = params?.slug as string;
   const initialManual = seeded;
@@ -187,13 +202,12 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   const [selectedRoadmapNode, setSelectedRoadmapNode] = useState<any | null>(null);
 
   // View Mode State: 'full' (exhaustive content) vs 'summary' (AI quick summary)
-  const [viewMode, setViewMode] = useState<"full" | "summary">("full");
+  const [viewMode, setViewMode] = useState<"full" | "summary" | "aiSummary">("full");
 
   // Overlay + chapter edit (no dialogs)
   const [isRoadmapModalOpen, setIsRoadmapModalOpen] = useState<boolean>(false);
   const [chapterEdit, setChapterEdit] = useState(false);
   const [saveHint, setSaveHint] = useState<"" | "Saving…" | "Saved">("");
-  const [armedDeleteId, setArmedDeleteId] = useState<string | null>(null);
   const [selectedPartIndices, setSelectedPartIndices] = useState<number[]>([]);
   const [selectedChapterIndices, setSelectedChapterIndices] = useState<number[]>([]);
   const [tocEdit, setTocEdit] = useState<null | "part" | "chapter" | "sub">(null);
@@ -207,7 +221,12 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   const persistTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingSave = useRef<ManualChapter[] | null>(null);
   const pendingMeta = useRef<{ title: string; description: string; category: string; estimatedTime: string } | null>(null);
+  const chapterEditSnapshot = useRef<{
+    chapters: ManualChapter[];
+    meta: { title: string; description: string; category: string; estimatedTime: string };
+  } | null>(null);
   const [pinnedShowcase, setPinnedShowcase] = useState<PinnedItemMetadata[]>([]);
+  const [highlights, setHighlights] = useState<HighlightStore>({});
 
   useEffect(() => {
     const updatePins = () => {
@@ -218,14 +237,18 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     return () => window.removeEventListener("hearth_pins_updated", updatePins);
   }, []);
 
-  // Load saved progress & custom manual edits from localStorage on mount
+  // Load saved progress, highlights & custom manual edits from localStorage on mount
   useEffect(() => {
-    const savedProgress = localStorage.getItem(`hearth_manual_progress_${initialManual.id}`);
+    if (!isScopeReady() || !userId) return;
+    const savedProgress = readScopedRaw(progressStoreKey(initialManual.id));
     if (savedProgress) {
       try {
         setCompletedChapterIds(JSON.parse(savedProgress));
       } catch (e) {}
+    } else {
+      setCompletedChapterIds([]);
     }
+    setHighlights(parseHighlightStore(readScopedRaw(highlightsStoreKey(initialManual.id))));
 
     const savedCustomData = localStorage.getItem(`hearth_manual_custom_data_${initialManual.id}`);
     let parsed: Record<string, unknown> | null = null;
@@ -250,7 +273,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     } else if (parsed && Array.isArray(parsed.chapters) && parsed.chapters.length > 0) {
       setChapters(parsed.chapters as ManualChapter[]);
     }
-  }, [initialManual.id]);
+  }, [initialManual.id, userId]);
 
   // Persist edits to localStorage
   const saveCustomDataToStorage = (updatedData: any) => {
@@ -271,6 +294,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   };
 
   const persistChapters = (updated: ManualChapter[], keepId?: string) => {
+    if (!isAdmin) return;
     if (persistTimer.current) {
       clearTimeout(persistTimer.current);
       persistTimer.current = null;
@@ -355,9 +379,32 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   };
 
   const setChapterEditMode = (on: boolean) => {
-    if (!on) commitPending();
-    setArmedDeleteId(null);
-    setChapterEdit(on);
+    if (on) {
+      enterChapterEdit(activeChapterIndex);
+      return;
+    }
+    commitPending();
+    chapterEditSnapshot.current = null;
+    setChapterEdit(false);
+  };
+
+  const cancelChapterEdit = () => {
+    if (persistTimer.current) {
+      clearTimeout(persistTimer.current);
+      persistTimer.current = null;
+    }
+    pendingSave.current = null;
+    pendingMeta.current = null;
+    const snap = chapterEditSnapshot.current;
+    if (snap) {
+      setManualTitle(snap.meta.title);
+      setManualDescription(snap.meta.description);
+      setManualCategory(snap.meta.category);
+      setManualEstimatedTime(snap.meta.estimatedTime);
+      persistChapters(snap.chapters);
+    }
+    chapterEditSnapshot.current = null;
+    setChapterEdit(false);
   };
 
   const activeChapter: ManualChapter = chapters[activeChapterIndex] || chapters[0] || {
@@ -458,7 +505,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     }
 
     setCompletedChapterIds(updated);
-    localStorage.setItem(`hearth_manual_progress_${initialManual.id}`, JSON.stringify(updated));
+    writeScopedRaw(progressStoreKey(initialManual.id), JSON.stringify(updated));
   };
 
   const persistManualMeta = (
@@ -467,6 +514,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     category: string,
     estimatedTime: string
   ) => {
+    if (!isAdmin) return;
     pendingMeta.current = { title, description, category, estimatedTime };
     setSaveHint("Saving…");
     if (persistTimer.current) clearTimeout(persistTimer.current);
@@ -476,11 +524,32 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     }, 400);
   };
 
+  const persistHighlights = (next: HighlightStore) => {
+    setHighlights(next);
+    writeScopedRaw(highlightsStoreKey(initialManual.id), JSON.stringify(next));
+  };
+
   const enterChapterEdit = (idx: number) => {
+    if (!isAdmin) return;
+    commitPending();
+    chapterEditSnapshot.current = {
+      chapters: JSON.parse(JSON.stringify(chapters)),
+      meta: {
+        title: manualTitle,
+        description: manualDescription,
+        category: manualCategory,
+        estimatedTime: manualEstimatedTime,
+      },
+    };
     setActiveChapterIndex(idx);
-    setArmedDeleteId(null);
     setChapterEdit(true);
   };
+
+  useEffect(() => {
+    if (isAdmin && searchParams.get("edit") === "1") enterChapterEdit(0);
+    // ponytail: open edit once when arriving from catalog kebab
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin]);
 
   const addChapterInPart = (partIndex?: number) => {
     const host =
@@ -495,8 +564,10 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       subtitle: host?.name || "New Part",
       partKey: host?.partKey || `part-${Date.now()}`,
       estimatedMinutes: 15,
-      contentMarkdown: "# New Chapter\n\nWrite your lesson content here...",
-      codeSnippet: "",
+    contentMarkdown: "# New Chapter\n\nWrite your lesson content here...",
+    customSummary: "",
+    aiSummary: "",
+    codeSnippet: "",
       exercises: [],
       resourceLinks: [],
     };
@@ -555,6 +626,8 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     partKey: `part-${Date.now()}`,
     estimatedMinutes: 15,
     contentMarkdown: "# New Chapter\n\nWrite your lesson content here...",
+    customSummary: "",
+    aiSummary: "",
     exercises: [],
     resourceLinks: [],
   });
@@ -755,58 +828,33 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
               </button>
             )}
             {showRowTools && (
-            <>
-            <button
-              type="button"
-              disabled={!canUp}
-              onClick={() => {
-                const result = moveChapterBlock(chapters, idx, -1);
-                persistChapters(result.chapters, chapters[activeChapterIndex]?.id);
-                setSelectedChapterIndices(result.selected);
-              }}
-              className={`p-1 rounded-md transition-colors disabled:opacity-30 ${
-                isActive ? "text-amber-400 hover:text-white" : "text-[#8A9B95] hover:text-[#D97706]"
-              }`}
-              title={nested ? "Move sub-chapter up" : "Move chapter up"}
-            >
-              <ArrowUp className="w-3 h-3" />
-            </button>
-            <button
-              type="button"
-              disabled={!canDown}
-              onClick={() => {
-                const result = moveChapterBlock(chapters, idx, 1);
-                persistChapters(result.chapters, chapters[activeChapterIndex]?.id);
-                setSelectedChapterIndices(result.selected);
-              }}
-              className={`p-1 rounded-md transition-colors disabled:opacity-30 ${
-                isActive ? "text-amber-400 hover:text-white" : "text-[#8A9B95] hover:text-[#D97706]"
-              }`}
-              title={nested ? "Move sub-chapter down" : "Move chapter down"}
-            >
-              <ArrowDown className="w-3 h-3" />
-            </button>
-            <button
-              type="button"
-              onClick={() => enterChapterEdit(idx)}
-              className={`p-1 rounded-md transition-colors ${
-                isActive ? "text-amber-400 hover:text-white" : "text-[#8A9B95] hover:text-[#D97706]"
-              }`}
-              title={nested ? "Edit Sub-chapter" : "Edit Chapter"}
-            >
-              <Edit className="w-3 h-3" />
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDeleteChapter(idx)}
-              className={`p-1 rounded-md transition-colors ${
-                isActive ? "text-amber-400 hover:text-red-400" : "text-[#8A9B95] hover:text-red-600"
-              }`}
-              title={nested ? "Delete Sub-chapter" : "Delete Chapter"}
-            >
-              <Trash2 className="w-3 h-3" />
-            </button>
-            </>
+            <KebabMenu
+              compact
+              label={nested ? "Sub-chapter actions" : "Chapter actions"}
+              items={[
+                { label: "Edit", onClick: () => enterChapterEdit(idx) },
+                {
+                  label: "Move Up",
+                  disabled: !canUp,
+                  onClick: () => {
+                    const result = moveChapterBlock(chapters, idx, -1);
+                    persistChapters(result.chapters, chapters[activeChapterIndex]?.id);
+                    setSelectedChapterIndices(result.selected);
+                  },
+                },
+                {
+                  label: "Move Down",
+                  disabled: !canDown,
+                  onClick: () => {
+                    const result = moveChapterBlock(chapters, idx, 1);
+                    persistChapters(result.chapters, chapters[activeChapterIndex]?.id);
+                    setSelectedChapterIndices(result.selected);
+                  },
+                },
+                { label: "Merge", disabled: selectedChapterIndices.length < 2, onClick: handleMergeSelectedChapters },
+                { label: "Delete", danger: true, onClick: () => handleDeleteChapter(idx) },
+              ]}
+            />
             )}
           </div>
         )}
@@ -818,8 +866,27 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   const parseInlineFormatting = (text: string) => {
     if (!text) return "";
     let clean = text.replace(/^#+\s*/, "").replace(/^[-*]\s+/, "");
+    const markParts = clean.split(/(<mark data-hl="[^"]*" data-c="[^"]*">[\s\S]*?<\/mark>)/g);
 
-    const boldParts = clean.split(/(\*\*.*?\*\*)/g);
+    return markParts.map((chunk, markIdx) => {
+      const mark = /^<mark data-hl="([^"]*)" data-c="([^"]*)">([\s\S]*?)<\/mark>$/.exec(chunk);
+      if (mark) {
+        const color =
+          mark[2] === "green"
+            ? "#BBF7D0"
+            : mark[2] === "pink"
+              ? "#FBCFE8"
+              : mark[2] === "blue"
+                ? "#BFDBFE"
+                : "#FEF08A";
+        return (
+          <mark key={`m-${markIdx}`} data-hl={mark[1]} className="rounded-sm px-0.5" style={{ backgroundColor: color }}>
+            {mark[3]}
+          </mark>
+        );
+      }
+
+    const boldParts = chunk.split(/(\*\*.*?\*\*)/g);
 
     return boldParts.map((part, idx) => {
       if (part.startsWith("**") && part.endsWith("**") && part.length >= 4) {
@@ -847,14 +914,21 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
         return cPart;
       });
     });
+    });
   };
 
   // Renders Markdown with clean compact spacing, proportional headings, and structured callouts
+  const activeFieldHighlights = highlightsForField(
+    highlights[activeChapter.id],
+    viewMode === "aiSummary" ? "aiSummary" : viewMode === "summary" ? "summary" : "full"
+  );
+
   const renderFormattedMarkdown = (text: string) => {
     if (!text) return null;
+    const marked = wrapHighlightHtml(text, activeFieldHighlights);
 
     const codeBlockRegex = /```([\s\S]*?)```/g;
-    const rawParts = text.split(codeBlockRegex);
+    const rawParts = marked.split(codeBlockRegex);
 
     return rawParts.map((part, pIdx) => {
       if (pIdx % 2 === 1) {
@@ -1080,32 +1154,39 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
             </Link>
 
             <div className="flex items-center gap-2">
+              {isAdmin ? (
               <Link href="/manuals?new=1">
                 <Button variant="outline" size="sm" leftIcon={<Sparkles className="w-3.5 h-3.5 text-[#D97706]" />}>
                   New with AI
                 </Button>
               </Link>
-              <Button
-                variant="outline"
-                size="sm"
-                leftIcon={<Trash2 className="w-3.5 h-3.5 text-rose-600" />}
-                onClick={() => {
-                  if (!window.confirm(`Delete “${manualTitle}”? This cannot be undone.`)) return;
-                  const kind = removeCatalogManual(slug);
-                  if (!kind) {
-                    toast({ type: "error", title: "Could not delete", description: "That manual could not be removed." });
-                    return;
-                  }
-                  toast({
-                    type: "info",
-                    title: kind === "deleted" ? "Manual deleted" : "Removed from catalog",
-                    description: `Removed “${manualTitle}”.`,
-                  });
-                  router.push("/manuals");
-                }}
-              >
-                Delete
-              </Button>
+              ) : null}
+              {isAdmin ? (
+              <KebabMenu
+                label="Manual actions"
+                items={[
+                  { label: "Edit", onClick: () => enterChapterEdit(activeChapterIndex) },
+                  {
+                    label: "Delete",
+                    danger: true,
+                    onClick: () => {
+                      if (!window.confirm(`Delete “${manualTitle}”? This cannot be undone.`)) return;
+                      const kind = removeCatalogManual(slug);
+                      if (!kind) {
+                        toast({ type: "error", title: "Could not delete", description: "That manual could not be removed." });
+                        return;
+                      }
+                      toast({
+                        type: "info",
+                        title: kind === "deleted" ? "Manual deleted" : "Removed from catalog",
+                        description: `Removed “${manualTitle}”.`,
+                      });
+                      router.push("/manuals");
+                    },
+                  },
+                ]}
+              />
+              ) : null}
               <PinButton
                 itemId={manualPinId(slug)}
                 itemTitle={manualTitle}
@@ -1250,7 +1331,8 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-1.5 shrink-0 justify-end">
-                  {tocEditOpen ? (
+                  {isAdmin ? (
+                  tocEditOpen ? (
                     <>
                       {(["part", "chapter", "sub"] as const).map((mode) => (
                         <button
@@ -1284,7 +1366,8 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                       <SquarePen className="w-3.5 h-3.5 text-[#D97706]" />
                       Edit
                     </button>
-                  )}
+                  )
+                  ) : null}
                 </div>
               </div>
 
@@ -1443,69 +1526,55 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                             {groupTitle(part.index, part.name)}
                           </p>
                           {isEditingParts && (
-                          <>
-                          <button
-                            type="button"
-                            disabled={part.index === 0}
-                            onClick={() => {
-                              const result = moveParts(chapters, [part.index], -1);
-                              persistChapters(result.chapters, chapters[activeChapterIndex]?.id);
-                              setSelectedPartIndices((prev) => {
-                                if (!prev.length) return prev;
-                                const next = new Set(prev);
-                                if (next.has(part.index)) {
-                                  next.delete(part.index);
-                                  result.selected.forEach((i) => next.add(i));
-                                }
-                                return [...next].sort((a, b) => a - b);
-                              });
-                            }}
-                            className="p-1 rounded-md bg-[#FAF7F2] text-[#52635E] hover:text-[#D97706] hover:bg-[#F5EFE6] disabled:opacity-30"
-                            title="Move part up"
-                          >
-                            <ArrowUp className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            disabled={part.index === partGroups.length - 1}
-                            onClick={() => {
-                              const result = moveParts(chapters, [part.index], 1);
-                              persistChapters(result.chapters, chapters[activeChapterIndex]?.id);
-                              setSelectedPartIndices((prev) => {
-                                if (!prev.length) return prev;
-                                const next = new Set(prev);
-                                if (next.has(part.index)) {
-                                  next.delete(part.index);
-                                  result.selected.forEach((i) => next.add(i));
-                                }
-                                return [...next].sort((a, b) => a - b);
-                              });
-                            }}
-                            className="p-1 rounded-md bg-[#FAF7F2] text-[#52635E] hover:text-[#D97706] hover:bg-[#F5EFE6] disabled:opacity-30"
-                            title="Move part down"
-                          >
-                            <ArrowDown className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingPartIndex(part.index);
-                              setEditingPartName(part.name);
-                            }}
-                            className="p-1 rounded-md bg-[#FAF7F2] text-[#52635E] hover:text-[#D97706] hover:bg-[#F5EFE6]"
-                            title="Edit part name"
-                          >
-                            <SquarePen className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteSelectedParts([part.index])}
-                            className="p-1 rounded-md bg-[#FAF7F2] text-[#52635E] hover:text-red-600 hover:bg-rose-50"
-                            title="Delete part"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                          </>
+                          <KebabMenu
+                            compact
+                            label="Part actions"
+                            items={[
+                              {
+                                label: "Edit",
+                                onClick: () => {
+                                  setEditingPartIndex(part.index);
+                                  setEditingPartName(part.name);
+                                },
+                              },
+                              {
+                                label: "Move Up",
+                                disabled: part.index === 0,
+                                onClick: () => {
+                                  const result = moveParts(chapters, [part.index], -1);
+                                  persistChapters(result.chapters, chapters[activeChapterIndex]?.id);
+                                  setSelectedPartIndices((prev) => {
+                                    if (!prev.length) return prev;
+                                    const next = new Set(prev);
+                                    if (next.has(part.index)) {
+                                      next.delete(part.index);
+                                      result.selected.forEach((i) => next.add(i));
+                                    }
+                                    return [...next].sort((a, b) => a - b);
+                                  });
+                                },
+                              },
+                              {
+                                label: "Move Down",
+                                disabled: part.index === partGroups.length - 1,
+                                onClick: () => {
+                                  const result = moveParts(chapters, [part.index], 1);
+                                  persistChapters(result.chapters, chapters[activeChapterIndex]?.id);
+                                  setSelectedPartIndices((prev) => {
+                                    if (!prev.length) return prev;
+                                    const next = new Set(prev);
+                                    if (next.has(part.index)) {
+                                      next.delete(part.index);
+                                      result.selected.forEach((i) => next.add(i));
+                                    }
+                                    return [...next].sort((a, b) => a - b);
+                                  });
+                                },
+                              },
+                              { label: "Merge", disabled: selectedPartIndices.length < 2, onClick: handleMergeSelectedParts },
+                              { label: "Delete", danger: true, onClick: () => handleDeleteSelectedParts([part.index]) },
+                            ]}
+                          />
                           )}
                         </>
                       )}
@@ -1565,11 +1634,20 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                       <FileText className="w-3.5 h-3.5" />
                       <span>Full Content</span>
                     </button>
-
                     <button
                       onClick={() => setViewMode("summary")}
                       className={`px-2.5 py-1 rounded-md font-medium transition-colors flex items-center gap-1.5 ${
                         viewMode === "summary"
+                          ? "bg-[#1C2A26] text-white shadow-2xs"
+                          : "text-[#52635E] hover:text-[#1C2A26]"
+                      }`}
+                    >
+                      <span>Summary</span>
+                    </button>
+                    <button
+                      onClick={() => setViewMode("aiSummary")}
+                      className={`px-2.5 py-1 rounded-md font-medium transition-colors flex items-center gap-1.5 ${
+                        viewMode === "aiSummary"
                           ? "bg-[#D97706] text-white shadow-2xs"
                           : "text-[#52635E] hover:text-[#1C2A26]"
                       }`}
@@ -1584,14 +1662,26 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                   {saveHint ? (
                     <span className="text-[11px] font-bold text-[#8A9B95]">{saveHint}</span>
                   ) : null}
-                  <Button
-                    variant={chapterEdit ? "primary" : "outline"}
-                    size="sm"
-                    onClick={() => setChapterEditMode(!chapterEdit)}
-                    leftIcon={<Edit className="w-3.5 h-3.5 text-[#D97706]" />}
-                  >
-                    {chapterEdit ? "Done editing" : "Edit"}
-                  </Button>
+                  {isAdmin && chapterEdit ? (
+                    <>
+                      <Button variant="outline" size="sm" onClick={cancelChapterEdit}>
+                        Cancel
+                      </Button>
+                      <Button variant="primary" size="sm" onClick={() => setChapterEditMode(false)}>
+                        Done editing
+                      </Button>
+                    </>
+                  ) : isAdmin ? (
+                    <KebabMenu
+                      label="Chapter actions"
+                      items={[
+                        { label: "Edit", onClick: () => enterChapterEdit(activeChapterIndex) },
+                        { label: "Move Up", disabled: !activeMove.canUp, onClick: () => persistChapters(moveChapterBlock(chapters, activeChapterIndex, -1).chapters, activeChapter.id) },
+                        { label: "Move Down", disabled: !activeMove.canDown, onClick: () => persistChapters(moveChapterBlock(chapters, activeChapterIndex, 1).chapters, activeChapter.id) },
+                        { label: "Delete", danger: true, onClick: () => handleDeleteChapter(activeChapterIndex) },
+                      ]}
+                    />
+                  ) : null}
 
                   <Button
                     variant={completedChapterIds.includes(activeChapter.id) ? "outline" : "primary"}
@@ -1673,50 +1763,6 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                       />
                       min
                     </label>
-                    <button
-                      type="button"
-                      disabled={!activeMove.canUp}
-                      onClick={() => {
-                        const result = moveChapterBlock(chapters, activeChapterIndex, -1);
-                        persistChapters(result.chapters, activeChapter.id);
-                      }}
-                      className="p-1 rounded-md text-[#8A9B95] hover:text-[#D97706] disabled:opacity-30"
-                      title="Move up"
-                    >
-                      <ArrowUp className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      disabled={!activeMove.canDown}
-                      onClick={() => {
-                        const result = moveChapterBlock(chapters, activeChapterIndex, 1);
-                        persistChapters(result.chapters, activeChapter.id);
-                      }}
-                      className="p-1 rounded-md text-[#8A9B95] hover:text-[#D97706] disabled:opacity-30"
-                      title="Move down"
-                    >
-                      <ArrowDown className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (armedDeleteId !== activeChapter.id) {
-                          setArmedDeleteId(activeChapter.id);
-                          return;
-                        }
-                        setArmedDeleteId(null);
-                        handleDeleteChapter(activeChapterIndex);
-                      }}
-                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-bold ${
-                        armedDeleteId === activeChapter.id
-                          ? "bg-rose-600 text-white"
-                          : "text-[#8A9B95] hover:text-rose-600"
-                      }`}
-                      title="Delete chapter"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      {armedDeleteId === activeChapter.id ? "Click again" : "Delete"}
-                    </button>
                   </div>
                 ) : activePartGroup ? (
                   <p className="font-serif-display text-xs sm:text-sm font-semibold text-[#D97706]">
@@ -1733,22 +1779,42 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
               {/* CONTENT VIEW OR AI SUMMARY VIEW */}
               {chapterEdit ? (
                 <div className="space-y-3">
-                  <LessonContentEditor
-                    value={activeChapter.contentMarkdown || ""}
-                    onChange={(next) => patchActiveChapter({ contentMarkdown: next })}
-                    preview={(text) => renderFormattedMarkdown(text)}
-                  />
-                  <div className="space-y-1.5 pt-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#52635E] flex items-center gap-1.5 font-sans">
-                      <Code className="w-3 h-3 text-[#D97706]" /> CODE EXAMPLE
-                    </span>
+                  {viewMode === "summary" ? (
                     <textarea
-                      value={activeChapter.codeSnippet || ""}
-                      onChange={(e) => patchActiveChapter({ codeSnippet: e.target.value })}
-                      rows={4}
-                      className="w-full p-3.5 sm:p-4 bg-[#1C2A26] text-[#A7F3D0] rounded-xl font-mono text-xs sm:text-[13px] leading-relaxed border border-[#2D3F3A] focus:outline-none focus:border-[#D97706]"
+                      value={chapterCustomSummary(activeChapter)}
+                      onChange={(e) => patchActiveChapter({ customSummary: e.target.value })}
+                      rows={10}
+                      placeholder="Write your summary for this chapter. This is never overwritten by AI."
+                      className="w-full p-3.5 text-sm bg-[#FAF7F2] border border-[#E7E0D3] rounded-xl focus:outline-none focus:border-[#D97706]"
                     />
-                  </div>
+                  ) : viewMode === "aiSummary" ? (
+                    <textarea
+                      value={chapterAiSummary(activeChapter)}
+                      onChange={(e) => patchActiveChapter({ aiSummary: e.target.value, summaryMarkdown: e.target.value })}
+                      rows={10}
+                      placeholder="AI summary"
+                      className="w-full p-3.5 text-sm bg-[#FAF7F2] border border-[#E7E0D3] rounded-xl focus:outline-none focus:border-[#D97706]"
+                    />
+                  ) : (
+                    <>
+                      <LessonContentEditor
+                        value={activeChapter.contentMarkdown || ""}
+                        onChange={(next) => patchActiveChapter({ contentMarkdown: next })}
+                        preview={(text) => renderFormattedMarkdown(text)}
+                      />
+                      <div className="space-y-1.5 pt-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#52635E] flex items-center gap-1.5 font-sans">
+                          <Code className="w-3 h-3 text-[#D97706]" /> CODE EXAMPLE
+                        </span>
+                        <textarea
+                          value={activeChapter.codeSnippet || ""}
+                          onChange={(e) => patchActiveChapter({ codeSnippet: e.target.value })}
+                          rows={4}
+                          className="w-full p-3.5 sm:p-4 bg-[#1C2A26] text-[#A7F3D0] rounded-xl font-mono text-xs sm:text-[13px] leading-relaxed border border-[#2D3F3A] focus:outline-none focus:border-[#D97706]"
+                        />
+                      </div>
+                    </>
+                  )}
                   <button
                     type="button"
                     onClick={() => addChapterInPart(activePartGroup?.index)}
@@ -1757,7 +1823,37 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                     <Plus className="w-3.5 h-3.5 text-[#D97706]" /> Add chapter
                   </button>
                 </div>
-              ) : viewMode === "summary" ? (
+              ) : (
+              <>
+              <Highlightable
+                onAdd={(text, color) =>
+                  persistHighlights(
+                    addHighlight(
+                      highlights,
+                      activeChapter.id,
+                      text,
+                      color,
+                      viewMode === "aiSummary" ? "aiSummary" : viewMode === "summary" ? "summary" : "full"
+                    )
+                  )
+                }
+              >
+              {viewMode === "summary" ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 3 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-4 sm:p-5 rounded-2xl bg-[#FAF7F2] border border-[#E7E0D3] space-y-2.5 shadow-2xs"
+                >
+                  <div className="flex items-center gap-2 text-[#1C2A26] font-serif-display font-bold text-base">
+                    <span>Summary</span>
+                  </div>
+                  <div className="text-xs sm:text-sm leading-relaxed text-[#1C2A26] font-sans space-y-2">
+                    {chapterCustomSummary(activeChapter)
+                      ? renderFormattedMarkdown(chapterCustomSummary(activeChapter))
+                      : <p className="text-[#8A9B95]">No summary yet.</p>}
+                  </div>
+                </motion.div>
+              ) : viewMode === "aiSummary" ? (
                 <motion.div
                   initial={{ opacity: 0, y: 3 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -1767,9 +1863,10 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                     <Zap className="w-4 h-4 text-[#D97706]" />
                     <span>AI Key Takeaways & Summary</span>
                   </div>
-
                   <div className="text-xs sm:text-sm leading-relaxed text-[#1C2A26] font-sans space-y-2">
-                    {renderFormattedMarkdown(activeChapter.summaryMarkdown || activeChapter.contentMarkdown)}
+                    {chapterAiSummary(activeChapter)
+                      ? renderFormattedMarkdown(chapterAiSummary(activeChapter))
+                      : <p className="text-[#8A9B95]">No AI summary yet.</p>}
                   </div>
                 </motion.div>
               ) : (slug === "testing-types" || slug === "testing-types-manual" || activeChapter.why || activeChapter.practical) ? (
@@ -1937,6 +2034,31 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                     </div>
                   )}
                 </motion.div>
+              )}
+              </Highlightable>
+              <details className="pt-2">
+                <summary className="text-[11px] font-bold text-[#52635E] cursor-pointer">
+                  Highlights ({(highlights[activeChapter.id] || []).length} in chapter · {allHighlights(highlights).length} in manual)
+                </summary>
+                <div className="mt-2 space-y-3">
+                  <HighlightsList
+                    rows={highlights[activeChapter.id] || []}
+                    emptyLabel="No highlights in this chapter. Select text in Full Content, Summary, or AI Summary."
+                    onRemove={(row) => persistHighlights(removeHighlight(highlights, row.chapterId, row.id))}
+                  />
+                  {allHighlights(highlights).length > (highlights[activeChapter.id] || []).length ? (
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-[#8A9B95] mb-1">Whole manual</p>
+                      <HighlightsList
+                        rows={allHighlights(highlights)}
+                        emptyLabel=""
+                        onRemove={(row) => persistHighlights(removeHighlight(highlights, row.chapterId, row.id))}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              </details>
+              </>
               )}
 
 

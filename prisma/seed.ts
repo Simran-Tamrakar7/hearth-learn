@@ -23,6 +23,7 @@ async function main() {
     data: {
       email: "demo@hearth.study",
       name: "Rowan Vance",
+      role: "ADMIN",
       streak: {
         create: {
           currentCount: 5,

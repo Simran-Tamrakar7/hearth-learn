@@ -12,7 +12,7 @@ import { useToast } from "@/components/ui/Toast";
 import { MANUALS_DATA, findHearthManual, ManualItem } from "@/app/manuals/_lib/manualsData";
 import { activeManualSlugs } from "@/app/manuals/_content/_registry";
 import { genres } from "@/app/manuals/_content/_helpers.js";
-import { Compass, Search, Clock, BookOpen, ArrowRight, Pin, ExternalLink, Code2, Sparkles, X, Trash2 } from "lucide-react";
+import { Compass, Search, Clock, BookOpen, ArrowRight, Pin, ExternalLink, Code2, Sparkles, X } from "lucide-react";
 import {
   PinButton,
   subscribePinnedItems,
@@ -22,6 +22,9 @@ import {
   manualPinId,
 } from "@/components/ui/PinButton";
 import { emptyManual, getUserManual, hiddenManualSlugs, notesToManual, removeCatalogManual, saveUserManual, subscribeUserManuals } from "@/app/manuals/_lib/userManuals";
+import { chapterAiSummary, chapterCustomSummary } from "@/app/manuals/_lib/manualsData";
+import { KebabMenu } from "@/app/manuals/_ui/KebabMenu";
+import { useIsAdmin } from "@/lib/useAuthz";
 
 const GENRE_CATEGORY: Record<string, ManualItem["category"] | "All"> = {
   all: "All",
@@ -74,30 +77,37 @@ function ManualCard({
   manual,
   pinned,
   onDelete,
+  isAdmin,
 }: {
   manual: ManualItem;
   pinned?: boolean;
   onDelete?: () => void;
+  isAdmin?: boolean;
 }) {
   return (
     <motion.div whileHover={{ y: -6, scale: 1.02 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
       <div className="relative h-full">
         <div className="absolute top-4 right-4 z-20 flex items-center gap-1">
-          {onDelete && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (window.confirm(`Delete “${manual.title}”? This cannot be undone.`)) onDelete();
-              }}
-              className="p-2 rounded-xl bg-white/90 text-[#8A9B95] hover:text-rose-700 hover:bg-rose-50 border border-[#E7E0D3]"
-              title="Delete manual"
-              aria-label={`Delete ${manual.title}`}
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          )}
+          {isAdmin ? (
+            <KebabMenu
+              label={`Actions for ${manual.title}`}
+              items={[
+                {
+                  label: "Edit",
+                  onClick: () => {
+                    window.location.href = `/manuals/${manual.slug}?edit=1`;
+                  },
+                },
+                {
+                  label: "Delete",
+                  danger: true,
+                  onClick: () => {
+                    if (window.confirm(`Delete “${manual.title}”? This cannot be undone.`)) onDelete?.();
+                  },
+                },
+              ]}
+            />
+          ) : null}
           <PinButton
             itemId={manualPinId(manual.slug)}
             itemTitle={manual.title}
@@ -174,8 +184,32 @@ function GenerateManualModal({
   const [notes, setNotes] = useState("");
   const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
+  const [draft, setDraft] = useState<ManualItem | null>(null);
+  const [editTab, setEditTab] = useState<"full" | "summary" | "aiSummary">("full");
 
   if (!open) return null;
+
+  function patchDraftChapter(idx: number, patch: Partial<ManualItem["chapters"][number]>) {
+    if (!draft) return;
+    setDraft({
+      ...draft,
+      chapters: draft.chapters.map((ch, i) => (i === idx ? { ...ch, ...patch } : ch)),
+    });
+  }
+
+  function addToList(manual: ManualItem) {
+    const saved = saveUserManual(manual);
+    onCreated(saved);
+    setNotes("");
+    setTitle("");
+    setDraft(null);
+    onClose();
+    toast({
+      type: "success",
+      title: "Manual added",
+      description: `"${saved.title}" is now on your Manuals list.`,
+    });
+  }
 
   async function generate() {
     setBusy(true);
@@ -185,34 +219,25 @@ function GenerateManualModal({
       if (!titleTrim && !notesTrim) {
         throw new Error("Add a title or paste some notes.");
       }
-      let saved;
       if (!notesTrim) {
-        saved = saveUserManual(emptyManual(titleTrim));
-      } else {
-        let markdown = notes;
-        try {
-          const res = await fetch("/api/manuals/generate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ notes, title: titleTrim || undefined }),
-          });
-          const data = await res.json();
-          if (typeof data.markdown === "string" && data.markdown.trim()) markdown = data.markdown;
-          if (data.error) throw new Error(data.error);
-        } catch (err) {
-          if (err instanceof Error && (err.message === "Paste some notes first." || err.message === "Add a title or paste some notes.")) throw err;
-        }
-        saved = saveUserManual(notesToManual(markdown, titleTrim || undefined));
+        setDraft(emptyManual(titleTrim));
+        return;
       }
-      onCreated(saved);
-      setNotes("");
-      setTitle("");
-      onClose();
-      toast({
-        type: "success",
-        title: "Manual added",
-        description: `"${saved.title}" is now on your Manuals list.`,
-      });
+      let markdown = notes;
+      try {
+        const res = await fetch("/api/manuals/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ notes, title: titleTrim || undefined }),
+        });
+        const data = await res.json();
+        if (res.status === 403) throw new Error(data.error || "Admin only.");
+        if (typeof data.markdown === "string" && data.markdown.trim()) markdown = data.markdown;
+        if (data.error) throw new Error(data.error);
+      } catch (err) {
+        if (err instanceof Error && (err.message === "Admin only." || err.message === "Paste some notes first." || err.message === "Add a title or paste some notes.")) throw err;
+      }
+      setDraft(notesToManual(markdown, titleTrim || undefined));
     } catch (e) {
       toast({
         type: "error",
@@ -226,52 +251,133 @@ function GenerateManualModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-[#1C2A26]/40">
-      <div className="w-full max-w-2xl bg-[#FAF7F2] border border-[#E7E0D3] rounded-3xl shadow-xl overflow-hidden">
+      <div className="w-full max-w-2xl max-h-[90vh] bg-[#FAF7F2] border border-[#E7E0D3] rounded-3xl shadow-xl overflow-hidden flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#E7E0D3]">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-[#D97706]" />
-            <h2 className="font-serif-display text-lg font-bold text-[#1C2A26]">New manual with AI</h2>
+            <h2 className="font-serif-display text-lg font-bold text-[#1C2A26]">
+              {draft ? "Review chapters" : "New manual with AI"}
+            </h2>
           </div>
           <button type="button" onClick={onClose} className="p-1.5 rounded-xl text-[#8A9B95] hover:text-[#1C2A26]" aria-label="Close">
             <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="p-5 space-y-3">
-          <p className="text-xs text-[#52635E] leading-relaxed">
-            Paste notes for AI to structure into parts, chapters, and sub-chapters — or just a title to start a blank manual you can edit.
-          </p>
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Title (optional)"
-            className="w-full h-11 px-4 text-sm bg-white border border-[#E7E0D3] rounded-2xl focus:outline-none focus:border-[#D97706]"
-          />
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Paste notes, meeting dump, or markdown…"
-            rows={12}
-            className="w-full px-4 py-3 text-sm bg-white border border-[#E7E0D3] rounded-2xl focus:outline-none focus:border-[#D97706] resize-y min-h-[12rem]"
-          />
-        </div>
-        <div className="px-5 py-4 border-t border-[#E7E0D3] flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="h-10 px-4 rounded-xl text-xs font-semibold border border-[#E7E0D3] bg-white text-[#52635E] hover:text-[#1C2A26]"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={generate}
-            className="h-10 px-4 rounded-xl text-xs font-semibold bg-[#1C2A26] text-[#FAF7F2] hover:bg-[#243530] disabled:opacity-50 inline-flex items-center gap-1.5"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            {busy ? "Creating…" : notes.trim() ? "Generate & add to list" : "Create blank manual"}
-          </button>
-        </div>
+        {draft ? (
+          <>
+            <div className="p-5 space-y-3 overflow-y-auto">
+              <input
+                value={draft.title}
+                onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+                className="w-full h-11 px-4 text-sm bg-white border border-[#E7E0D3] rounded-2xl focus:outline-none focus:border-[#D97706]"
+              />
+              <p className="text-xs text-[#52635E]">
+                {draft.chapters.length} chapter{draft.chapters.length === 1 ? "" : "s"} · edit Full Content, Summary, and AI Summary before adding to the list.
+              </p>
+              <div className="flex items-center bg-white border border-[#E7E0D3] rounded-lg p-0.5 text-[11px] w-fit">
+                {(["full", "summary", "aiSummary"] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setEditTab(tab)}
+                    className={`px-2.5 py-1 rounded-md font-bold ${editTab === tab ? "bg-[#1C2A26] text-white" : "text-[#52635E]"}`}
+                  >
+                    {tab === "full" ? "Full Content" : tab === "summary" ? "Summary" : "AI Summary"}
+                  </button>
+                ))}
+              </div>
+              {draft.chapters.map((ch, idx) => (
+                <div key={ch.id} className="space-y-1.5 p-3 rounded-2xl bg-white border border-[#E7E0D3]">
+                  <div className="text-[11px] font-bold text-[#D97706]">{ch.subtitle || "Part"} · {ch.title}</div>
+                  <input
+                    value={ch.title}
+                    onChange={(e) => patchDraftChapter(idx, { title: e.target.value })}
+                    className="w-full h-9 px-3 text-sm bg-[#FAF7F2] border border-[#E7E0D3] rounded-xl focus:outline-none focus:border-[#D97706]"
+                  />
+                  {editTab === "full" ? (
+                    <textarea
+                      value={ch.contentMarkdown}
+                      onChange={(e) => patchDraftChapter(idx, { contentMarkdown: e.target.value })}
+                      rows={6}
+                      className="w-full px-3 py-2 text-xs bg-[#FAF7F2] border border-[#E7E0D3] rounded-xl focus:outline-none focus:border-[#D97706]"
+                    />
+                  ) : editTab === "summary" ? (
+                    <textarea
+                      value={chapterCustomSummary(ch)}
+                      onChange={(e) => patchDraftChapter(idx, { customSummary: e.target.value })}
+                      rows={5}
+                      placeholder="Your summary for this chapter"
+                      className="w-full px-3 py-2 text-xs bg-[#FAF7F2] border border-[#E7E0D3] rounded-xl focus:outline-none focus:border-[#D97706]"
+                    />
+                  ) : (
+                    <textarea
+                      value={chapterAiSummary(ch)}
+                      onChange={(e) => patchDraftChapter(idx, { aiSummary: e.target.value, summaryMarkdown: e.target.value })}
+                      rows={5}
+                      placeholder="AI summary"
+                      className="w-full px-3 py-2 text-xs bg-[#FAF7F2] border border-[#E7E0D3] rounded-xl focus:outline-none focus:border-[#D97706]"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="px-5 py-4 border-t border-[#E7E0D3] flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDraft(null)}
+                className="h-10 px-4 rounded-xl text-xs font-semibold border border-[#E7E0D3] bg-white text-[#52635E]"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={() => addToList(draft)}
+                className="h-10 px-4 rounded-xl text-xs font-semibold bg-[#1C2A26] text-[#FAF7F2] inline-flex items-center gap-1.5"
+              >
+                Add to manuals list
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="p-5 space-y-3">
+              <p className="text-xs text-[#52635E] leading-relaxed">
+                Paste notes for AI to structure into parts and chapters — or just a title to start a blank manual you can edit.
+              </p>
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Title (optional)"
+                className="w-full h-11 px-4 text-sm bg-white border border-[#E7E0D3] rounded-2xl focus:outline-none focus:border-[#D97706]"
+              />
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Paste notes, meeting dump, or markdown…"
+                rows={12}
+                className="w-full px-4 py-3 text-sm bg-white border border-[#E7E0D3] rounded-2xl focus:outline-none focus:border-[#D97706] resize-y min-h-[12rem]"
+              />
+            </div>
+            <div className="px-5 py-4 border-t border-[#E7E0D3] flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="h-10 px-4 rounded-xl text-xs font-semibold border border-[#E7E0D3] bg-white text-[#52635E] hover:text-[#1C2A26]"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={generate}
+                className="h-10 px-4 rounded-xl text-xs font-semibold bg-[#1C2A26] text-[#FAF7F2] hover:bg-[#243530] disabled:opacity-50 inline-flex items-center gap-1.5"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                {busy ? "Creating…" : notes.trim() ? "Generate" : "Create blank manual"}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -279,6 +385,7 @@ function GenerateManualModal({
 
 export default function ManualsCatalogPage() {
   const { toast } = useToast();
+  const isAdmin = useIsAdmin();
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [pinnedManuals, setPinnedManuals] = useState<ReturnType<typeof resolvePinnedManual>[]>([]);
@@ -474,6 +581,7 @@ export default function ManualsCatalogPage() {
                 Pathwise paths, grouped by craft — open a category, then work it chapter by chapter.
               </p>
             </div>
+            {isAdmin ? (
             <button
               type="button"
               onClick={() => setGenerateOpen(true)}
@@ -482,6 +590,7 @@ export default function ManualsCatalogPage() {
               <Sparkles className="w-4 h-4 text-[#D97706]" />
               New with AI
             </button>
+            ) : null}
           </div>
 
           <div className="pt-1 sm:max-w-md">
@@ -532,6 +641,7 @@ export default function ManualsCatalogPage() {
                     key={manual.id}
                     manual={manual}
                     pinned={pinnedIds.has(manualPinId(manual.slug))}
+                    isAdmin={isAdmin}
                     onDelete={() => {
                       const kind = removeCatalogManual(manual.slug);
                       if (!kind) return;
@@ -549,6 +659,7 @@ export default function ManualsCatalogPage() {
         )}
       </main>
 
+      {isAdmin ? (
       <GenerateManualModal
         open={generateOpen}
         onClose={() => setGenerateOpen(false)}
@@ -556,6 +667,7 @@ export default function ManualsCatalogPage() {
           /* subscribeUserManuals already refreshes the list */
         }}
       />
+      ) : null}
     </div>
   );
 }

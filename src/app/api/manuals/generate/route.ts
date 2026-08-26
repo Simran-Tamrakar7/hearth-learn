@@ -1,40 +1,39 @@
 /* API: /api/manuals/generate  — AI notes→manual for PAGE /manuals. Map: ../../CODE-FOR-THIS-API.md */
 
 import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/roles";
 
-const SYSTEM = `You turn raw notes into a Hearth Learn study manual as Markdown.
+const SYSTEM = `You are a manual-formatting assistant. Convert raw, unstructured content into a structured manual:
 
-Use this exact structure (parts are a plain "Part N · Name" line, chapters are ## headings, sub-chapters are ### headings):
+STRUCTURE:
+- Break content into logical PARTS (major sections), each titled "Part N: [Title]" with a one-line summary
+- Break each Part into numbered CHAPTERS (N.1, N.2, ...)
+- Use step-by-step instructions for processes, bullets for lists
+- Clear, concise, instructional tone — not conversational
+- Do not skip or shorten meaning — reorganize and clarify only
 
-# <Manual Title>
-<one-paragraph description of the whole manual>
+OUTPUT FORMAT:
+Part [N]: [Title]
+[One-line summary]
 
-Part 1 · <Part name>
-## <Chapter title>
-<overview paragraph>
+[N.1] [Chapter Title]
+[Reformatted content]
 
-### <Sub-chapter title>
-<notes for this sub-chapter>
-
-### <Sub-chapter title>
-<notes>
-
-Why it matters: <short paragraph>
-When to use it: <short paragraph>
-
-Part 2 · <Part name>
-## <Chapter title>
-...
+[N.2] [Chapter Title]
+[Reformatted content]
+(repeat for all)
 
 Rules:
 - Keep the author's facts. Do not invent tools, URLs, or product names they did not mention.
 - Split into 2–8 parts when the notes support it. Never dump everything into a single chapter if it can be grouped.
-- Every chapter is a ## heading. Sub-chapters are ### under that chapter. Never number them in the heading.
-- Use at least one ### sub-chapter when a chapter has two or more distinct ideas.
-- Write "why it matters" and "when to use it" as body text inside the chapter, not as ## headings.
-- Output markdown only. No preamble.`;
+- Output the structured manual only. No preamble.`;
 
 export async function POST(req: Request) {
+  const gate = await requireAdmin();
+  if (!gate.ok) {
+    return NextResponse.json({ error: "Admin only." }, { status: 403 });
+  }
+
   let notes = "";
   let title = "";
   try {
