@@ -36,14 +36,14 @@ async function main() {
     canUseAI: false,
   });
 
-  // Temporary seed admin — must change password on first login.
+  // Seed admin — change password from Profile (min 8 chars).
   await prisma.user.create({
     data: {
       email: "admin",
       name: "Admin",
       role: "ADMIN",
       status: "ACTIVE",
-      mustChangePassword: true,
+      mustChangePassword: false,
       permissions: adminPerms,
       passwordHash: await bcrypt.hash("admin", 10),
     },

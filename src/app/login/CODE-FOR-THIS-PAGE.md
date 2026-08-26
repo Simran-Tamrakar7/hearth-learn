@@ -4,8 +4,8 @@
 |---|---|
 | Login UI | `page.tsx` |
 | Sign up | `src/app/signup/page.tsx` |
-| Forgot / reset password | `src/app/forgot-password/page.tsx`, `src/app/reset-password/page.tsx` |
-| First-login password change | `src/app/account/password/page.tsx` |
+| Forgot / reset password | `src/app/forgot-password/page.tsx` (code flow; `/reset-password` redirects here) |
+| First-login password change | Removed — use `/profile` Edit Profile |
 | Approvals + per-user permissions | `src/app/admin/page.tsx` |
 | Manage categories | `src/app/admin/page.tsx` |
 | Auth options, seed admin | `src/lib/auth.ts` |

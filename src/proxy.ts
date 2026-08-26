@@ -23,9 +23,6 @@ export async function proxy(request: NextRequest) {
 
   if (isPublic(pathname)) {
     if (token && (pathname === "/login" || pathname === "/signup") && !request.nextUrl.searchParams.get("pending")) {
-      if (token.mustChangePassword) {
-        return NextResponse.redirect(new URL("/account/password", request.url));
-      }
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
     return NextResponse.next();
@@ -45,10 +42,6 @@ export async function proxy(request: NextRequest) {
     url.search = "";
     url.searchParams.set(token.status === "REJECTED" ? "rejected" : "pending", "1");
     return NextResponse.redirect(url);
-  }
-
-  if (token.mustChangePassword && pathname !== "/account/password") {
-    return NextResponse.redirect(new URL("/account/password", request.url));
   }
 
   if (pathname.startsWith("/admin") && token.role !== "ADMIN") {

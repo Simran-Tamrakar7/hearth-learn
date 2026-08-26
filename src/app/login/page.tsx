@@ -32,9 +32,10 @@ function LoginFormContent() {
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const { toast } = useToast();
 
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(searchParams.get("email") || "");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const resetOk = searchParams.get("reset") === "1";
   const [errorMsg, setErrorMsg] = useState(
     searchParams.get("pending")
       ? "Your account is waiting for admin approval."
@@ -67,6 +68,12 @@ function LoginFormContent() {
 
   return (
     <Card variant="default" hoverable={false} className="shadow-lg shadow-[#1C2A26]/5 p-6 sm:p-8">
+      {resetOk ? (
+        <div className="mb-4 flex items-center gap-2 p-3 bg-[#EBF3F0] text-[#1C2A26] text-xs font-semibold rounded-xl">
+          <CheckCircle2 className="w-4 h-4 text-[#2D4A43] shrink-0" />
+          <span>Password updated. Sign in with your new password.</span>
+        </div>
+      ) : null}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
           <label className="block text-xs font-semibold text-[#52635E]">Email or username</label>
@@ -87,7 +94,10 @@ function LoginFormContent() {
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <label className="block text-xs font-semibold text-[#52635E]">Password</label>
-            <Link href="/forgot-password" className="text-[11px] font-semibold text-[#D97706] hover:underline">
+            <Link
+              href={email.trim() ? `/forgot-password?email=${encodeURIComponent(email.trim())}` : "/forgot-password"}
+              className="text-[11px] font-semibold text-[#D97706] hover:underline"
+            >
               Forgot Password?
             </Link>
           </div>

@@ -1,30 +1,40 @@
+/* API: /api/auth/reset  — used by PAGE /forgot-password. Map: ../../CODE-FOR-THIS-API.md */
+
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { passwordError } from "@/lib/password";
+import { checkResetCode } from "@/lib/resetCode";
+import { purgeExpiredResetTokens } from "@/lib/mail";
 
 export async function POST(req: Request) {
-  let token = "";
+  let email = "";
+  let code = "";
   let password = "";
+  let confirm = "";
   try {
     const body = await req.json();
-    token = typeof body?.token === "string" ? body.token.trim() : "";
+    email = typeof body?.email === "string" ? body.email.trim() : "";
+    code = typeof body?.code === "string" ? body.code.trim() : "";
     password = typeof body?.password === "string" ? body.password : "";
+    confirm = typeof body?.confirmPassword === "string" ? body.confirmPassword : password;
   } catch {
-    return NextResponse.json({ error: "Expected JSON { token, password }" }, { status: 400 });
+    return NextResponse.json({ error: "Expected JSON { email, code, password }" }, { status: 400 });
   }
 
-  if (!token || password.length < 4) {
-    return NextResponse.json({ error: "A new password of at least 4 characters is required." }, { status: 400 });
+  const invalid = passwordError(password, confirm);
+  if (invalid) return NextResponse.json({ error: invalid }, { status: 400 });
+  if (!email || !code) {
+    return NextResponse.json({ error: "Email and code are required." }, { status: 400 });
   }
 
-  const row = await prisma.passwordResetToken.findUnique({ where: { token } });
-  if (!row || row.expiresAt.getTime() < Date.now()) {
-    return NextResponse.json({ error: "This reset link is invalid or has expired." }, { status: 400 });
-  }
+  await purgeExpiredResetTokens();
+  const result = await checkResetCode(email, code);
+  if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
 
-  const user = await prisma.user.findUnique({ where: { email: row.email } });
+  const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
-    return NextResponse.json({ error: "This reset link is invalid or has expired." }, { status: 400 });
+    return NextResponse.json({ error: "This code is invalid or has expired." }, { status: 400 });
   }
 
   await prisma.user.update({
@@ -34,7 +44,7 @@ export async function POST(req: Request) {
       mustChangePassword: false,
     },
   });
-  await prisma.passwordResetToken.deleteMany({ where: { email: row.email } });
+  await prisma.passwordResetToken.deleteMany({ where: { email } });
 
   return NextResponse.json({ ok: true });
 }

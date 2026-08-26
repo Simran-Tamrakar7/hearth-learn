@@ -50,7 +50,15 @@ UI kit demo. Not catalog content.
 
 ## `/profile`
 
-GET `/api/user/profile`. PATCH name, avatar URL, password. Nav avatar opens this page.
+GET `/api/user/profile`. PATCH name and avatar URL. Change password is `POST /api/auth/change-password` from Edit Profile (current + new + confirm, min 8 characters). Nav avatar opens this page.
+
+## `/login`
+
+Credentials + Google. `Forgot Password?` goes to `/forgot-password` (6-digit email code via Resend, then new password). Success returns to `/login?reset=1`. Password changes do **not** happen on login.
+
+## `/forgot-password`
+
+Email → verify code → new password. APIs: `/api/auth/forgot`, `/api/auth/verify-code`, `/api/auth/reset`. `/reset-password` and `/account/password` redirect here / to `/profile`.
 
 ## `/settings`
 

@@ -1,7 +1,9 @@
-import { randomBytes } from "crypto";
+/* API: /api/auth/forgot  — used by PAGE /forgot-password. Map: ../../CODE-FOR-THIS-API.md */
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { appBaseUrl, purgeExpiredResetTokens, sendAppEmail } from "@/lib/mail";
+import { purgeExpiredResetTokens, sendAppEmail } from "@/lib/mail";
+import { issueResetCode, recentResetToken, resendTooSoon } from "@/lib/resetCode";
 
 export async function POST(req: Request) {
   let email = "";
@@ -12,28 +14,32 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Expected JSON { email }" }, { status: 400 });
   }
 
-  const generic = { ok: true, message: "If that account exists, we sent a reset link." };
+  const generic = { ok: true, message: "If that account exists, we sent a verification code." };
 
   if (!email) return NextResponse.json(generic);
 
   await purgeExpiredResetTokens();
+
+  const existing = await recentResetToken(email);
+  if (existing && resendTooSoon(existing.createdAt)) {
+    return NextResponse.json(
+      { error: "Please wait a minute before requesting another code." },
+      { status: 429 }
+    );
+  }
+
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) return NextResponse.json(generic);
 
-  const token = randomBytes(32).toString("hex");
-  const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
-  await prisma.passwordResetToken.deleteMany({ where: { email } });
-  await prisma.passwordResetToken.create({ data: { email, token, expiresAt } });
-
-  const resetUrl = `${appBaseUrl()}/reset-password?token=${token}`;
+  const code = await issueResetCode(user.email);
   const mailed = await sendAppEmail({
-    to: email,
-    subject: "Reset your Hearth password",
-    text: `Click this link to set a new password (expires in 1 hour):\n${resetUrl}`,
+    to: user.email,
+    subject: "Your Hearth verification code",
+    text: `Your Hearth Learn verification code is:\n\n${code}\n\nIt expires in 15 minutes. If you didn't request this, ignore this email.`,
   });
 
   if (!mailed.sent && process.env.NODE_ENV !== "production") {
-    return NextResponse.json({ ...generic, resetUrl });
+    return NextResponse.json({ ...generic, code });
   }
   return NextResponse.json(generic);
 }

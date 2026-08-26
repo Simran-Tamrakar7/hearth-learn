@@ -7,8 +7,10 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { PasswordField } from "@/components/ui/PasswordField";
 import { useToast } from "@/components/ui/Toast";
 import { useSession } from "next-auth/react";
+import { passwordError } from "@/lib/password";
 import { PERMISSION_LABELS, PERMISSION_KEYS, parsePermissions, type Permissions } from "@/lib/permissions";
 import {
   Flame,
@@ -52,13 +54,18 @@ function initials(name?: string | null, email?: string | null) {
 
 export default function ProfilePage() {
   const { toast } = useToast();
-  const { status } = useSession();
+  const { status, update } = useSession();
   const [user, setUser] = useState<ProfileUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
   const [image, setImage] = useState("");
-  const [password, setPassword] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [pwBusy, setPwBusy] = useState(false);
+  const [pwError, setPwError] = useState("");
+  const [pwOk, setPwOk] = useState("");
 
   useEffect(() => {
     fetch("/api/user/profile")
@@ -77,7 +84,7 @@ export default function ProfilePage() {
     const res = await fetch("/api/user/profile", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, image, ...(password.length >= 4 ? { password } : {}) }),
+      body: JSON.stringify({ name, image }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -85,9 +92,45 @@ export default function ProfilePage() {
       return;
     }
     setUser((prev) => (prev ? { ...prev, name: data.user.name, image: data.user.image } : prev));
-    setPassword("");
     setEditing(false);
     toast({ type: "success", title: "Profile updated" });
+  }
+
+  async function changePassword(e: React.FormEvent) {
+    e.preventDefault();
+    const invalid = passwordError(newPassword, confirmPassword);
+    if (invalid) {
+      setPwError(invalid);
+      setPwOk("");
+      return;
+    }
+    setPwBusy(true);
+    setPwError("");
+    setPwOk("");
+    try {
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword,
+          password: newPassword,
+          confirmPassword,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setPwError(data.error || "Could not update password.");
+        return;
+      }
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setPwOk("Password updated. You can keep using this session, or sign in again with the new password.");
+      toast({ type: "success", title: "Password updated" });
+      await update();
+    } finally {
+      setPwBusy(false);
+    }
   }
 
   if (isLoading) {
@@ -153,13 +196,38 @@ export default function ProfilePage() {
             <label className="block text-xs font-semibold text-[#52635E]">Avatar URL
               <input className="mt-1 w-full h-11 px-3 rounded-xl border border-[#E7E0D3]" value={image} onChange={(e) => setImage(e.target.value)} placeholder="https://…" />
             </label>
-            <label className="block text-xs font-semibold text-[#52635E]">New password (optional)
-              <input type="password" className="mt-1 w-full h-11 px-3 rounded-xl border border-[#E7E0D3]" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Leave blank to keep current" />
-            </label>
             <div className="flex gap-2">
               <Button variant="primary" size="sm" onClick={() => void saveProfile()}>Save</Button>
               <Button variant="outline" size="sm" onClick={() => setEditing(false)}>Cancel</Button>
             </div>
+            <form onSubmit={changePassword} className="space-y-3 pt-4 border-t border-[#E7E0D3]">
+              <h3 className="font-serif-display text-base font-bold">Change Password</h3>
+              <p className="text-[11px] text-[#8A9B95]">At least 8 characters. Current password must match what’s on file.</p>
+              <PasswordField
+                label="Current password"
+                value={currentPassword}
+                onChange={setCurrentPassword}
+                autoComplete="current-password"
+                required
+              />
+              <PasswordField
+                label="New password"
+                value={newPassword}
+                onChange={setNewPassword}
+                autoComplete="new-password"
+                required
+              />
+              <PasswordField
+                label="Confirm new password"
+                value={confirmPassword}
+                onChange={setConfirmPassword}
+                autoComplete="new-password"
+                required
+              />
+              {pwError ? <p className="text-xs text-red-700">{pwError}</p> : null}
+              {pwOk ? <p className="text-xs text-[#2D4A43]">{pwOk}</p> : null}
+              <Button type="submit" variant="primary" size="sm" isLoading={pwBusy}>Update password</Button>
+            </form>
           </Card>
         ) : null}
 

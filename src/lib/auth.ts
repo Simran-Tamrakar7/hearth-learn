@@ -19,14 +19,14 @@ import {
 export async function ensureSeedAdmin() {
   const existing = await prisma.user.findUnique({ where: { email: SEED_ADMIN_EMAIL } });
   if (existing) return existing;
-  // ponytail: seed password "admin" is hashed only on first create; mustChangePassword forces a real password.
+  // ponytail: seed password "admin" is hashed only on first create; change it from Profile.
   return prisma.user.create({
     data: {
       email: SEED_ADMIN_EMAIL,
       name: "Admin",
       role: ADMIN_ROLE,
       status: STATUS_ACTIVE,
-      mustChangePassword: true,
+      mustChangePassword: false,
       permissions: stringifyPermissions(ADMIN_PERMISSIONS),
       passwordHash: await bcrypt.hash("admin", 10),
     },

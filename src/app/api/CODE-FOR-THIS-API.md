@@ -5,10 +5,14 @@ These are server routes, not screens. Each `route.ts` has a `API:` comment at th
 | API file | Called from / used by |
 |---|---|
 | `auth/[...nextauth]/route.ts` | `/login` (next-auth) |
-| `auth/register/route.ts` | `/login` sign-up |
+| `auth/register/route.ts` | `/signup` |
+| `auth/change-password/route.ts` | `/profile` |
+| `auth/forgot/route.ts` | `/forgot-password` (email verification code) |
+| `auth/verify-code/route.ts` | `/forgot-password` |
+| `auth/reset/route.ts` | `/forgot-password` (set password after code) |
+| `user/profile/route.ts` | `/profile` (GET + PATCH name/avatar; password is `auth/change-password`) |
 | `notes/route.ts` | `/notes`, `/tags` |
 | `user/dashboard/route.ts` | `/dashboard` |
-| `user/profile/route.ts` | `/profile` |
 | `settings/route.ts` | exists; `/settings` page does **not** call it |
 | `showcase/route.ts` | `/showcase-wall` |
 | `trails/route.ts` | notes/dashboard trail pickers |
