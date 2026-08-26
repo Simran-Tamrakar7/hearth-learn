@@ -10,6 +10,10 @@ export type KebabItem = {
   danger?: boolean;
 };
 
+export function kebabItems(items: Array<KebabItem | false | null | undefined>): KebabItem[] {
+  return items.filter((x): x is KebabItem => Boolean(x));
+}
+
 export function KebabMenu({ items, label, compact }: { items: KebabItem[]; label: string; compact?: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);

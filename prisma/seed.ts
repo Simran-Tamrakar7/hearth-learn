@@ -19,12 +19,45 @@ async function main() {
   await prisma.streak.deleteMany();
   await prisma.user.deleteMany();
 
-  // Create demo user
+  const adminPerms = JSON.stringify({
+    canCreate: true,
+    canEdit: true,
+    canDelete: true,
+    canMerge: true,
+    canReorder: true,
+    canUseAI: true,
+  });
+  const viewerPerms = JSON.stringify({
+    canCreate: false,
+    canEdit: false,
+    canDelete: false,
+    canMerge: false,
+    canReorder: false,
+    canUseAI: false,
+  });
+
+  // Temporary seed admin — must change password on first login.
+  await prisma.user.create({
+    data: {
+      email: "admin",
+      name: "Admin",
+      role: "ADMIN",
+      status: "ACTIVE",
+      mustChangePassword: true,
+      permissions: adminPerms,
+      passwordHash: await bcrypt.hash("admin", 10),
+    },
+  });
+
+  // Create demo viewer
   const user = await prisma.user.create({
     data: {
       email: "demo@hearth.study",
       name: "Rowan Vance",
-      role: "ADMIN",
+      role: "USER",
+      status: "ACTIVE",
+      mustChangePassword: false,
+      permissions: viewerPerms,
       passwordHash: await bcrypt.hash("demopassword", 10),
       streak: {
         create: {
