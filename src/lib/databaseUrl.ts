@@ -13,7 +13,12 @@ export function resolveDatabaseUrl(env: Record<string, string | undefined> = pro
 }
 
 export function prepareDatabaseUrl(env: Record<string, string | undefined> = process.env) {
-  const url = resolveDatabaseUrl(env);
+  let url = resolveDatabaseUrl(env);
+  // ponytail: Prisma sqlite file: paths are schema-relative; Next/turbopack cwd can differ → SQLITE_CANTOPEN.
+  if (url.startsWith("file:") && !url.startsWith("file:/")) {
+    const rel = url.slice("file:".length).replace(/^\.\//, "");
+    url = `file:${join(process.cwd(), rel)}`;
+  }
   if (url === VERCEL_SQLITE_URL) {
     const dest = "/tmp/hearth.db";
     if (!existsSync(dest)) {
