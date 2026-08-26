@@ -6,4 +6,8 @@ Auth and the database client. Catalog data lives in each page folder (`_content`
 |---|---|---|
 | `auth.ts` | next-auth options | `/login` + session APIs |
 | `prisma.ts` | database client | every Prisma API |
+| `permissions.ts` | roles + granular perms | admin, nav kebabs |
+| `prefs.ts` | account prefs + site feature flags | settings, admin, `/api/me/prefs` |
+| `readerMemory.ts` | recently viewed / resume / dual-write prefs | manuals catalog + reader |
+| `openai.ts` | chat completions helper | coach, CV, life lab, quiz |
 | `_unused/` | dead code. Not imported. | — |

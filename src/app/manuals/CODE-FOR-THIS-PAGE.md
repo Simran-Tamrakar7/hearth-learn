@@ -15,7 +15,8 @@ This folder **is** Manuals. Screen, helpers, and chapter text all live here.
 | Catalog card (kebab Edit / Pin / Delete, tags) | `_ui/ManualCard.tsx` |
 | Categories (add / rename / delete) | `_lib/categories.ts` — UI on `/admin` |
 | Tags on add/edit | `_ui/TagInput.tsx` + `_lib/tags.ts` |
-| Highlights (select → color dots → save) | `_ui/Highlightable.tsx` + `_lib/highlights.ts` + `/api/highlights` |
+| Recently viewed / Continue | `_ui/RecentlyViewed.tsx` + `src/lib/readerMemory.ts` |
+| Highlights (select → color dots → save; click mark to remove) | `_ui/Highlightable.tsx` + `_lib/highlights.ts` + `/api/highlights` |
 | Convert body JS → Hearth shape | `_lib/pathwiseToHearth.ts` |
 | Chapter **text** of a builtin manual | `_content/<slug>/data.js` |
 | Testing Types overlay + 15-chapter TOC | `_content/testing-types/` |

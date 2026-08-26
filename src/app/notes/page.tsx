@@ -56,6 +56,7 @@ function NotesContent() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [formError, setFormError] = useState("");
+  const [dueReviews, setDueReviews] = useState<{ id: string; text: string; chapterId: string }[]>([]);
 
   useEffect(() => {
     fetchNotesAndTrails();
@@ -73,6 +74,11 @@ function NotesContent() {
 
       if (notesData.notes) setNotes(notesData.notes);
       if (trailsData.trails) setTrailsList(trailsData.trails);
+      const dueRes = await fetch("/api/highlights?due=1");
+      if (dueRes.ok) {
+        const dueData = await dueRes.json();
+        setDueReviews(Array.isArray(dueData.highlights) ? dueData.highlights : []);
+      }
     } catch (err) {
       console.error("Failed to load notes:", err);
     } finally {
@@ -179,6 +185,17 @@ function NotesContent() {
           {isCreating ? "Close Editor" : "New Study Note"}
         </Button>
       </div>
+
+      {dueReviews.length > 0 ? (
+        <Card variant="default" hoverable={false} className="p-4 space-y-2">
+          <h2 className="font-serif-display font-bold">Review later — due now</h2>
+          <ul className="space-y-1 text-sm">
+            {dueReviews.map((h) => (
+              <li key={h.id}>“{h.text}”</li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
 
       {/* Animated Note Creation Form Card */}
       <AnimatePresence mode="popLayout">

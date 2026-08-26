@@ -21,6 +21,8 @@ model User {
   mustChangePassword Boolean @default(false)
   permissions    String     @default("{\"canCreate\":false,\"canEdit\":false,\"canDelete\":false,\"canMerge\":false,\"canReorder\":false,\"canUseAI\":false}")
   createdAt      DateTime   @default(now())
+  lastActiveAt   DateTime?
+  prefs          String     @default("{}")
 
   progress            Progress[]
   notes               Note[]
@@ -34,6 +36,7 @@ model User {
   bookmarks           Bookmark[]
   highlights          Highlight[]
   manualHighlights    ManualHighlight[]
+  lifeLabAttempts     LifeLabAttempt[]
 }
 
 model Trail {
@@ -130,6 +133,11 @@ model ShowcaseItem {
   linkUrl     String
   trailId     String?
   createdAt   DateTime @default(now())
+  category    String   @default("General")
+  visibility  String   @default("private")
+  thumbnail   String   @default("")
+  links       String   @default("[]")
+  sortOrder   Int      @default(0)
 
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   trail       Trail?   @relation(fields: [trailId], references: [id], onDelete: SetNull)
@@ -239,12 +247,33 @@ model ManualHighlight {
   tabType   String   // fullContent | summary | aiSummary
   text      String
   color     String   @default("yellow")
-  start     Int      @default(0)
-  createdAt DateTime @default(now())
+  start       Int      @default(0)
+  reviewLater Boolean  @default(false)
+  reviewAt    DateTime?
+  createdAt   DateTime @default(now())
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, chapterId])
+}
+
+model LifeLabAttempt {
+  id        String   @id @default(cuid())
+  userId    String
+  arenaId   String
+  prompt    String
+  answer    String
+  scores    String   @default("{}")
+  xp        Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, arenaId])
+}
+
+model SiteConfig {
+  id       String @id @default("site")
+  features String @default("{\"watchDesk\":true,\"library\":true,\"lifeLab\":true,\"notes\":true,\"aiCoach\":true,\"breakRoom\":true,\"cookbook\":true,\"onboarding\":true,\"analytics\":true,\"chapterStudio\":true}")
 }
 
 model PasswordResetToken {

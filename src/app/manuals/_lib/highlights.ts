@@ -16,6 +16,8 @@ export type ChapterHighlight = {
   field: HighlightField;
   chapterId: string;
   start?: number;
+  reviewLater?: boolean;
+  reviewAt?: string | null;
 };
 
 export type HighlightStore = Record<string, ChapterHighlight[]>;
@@ -56,6 +58,8 @@ function asRow(row: ChapterHighlight, chapterId: string): ChapterHighlight {
     field: row.field === "summary" || row.field === "aiSummary" ? row.field : "full",
     chapterId,
     start: typeof row.start === "number" && row.start >= 0 ? row.start : 0,
+    reviewLater: Boolean(row.reviewLater),
+    reviewAt: row.reviewAt || null,
   };
 }
 
@@ -161,6 +165,8 @@ export async function fetchManualHighlights(chapterIds: string[]): Promise<Highl
         field: tabTypeToField(String(row.tabType || "fullContent")),
         chapterId: String(row.chapterId || ""),
         start: typeof row.start === "number" ? row.start : 0,
+        reviewLater: Boolean(row.reviewLater),
+        reviewAt: row.reviewAt ? String(row.reviewAt) : null,
       }))
     );
   } catch {
@@ -181,6 +187,7 @@ export async function postManualHighlight(row: ChapterHighlight) {
         text: row.text,
         color: row.color,
         start: row.start ?? 0,
+        reviewLater: Boolean(row.reviewLater),
       }),
     });
   } catch {

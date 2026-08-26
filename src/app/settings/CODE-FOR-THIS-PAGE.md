@@ -2,7 +2,8 @@
 
 | What you want to change | Open this file |
 |---|---|
-| Settings UI (theme, room toggles) | `page.tsx` |
-| Theme state | `src/context/ThemeContext.tsx` |
+| Settings UI (theme, type, highlight legend) | `page.tsx` |
+| Theme state + account persist | `src/context/ThemeContext.tsx` |
+| Prefs API | `src/app/api/me/prefs/route.ts` |
 
-This page writes `localStorage`. `src/app/api/settings/route.ts` exists but this screen does not call it.
+Room feature flags are Admin global (`/admin` + `/api/admin/features`), not per-user.

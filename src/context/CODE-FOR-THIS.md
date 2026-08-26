@@ -4,4 +4,5 @@
 
 - **Every page** gets theme via `Providers` in `src/app/layout.tsx`
 - **UI to change it:** `/settings` (`src/app/settings/page.tsx`)
-- **Navbar** reads room toggles to hide Library / Life Lab / etc.
+- **Persisted:** `/api/me/prefs` when signed in (localStorage cache for instant paint)
+- **Navbar** reads Admin global room flags from `/api/me/prefs` → `features`

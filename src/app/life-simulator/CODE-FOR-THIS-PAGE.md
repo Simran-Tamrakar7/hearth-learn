@@ -3,9 +3,7 @@
 | What you want to change | Open this file |
 |---|---|
 | How Life Lab **looks** and the arena UI | `page.tsx` ← **this is the `/life-simulator` screen** |
+| New Question / Evaluate / Past Attempts | `_ui/ArenaStudio.tsx` |
+| AI generate + evaluate + history | `src/app/api/life-lab/route.ts` |
 | Which arenas show in the pill bar | `_content/_registry.ts` |
-| Bug-hunt scenarios | `_content/bughunt/meta.ts` |
-| Crisis scenarios | `_content/crisis/meta.ts` |
-| Interview sample answers | `_content/interview/meta.ts` |
-| Refactor snippets | `_content/refactor/meta.ts` |
-| Negotiation strategies | `_content/negotiation/meta.ts` |
+| Interview role names | `_content/interview/meta.ts` |

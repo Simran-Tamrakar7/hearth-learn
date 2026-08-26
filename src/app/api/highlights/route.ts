@@ -20,6 +20,7 @@ export async function GET(req: Request) {
     if (!userId) return NextResponse.json({ highlights: [] });
 
     const { searchParams } = new URL(req.url);
+    const due = searchParams.get("due") === "1";
     const chapterId = searchParams.get("chapterId");
     const chapterIds = (searchParams.get("chapterIds") || "")
       .split(",")
@@ -28,7 +29,11 @@ export async function GET(req: Request) {
     const ids = chapterId ? [chapterId, ...chapterIds] : chapterIds;
 
     const rows = await prisma.manualHighlight.findMany({
-      where: ids.length ? { userId, chapterId: { in: ids } } : { userId },
+      where: {
+        userId,
+        ...(ids.length ? { chapterId: { in: ids } } : {}),
+        ...(due ? { reviewLater: true, reviewAt: { lte: new Date() } } : {}),
+      },
       orderBy: { createdAt: "asc" },
     });
     return NextResponse.json({ highlights: rows });
@@ -56,10 +61,33 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "chapterId and text are required." }, { status: 400 });
     }
 
+    const reviewLater = body.reviewLater === true;
+    const reviewAt = reviewLater
+      ? new Date(Date.now() + 1000 * 60 * 60 * 24)
+      : body.reviewLater === false
+        ? null
+        : undefined;
     const row = await prisma.manualHighlight.upsert({
       where: { id },
-      create: { id, userId, chapterId, tabType, text, color, start },
-      update: { text, color, start, tabType, chapterId },
+      create: {
+        id,
+        userId,
+        chapterId,
+        tabType,
+        text,
+        color,
+        start,
+        reviewLater,
+        reviewAt: reviewAt ?? null,
+      },
+      update: {
+        text,
+        color,
+        start,
+        tabType,
+        chapterId,
+        ...(typeof body.reviewLater === "boolean" ? { reviewLater, reviewAt: reviewAt ?? null } : {}),
+      },
     });
     return NextResponse.json({ highlight: row, field: tabTypeToField(tabType) });
   } catch (error) {

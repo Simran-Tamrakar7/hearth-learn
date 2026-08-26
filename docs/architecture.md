@@ -3,7 +3,7 @@
 ## Stack
 
 - **Next.js 16** (App Router), **React 19**, **Tailwind 4**
-- **Prisma + SQLite** for users, notes, Prisma-trails, showcase posts, certificates, streaks/badges, **manual chapter highlights**
+- **Prisma + SQLite** for users, notes, Prisma-trails, showcase portfolio, certificates, streaks/badges, **manual chapter highlights**, Life Lab attempts, site feature flags
 - **next-auth** for sessions
 - Catalog learning content is **imported TypeScript/JavaScript**, not a CMS and not MDX. There is no glob indexer: each `_registry.ts` is an explicit array you edit by hand.
 
@@ -32,24 +32,24 @@ Find a page: open `src/app/<url>/`. Example: dashboard is `src/app/dashboard/`. 
 | `/trails` | Redirect → `/manuals` |
 | `/trails/[slug]` | Redirect → `/manuals/[slug]` |
 | `/library` | Outbound book list **and** manuals catalog (add / pin / kebab) |
-| `/admin` | Signup approvals, permissions, manage categories |
-| `/life-simulator` | Life Lab arenas |
-| `/notes` | User notes (Prisma) |
-| `/ai` | Coach + CV maker (session UI) |
+| `/admin` | Signup approvals, user table, permissions, site feature flags, manage categories |
+| `/life-simulator` | Life Lab arenas (AI scenarios + past attempts) |
+| `/notes` | User notes (Prisma) + due highlight reviews |
+| `/ai` | Coach + CV maker (OpenAI) |
+| `/showcase-wall` | Per-user portfolio (public/private) + featured GitHub |
 | `/rest` | Break-room timer |
 | `/rest/games` | Games shelf |
 | `/rest/retro` | Ambient + trivia |
 | `/rest/cookbook` | Recipes |
 | `/toolkits` | Cheat sheets |
-| `/showcase-wall` | Featured GitHub + user posts |
 | `/showcase` | Component demo |
-| `/profile` | Streak / badges |
-| `/settings` | Theme + room toggles |
+| `/profile` | Avatar, stats, badges, edit profile, account |
+| `/settings` | Theme, type, highlight legend (account prefs) |
 | `/tags` | Note tags |
 | `/certificates/[id]` | Printable certificate |
 | `/login` | Auth |
 
-Navbar: Manuals, Library, Life Lab, Notes, AI, Break Room, Showcase Wall, Profile, Settings. Dashboard is the logo target. Toolkits is linked from home, not the nav. `/admin` is admin-only.
+Navbar: Manuals, Library, Life Lab, Notes, AI, Break Room, Showcase Wall, Settings, circular profile avatar. Dashboard is the logo target. Rest mode is the labeled coffee control. `/admin` is admin-only.
 
 ## Manual bodies
 

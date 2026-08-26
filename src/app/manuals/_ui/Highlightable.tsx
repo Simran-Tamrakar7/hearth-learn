@@ -22,7 +22,14 @@ export function MarkedText({ text, highlights }: { text: string; highlights: Cha
         if (!m) return <span key={i}>{part}</span>;
         const color = m[2] in HL_COLORS ? HL_COLORS[m[2] as HighlightColor] : HL_COLORS.yellow;
         return (
-          <mark key={m[1] || i} data-hl={m[1]} style={{ backgroundColor: color }} className="rounded-sm px-0.5">
+          <mark
+            key={m[1] || i}
+            data-hl={m[1]}
+            data-c={m[2]}
+            style={{ backgroundColor: color }}
+            className="rounded-sm px-0.5 cursor-pointer"
+            title="Click to remove highlight"
+          >
             {m[3]}
           </mark>
         );
@@ -31,19 +38,26 @@ export function MarkedText({ text, highlights }: { text: string; highlights: Cha
   );
 }
 
+type Bar =
+  | { kind: "add"; x: number; y: number; text: string; start: number }
+  | { kind: "edit"; x: number; y: number; id: string };
+
 export function Highlightable({
   children,
   onAdd,
+  onRemove,
+  defaultColor = "yellow",
 }: {
   children: ReactNode;
   onAdd: (text: string, color: HighlightColor, start: number) => void;
+  onRemove?: (id: string) => void;
+  defaultColor?: HighlightColor;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
-  const [bar, setBar] = useState<{ x: number; y: number; text: string; start: number } | null>(null);
+  const [bar, setBar] = useState<Bar | null>(null);
 
   useEffect(() => {
-    // ponytail: React 17+ delegates to root, so stopPropagation on the toolbar never reaches this native listener.
     const hide = (e: Event) => {
       if (barRef.current?.contains(e.target as Node)) return;
       setBar(null);
@@ -54,10 +68,7 @@ export function Highlightable({
 
   function showFromSelection() {
     const sel = window.getSelection();
-    if (!sel || sel.isCollapsed || !ref.current) {
-      setBar(null);
-      return;
-    }
+    if (!sel || sel.isCollapsed || !ref.current) return;
     const text = sel.toString().trim();
     if (!text || text.length > 500) return;
     const node = sel.anchorNode;
@@ -68,6 +79,7 @@ export function Highlightable({
     const full = ref.current.textContent || "";
     const start = Math.max(0, full.indexOf(text));
     setBar({
+      kind: "add",
       x: Math.min(Math.max(rect.left - host.left + rect.width / 2, 24), Math.max(host.width - 24, 24)),
       y: Math.max(rect.top - host.top - 8, 8),
       text,
@@ -75,36 +87,66 @@ export function Highlightable({
     });
   }
 
+  function onClick(e: React.MouseEvent) {
+    const mark = (e.target as HTMLElement).closest("mark[data-hl]") as HTMLElement | null;
+    if (!mark || !ref.current) return;
+    const id = mark.getAttribute("data-hl");
+    if (!id) return;
+    const rect = mark.getBoundingClientRect();
+    const host = ref.current.getBoundingClientRect();
+    setBar({
+      kind: "edit",
+      id,
+      x: Math.min(Math.max(rect.left - host.left + rect.width / 2, 24), Math.max(host.width - 24, 24)),
+      y: Math.max(rect.top - host.top - 8, 8),
+    });
+  }
+
   return (
-    <div ref={ref} className="relative" onMouseUp={showFromSelection}>
+    <div ref={ref} className="relative" onMouseUp={showFromSelection} onClick={onClick}>
       {children}
       {bar ? (
         <div
           ref={barRef}
-          className="absolute z-20 flex items-center gap-1 px-1.5 py-1 rounded-full bg-[#1C2A26] shadow-lg"
+          className="absolute z-20 flex items-center gap-1 px-1.5 py-1 rounded-full bg-[#1C2A26] shadow-lg text-[#FAF7F2]"
           style={{ left: bar.x, top: bar.y, transform: "translate(-50%, -100%)" }}
           onMouseDown={(e) => {
             e.preventDefault();
             e.stopPropagation();
           }}
         >
-          <Highlighter className="w-3 h-3 text-[#FAF7F2] ml-1" />
-          {COLORS.map((color) => (
+          {bar.kind === "add" ? (
+            <>
+              <Highlighter className="w-3 h-3 ml-1" />
+              {COLORS.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  title={`Highlight ${color}`}
+                  aria-label={`Highlight ${color}`}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    onAdd(bar.text, color || defaultColor, bar.start);
+                    setBar(null);
+                    window.getSelection()?.removeAllRanges();
+                  }}
+                  className={`w-4 h-4 rounded-full border ${color === defaultColor ? "border-white" : "border-white/40"}`}
+                  style={{ backgroundColor: HL_COLORS[color] }}
+                />
+              ))}
+            </>
+          ) : (
             <button
-              key={color}
               type="button"
-              title={`Highlight ${color}`}
-              aria-label={`Highlight ${color}`}
-              onMouseDown={(e) => e.preventDefault()}
+              className="flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold"
               onClick={() => {
-                onAdd(bar.text, color, bar.start);
+                onRemove?.(bar.id);
                 setBar(null);
-                window.getSelection()?.removeAllRanges();
               }}
-              className="w-4 h-4 rounded-full border border-white/40"
-              style={{ backgroundColor: HL_COLORS[color] }}
-            />
-          ))}
+            >
+              <X className="w-3 h-3" /> Remove highlight
+            </button>
+          )}
         </div>
       ) : null}
     </div>
@@ -115,10 +157,12 @@ export function HighlightsList({
   rows,
   emptyLabel,
   onRemove,
+  onReviewLater,
 }: {
   rows: ChapterHighlight[];
   emptyLabel: string;
   onRemove: (row: ChapterHighlight) => void;
+  onReviewLater?: (row: ChapterHighlight) => void;
 }) {
   if (rows.length === 0) {
     return <p className="text-[11px] text-[#8A9B95]">{emptyLabel}</p>;
@@ -132,6 +176,11 @@ export function HighlightsList({
             style={{ backgroundColor: HL_COLORS[row.color] }}
           />
           <span className="flex-1 min-w-0 leading-relaxed">“{row.text}”</span>
+          {onReviewLater ? (
+            <button type="button" className="text-[10px] font-bold text-[#D97706] shrink-0" onClick={() => onReviewLater(row)}>
+              {row.reviewLater ? "Queued" : "Review later"}
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={() => onRemove(row)}

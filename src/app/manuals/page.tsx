@@ -23,6 +23,7 @@ import { applyManualOverlay, getUserManual, hiddenManualSlugs, removeCatalogManu
 import { subscribeCategories } from "@/app/manuals/_lib/categories";
 import { AddManualControl } from "@/app/manuals/_ui/AddManualControl";
 import { ManualCard } from "@/app/manuals/_ui/ManualCard";
+import { RecentlyViewed } from "@/app/manuals/_ui/RecentlyViewed";
 import { usePermissions } from "@/lib/useAuthz";
 
 const GENRE_CATEGORY: Record<string, string> = {
@@ -156,6 +157,7 @@ export default function ManualsCatalogPage() {
       <Navbar />
 
       <main className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-12 py-10 sm:py-12 w-full space-y-10 flex-1">
+        <RecentlyViewed />
         {pinnedManuals.length > 0 && (
           <div className="space-y-4 bg-gradient-to-br from-white via-[#FAF7F2] to-[#FEF3C7]/40 border border-[#E7E0D3] rounded-3xl p-6 shadow-xs">
             <div className="flex items-center justify-between">

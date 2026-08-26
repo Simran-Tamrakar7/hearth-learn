@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
-import { findHearthManual, ManualItem, ManualChapter, chapterAiSummary, chapterCustomSummary } from "@/app/manuals/_lib/manualsData";
+import { MANUALS_DATA, findHearthManual, ManualItem, ManualChapter, chapterAiSummary, chapterCustomSummary } from "@/app/manuals/_lib/manualsData";
 import { getUserManual, saveUserManual, removeCatalogManual } from "@/app/manuals/_lib/userManuals";
 import { isTestingTypesSlug, TestingTypesGuide } from "@/app/manuals/_ui/TestingTypesGuide";
 import { PLAYWRIGHT_ROADMAP_PHASES, downloadRoadmapSVG } from "@/app/manuals/_lib/roadmapData";
@@ -27,11 +27,13 @@ import {
   deleteManualHighlight,
   fetchManualHighlights,
   highlightsForField,
+  HL_COLORS,
   lastAdded,
   mergeHighlightStores,
   parseHighlightStore,
   postManualHighlight,
   removeHighlight,
+  type ChapterHighlight,
   type HighlightStore,
   wrapHighlightHtml,
 } from "@/app/manuals/_lib/highlights";
@@ -39,6 +41,7 @@ import { listedCategories, subscribeCategories } from "@/app/manuals/_lib/catego
 import { TagInput } from "@/app/manuals/_ui/TagInput";
 import { usePermissions, useAppUserId } from "@/lib/useAuthz";
 import { highlightsStoreKey, isScopeReady, progressStoreKey, readScopedRaw, writeScopedRaw } from "@/lib/userScope";
+import { getResume, pushAccountProgress, setResume, touchRecentManual } from "@/lib/readerMemory";
 import { readerChaptersFromOverlay, testingOverlayForChapter } from "@/app/manuals/_ui/testing-types-reader";
 import { restoreTestingTypesToc, TESTING_TYPES_TOC_VERSION } from "@/app/manuals/_content/testing-types/outline";
 import {
@@ -179,6 +182,9 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   const [activeChapterIndex, setActiveChapterIndex] = useState<number>(0);
   const [prevChapterIndex, setPrevChapterIndex] = useState<number | null>(null);
   const [completedChapterIds, setCompletedChapterIds] = useState<string[]>([]);
+  const [quizText, setQuizText] = useState("");
+  const [quizBusy, setQuizBusy] = useState(false);
+  const resumeOnce = useRef(false);
 
   const handleNavigateChapter = (targetIdx: number) => {
     if (targetIdx >= 0 && targetIdx < chapters.length) {
@@ -294,6 +300,40 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       setChapters(parsed.chapters as ManualChapter[]);
     }
   }, [initialManual.id, userId]);
+
+  useEffect(() => {
+    if (!slug) return;
+    touchRecentManual(slug, manualTitle || initialManual.title);
+  }, [slug, manualTitle, initialManual.title]);
+
+  useEffect(() => {
+    if (resumeOnce.current || !chapters.length) return;
+    const resume = getResume(slug);
+    if (resume?.chapterIndex != null && resume.chapterIndex >= 0 && resume.chapterIndex < chapters.length) {
+      setActiveChapterIndex(resume.chapterIndex);
+      if (resume.scroll) window.scrollTo({ top: resume.scroll, behavior: "instant" as ScrollBehavior });
+    }
+    resumeOnce.current = true;
+  }, [slug, chapters.length]);
+
+  useEffect(() => {
+    if (!resumeOnce.current || !slug) return;
+    const chap = chapters[activeChapterIndex];
+    setResume(slug, { chapterId: chap?.id, chapterIndex: activeChapterIndex, scroll: typeof window !== "undefined" ? window.scrollY : 0 });
+  }, [slug, activeChapterIndex]);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const chap = chapters[activeChapterIndex];
+      setResume(slug, { chapterId: chap?.id, chapterIndex: activeChapterIndex, scroll: window.scrollY });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [slug, activeChapterIndex, chapters]);
+
+  useEffect(() => {
+    document.querySelector(`[data-toc-idx="${activeChapterIndex}"]`)?.scrollIntoView({ block: "nearest" });
+  }, [activeChapterIndex]);
 
   // Persist edits to localStorage
   const saveCustomDataToStorage = (updatedData: any) => {
@@ -532,6 +572,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
 
     setCompletedChapterIds(updated);
     writeScopedRaw(progressStoreKey(initialManual.id), JSON.stringify(updated));
+    pushAccountProgress(slug, updated);
   };
 
   const persistManualMeta = (
@@ -567,6 +608,14 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   const dropHighlight = (row: { id: string; chapterId: string }) => {
     persistHighlights(removeHighlight(highlights, row.chapterId, row.id));
     void deleteManualHighlight(row.id);
+  };
+
+  const flagReviewLater = (row: ChapterHighlight) => {
+    const nextRows = (highlights[row.chapterId] || []).map((h) =>
+      h.id === row.id ? { ...h, reviewLater: true } : h
+    );
+    persistHighlights({ ...highlights, [row.chapterId]: nextRows });
+    void postManualHighlight({ ...row, reviewLater: true });
   };
 
   const enterChapterEdit = (idx: number) => {
@@ -847,11 +896,15 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
             isActive ? "text-[#FAF7F2] font-semibold" : "text-[#3D4D47] hover:text-[#1C2A26] font-normal"
           } ${nested ? "py-1.5" : ""}`}
           title={displayTitle}
+          data-toc-idx={idx}
         >
           <span className={`font-mono text-[11px] font-bold shrink-0 min-w-[2.85rem] ${isActive ? "text-[#D97706]" : "text-[#8A9B95]"}`}>
             {label}.
           </span>
           <span className="truncate whitespace-nowrap flex-1 min-w-0">{displayTitle}</span>
+          <span className={`text-[10px] font-mono shrink-0 ${isActive ? "text-amber-200" : "text-[#8A9B95]"}`}>
+            {chap.estimatedMinutes || 15}m
+          </span>
         </button>
 
         {(showRowTools || (!nested && tocEdit === "sub")) && (
@@ -1709,7 +1762,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
 
           {/* RIGHT COLUMN: CHAPTER CONTENT VIEW */}
           <div className="lg:col-span-8 xl:col-span-8 space-y-4">
-            <Card variant="default" hoverable={false} className="p-4 sm:p-6 space-y-4 border-[#E7E0D3] bg-white shadow-xs rounded-2xl">
+            <Card variant="default" hoverable={false} className="p-4 sm:p-6 space-y-4 border-[#E7E0D3] bg-white shadow-xs rounded-2xl" id={`read-${activeChapter.id}`} data-chapter-spy={activeChapter.id}>
               {/* HEADER ROW WITH VIEW MODE TOGGLE BUTTONS */}
               <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#E7E0D3]">
                 <div className="flex flex-wrap items-center gap-3">
@@ -1920,7 +1973,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                 </div>
               ) : (
               <>
-              <Highlightable onAdd={applyHighlight}>
+              <Highlightable onAdd={applyHighlight} onRemove={(id) => dropHighlight({ id, chapterId: activeChapter.id })}>
               {viewMode === "summary" ? (
                 <motion.div
                   initial={{ opacity: 0, y: 3 }}
@@ -2134,6 +2187,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                     rows={highlights[activeChapter.id] || []}
                     emptyLabel="No highlights in this chapter. Select text in Full Content, Summary, or AI Summary."
                     onRemove={dropHighlight}
+                    onReviewLater={flagReviewLater}
                   />
                   {allHighlights(highlights).length > (highlights[activeChapter.id] || []).length ? (
                     <div>
@@ -2145,8 +2199,55 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                       />
                     </div>
                   ) : null}
+                  <button
+                    type="button"
+                    className="text-[11px] font-bold text-[#D97706]"
+                    onClick={() => {
+                      const rows = allHighlights(highlights);
+                      const html = `<html><head><meta charset="utf-8"><title>${manualTitle} notes</title></head><body><h1>${manualTitle}</h1>${rows
+                        .map((r) => `<p style="background:${HL_COLORS[r.color]};padding:8px">${r.text}</p>`)
+                        .join("")}</body></html>`;
+                      const blob = new Blob([html], { type: "application/msword" });
+                      const a = document.createElement("a");
+                      a.href = URL.createObjectURL(blob);
+                      a.download = `${slug}-highlights.doc`;
+                      a.click();
+                    }}
+                  >
+                    Export notes (.doc)
+                  </button>
+                  <button
+                    type="button"
+                    className="ml-3 text-[11px] font-bold text-[#1C2A26]"
+                    onClick={() => window.print()}
+                  >
+                    Print / PDF
+                  </button>
                 </div>
               </details>
+              <div className="pt-3 space-y-2">
+                <button
+                  type="button"
+                  className="text-[11px] font-bold px-3 py-1.5 rounded-lg border border-[#E7E0D3]"
+                  disabled={quizBusy}
+                  onClick={async () => {
+                    setQuizBusy(true);
+                    setQuizText("");
+                    const content = [activeChapter.overviewText, activeChapter.why, activeChapter.contentMarkdown, chapterCustomSummary(activeChapter)].filter(Boolean).join("\n");
+                    const res = await fetch("/api/ai/quiz", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ title: activeChapter.title, content: content || activeChapter.title }),
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    setQuizBusy(false);
+                    setQuizText(data.text || data.error || "Could not generate quiz.");
+                  }}
+                >
+                  {quizBusy ? "Writing quiz…" : "Chapter quiz"}
+                </button>
+                {quizText ? <pre className="text-xs whitespace-pre-wrap p-3 rounded-xl bg-[#FAF7F2] border border-[#E7E0D3]">{quizText}</pre> : null}
+              </div>
               </>
               )}
 
@@ -2176,6 +2277,27 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
             </Card>
           </div>
         </div>
+        {(() => {
+          const related = MANUALS_DATA.filter(
+            (m) =>
+              m.slug !== slug &&
+              (m.category === manualCategory || (m.tags || []).some((t) => manualTags.includes(t)))
+          ).slice(0, 4);
+          if (!related.length) return null;
+          return (
+            <section className="space-y-3">
+              <h2 className="font-serif-display text-xl font-bold">Related manuals</h2>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {related.map((m) => (
+                  <Link key={m.slug} href={`/manuals/${m.slug}`} className="p-4 rounded-2xl bg-white border border-[#E7E0D3] hover:border-[#1C2A26]">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#D97706]">{m.category}</p>
+                    <h3 className="font-serif-display font-bold mt-1">{m.title}</h3>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          );
+        })()}
       </main>
 
 
