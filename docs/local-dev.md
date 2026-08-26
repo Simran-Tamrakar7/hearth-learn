@@ -16,6 +16,7 @@ Open http://localhost:3000 (or the port Next prints).
 | `DATABASE_URL` | Prisma SQLite (see `.env`) |
 | `NEXTAUTH_SECRET` / `NEXTAUTH_URL` | Auth |
 | `OPENAI_API_KEY` | Optional `POST /api/manuals/generate` |
+| `ADMIN_EMAIL` | Optional extra admin account (demo@hearth.study is always admin) |
 
 Copy from `.env` if a teammate has one. Gitignores `.env*`. A typical local file:
 
@@ -34,6 +35,7 @@ node --experimental-strip-types scripts/check-registry.ts
 node --experimental-strip-types src/app/manuals/_lib/manualParts.check.ts
 node --experimental-strip-types src/app/manuals/_lib/testing-types-reader.check.ts
 node --experimental-strip-types src/app/manuals/_lib/userManuals.check.ts
+node --experimental-strip-types src/app/manuals/_lib/highlights.check.ts
 node --experimental-strip-types src/app/manuals/_ui/lessonFormat.check.ts
 node --experimental-strip-types scripts/check-library.ts
 node --experimental-strip-types scripts/check-pathwise-manuals.ts

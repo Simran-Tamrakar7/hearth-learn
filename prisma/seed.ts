@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
@@ -23,6 +24,8 @@ async function main() {
     data: {
       email: "demo@hearth.study",
       name: "Rowan Vance",
+      role: "ADMIN",
+      passwordHash: await bcrypt.hash("demopassword", 10),
       streak: {
         create: {
           currentCount: 5,

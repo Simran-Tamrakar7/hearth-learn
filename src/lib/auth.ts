@@ -12,6 +12,15 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { ADMIN_ROLE, emailIsAdmin } from "@/lib/roles";
+
+async function resolvedRole(user: { id: string; email?: string | null; role?: string | null }) {
+  if (emailIsAdmin(user.email) && user.role !== ADMIN_ROLE) {
+    await prisma.user.update({ where: { id: user.id }, data: { role: ADMIN_ROLE } });
+    return ADMIN_ROLE;
+  }
+  return user.role || "USER";
+}
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -55,20 +64,31 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           image: user.image,
+          role: await resolvedRole(user),
         };
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
+      if (user) token.id = user.id;
+      if (token.id) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: String(token.id) },
+          select: { id: true, email: true, role: true },
+        });
+        if (dbUser) {
+          token.role = await resolvedRole(dbUser);
+        } else if (user?.role) {
+          token.role = user.role;
+        }
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).id = token.id;
+        session.user.id = String(token.id || "");
+        session.user.role = String(token.role || "USER");
       }
       return session;
     },

@@ -3,6 +3,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { ADMIN_ROLE, emailIsAdmin } from "@/lib/roles";
 
 export async function POST(req: Request) {
   try {
@@ -33,6 +34,7 @@ export async function POST(req: Request) {
         name: name || email.split("@")[0],
         email,
         passwordHash,
+        role: emailIsAdmin(email) ? ADMIN_ROLE : "USER",
         streak: {
           create: {
             currentCount: 1,

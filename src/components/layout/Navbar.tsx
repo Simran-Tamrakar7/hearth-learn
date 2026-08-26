@@ -128,6 +128,9 @@ export function Navbar() {
             <div className="hidden sm:flex items-center gap-2">
               <span className="text-xs font-semibold text-[#1C2A26]">
                 {session.user.name || session.user.email?.split("@")[0]}
+                {session.user.role === "ADMIN" ? (
+                  <span className="ml-1.5 text-[10px] font-bold uppercase tracking-wider text-[#D97706]">Admin</span>
+                ) : null}
               </span>
               <button
                 onClick={() => signOut()}

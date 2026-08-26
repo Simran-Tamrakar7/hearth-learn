@@ -62,7 +62,12 @@ export interface ManualChapter {
   when?: string;
   practical?: PracticalExample;
   contentMarkdown: string;
+  /** Back-compat AI summary. Prefer `aiSummary` when both exist. */
   summaryMarkdown?: string;
+  /** User-authored summary — never mixed with fullContent or AI summary. */
+  customSummary?: string;
+  /** AI-authored summary. Falls back to summaryMarkdown when missing. */
+  aiSummary?: string;
   sections?: { title: string; body: string }[];
   codeSnippet?: string;
   tools?: ToolItem[];
@@ -92,6 +97,14 @@ export interface ManualItem {
   icon: string;
   coverImage: string;
   chapters: ManualChapter[];
+}
+
+export function chapterCustomSummary(ch: Pick<ManualChapter, "customSummary">) {
+  return ch.customSummary || "";
+}
+
+export function chapterAiSummary(ch: Pick<ManualChapter, "aiSummary" | "summaryMarkdown">) {
+  return ch.aiSummary || ch.summaryMarkdown || "";
 }
 
 export { PATHWISE_HEARTH_MANUALS as MANUALS_DATA, findHearthManual } from "./pathwiseToHearth";
