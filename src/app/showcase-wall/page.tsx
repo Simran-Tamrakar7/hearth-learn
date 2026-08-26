@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Navbar } from "@/components/layout/Navbar";
+import { kebabItems, KebabMenu } from "@/app/manuals/_ui/KebabMenu";
+import { ImageField } from "@/components/ui/ImageField";
+import { togglePinnedItem } from "@/components/ui/PinButton";
 
 type Link = { label: string; url: string };
 type Item = {
@@ -180,14 +183,14 @@ export default function ShowcaseWallPage() {
           <h2 className="font-display text-lg font-semibold">Add entry</h2>
           <input className="w-full rounded-lg border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-sm" placeholder="Title" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
           <textarea className="w-full rounded-lg border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-sm" rows={3} placeholder="Description" value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
-          <div className="grid gap-2 sm:grid-cols-3">
+          <div className="grid gap-2 sm:grid-cols-2">
             <input className="rounded-lg border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-sm" placeholder="Category" value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })} />
             <select className="rounded-lg border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-sm" value={draft.visibility} onChange={(e) => setDraft({ ...draft, visibility: e.target.value })}>
               <option value="PRIVATE">Private</option>
               <option value="PUBLIC">Public</option>
             </select>
-            <input className="rounded-lg border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-sm" placeholder="Thumbnail URL" value={draft.thumbnail} onChange={(e) => setDraft({ ...draft, thumbnail: e.target.value })} />
           </div>
+          <ImageField value={draft.thumbnail} onChange={(thumbnail) => setDraft({ ...draft, thumbnail })} label="Thumbnail" />
           {draft.links.map((link, i) => (
             <div key={i} className="grid gap-2 sm:grid-cols-[140px_1fr_auto]">
               <input className="rounded-lg border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-sm" value={link.label} onChange={(e) => {
@@ -262,13 +265,28 @@ export default function ShowcaseWallPage() {
                     <>
                       <div className="flex items-start justify-between gap-2">
                         <h3 className="font-display text-lg font-semibold">{item.title}</h3>
-                        {tab === "public" ? (
-                          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent-soft)] text-xs font-bold" title={item.author.name || item.author.email}>
-                            {initials(item.author.name, item.author.email)}
-                          </span>
-                        ) : (
-                          <span className="text-[10px] uppercase tracking-widest text-[var(--muted)]">{item.visibility.toLowerCase()}</span>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {tab === "public" ? (
+                            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent-soft)] text-xs font-bold" title={item.author.name || item.author.email}>
+                              {initials(item.author.name, item.author.email)}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] uppercase tracking-widest text-[var(--muted)]">{item.visibility.toLowerCase()}</span>
+                          )}
+                          {tab === "mine" ? (
+                            <KebabMenu
+                              compact
+                              label={`Actions for ${item.title}`}
+                              items={kebabItems([
+                                { label: "Edit", onClick: () => setEditingId(item.id) },
+                                { label: "Pin", onClick: () => togglePinnedItem({ id: item.id, title: item.title, category: item.category, type: "showcase", url: item.links[0]?.url || "/showcase-wall" }) },
+                                { label: "Move up", onClick: () => void move(item, -1) },
+                                { label: "Move down", onClick: () => void move(item, 1) },
+                                { label: "Delete", danger: true, onClick: () => void remove(item.id) },
+                              ])}
+                            />
+                          ) : null}
+                        </div>
                       </div>
                       {tab === "public" ? <p className="text-xs text-[var(--muted)]">{item.author.name || item.author.email}</p> : null}
                       <p className="text-sm text-[var(--ink)]/80">{item.description}</p>
@@ -277,14 +295,6 @@ export default function ShowcaseWallPage() {
                           <a key={i} href={l.url} target="_blank" rel="noreferrer" className="hearth-chip">{l.label}</a>
                         ))}
                       </div>
-                      {tab === "mine" ? (
-                        <div className="flex flex-wrap gap-2 pt-2">
-                          <button type="button" className="hearth-chip" onClick={() => setEditingId(item.id)}>Edit</button>
-                          <button type="button" className="hearth-chip" onClick={() => void move(item, -1)}>Up</button>
-                          <button type="button" className="hearth-chip" onClick={() => void move(item, 1)}>Down</button>
-                          <button type="button" className="hearth-chip" onClick={() => void remove(item.id)}>Delete</button>
-                        </div>
-                      ) : null}
                     </>
                   )}
                 </div>
@@ -322,7 +332,7 @@ function EditCard({
         <option value="PRIVATE">Private</option>
         <option value="PUBLIC">Public</option>
       </select>
-      <input className="w-full rounded-lg border border-[var(--line)] px-2 py-1 text-sm" placeholder="Thumbnail URL" value={thumbnail} onChange={(e) => setThumbnail(e.target.value)} />
+      <ImageField value={thumbnail} onChange={setThumbnail} label="Thumbnail" />
       {links.map((l, i) => (
         <div key={i} className="grid grid-cols-2 gap-1">
           <input className="rounded border border-[var(--line)] px-2 py-1 text-sm" value={l.label} onChange={(e) => {

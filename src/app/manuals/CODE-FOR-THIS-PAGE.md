@@ -11,9 +11,10 @@ This folder **is** Manuals. Screen, helpers, and chapter text all live here.
 | Playwright roadmap download | `_lib/roadmapData.ts` |
 | TOC part helpers | `_lib/manualParts.ts` |
 | User / AI manuals (`localStorage`) | `_lib/userManuals.ts` |
-| Add a blank manual (`+` on this page and `/library`) | `_ui/AddManualControl.tsx` (saves via `emptyManual`, opens `[slug]/page.tsx`) |
-| Catalog card (kebab Edit / Pin / Delete, tags) | `_ui/ManualCard.tsx` |
-| Categories (add / rename / delete) | `_lib/categories.ts` — UI on `/admin` |
+| Add a blank manual (`+` dropdown → Add Manual / Add Category) | `_ui/AddManualControl.tsx` (inline form, not a modal; saves via `emptyManual`, opens `[slug]/page.tsx`) |
+| Catalog card (kebab Edit / Pin / Delete, tags, cover) | `_ui/ManualCard.tsx` |
+| Categories (add from `+` dropdown, rename / delete on `/admin`) | `_lib/categories.ts` |
+| Cover image (URL or upload) | `src/components/ui/ImageField.tsx` — also on reader edit |
 | Tags on add/edit | `_ui/TagInput.tsx` + `_lib/tags.ts` |
 | Recently viewed / Continue | `_ui/RecentlyViewed.tsx` + `src/lib/readerMemory.ts` |
 | Highlights (select → color dots → save; click mark to remove) | `_ui/Highlightable.tsx` + `_lib/highlights.ts` + `/api/highlights` |

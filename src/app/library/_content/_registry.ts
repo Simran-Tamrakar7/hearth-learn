@@ -12,6 +12,8 @@ export type LibraryBook = {
   url: string
   source: string
   year?: string
+  /** Paste URL or uploaded data URL. Builtin Gutenberg covers still come from `url`. */
+  coverUrl?: string | null
   /** Omit = active. Set `archived` here to hide a title; do not add 67 copies of `status: "active"`. */
   status?: CatalogStatus
 }
@@ -815,4 +817,8 @@ export function searchBooks(query: string, shelfId = 'all') {
 export function gutenbergCoverUrl(book: LibraryBook) {
   const m = book.url.match(/gutenberg\.org\/ebooks\/(\d+)/)
   return m ? `https://www.gutenberg.org/cache/epub/${m[1]}/pg${m[1]}.cover.medium.jpg` : null
+}
+
+export function bookCoverUrl(book: LibraryBook) {
+  return book.coverUrl || gutenbergCoverUrl(book)
 }

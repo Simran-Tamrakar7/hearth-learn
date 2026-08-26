@@ -9,12 +9,21 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import {
-  listedLibraryBooks,
+  bookCoverUrl,
   searchBooks,
   shelves,
-  gutenbergCoverUrl,
   type LibraryBook,
 } from "@/app/library/_content/_registry";
+import {
+  listedAllBooks,
+  removeBook,
+  searchAllBooks,
+  subscribeBooks,
+  type UserBook,
+} from "@/app/library/_lib/userBooks";
+import { AddBookControl } from "@/app/library/_ui/AddBookControl";
+import { kebabItems, KebabMenu } from "@/app/manuals/_ui/KebabMenu";
+import { togglePinnedItem } from "@/components/ui/PinButton";
 import {
   BookOpen,
   Search,
@@ -24,18 +33,6 @@ import {
   ExternalLink,
   Play,
 } from "lucide-react";
-import { MANUALS_DATA, type ManualItem } from "@/app/manuals/_lib/manualsData";
-import { activeManualSlugs } from "@/app/manuals/_content/_registry";
-import {
-  applyManualOverlay,
-  hiddenManualSlugs,
-  removeCatalogManual,
-  subscribeUserManuals,
-} from "@/app/manuals/_lib/userManuals";
-import { AddManualControl } from "@/app/manuals/_ui/AddManualControl";
-import { ManualCard } from "@/app/manuals/_ui/ManualCard";
-import { RecentlyViewed } from "@/app/manuals/_ui/RecentlyViewed";
-import { isManualsCatalogPin, manualPinId, subscribePinnedItems } from "@/components/ui/PinButton";
 import { usePermissions } from "@/lib/useAuthz";
 
 const SAVED_KEY = "hearth_library_saved";
@@ -49,8 +46,12 @@ function loadSaved(): Set<string> {
   }
 }
 
+function bookPinId(id: string) {
+  return `book-${id}`;
+}
+
 function BookCover({ book, compact = false }: { book: LibraryBook; compact?: boolean }) {
-  const src = gutenbergCoverUrl(book);
+  const src = bookCoverUrl(book);
   const [broken, setBroken] = useState(!src);
 
   if (broken || !src) {
@@ -129,44 +130,28 @@ export default function LibraryPage() {
   const [savedOnly, setSavedOnly] = useState(false);
   const [saved, setSaved] = useState<Set<string>>(new Set());
   const [detail, setDetail] = useState<LibraryBook | null>(null);
-  const [userManuals, setUserManuals] = useState<ManualItem[]>([]);
-  const [hiddenSlugs, setHiddenSlugs] = useState<Set<string>>(new Set());
-  const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
-  const [selectedTag, setSelectedTag] = useState("");
+  const [tick, setTick] = useState(0);
+  const [hydrated, setHydrated] = useState(false);
+  const [editing, setEditing] = useState<UserBook | null>(null);
 
   useEffect(() => {
     setSaved(loadSaved());
   }, []);
 
   useEffect(() => {
-    return subscribeUserManuals((items) => {
-      setUserManuals(items);
-      setHiddenSlugs(hiddenManualSlugs());
-    });
+    setHydrated(true);
+    return subscribeBooks(() => setTick((n) => n + 1));
   }, []);
-
-  useEffect(() => {
-    return subscribePinnedItems((all) => {
-      setPinnedIds(new Set(all.filter(isManualsCatalogPin).map((p) => p.id)));
-    });
-  }, []);
-
-  const libraryManuals = useMemo(() => {
-    const builtin = MANUALS_DATA.filter((m) => activeManualSlugs().has(m.slug) && !hiddenSlugs.has(m.slug));
-    const all = [...userManuals, ...builtin].map(applyManualOverlay);
-    if (!selectedTag) return all;
-    return all.filter((m) => (m.tags || []).includes(selectedTag));
-  }, [userManuals, hiddenSlugs, selectedTag]);
 
   const books = useMemo(() => {
-    let list = searchBooks(q, shelf);
+    let list = hydrated ? searchAllBooks(q, shelf) : searchBooks(q, shelf);
     if (savedOnly) list = list.filter((b) => saved.has(b.id));
     return list;
-  }, [q, shelf, savedOnly, saved]);
+  }, [q, shelf, savedOnly, saved, tick, hydrated]);
 
   const savedBooks = useMemo(
-    () => listedLibraryBooks().filter((b) => saved.has(b.id)),
-    [saved]
+    () => listedAllBooks().filter((b) => saved.has(b.id)),
+    [saved, tick]
   );
 
   const activeShelf = shelves.find((s) => s.id === shelf) || shelves[0];
@@ -188,28 +173,32 @@ export default function LibraryPage() {
       <Navbar />
 
       <main className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-12 py-8 w-full space-y-8 flex-1">
-        <RecentlyViewed />
         <div className="bg-gradient-to-br from-white via-[#FAF7F2] to-[#F5EFE6] border border-[#E7E0D3] rounded-3xl p-6 sm:p-10 space-y-4 shadow-sm">
-          <div className="flex items-center gap-2">
-            <Badge variant="amber" icon={<LibraryIcon className="w-3.5 h-3.5" />}>
-              LIBRARY
-            </Badge>
-            <span className="text-xs font-semibold text-[#8A9B95]">
-              Free to read · legal links only
-            </span>
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-4 min-w-0">
+              <div className="flex items-center gap-2">
+                <Badge variant="amber" icon={<LibraryIcon className="w-3.5 h-3.5" />}>
+                  LIBRARY
+                </Badge>
+                <span className="text-xs font-semibold text-[#8A9B95]">
+                  Free to read · legal links only
+                </span>
+              </div>
+
+              <h1 className="font-serif-display text-3xl sm:text-5xl font-bold text-[#1C2A26] tracking-tight">
+                The Library
+              </h1>
+
+              <p className="text-xs sm:text-base text-[#52635E] leading-relaxed max-w-2xl">
+                Shelves of tech fiction, DevOps novels, engineering classics, study guides, and public-domain literature. Open a title — then return to your course manual.
+              </p>
+
+              <p className="text-xs font-semibold text-[#8A9B95]">
+                {(hydrated ? listedAllBooks() : searchBooks("", "all")).length} titles · {shelves.length - 1} shelves · {saved.size} saved here
+              </p>
+            </div>
+            {perms.canCreate ? <AddBookControl editing={editing} onCloseEdit={() => setEditing(null)} /> : null}
           </div>
-
-          <h1 className="font-serif-display text-3xl sm:text-5xl font-bold text-[#1C2A26] tracking-tight">
-            The Library
-          </h1>
-
-          <p className="text-xs sm:text-base text-[#52635E] leading-relaxed max-w-2xl">
-            Shelves of tech fiction, DevOps novels, engineering classics, study guides, and public-domain literature. Open a title or blueprint — then return to your course manual.
-          </p>
-
-          <p className="text-xs font-semibold text-[#8A9B95]">
-            {listedLibraryBooks().length} titles · {shelves.length - 1} shelves · {saved.size} saved here
-          </p>
 
           <div className="pt-2 sm:max-w-md flex items-center gap-3">
             <div className="relative flex-1">
@@ -233,46 +222,6 @@ export default function LibraryPage() {
             </label>
           </div>
         </div>
-
-        <section className="space-y-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="font-serif-display text-xl sm:text-2xl font-bold text-[#1C2A26]">Manuals</h2>
-              <p className="text-xs text-[#8A9B95] mt-0.5">Create, pin, and edit the same catalog as /manuals.</p>
-            </div>
-            {perms.canCreate ? <AddManualControl /> : null}
-          </div>
-          {selectedTag ? (
-            <button
-              type="button"
-              onClick={() => setSelectedTag("")}
-              className="px-2 py-0.5 rounded-full bg-[#1C2A26] text-[#FAF7F2] text-[10px] font-bold"
-            >
-              {selectedTag} ×
-            </button>
-          ) : null}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-            {libraryManuals.map((manual) => (
-              <ManualCard
-                key={manual.id}
-                manual={manual}
-                pinned={pinnedIds.has(manualPinId(manual.slug))}
-                canEdit={perms.canEdit}
-                canDelete={perms.canDelete}
-                onTagClick={setSelectedTag}
-                onDelete={() => {
-                  const kind = removeCatalogManual(manual.slug);
-                  if (!kind) return;
-                  toast({
-                    type: "info",
-                    title: kind === "deleted" ? "Manual deleted" : "Removed from catalog",
-                    description: `Removed “${manual.title}”.`,
-                  });
-                }}
-              />
-            ))}
-          </div>
-        </section>
 
         {savedBooks.length > 0 && !savedOnly && (
           <div className="space-y-3">
@@ -327,8 +276,45 @@ export default function LibraryPage() {
               key={book.id}
               whileHover={{ y: -6, scale: 1.02 }}
               onClick={() => setDetail(book)}
-              className="bg-white border border-[#E7E0D3] rounded-3xl overflow-hidden shadow-xs hover:shadow-xl transition-all cursor-pointer group flex flex-col justify-between"
+              className="bg-white border border-[#E7E0D3] rounded-3xl overflow-hidden shadow-xs hover:shadow-xl transition-all cursor-pointer group flex flex-col justify-between relative"
             >
+              <div className="absolute top-3 right-3 z-20">
+                <KebabMenu
+                  label={`Actions for ${book.title}`}
+                  items={kebabItems([
+                    perms.canEdit && {
+                      label: "Edit",
+                      onClick: () => setEditing(book),
+                    },
+                    {
+                      label: "Pin",
+                      onClick: () => {
+                        const now = togglePinnedItem({
+                          id: bookPinId(book.id),
+                          title: book.title,
+                          category: book.shelf,
+                          type: "book",
+                          url: book.url,
+                        });
+                        toast({
+                          type: now ? "achievement" : "info",
+                          title: now ? "Pinned" : "Unpinned",
+                          description: book.title,
+                        });
+                      },
+                    },
+                    perms.canDelete && {
+                      label: "Delete",
+                      danger: true,
+                      onClick: () => {
+                        if (!window.confirm(`Remove “${book.title}” from your library?`)) return;
+                        removeBook(book.id);
+                        toast({ type: "info", title: "Removed", description: book.title });
+                      },
+                    },
+                  ])}
+                />
+              </div>
               <div>
                 <div className="h-64 relative overflow-hidden bg-[#FAF7F2] p-4 flex items-center justify-center">
                   <BookCover book={book} />

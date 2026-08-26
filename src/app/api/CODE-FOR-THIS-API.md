@@ -10,7 +10,7 @@ These are server routes, not screens. Each `route.ts` has a `API:` comment at th
 | `user/dashboard/route.ts` | `/dashboard` |
 | `user/profile/route.ts` | `/profile` |
 | `settings/route.ts` | exists; `/settings` page does **not** call it |
-| `showcase/route.ts` | `/showcase-wall` |
+| `showcase/route.ts` | `/showcase-wall` (GET list, POST create, PATCH update, DELETE `?id=`) |
 | `trails/route.ts` | notes/dashboard trail pickers |
 | `trails/[slug]/route.ts` | trail detail JSON (reader UI redirects to manuals) |
 | `progress/toggle/route.ts` | Prisma trail checkboxes on dashboard |

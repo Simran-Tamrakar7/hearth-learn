@@ -17,7 +17,7 @@ interface PinButtonProps {
   itemId: string;
   itemTitle: string;
   itemCategory?: string;
-  itemType: "manual" | "game" | "recipe" | "trail" | "showcase";
+  itemType: "manual" | "game" | "recipe" | "trail" | "showcase" | "book";
   itemUrl: string;
   itemIcon?: string;
   className?: string;
@@ -28,7 +28,7 @@ export interface PinnedItemMetadata {
   id: string;
   title: string;
   category?: string;
-  type: "manual" | "game" | "recipe" | "trail" | "showcase";
+  type: "manual" | "game" | "recipe" | "trail" | "showcase" | "book";
   url: string;
   icon?: string;
   pinnedAt: number;

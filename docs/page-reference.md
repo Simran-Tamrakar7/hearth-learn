@@ -2,7 +2,7 @@
 
 ## `/manuals`
 
-Catalog of 65 builtin manuals + user manuals. Reads `MANUALS_DATA` filtered by `src/app/manuals/_content/_registry.ts` (`status: "active"`). Featured cards and dashboard pins also come from that registry. Writes nothing to the server. Pins, user manuals, categories, and tags use `localStorage`. `+` add is `AddManualControl` (name + category + tags).
+Catalog of 65 builtin manuals + user manuals. Reads `MANUALS_DATA` filtered by `src/app/manuals/_content/_registry.ts` (`status: "active"`). Featured cards and dashboard pins also come from that registry. Writes nothing to the server. Pins, user manuals, categories, and tags use `localStorage`. `+` opens a dropdown: Add Manual (inline name + category select-or-create + tags + cover) or Add Category.
 
 Key UI: `src/app/manuals/page.tsx` (labeled **PAGE: /manuals**). Other manuals-only files sit in `src/app/manuals/_ui/`. Map: `src/app/manuals/CODE-FOR-THIS-PAGE.md`. Site-wide index: [where-to-edit.md](./where-to-edit.md).
 
@@ -14,7 +14,7 @@ Key UI: `src/app/manuals/[slug]/page.tsx` (labeled **PAGE: /manuals/[slug]**), `
 
 ## `/library`
 
-Reads `listedLibraryBooks()` from `src/app/library/_content/_registry.ts`. Writes `hearth_library_saved`. Opens `book.url` in a new tab. Also lists the manuals catalog with the same `+` / pin / kebab Edit as `/manuals`. Recently viewed + Continue card shared with `/manuals`.
+Reads `listedLibraryBooks()` from `src/app/library/_content/_registry.ts` plus user books in `localStorage`. Writes `hearth_library_saved`. Opens `book.url` in a new tab. `+` adds a book only (Library and Manuals stay separate). Each book has a kebab: Edit / Delete / Pin. Cover image: URL or upload.
 
 ## `/trails`, `/trails/[slug]`
 
@@ -34,7 +34,7 @@ Coach `POST /api/ai/coach` and CV Maker `POST /api/ai/cv`. Needs `OPENAI_API_KEY
 
 ## `/rest`
 
-Timer. Subpages: games (`src/app/rest/games/_content.ts`), cookbook (`src/app/rest/cookbook/_content.ts`), retro (inline vibes).
+Timer. Subpages: games (`src/app/rest/games/_content.ts` + `_lib/userGames.ts` CRUD overlay), cookbook (`src/app/rest/cookbook/_content.ts` + `_lib/userRecipes.ts` CRUD overlay), retro (inline vibes). Games and cookbook cards support Add / Edit / Delete via kebab, plus image URL or upload.
 
 ## `/toolkits`
 
@@ -42,7 +42,7 @@ Reads `src/app/toolkits/_content/_registry.ts`. Copy-to-clipboard only.
 
 ## `/showcase-wall`
 
-GET/POST/PATCH/DELETE `/api/showcase` — per-user portfolio (private/public) plus featured GitHub in the public gallery.
+GET/POST/PATCH/DELETE `/api/showcase` — per-user portfolio (private/public) plus featured GitHub in the public gallery. Card kebab: Edit / Delete / Pin / reorder. Thumbnail: URL or upload.
 
 ## `/showcase`
 

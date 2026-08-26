@@ -31,7 +31,7 @@ Find a page: open `src/app/<url>/`. Example: dashboard is `src/app/dashboard/`. 
 | `/manuals/[slug]` | Manual reader / TOC editor |
 | `/trails` | Redirect → `/manuals` |
 | `/trails/[slug]` | Redirect → `/manuals/[slug]` |
-| `/library` | Outbound book list **and** manuals catalog (add / pin / kebab) |
+| `/library` | Outbound book list (add / pin / kebab). Manuals live on `/manuals` only. |
 | `/admin` | Signup approvals, user table, permissions, site feature flags, manage categories |
 | `/life-simulator` | Life Lab arenas (AI scenarios + past attempts) |
 | `/notes` | User notes (Prisma) + due highlight reviews |

@@ -48,12 +48,26 @@ import {
   Flame as BurnIcon,
   Film,
   Pin,
+  Plus,
 } from "lucide-react";
-import { PinButton, getPinnedItems, PinnedItemMetadata } from "@/components/ui/PinButton";
+import { PinButton, getPinnedItems, PinnedItemMetadata, togglePinnedItem } from "@/components/ui/PinButton";
+import { kebabItems, KebabMenu } from "@/app/manuals/_ui/KebabMenu";
+import { ImageField } from "@/components/ui/ImageField";
+import { usePermissions } from "@/lib/useAuthz";
+import {
+  emptyRecipe,
+  isUserRecipe,
+  listedRecipes,
+  patchRecipe,
+  removeRecipe,
+  saveRecipe,
+  subscribeRecipes,
+} from "@/app/rest/cookbook/_lib/userRecipes";
 import Link from "next/link";
 
 export default function LuminaCookbookPage() {
   const { toast } = useToast();
+  const perms = usePermissions();
 
   const [selectedCuisine, setSelectedCuisine] = useState<string>("All");
   const [selectedMeal, setSelectedMeal] = useState<string>("Any meal");
@@ -64,6 +78,19 @@ export default function LuminaCookbookPage() {
   const [selectedWayId, setSelectedWayId] = useState<string>("w1");
   const [activeVideo, setActiveVideo] = useState<RecipeVideo | null>(null);
   const [pinnedRecipes, setPinnedRecipes] = useState<PinnedItemMetadata[]>([]);
+  const [allDishes, setAllDishes] = useState<DetailedDish[]>(COOKBOOK_DISHES);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<DetailedDish | null>(null);
+  const [draft, setDraft] = useState({
+    title: "",
+    cuisine: "Custom",
+    meal: "dinner" as DetailedDish["meal"],
+    imageUrl: "",
+    ingredients: "",
+    steps: "",
+  });
+
+  useEffect(() => subscribeRecipes(() => setAllDishes(listedRecipes())), []);
 
   useEffect(() => {
     const updatePins = () => {
@@ -75,8 +102,51 @@ export default function LuminaCookbookPage() {
     return () => window.removeEventListener("hearth_pins_updated", updatePins);
   }, []);
 
+  function openAddRecipe() {
+    setEditing(null);
+    setDraft({ title: "", cuisine: "Custom", meal: "dinner", imageUrl: "", ingredients: "", steps: "" });
+    setFormOpen(true);
+  }
+
+  function openEditRecipe(dish: DetailedDish) {
+    setEditing(dish);
+    setDraft({
+      title: dish.title,
+      cuisine: dish.cuisine,
+      meal: dish.meal,
+      imageUrl: dish.imageUrl || "",
+      ingredients: (dish.ingredients || []).join("\n"),
+      steps: (dish.steps || []).join("\n"),
+    });
+    setFormOpen(true);
+  }
+
+  function submitRecipe(e: React.FormEvent) {
+    e.preventDefault();
+    const title = draft.title.trim();
+    if (!title) return;
+    const ingredients = draft.ingredients.split("\n").map((x) => x.trim()).filter(Boolean);
+    const steps = draft.steps.split("\n").map((x) => x.trim()).filter(Boolean);
+    const fields = {
+      title,
+      cuisine: draft.cuisine.trim() || "Custom",
+      meal: draft.meal,
+      imageUrl: draft.imageUrl.trim(),
+      ingredients,
+      steps,
+    };
+    if (editing) {
+      if (isUserRecipe(editing.id)) saveRecipe({ ...editing, ...fields });
+      else patchRecipe(editing.id, fields);
+    } else {
+      saveRecipe(emptyRecipe(fields));
+    }
+    setFormOpen(false);
+    setEditing(null);
+    toast({ type: "success", title: editing ? "Recipe saved" : "Recipe added", description: title });
+  }
+
   const cuisines = COOKBOOK_CUISINES;
-  const allDishes = COOKBOOK_DISHES;
 
   // Filter Dishes by Search, Cuisine, Meal, Level
   const filteredDishes = allDishes.filter((dish) => {
@@ -86,7 +156,7 @@ export default function LuminaCookbookPage() {
     const matchesSearch =
       searchQuery === "" ||
       dish.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      dish.ingredients.some((i) => i.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      dish.ingredients?.some((i) => i.toLowerCase().includes(searchQuery.toLowerCase())) ||
       dish.cuisine.toLowerCase().includes(searchQuery.toLowerCase());
 
     return matchesCuisine && matchesMeal && matchesLevel && matchesSearch;
@@ -163,6 +233,16 @@ export default function LuminaCookbookPage() {
           >
             Chef&apos;s Surprise Dish 🎲
           </Button>
+          {perms.canCreate ? (
+            <button
+              type="button"
+              aria-label="Add recipe"
+              onClick={openAddRecipe}
+              className="inline-flex items-center justify-center h-10 w-10 rounded-2xl bg-[#1C2A26] text-[#FAF7F2] hover:bg-[#243530] shadow-xs"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          ) : null}
         </div>
 
         {/* Hero Section */}
@@ -199,6 +279,62 @@ export default function LuminaCookbookPage() {
               />
             </div>
           </div>
+
+          {formOpen ? (
+            <form onSubmit={submitRecipe} className="max-w-xl space-y-2 pt-2">
+              <input
+                value={draft.title}
+                onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
+                placeholder="Recipe name"
+                aria-label="Recipe name"
+                className="w-full h-11 px-3 text-sm bg-white border border-[#E7E0D3] rounded-2xl focus:outline-none focus:border-[#D97706]"
+              />
+              <div className="flex gap-2">
+                <input
+                  value={draft.cuisine}
+                  onChange={(e) => setDraft((d) => ({ ...d, cuisine: e.target.value }))}
+                  placeholder="Cuisine"
+                  aria-label="Cuisine"
+                  className="h-10 flex-1 px-3 text-xs bg-white border border-[#E7E0D3] rounded-2xl"
+                />
+                <select
+                  value={draft.meal}
+                  onChange={(e) => setDraft((d) => ({ ...d, meal: e.target.value as DetailedDish["meal"] }))}
+                  aria-label="Meal"
+                  className="h-10 px-3 text-xs bg-white border border-[#E7E0D3] rounded-2xl"
+                >
+                  {["breakfast", "lunch", "dinner", "snack", "side"].map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <textarea
+                rows={3}
+                value={draft.ingredients}
+                onChange={(e) => setDraft((d) => ({ ...d, ingredients: e.target.value }))}
+                placeholder="Ingredients (one per line)"
+                className="w-full px-3 py-2 text-xs bg-white border border-[#E7E0D3] rounded-2xl resize-none"
+              />
+              <textarea
+                rows={3}
+                value={draft.steps}
+                onChange={(e) => setDraft((d) => ({ ...d, steps: e.target.value }))}
+                placeholder="Steps (one per line)"
+                className="w-full px-3 py-2 text-xs bg-white border border-[#E7E0D3] rounded-2xl resize-none"
+              />
+              <ImageField value={draft.imageUrl} onChange={(imageUrl) => setDraft((d) => ({ ...d, imageUrl }))} label="Dish image" />
+              <div className="flex justify-end gap-2">
+                <button type="button" onClick={() => { setFormOpen(false); setEditing(null); }} className="h-10 px-3 text-xs font-semibold text-[#52635E]">
+                  Cancel
+                </button>
+                <button type="submit" className="h-10 px-4 rounded-2xl bg-[#1C2A26] text-[#FAF7F2] text-xs font-semibold">
+                  {editing ? "Save" : "Add recipe"}
+                </button>
+              </div>
+            </form>
+          ) : null}
         </div>
 
         {/* 14 CUISINES HORIZONTAL CAROUSEL (Lumina Spec Design) */}
@@ -360,7 +496,10 @@ export default function LuminaCookbookPage() {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
 
-                    <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
+                    <div
+                      className="absolute top-3 right-3 flex items-center gap-1.5 z-10"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <PinButton
                         itemId={`dish-${dish.id}`}
                         itemTitle={dish.title}
@@ -369,6 +508,34 @@ export default function LuminaCookbookPage() {
                         itemUrl="/rest/cookbook"
                         itemIcon={matchedImg}
                         variant="icon"
+                      />
+                      <KebabMenu
+                        compact
+                        label={`Actions for ${dish.title}`}
+                        items={kebabItems([
+                          perms.canEdit && { label: "Edit", onClick: () => openEditRecipe(dish) },
+                          {
+                            label: "Pin",
+                            onClick: () =>
+                              togglePinnedItem({
+                                id: `dish-${dish.id}`,
+                                title: dish.title,
+                                category: dish.cuisine,
+                                type: "recipe",
+                                url: "/rest/cookbook",
+                                icon: matchedImg,
+                              }),
+                          },
+                          perms.canDelete && {
+                            label: "Delete",
+                            danger: true,
+                            onClick: () => {
+                              if (!window.confirm(`Remove “${dish.title}”?`)) return;
+                              removeRecipe(dish.id);
+                              toast({ type: "info", title: "Recipe removed", description: dish.title });
+                            },
+                          },
+                        ])}
                       />
                       <button
                         onClick={(e) => toggleBookmark(dish.id, e)}

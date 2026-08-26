@@ -9,12 +9,16 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import {
-  ARCADIA_GAMES,
   ARCADIA_CATEGORIES,
   ARCADIA_GENRES,
   ArcadiaGame,
+  gamePinId,
 } from "@/app/rest/games/_content";
-import { PinButton, getPinnedItems, PinnedItemMetadata } from "@/components/ui/PinButton";
+import { emptyGame, listedGames, patchGame, removeGame, saveGame, subscribeGames, type UserGame, isUserGame, catalogGames } from "@/app/rest/games/_lib/userGames";
+import { kebabItems, KebabMenu } from "@/app/manuals/_ui/KebabMenu";
+import { ImageField } from "@/components/ui/ImageField";
+import { usePermissions } from "@/lib/useAuthz";
+import { PinButton, getPinnedItems, PinnedItemMetadata, togglePinnedItem } from "@/components/ui/PinButton";
 import {
   Gamepad2,
   Search,
@@ -34,11 +38,26 @@ import {
 } from "lucide-react";
 
 export default function ArcadiaGamesShelfPage() {
+  const perms = usePermissions();
   const [activeCat, setActiveCat] = useState<string>("all");
   const [selectedGenre, setSelectedGenre] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [fabDrawerOpen, setFabDrawerOpen] = useState<boolean>(false);
   const [pinnedGames, setPinnedGames] = useState<PinnedItemMetadata[]>([]);
+  const [games, setGames] = useState<UserGame[]>(catalogGames);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<UserGame | null>(null);
+  const [draft, setDraft] = useState({
+    title: "",
+    url: "",
+    cat: "arcade" as ArcadiaGame["cat"],
+    genre: "Arcade",
+    description: "",
+    emoji: "🎮",
+    imageUrl: "",
+  });
+
+  useEffect(() => subscribeGames(() => setGames(listedGames())), []);
 
   useEffect(() => {
     const updatePins = () => {
@@ -50,9 +69,51 @@ export default function ArcadiaGamesShelfPage() {
     return () => window.removeEventListener("hearth_pins_updated", updatePins);
   }, []);
 
+  function openAdd() {
+    setEditing(null);
+    setDraft({ title: "", url: "", cat: "arcade", genre: "Arcade", description: "", emoji: "🎮", imageUrl: "" });
+    setFormOpen(true);
+  }
+
+  function openEdit(g: UserGame) {
+    setEditing(g);
+    setDraft({
+      title: g.t,
+      url: g.u,
+      cat: g.cat,
+      genre: g.genre,
+      description: g.d,
+      emoji: g.e,
+      imageUrl: g.imageUrl || "",
+    });
+    setFormOpen(true);
+  }
+
+  function submitGame(e: React.FormEvent) {
+    e.preventDefault();
+    const title = draft.title.trim();
+    if (!title) return;
+    const fields = {
+      t: title,
+      u: draft.url.trim() || "https://",
+      cat: draft.cat,
+      genre: draft.genre,
+      d: draft.description.trim(),
+      e: draft.emoji.trim() || "🎮",
+      imageUrl: draft.imageUrl.trim(),
+    };
+    if (editing) {
+      if (isUserGame(editing.id)) saveGame({ ...editing, ...fields });
+      else patchGame(editing.id, fields);
+    } else {
+      saveGame(emptyGame({ title, url: draft.url, cat: draft.cat, genre: draft.genre, description: draft.description, emoji: draft.emoji, imageUrl: draft.imageUrl }));
+    }
+    setFormOpen(false);
+    setEditing(null);
+  }
+
   const categories = ARCADIA_CATEGORIES;
   const genres = ARCADIA_GENRES;
-  const games = ARCADIA_GAMES;
 
   const filteredCategories =
     activeCat === "all"
@@ -108,6 +169,16 @@ export default function ArcadiaGamesShelfPage() {
             <Badge variant="amber" icon={<Gamepad2 className="w-3.5 h-3.5" />}>
               ARCADIA GAMES LIBRARY · {games.length} GAMES
             </Badge>
+            {perms.canCreate ? (
+              <button
+                type="button"
+                aria-label="Add game"
+                onClick={openAdd}
+                className="inline-flex items-center justify-center h-11 w-11 rounded-2xl bg-[#1C2A26] text-[#FAF7F2] hover:bg-[#243530] shadow-xs"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+            ) : null}
           </div>
         </div>
 
@@ -128,6 +199,67 @@ export default function ArcadiaGamesShelfPage() {
               Hand-curated collection of over {games.length} browser games spanning web portals, multiplayer .io arenas, retro arcade classics, digital sandboxes, and relaxing chill games.
             </p>
           </div>
+
+          {formOpen ? (
+            <form onSubmit={submitGame} className="max-w-xl space-y-2 pt-2">
+              <input
+                value={draft.title}
+                onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
+                placeholder="Game name"
+                aria-label="Game name"
+                className="w-full h-11 px-3 text-sm bg-white border border-[#E7E0D3] rounded-2xl focus:outline-none focus:border-[#D97706]"
+              />
+              <input
+                value={draft.url}
+                onChange={(e) => setDraft((d) => ({ ...d, url: e.target.value }))}
+                placeholder="Play URL"
+                aria-label="Game URL"
+                className="w-full h-10 px-3 text-xs bg-white border border-[#E7E0D3] rounded-2xl focus:outline-none focus:border-[#D97706]"
+              />
+              <div className="flex gap-2">
+                <select
+                  value={draft.cat}
+                  onChange={(e) => setDraft((d) => ({ ...d, cat: e.target.value as ArcadiaGame["cat"] }))}
+                  aria-label="Category"
+                  className="h-10 flex-1 px-3 text-xs bg-white border border-[#E7E0D3] rounded-2xl"
+                >
+                  {categories.filter((c) => c.id !== "all").map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={draft.genre}
+                  onChange={(e) => setDraft((d) => ({ ...d, genre: e.target.value }))}
+                  aria-label="Genre"
+                  className="h-10 flex-1 px-3 text-xs bg-white border border-[#E7E0D3] rounded-2xl"
+                >
+                  {genres.filter((g) => g.id !== "all").map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <textarea
+                rows={2}
+                value={draft.description}
+                onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
+                placeholder="Short description"
+                className="w-full px-3 py-2 text-xs bg-white border border-[#E7E0D3] rounded-2xl resize-none"
+              />
+              <ImageField value={draft.imageUrl} onChange={(imageUrl) => setDraft((d) => ({ ...d, imageUrl }))} label="Card image" />
+              <div className="flex justify-end gap-2">
+                <button type="button" onClick={() => { setFormOpen(false); setEditing(null); }} className="h-10 px-3 text-xs font-semibold text-[#52635E]">
+                  Cancel
+                </button>
+                <button type="submit" className="h-10 px-4 rounded-2xl bg-[#1C2A26] text-[#FAF7F2] text-xs font-semibold">
+                  {editing ? "Save" : "Add game"}
+                </button>
+              </div>
+            </form>
+          ) : null}
 
           {/* SEARCH & GENRE DRAWER TRIGGER */}
           <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 max-w-xl">
@@ -270,16 +402,16 @@ export default function ArcadiaGamesShelfPage() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {catGames.map((game, idx) => (
-                    <motion.a
-                      key={idx}
-                      href={game.u}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                  {catGames.map((game) => (
+                    <motion.div
+                      key={game.id}
                       whileHover={{ y: -4, scale: 1.02 }}
                       transition={{ type: "spring", stiffness: 300, damping: 20 }}
                       className="group bg-white border border-[#E7E0D3] rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-2xs hover:shadow-lg transition-all"
                     >
+                      {game.imageUrl ? (
+                        <img src={game.imageUrl} alt="" className="h-28 w-full object-cover rounded-xl border border-[#E7E0D3]" />
+                      ) : null}
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-2xl">{game.e}</span>
@@ -288,32 +420,64 @@ export default function ArcadiaGamesShelfPage() {
                               {game.genre}
                             </span>
                             <PinButton
-                              itemId={`g-${game.t.toLowerCase().replace(/[^a-z0-9]/g, "")}`}
+                              itemId={gamePinId(game)}
                               itemTitle={game.t}
                               itemCategory={game.genre}
                               itemType="game"
                               itemUrl={game.u}
-                              itemIcon={game.e}
+                              itemIcon={game.imageUrl || game.e}
                               variant="icon"
                             />
-                            <ExternalLink className="w-3.5 h-3.5 text-[#8A9B95] group-hover:text-[#D97706] transition-colors ml-1" />
+                            <KebabMenu
+                              compact
+                              label={`Actions for ${game.t}`}
+                              items={kebabItems([
+                                perms.canEdit && { label: "Edit", onClick: () => openEdit(game) },
+                                {
+                                  label: "Pin",
+                                  onClick: () =>
+                                    togglePinnedItem({
+                                      id: gamePinId(game),
+                                      title: game.t,
+                                      category: game.genre,
+                                      type: "game",
+                                      url: game.u,
+                                      icon: game.imageUrl || game.e,
+                                    }),
+                                },
+                                perms.canDelete && {
+                                  label: "Delete",
+                                  danger: true,
+                                  onClick: () => {
+                                    if (!window.confirm(`Remove “${game.t}”?`)) return;
+                                    removeGame(game.id);
+                                  },
+                                },
+                              ])}
+                            />
                           </div>
                         </div>
 
-                        <h3 className="font-serif-display font-bold text-base text-[#1C2A26] group-hover:text-[#D97706] transition-colors leading-tight">
-                          {game.t}
-                        </h3>
-
-                        <p className="text-xs text-[#52635E] line-clamp-2 leading-relaxed font-sans">
-                          {game.d}
-                        </p>
+                        <a href={game.u} target="_blank" rel="noopener noreferrer" className="block">
+                          <h3 className="font-serif-display font-bold text-base text-[#1C2A26] group-hover:text-[#D97706] transition-colors leading-tight">
+                            {game.t}
+                          </h3>
+                          <p className="text-xs text-[#52635E] line-clamp-2 leading-relaxed font-sans mt-1">
+                            {game.d}
+                          </p>
+                        </a>
                       </div>
 
-                      <div className="pt-2 border-t border-[#FAF7F2] flex items-center justify-between text-[11px] font-bold text-[#1C2A26] group-hover:text-[#D97706]">
+                      <a
+                        href={game.u}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="pt-2 border-t border-[#FAF7F2] flex items-center justify-between text-[11px] font-bold text-[#1C2A26] group-hover:text-[#D97706]"
+                      >
                         <span>Play Now</span>
                         <span>→</span>
-                      </div>
-                    </motion.a>
+                      </a>
+                    </motion.div>
                   ))}
                 </div>
               </section>

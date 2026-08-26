@@ -1,4 +1,5 @@
 export interface ArcadiaGame {
+  id?: string;
   cat: "portals" | "io" | "arcade" | "sandbox" | "chill";
   tag: string;
   genre: string;
@@ -7,6 +8,15 @@ export interface ArcadiaGame {
   u: string;
   e: string;
   c: string;
+  imageUrl?: string;
+}
+
+export function gameId(g: ArcadiaGame, index = 0) {
+  return g.id || `g-${g.cat || "x"}-${index}`;
+}
+
+export function gamePinId(g: ArcadiaGame) {
+  return `g-${g.t.toLowerCase().replace(/[^a-z0-9]/g, "")}`;
 }
 
 export const ARCADIA_CATEGORIES = [
@@ -262,4 +272,7 @@ function generateComprehensiveGamesDataset(): ArcadiaGame[] {
   return games;
 }
 
-export const ARCADIA_GAMES: ArcadiaGame[] = generateComprehensiveGamesDataset();
+export const ARCADIA_GAMES: ArcadiaGame[] = generateComprehensiveGamesDataset().map((g, i) => ({
+  ...g,
+  id: `g-${i}`,
+}));

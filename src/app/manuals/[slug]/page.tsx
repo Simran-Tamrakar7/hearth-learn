@@ -39,6 +39,7 @@ import {
 } from "@/app/manuals/_lib/highlights";
 import { listedCategories, subscribeCategories } from "@/app/manuals/_lib/categories";
 import { TagInput } from "@/app/manuals/_ui/TagInput";
+import { ImageField } from "@/components/ui/ImageField";
 import { usePermissions, useAppUserId } from "@/lib/useAuthz";
 import { highlightsStoreKey, isScopeReady, progressStoreKey, readScopedRaw, writeScopedRaw } from "@/lib/userScope";
 import { getResume, pushAccountProgress, setResume, touchRecentManual } from "@/lib/readerMemory";
@@ -161,6 +162,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   const [manualDescription, setManualDescription] = useState<string>(initialManual.description);
   const [manualCategory, setManualCategory] = useState<string>(initialManual.category);
   const [manualTags, setManualTags] = useState<string[]>(initialManual.tags || []);
+  const [manualCover, setManualCover] = useState<string>(initialManual.coverImage || "");
   const [manualEstimatedTime, setManualEstimatedTime] = useState<string>(initialManual.estimatedTime);
   const [categoryOptions, setCategoryOptions] = useState<string[]>(() => listedCategories());
 
@@ -235,10 +237,10 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
 
   const persistTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingSave = useRef<ManualChapter[] | null>(null);
-  const pendingMeta = useRef<{ title: string; description: string; category: string; estimatedTime: string; tags: string[] } | null>(null);
+  const pendingMeta = useRef<{ title: string; description: string; category: string; estimatedTime: string; tags: string[]; coverImage: string } | null>(null);
   const chapterEditSnapshot = useRef<{
     chapters: ManualChapter[];
-    meta: { title: string; description: string; category: string; estimatedTime: string; tags: string[] };
+    meta: { title: string; description: string; category: string; estimatedTime: string; tags: string[]; coverImage: string };
   } | null>(null);
   const [pinnedShowcase, setPinnedShowcase] = useState<PinnedItemMetadata[]>([]);
   const [highlights, setHighlights] = useState<HighlightStore>({});
@@ -287,6 +289,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       if (parsed.description) setManualDescription(String(parsed.description));
       if (parsed.category) setManualCategory(String(parsed.category));
       if (Array.isArray(parsed.tags)) setManualTags(parsed.tags.filter((t) => typeof t === "string"));
+      if (parsed.coverImage) setManualCover(String(parsed.coverImage));
       if (parsed.estimatedTime) setManualEstimatedTime(String(parsed.estimatedTime));
     }
     if (isTestingTypesManual) {
@@ -370,12 +373,14 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     const category = meta?.category ?? manualCategory;
     const estimatedTime = meta?.estimatedTime ?? manualEstimatedTime;
     const tags = meta?.tags ?? manualTags;
+    const coverImage = meta?.coverImage ?? manualCover;
     saveCustomDataToStorage({
       title,
       description,
       category,
       estimatedTime,
       tags,
+      coverImage,
       chapters: updated,
       tocManaged: true,
       ...(isTestingTypesManual ? { tocCatalogVersion: TESTING_TYPES_TOC_VERSION } : {}),
@@ -386,6 +391,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       category,
       estimatedTime,
       tags,
+      coverImage,
       chapters: updated,
     });
     setSaveHint("Saved");
@@ -408,6 +414,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       category: manualCategory,
       estimatedTime: manualEstimatedTime,
       tags: manualTags,
+      coverImage: manualCover,
     };
     saveCustomDataToStorage({
       ...m,
@@ -421,6 +428,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       category: m.category,
       estimatedTime: m.estimatedTime,
       tags: m.tags,
+      coverImage: m.coverImage,
       chapters: ch,
     });
     setSaveHint("Saved");
@@ -467,6 +475,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       setManualCategory(snap.meta.category);
       setManualEstimatedTime(snap.meta.estimatedTime);
       setManualTags(snap.meta.tags || []);
+      setManualCover(snap.meta.coverImage || "");
       persistChapters(snap.chapters);
     }
     chapterEditSnapshot.current = null;
@@ -580,10 +589,11 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     description: string,
     category: string,
     estimatedTime: string,
-    tags: string[] = manualTags
+    tags: string[] = manualTags,
+    coverImage: string = manualCover
   ) => {
     if (!perms.canEdit) return;
-    pendingMeta.current = { title, description, category, estimatedTime, tags };
+    pendingMeta.current = { title, description, category, estimatedTime, tags, coverImage };
     setSaveHint("Saving…");
     if (persistTimer.current) clearTimeout(persistTimer.current);
     persistTimer.current = setTimeout(() => {
@@ -629,6 +639,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
         category: manualCategory,
         estimatedTime: manualEstimatedTime,
         tags: manualTags,
+        coverImage: manualCover,
       },
     };
     setActiveChapterIndex(idx);
@@ -1332,6 +1343,14 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                     setManualTags(tags);
                     persistManualMeta(manualTitle, manualDescription, manualCategory, manualEstimatedTime, tags);
                   }}
+                />
+                <ImageField
+                  value={manualCover}
+                  onChange={(coverImage) => {
+                    setManualCover(coverImage);
+                    persistManualMeta(manualTitle, manualDescription, manualCategory, manualEstimatedTime, manualTags, coverImage);
+                  }}
+                  label="Cover image"
                 />
               </>
             ) : (
