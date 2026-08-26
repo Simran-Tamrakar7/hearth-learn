@@ -13,7 +13,7 @@ Open http://localhost:3000 (or the port Next prints).
 
 | Variable | Used for |
 |---|---|
-| `DATABASE_URL` | Prisma SQLite (see `.env`) |
+| `DATABASE_URL` | Optional. Defaults to `file:./dev.db` (on Vercel, `/tmp/hearth.db`) |
 | `NEXTAUTH_SECRET` / `NEXTAUTH_URL` | Auth |
 | `OPENAI_API_KEY` | Optional `POST /api/manuals/generate` |
 | `ADMIN_EMAIL` | Optional extra admin account (demo@hearth.study is always admin) |
