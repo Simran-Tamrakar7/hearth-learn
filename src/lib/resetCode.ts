@@ -27,7 +27,7 @@ export async function issueResetCode(email: string) {
   const token = await bcrypt.hash(code, 10);
   const expiresAt = new Date(Date.now() + RESET_CODE_TTL_MS);
   await prisma.passwordResetToken.deleteMany({ where: { email } });
-  await prisma.passwordResetToken.create({ data: { email, token, expiresAt, attempts: 0 } });
+  await prisma.passwordResetToken.create({ data: { email, token, expiresAt } });
   return code;
 }
 
