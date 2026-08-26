@@ -7,7 +7,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useToast } from "@/components/ui/Toast";
-import { useTheme, ThemeId, AccentId, RoomFeatures } from "@/context/ThemeContext";
+import { useTheme, ThemeId, AccentId } from "@/context/ThemeContext";
 import {
   Download,
   Check,
@@ -23,7 +23,7 @@ interface ThemeSwatch {
 
 export default function LuminaSettingsPage() {
   const { toast } = useToast();
-  const { theme, accent, fontSize, features, setTheme, setAccent, setFontSize, toggleFeature } = useTheme();
+  const { theme, accent, fontSize, lineHeight, highlightColor, highlightLegend, setTheme, setAccent, setFontSize, setLineHeight, setHighlightColor, setHighlightLegend } = useTheme();
 
   // 24 Palette Themes (Expanded)
   const themes: ThemeSwatch[] = [
@@ -70,26 +70,15 @@ export default function LuminaSettingsPage() {
 
   const [reducedMotion, setReducedMotion] = useState(false);
 
-  const featureList: { key: keyof RoomFeatures; title: string; desc: string }[] = [
-    { key: "watchDesk", title: "Watch desk", desc: "Video carousel on the home page" },
-    { key: "library", title: "Library", desc: "Free books and shelves" },
-    { key: "lifeLab", title: "Life Lab", desc: "Interview and life scenarios" },
-    { key: "notes", title: "Notes", desc: "Study notes while you read" },
-    { key: "aiCoach", title: "AI Coach", desc: "Tutor + CV maker with templates" },
-    { key: "breakRoom", title: "Break Room & games", desc: "Break Room, toys, and /games" },
-    { key: "cookbook", title: "Cookbook", desc: "Recipes, ways, nutrition" },
-    { key: "onboarding", title: "Onboarding", desc: "Skill pulse check for new visitors" },
-    { key: "analytics", title: "Analytics & Insights", desc: "Usage rollup and /insights" },
-    { key: "chapterStudio", title: "Chapter studio", desc: "Add/edit chapters and steps on manuals (device-only)" },
-  ];
-
   const handleDownloadBackup = () => {
     const backupData = {
       exportDate: new Date().toISOString(),
       theme,
       accent,
       fontSize,
-      features,
+      lineHeight,
+      highlightColor,
+      highlightLegend,
     };
 
     const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" });
@@ -117,7 +106,7 @@ export default function LuminaSettingsPage() {
             Settings
           </h1>
           <p className="text-xs sm:text-base opacity-75">
-            Theme, type, rooms — stored on this device. No account required.
+            Theme, type, and highlight legend — saved to your account when you are signed in.
           </p>
         </div>
 
@@ -218,52 +207,60 @@ export default function LuminaSettingsPage() {
               ))}
             </div>
           </div>
-        </Card>
 
-        {/* SECTION 2: FEATURES TOGGLES (REACTIVELY DRIVING NAVBAR VISIBILITY) */}
-        <Card variant="glass" hoverable={false} className="p-6 sm:p-8 space-y-4 border-black/10">
-          <div className="space-y-1">
-            <h3 className="font-serif-display font-bold text-lg">
-              Features
-            </h3>
-            <p className="text-xs opacity-75">
-              Turn rooms off to declutter nav and home. Disabled routes show a short enable hint.
-            </p>
+          <div className="space-y-2 pt-2">
+            <label className="block text-xs font-semibold opacity-75">Line height</label>
+            <div className="flex items-center gap-2">
+              {(["tight", "normal", "loose"] as const).map((sz) => (
+                <button
+                  key={sz}
+                  onClick={() => setLineHeight(sz)}
+                  className={`px-5 py-2 rounded-2xl text-xs font-bold capitalize ${
+                    lineHeight === sz
+                      ? "bg-[#1C2A26] text-[#FAF7F2] border border-[#1C2A26]"
+                      : "bg-white border border-black/10 text-[#52635E]"
+                  }`}
+                >
+                  {sz}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="space-y-2 pt-2">
-            {featureList.map((f) => {
-              const isChecked = features[f.key];
-              return (
-                <div
-                  key={f.key}
-                  onClick={() => {
-                    toggleFeature(f.key);
-                    toast({
-                      type: "info",
-                      title: `${f.title} ${!isChecked ? "Enabled" : "Disabled"}`,
-                      description: "Navbar updated instantly.",
-                    });
-                  }}
-                  className="p-3.5 rounded-2xl bg-white text-[#1C2A26] border border-black/10 flex items-center justify-between cursor-pointer hover:border-black/30 transition-all"
+            <label className="block text-xs font-semibold opacity-75">Default highlight color</label>
+            <div className="flex flex-wrap gap-2">
+              {(["yellow", "green", "pink", "blue"] as const).map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setHighlightColor(c)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold border ${highlightColor === c ? "border-[#1C2A26] ring-2 ring-[#D97706]/40" : "border-[#E7E0D3]"}`}
                 >
-                  <div className="space-y-0.5">
-                    <h4 className="font-serif-display font-bold text-xs">
-                      {f.title}
-                    </h4>
-                    <p className="text-[11px] opacity-70">{f.desc}</p>
-                  </div>
-
-                  <input
-                    type="checkbox"
-                    checked={isChecked}
-                    onChange={() => {}}
-                    className="w-4 h-4 rounded text-[#1C2A26] focus:ring-0 cursor-pointer"
-                  />
-                </div>
-              );
-            })}
+                  {c}
+                </button>
+              ))}
+            </div>
+            <label className="block text-xs font-semibold opacity-75 pt-2">Highlight legend</label>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {(["yellow", "green", "pink", "blue"] as const).map((c) => (
+                <input
+                  key={c}
+                  className="h-10 px-3 rounded-xl border border-[#E7E0D3] text-sm"
+                  value={highlightLegend[c] || ""}
+                  onChange={(e) => setHighlightLegend({ ...highlightLegend, [c]: e.target.value })}
+                  placeholder={c}
+                />
+              ))}
+            </div>
           </div>
+        </Card>
+
+        <Card variant="glass" hoverable={false} className="p-6 sm:p-8 space-y-4 border-black/10">
+          <h3 className="font-serif-display font-bold text-lg">Features</h3>
+          <p className="text-xs opacity-75">
+            Watch Desk, Library, Life Lab, and the other rooms are Admin-controlled global flags — not per-user toggles. Admins change them on the Users panel.
+          </p>
         </Card>
 
         {/* SECTION 3: DATA EXPORT */}

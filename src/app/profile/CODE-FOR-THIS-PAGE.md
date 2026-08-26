@@ -2,5 +2,7 @@
 
 | What you want to change | Open this file |
 |---|---|
-| Profile UI | `page.tsx` |
-| Profile data | `src/app/api/user/profile/route.ts` |
+| Profile UI (avatar, edit, account, stats, badges) | `page.tsx` |
+| Profile data / PATCH name-avatar-password | `src/app/api/user/profile/route.ts` |
+
+Nav uses a circular initial avatar (not the word “Profile”).

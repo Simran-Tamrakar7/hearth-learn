@@ -37,6 +37,7 @@
     background-color: var(--bg-main);
     color: var(--text-primary);
     font-family: var(--font-body);
+    line-height: var(--hearth-lh, 1.7);
     transition: background-color 500ms ease, color 500ms ease;
     -webkit-font-smoothing: antialiased;
   }
@@ -98,6 +99,35 @@
 
 .animate-breathing-glow {
   animation: breathing-glow 4s ease-in-out infinite;
+}
+
+.hearth-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #d97706;
+}
+.hearth-panel {
+  background: #fff;
+  border: 1px solid #e7e0d3;
+  border-radius: 1rem;
+}
+.hearth-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid #e7e0d3;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  color: #52635e;
+}
+.hearth-chip-active {
+  background: #1c2a26;
+  border-color: #1c2a26;
+  color: #faf7f2;
 }
 
 /* Global Prefers-Reduced-Motion Handling */

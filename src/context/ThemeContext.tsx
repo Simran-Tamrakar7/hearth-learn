@@ -8,7 +8,14 @@
  * Changing this file changes all of those pages at once.
  * ========================================================================== */
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
+import { useSession } from "next-auth/react";
+import {
+  DEFAULT_HIGHLIGHT_LEGEND,
+  DEFAULT_SITE_FEATURES,
+  parseSiteFeatures,
+  type SiteFeatures,
+} from "@/lib/prefs";
 
 export type ThemeId =
   | "pathwise"
@@ -50,27 +57,24 @@ export type AccentId =
   | "ink"
   | "violet";
 
-export interface RoomFeatures {
-  watchDesk: boolean;
-  library: boolean;
-  lifeLab: boolean;
-  notes: boolean;
-  aiCoach: boolean;
-  breakRoom: boolean;
-  cookbook: boolean;
-  onboarding: boolean;
-  analytics: boolean;
-  chapterStudio: boolean;
-}
+export type RoomFeatures = SiteFeatures;
+export type FontSize = "small" | "medium" | "large";
+export type LineHeight = "tight" | "normal" | "loose";
 
 interface ThemeContextType {
   theme: ThemeId;
   accent: AccentId;
-  fontSize: "small" | "medium" | "large";
+  fontSize: FontSize;
+  lineHeight: LineHeight;
+  highlightColor: string;
+  highlightLegend: Record<string, string>;
   features: RoomFeatures;
   setTheme: (t: ThemeId) => void;
   setAccent: (a: AccentId) => void;
-  setFontSize: (s: "small" | "medium" | "large") => void;
+  setFontSize: (s: FontSize) => void;
+  setLineHeight: (s: LineHeight) => void;
+  setHighlightColor: (c: string) => void;
+  setHighlightLegend: (legend: Record<string, string>) => void;
   toggleFeature: (key: keyof RoomFeatures) => void;
 }
 
@@ -106,80 +110,159 @@ export const THEME_CONFIGS: Record<
   lavender: { bg: "#F3E8FF", text: "#3B0764", primary: "#581C87", accent: "#C084FC" },
 };
 
-const defaultFeatures: RoomFeatures = {
-  watchDesk: true,
-  library: true,
-  lifeLab: true,
-  notes: true,
-  aiCoach: true,
-  breakRoom: true,
-  cookbook: true,
-  onboarding: true,
-  analytics: true,
-  chapterStudio: true,
-};
+const LINE_HEIGHT: Record<LineHeight, string> = { tight: "1.45", normal: "1.7", loose: "1.95" };
+
+function applySkin(theme: ThemeId, fontSize: FontSize, lineHeight: LineHeight) {
+  const config = THEME_CONFIGS[theme];
+  if (config) {
+    document.body.style.backgroundColor = config.bg;
+    document.body.style.color = config.text;
+  }
+  document.documentElement.style.setProperty("--hearth-lh", LINE_HEIGHT[lineHeight]);
+  document.documentElement.style.fontSize = fontSize === "small" ? "15px" : fontSize === "large" ? "18px" : "16px";
+}
+
+function persistAccount(prefs: Record<string, unknown>) {
+  void fetch("/api/me/prefs", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prefs }),
+  }).catch(() => {});
+}
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const { status } = useSession();
   const [theme, setThemeState] = useState<ThemeId>("pathwise");
   const [accent, setAccentState] = useState<AccentId>("gold");
-  const [fontSize, setFontSizeState] = useState<"small" | "medium" | "large">("medium");
-  const [features, setFeaturesState] = useState<RoomFeatures>(defaultFeatures);
+  const [fontSize, setFontSizeState] = useState<FontSize>("medium");
+  const [lineHeight, setLineHeightState] = useState<LineHeight>("normal");
+  const [highlightColor, setHighlightColorState] = useState("yellow");
+  const [highlightLegend, setHighlightLegendState] = useState<Record<string, string>>(DEFAULT_HIGHLIGHT_LEGEND);
+  const [features, setFeaturesState] = useState<RoomFeatures>(DEFAULT_SITE_FEATURES);
+  const ready = useRef(false);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("hearth_theme") as ThemeId;
     const savedAccent = localStorage.getItem("hearth_accent") as AccentId;
-    const savedFontSize = localStorage.getItem("hearth_fontSize") as any;
-    const savedFeatures = localStorage.getItem("hearth_features");
-
-    if (savedTheme && THEME_CONFIGS[savedTheme]) {
-      setThemeState(savedTheme);
-      document.body.style.backgroundColor = THEME_CONFIGS[savedTheme].bg;
-      document.body.style.color = THEME_CONFIGS[savedTheme].text;
-    }
-    if (savedAccent) {
-      setAccentState(savedAccent);
-    }
-    if (savedFontSize) {
-      setFontSizeState(savedFontSize);
-    }
-    if (savedFeatures) {
+    const savedFontSize = localStorage.getItem("hearth_fontSize") as FontSize;
+    const savedLh = localStorage.getItem("hearth_lineHeight") as LineHeight;
+    const savedColor = localStorage.getItem("hearth_highlightColor");
+    const savedLegend = localStorage.getItem("hearth_highlightLegend");
+    if (savedTheme && THEME_CONFIGS[savedTheme]) setThemeState(savedTheme);
+    if (savedAccent) setAccentState(savedAccent);
+    if (savedFontSize) setFontSizeState(savedFontSize);
+    if (savedLh) setLineHeightState(savedLh);
+    if (savedColor) setHighlightColorState(savedColor);
+    if (savedLegend) {
       try {
-        setFeaturesState(JSON.parse(savedFeatures));
-      } catch (e) {}
+        setHighlightLegendState({ ...DEFAULT_HIGHLIGHT_LEGEND, ...JSON.parse(savedLegend) });
+      } catch {
+        /* keep default */
+      }
     }
-  }, []);
+    applySkin(savedTheme && THEME_CONFIGS[savedTheme] ? savedTheme : "pathwise", savedFontSize || "medium", savedLh || "normal");
+    ready.current = true;
+
+    void fetch("/api/me/prefs", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.features) setFeaturesState(parseSiteFeatures(JSON.stringify(data.features)));
+        const prefs = data.prefs || {};
+        if (prefs.theme && THEME_CONFIGS[prefs.theme as ThemeId]) {
+          setThemeState(prefs.theme);
+          localStorage.setItem("hearth_theme", prefs.theme);
+        }
+        if (prefs.accent) {
+          setAccentState(prefs.accent);
+          localStorage.setItem("hearth_accent", prefs.accent);
+        }
+        if (prefs.fontSize) {
+          setFontSizeState(prefs.fontSize);
+          localStorage.setItem("hearth_fontSize", prefs.fontSize);
+        }
+        if (prefs.lineHeight) {
+          setLineHeightState(prefs.lineHeight);
+          localStorage.setItem("hearth_lineHeight", prefs.lineHeight);
+        }
+        if (prefs.highlightColor) {
+          setHighlightColorState(prefs.highlightColor);
+          localStorage.setItem("hearth_highlightColor", prefs.highlightColor);
+        }
+        if (prefs.highlightLegend) {
+          const legend = { ...DEFAULT_HIGHLIGHT_LEGEND, ...prefs.highlightLegend };
+          setHighlightLegendState(legend);
+          localStorage.setItem("hearth_highlightLegend", JSON.stringify(legend));
+        }
+        applySkin(
+          (prefs.theme && THEME_CONFIGS[prefs.theme as ThemeId] ? prefs.theme : savedTheme) || "pathwise",
+          prefs.fontSize || savedFontSize || "medium",
+          prefs.lineHeight || savedLh || "normal"
+        );
+      })
+      .catch(() => {});
+  }, [status]);
 
   const setTheme = (t: ThemeId) => {
     setThemeState(t);
     localStorage.setItem("hearth_theme", t);
-    const config = THEME_CONFIGS[t];
-    if (config) {
-      document.body.style.backgroundColor = config.bg;
-      document.body.style.color = config.text;
-    }
+    applySkin(t, fontSize, lineHeight);
+    persistAccount({ theme: t });
   };
 
   const setAccent = (a: AccentId) => {
     setAccentState(a);
     localStorage.setItem("hearth_accent", a);
+    persistAccount({ accent: a });
   };
 
-  const setFontSize = (s: "small" | "medium" | "large") => {
+  const setFontSize = (s: FontSize) => {
     setFontSizeState(s);
     localStorage.setItem("hearth_fontSize", s);
+    applySkin(theme, s, lineHeight);
+    persistAccount({ fontSize: s });
   };
 
-  const toggleFeature = (key: keyof RoomFeatures) => {
-    setFeaturesState((prev) => {
-      const updated = { ...prev, [key]: !prev[key] };
-      localStorage.setItem("hearth_features", JSON.stringify(updated));
-      return updated;
-    });
+  const setLineHeight = (s: LineHeight) => {
+    setLineHeightState(s);
+    localStorage.setItem("hearth_lineHeight", s);
+    applySkin(theme, fontSize, s);
+    persistAccount({ lineHeight: s });
+  };
+
+  const setHighlightColor = (c: string) => {
+    setHighlightColorState(c);
+    localStorage.setItem("hearth_highlightColor", c);
+    persistAccount({ highlightColor: c });
+  };
+
+  const setHighlightLegend = (legend: Record<string, string>) => {
+    setHighlightLegendState(legend);
+    localStorage.setItem("hearth_highlightLegend", JSON.stringify(legend));
+    persistAccount({ highlightLegend: legend });
+  };
+
+  const toggleFeature = (_key: keyof RoomFeatures) => {
+    /* ponytail: room flags are Admin global via /api/admin/features, not per-device */
   };
 
   return (
     <ThemeContext.Provider
-      value={{ theme, accent, fontSize, features, setTheme, setAccent, setFontSize, toggleFeature }}
+      value={{
+        theme,
+        accent,
+        fontSize,
+        lineHeight,
+        highlightColor,
+        highlightLegend,
+        features,
+        setTheme,
+        setAccent,
+        setFontSize,
+        setLineHeight,
+        setHighlightColor,
+        setHighlightLegend,
+        toggleFeature,
+      }}
     >
       {children}
     </ThemeContext.Provider>

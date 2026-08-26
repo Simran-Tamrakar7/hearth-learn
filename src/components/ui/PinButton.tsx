@@ -11,6 +11,7 @@ import React, { useState, useEffect } from "react";
 import { Pin } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { isScopeReady, pinsStoreKey, readScopedRaw, writeScopedRaw } from "@/lib/userScope";
+import { pushAccountPins } from "@/lib/readerMemory";
 
 interface PinButtonProps {
   itemId: string;
@@ -90,6 +91,7 @@ export function savePinnedItems(items: PinnedItemMetadata[]) {
   try {
     writeScopedRaw(pinsStoreKey(), JSON.stringify(items));
     window.dispatchEvent(new Event("hearth_pins_updated"));
+    pushAccountPins(items);
   } catch (e) {
     console.error("Failed to save pinned items:", e);
   }

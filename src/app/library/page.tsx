@@ -34,6 +34,7 @@ import {
 } from "@/app/manuals/_lib/userManuals";
 import { AddManualControl } from "@/app/manuals/_ui/AddManualControl";
 import { ManualCard } from "@/app/manuals/_ui/ManualCard";
+import { RecentlyViewed } from "@/app/manuals/_ui/RecentlyViewed";
 import { isManualsCatalogPin, manualPinId, subscribePinnedItems } from "@/components/ui/PinButton";
 import { usePermissions } from "@/lib/useAuthz";
 
@@ -187,6 +188,7 @@ export default function LibraryPage() {
       <Navbar />
 
       <main className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-12 py-8 w-full space-y-8 flex-1">
+        <RecentlyViewed />
         <div className="bg-gradient-to-br from-white via-[#FAF7F2] to-[#F5EFE6] border border-[#E7E0D3] rounded-3xl p-6 sm:p-10 space-y-4 shadow-sm">
           <div className="flex items-center gap-2">
             <Badge variant="amber" icon={<LibraryIcon className="w-3.5 h-3.5" />}>

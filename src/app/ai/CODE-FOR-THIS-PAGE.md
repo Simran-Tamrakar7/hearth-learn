@@ -2,6 +2,8 @@
 
 | What you want to change | Open this file |
 |---|---|
-| Coach modes, canned replies, CV layouts | `page.tsx` ← **this is the `/ai` screen** |
+| Coach + CV Maker UI | `page.tsx` ← **this is the `/ai` screen** |
+| Coach API (mode-specific system prompts) | `src/app/api/ai/coach/route.ts` |
+| CV Maker API | `src/app/api/ai/cv/route.ts` |
 
-Nothing is saved to the server from this page (the CV “save” toast does not persist).
+Needs `OPENAI_API_KEY`. Copy Output uses the live RESPONSE box.

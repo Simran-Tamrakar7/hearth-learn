@@ -8,13 +8,13 @@ Key UI: `src/app/manuals/page.tsx` (labeled **PAGE: /manuals**). Other manuals-o
 
 ## `/manuals/[slug]`
 
-Reader + TOC editor + inline chapter edit (no dialog). Builtin: `findHearthManual`. User: `getUserManual`. Testing Types: overlay + outline. Writes `hearth_manual_custom_data_*` (debounced while editing) and progress keys. Highlights: localStorage plus `POST /api/highlights` (userId, chapterId, tabType, text, start). Three tabs (Full Content / Summary / AI Summary) keep highlights separate.
+Reader + TOC editor + inline chapter edit (no dialog). Builtin: `findHearthManual`. User: `getUserManual`. Testing Types: overlay + outline. Writes `hearth_manual_custom_data_*` (debounced while editing) and progress keys. Highlights: localStorage plus `POST /api/highlights` (userId, chapterId, tabType, text, start). Click an existing mark to remove it. Three tabs (Full Content / Summary / AI Summary) keep highlights separate. TOC shows minutes per chapter and scrolls the active row into view. Resume + recently viewed dual-write to account prefs. Related manuals by category/tags at the end.
 
 Key UI: `src/app/manuals/[slug]/page.tsx` (labeled **PAGE: /manuals/[slug]**), `_ui/LessonContentEditor`, `_ui/ToolSwitcher`, `_ui/Highlightable`, `_lib/manualParts.ts`.
 
 ## `/library`
 
-Reads `listedLibraryBooks()` from `src/app/library/_content/_registry.ts`. Writes `hearth_library_saved`. Opens `book.url` in a new tab. Also lists the manuals catalog with the same `+` / pin / kebab Edit as `/manuals`.
+Reads `listedLibraryBooks()` from `src/app/library/_content/_registry.ts`. Writes `hearth_library_saved`. Opens `book.url` in a new tab. Also lists the manuals catalog with the same `+` / pin / kebab Edit as `/manuals`. Recently viewed + Continue card shared with `/manuals`.
 
 ## `/trails`, `/trails/[slug]`
 
@@ -22,15 +22,15 @@ Redirects. Prisma trail APIs still used by dashboard, notes, showcase-wall.
 
 ## `/life-simulator`
 
-Client-only arenas. Pills from `listedArenas()`. Scenario lists in `src/app/life-simulator/_content/<arena>/meta.ts`. UI stays in `src/app/life-simulator/page.tsx`.
+Client arenas. Pills from `listedArenas()`. AI generate/evaluate via `/api/life-lab`. UI: `src/app/life-simulator/page.tsx` + `_ui/ArenaStudio.tsx`. Attempts stored per user.
 
 ## `/notes`
 
-Prisma via `/api/notes`. Optional trail from `/api/trails`. No templates.
+Prisma via `/api/notes`. Optional trail from `/api/trails`. Due “review later” highlights from `/api/highlights?due=1`.
 
 ## `/ai`
 
-Canned coach + CV layouts in the page. No persistence despite the save toast.
+Coach `POST /api/ai/coach` and CV Maker `POST /api/ai/cv`. Needs `OPENAI_API_KEY`.
 
 ## `/rest`
 
@@ -42,7 +42,7 @@ Reads `src/app/toolkits/_content/_registry.ts`. Copy-to-clipboard only.
 
 ## `/showcase-wall`
 
-GET/POST `/api/showcase` — featured list from `src/app/showcase-wall/_content/_registry.ts` plus Prisma user posts.
+GET/POST/PATCH/DELETE `/api/showcase` — per-user portfolio (private/public) plus featured GitHub in the public gallery.
 
 ## `/showcase`
 
@@ -50,15 +50,15 @@ UI kit demo. Not catalog content.
 
 ## `/profile`
 
-GET `/api/user/profile`.
+GET `/api/user/profile`. PATCH name, avatar URL, password. Nav avatar opens this page.
 
 ## `/settings`
 
-`ThemeContext` + localStorage. Prisma `/api/settings` is unused by this page.
+`ThemeContext` loads/saves `/api/me/prefs` (theme, accent, font size, line height, highlight legend). Room flags are Admin global.
 
 ## `/admin`
 
-Admin-only. Signup approvals, per-user permission checkboxes, and Manage categories (add / rename / delete → Uncategorized). Map: `src/app/admin/CODE-FOR-THIS-PAGE.md`.
+Admin-only. Users table (search/filter, bulk, detail with permissions + activity), global feature flags, Manage categories. Map: `src/app/admin/CODE-FOR-THIS-PAGE.md`.
 
 ## `/dashboard`
 

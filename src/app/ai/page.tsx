@@ -41,6 +41,9 @@ export default function AICoachPage() {
   const [inputText, setInputText] = useState(defaultText);
   const [isRunning, setIsRunning] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [aiResult, setAiResult] = useState("");
+  const [cvNotes, setCvNotes] = useState("");
+  const [cvAi, setCvAi] = useState("");
 
   // CV Maker State
   const [selectedTemplate, setSelectedTemplate] = useState("Classic");
@@ -56,68 +59,11 @@ export default function AICoachPage() {
       "Automation-focused QA with 4+ years shipping Playwright and pytest suites. Cuts flake, owns CI smoke, and partners with product on risk-based coverage.",
   });
 
-  // Dynamic AI Response Engine (Cleaned of raw ### symbols, 100% clean typography)
-  const getResponseForMode = (mode: CoachMode, text: string) => {
-    const isDefault = text.trim() === defaultText.trim() || text.toLowerCase().includes("locators");
-
-    if (isDefault) {
-      switch (mode) {
-        case "Explain":
-          return `${text}\n\nThink of Playwright actions as polite guests: they wait until the element is present, visible, finished moving, enabled, and ready — then they interact. Fewer flakes than sleep()-heavy suites.\n\nTip: Prefer role locators so waits attach to the same tree assistive tech uses.`;
-        case "ELI5":
-          return `Imagine a door that only opens when someone is standing still and ready to talk. Playwright waits for that “ready” moment before knocking. Old tools sometimes knock while the person is still spinning.`;
-        case "Summarize":
-          return `• Core idea: This is the most important chapter in the entire manual — nearly everything else builds on writing good locators.\n\nThese are “user-facing” locators — they find elements the way a real user (or screen reader) would identify them, rather than by internal implementation details like CSS classes. This is deliberate philosophy, not just convenience: implementation details (class names, DOM structure) change often as developers refactor CSS/markup, but the role and visible text of a button rarely change. Locators built on them break far less often.\n\n• Why it matters: less wasted time, fewer false failures\n• Practice: one tiny project today\n• Check: teach it in 60 seconds`;
-        case "Quiz":
-          return `1) What five actionability checks does Playwright auto-wait for?\n2) Why is get_by_role often better than CSS?\n3) What problem does storage_state solve?\n4) How do UI + API assertions differ?\n5) Name two CI flake debugging artifacts.\n\nAnswers: (1) attached/visible/stable/enabled/receives events (2) accessibility tree (3) skip repeated UI login (4) UI can look right while data didn’t persist (5) traces, videos/screenshots`;
-        case "Flashcards":
-          return `Front: Auto-waiting → Back: Actionability before interact\nFront: BrowserContext → Back: Isolated session\nFront: POM → Back: Business-named page methods\nFront: page.route → Back: Intercept/mock network\nFront: Trace Viewer → Back: Time-travel debug for CI fails`;
-        case "Study notes":
-          return `Study notes — This is the most important chapter in the entire manual — nearly everything else builds on writing good locators.\n\nThese are “user-facing” locators — they find elements the way a real user (or screen reader) would identify them, rather than by internal implementation details like CSS classes. This is deliberate philosophy, not just convenience: implementation details (class names, DOM structure) change often as developers refactor CSS/markup, but the role and visible text of a button rarely change. Locators built on them break far less often.\n\nDefinition: one-sentence mental model.\nWhy companies care: reliability + hiring signal.\nDo next: read the matching chapter, write one failing test then make it green, capture a trace once.`;
-        case "Next topic":
-          return `Next: Page Object Model after locators/waits. You can find and wait — POM teaches how to scale without copy-paste chaos.`;
-        case "7-day plan":
-          return `Day 1: Background\nDay 2: Locators\nDay 3: Auto-waiting + assertions\nDay 4: POM skeleton\nDay 5: API hybrid\nDay 6: CI workflow\nDay 7: Capstone slice`;
-        default:
-          return text;
-      }
-    }
-
-    // Clean Topic formatting without raw ### symbols
-    const cleanTopic = text.split("\n")[0].slice(0, 60);
-
-    switch (mode) {
-      case "Explain":
-        return `💡 Deep Explanation: "${cleanTopic}"\n\n${text}\n\nCore Technical Principles:\n1. Fundamental Mechanism: Primary execution path handles state transition deterministically.\n2. Best Practice: Isolate dependencies and rely on explicit state contracts.\n\nPro-Tip: Always write test assertions against observable side-effects rather than private variables.`;
-      case "ELI5":
-        return `🐣 Simple Analogy: "${cleanTopic}"\n\nImagine ordering food at a restaurant counter. Instead of standing in kitchen line watching cooks chop onions, you take a buzzer ticket. When your food is ready, the buzzer lights up and rings!\n\nThat is how "${cleanTopic}" works — it handles background preparation without locking up the front desk counter.`;
-      case "Summarize":
-        return `• Core idea: ${cleanTopic}\n\n${text}\n\n• Why it matters: Prevents architectural complexity and accelerates delivery speed.\n• Practice: Build a minimal working prototype in 15 minutes.\n• Check: Explain the concept in 60 seconds without technical jargon.`;
-      case "Quiz":
-        return `1) What is the main purpose of ${cleanTopic}?\n2) Which architectural trade-offs should be evaluated first?\n3) How does this concept improve code reliability?\n4) What common anti-pattern should be avoided?\n5) How do you verify performance metrics?\n\nAnswers: (1) Core functionality isolation (2) Latency vs memory trade-offs (3) Reduces runtime side-effects (4) Tightly-coupled global state (5) Synthetic benchmark tracking`;
-      case "Flashcards":
-        return `Front: Core Concept → Back: ${cleanTopic}\nFront: Key Benefit → Back: High reliability & clean architecture\nFront: Implementation Pattern → Back: Modular decoupling\nFront: Common Mistake → Back: Premature optimization\nFront: Verification Strategy → Back: Automated assertion checks`;
-      case "Study notes":
-        return `Study notes — ${cleanTopic}\n\n${text}\n\nDefinition: A clear mental model for understanding ${cleanTopic}.\nWhy companies care: Maintainability, developer velocity, and system stability.\nDo next: Build a 5-line code snippet demonstrating the concept and document key takeaways.`;
-      case "Next topic":
-        return `Next: Advanced Architectural Patterns for ${cleanTopic}.\n\nPrerequisite checklist:\n✓ Core syntax & mental models\n✓ Unit assertion testing\n\nRecommended next step: Explore production case studies and scaling strategies.`;
-      case "7-day plan":
-        return `Day 1: Foundations of ${cleanTopic}\nDay 2: Core Syntax & API Exploration\nDay 3: State Management & Error Handling\nDay 4: Integration with Existing Pipelines\nDay 5: Performance Benchmarking\nDay 6: Refactoring & Anti-Pattern Auditing\nDay 7: Capstone Mini-Project`;
-      default:
-        return text;
-    }
-  };
-
-  const [aiResult, setAiResult] = useState<string>(
-    getResponseForMode("Explain", inputText)
-  );
-
   const handleModeSwitch = (mode: CoachMode) => {
     setCoachMode(mode);
-    setAiResult(getResponseForMode(mode, inputText));
   };
 
-  const handleRunCoach = () => {
+  const handleRunCoach = async () => {
     if (!inputText.trim()) {
       toast({
         type: "error",
@@ -128,16 +74,25 @@ export default function AICoachPage() {
     }
 
     setIsRunning(true);
-    setTimeout(() => {
-      setIsRunning(false);
-      const generated = getResponseForMode(coachMode, inputText);
-      setAiResult(generated);
-      toast({
-        type: "achievement",
-        title: `AI ${coachMode} Mode Executed! ✨`,
-        description: "AI response generated into the RESPONSE container.",
+    try {
+      const res = await fetch("/api/ai/coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: coachMode, input: inputText }),
       });
-    }, 300);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setAiResult(data.error || "AI Coach needs OPENAI_API_KEY on the server.");
+        toast({ type: "error", title: "Coach failed", description: data.error || "Sign in and set OPENAI_API_KEY." });
+      } else {
+        setAiResult(data.text || "");
+        toast({ type: "achievement", title: `AI ${coachMode} ready`, description: "Response is in the box below." });
+      }
+    } catch (e) {
+      setAiResult("Network error talking to the coach.");
+    } finally {
+      setIsRunning(false);
+    }
   };
 
   const handleCopy = (text: string) => {
@@ -145,6 +100,26 @@ export default function AICoachPage() {
     setCopied(true);
     toast({ type: "info", title: "Copied to Clipboard 📋" });
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCvGenerate = async () => {
+    setIsRunning(true);
+    try {
+      const res = await fetch("/api/ai/cv", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ template: selectedTemplate, notes: cvNotes || cvForm.summary, basics: cvForm }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setCvAi(data.error || "CV Maker needs OPENAI_API_KEY.");
+      } else {
+        setCvAi(data.text || "");
+        toast({ type: "achievement", title: "Resume drafted" });
+      }
+    } finally {
+      setIsRunning(false);
+    }
   };
 
   // CV Maker Handlers
@@ -217,7 +192,7 @@ export default function AICoachPage() {
         {/* Header */}
         <div className="space-y-3 print:hidden">
           <span className="text-[11px] font-bold uppercase tracking-wider text-[#52635E] block">
-            PERSONAL TOOLS · OFFLINE-FIRST
+            PERSONAL TOOLS · LIVE MODEL
           </span>
 
           <h1 className="font-serif-display text-4xl sm:text-5xl font-bold text-[#1C2A26] tracking-tight">
@@ -225,7 +200,7 @@ export default function AICoachPage() {
           </h1>
 
           <p className="text-xs sm:text-base text-[#52635E] leading-relaxed w-full">
-            Local coaching modes that work without an API. Swap in an LLM later without changing the UX.
+            Coach modes call a real model with a prompt matched to Explain, ELI5, Quiz, Flashcards, and the rest. CV Maker drafts structured resume sections from your basics + notes.
           </p>
         </div>
 
@@ -381,6 +356,12 @@ export default function AICoachPage() {
               >
                 Print / PDF
               </button>
+              <button
+                onClick={() => void handleCvGenerate()}
+                className="px-5 py-2 rounded-2xl text-xs font-bold bg-[#D97706] text-white"
+              >
+                Generate with AI
+              </button>
             </div>
 
             <Card variant="glass" hoverable={false} className="p-6 sm:p-8 space-y-6 border-[#E7E0D3] print:shadow-none print:border-none print:bg-white">
@@ -484,7 +465,25 @@ export default function AICoachPage() {
                     className="w-full p-4 text-xs font-sans bg-white border border-[#E7E0D3] rounded-2xl focus:outline-none focus:border-[#D97706] leading-relaxed"
                   />
                 </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[#52635E]">
+                    EXPERIENCE NOTES (PASTE)
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={cvNotes}
+                    onChange={(e) => setCvNotes(e.target.value)}
+                    placeholder="Paste roles, dates, bullets…"
+                    className="w-full p-4 text-xs font-sans bg-white border border-[#E7E0D3] rounded-2xl focus:outline-none focus:border-[#D97706] leading-relaxed"
+                  />
+                </div>
               </div>
+              {cvAi ? (
+                <div className="space-y-2 pt-4">
+                  <span className="text-[11px] font-bold uppercase tracking-wider">AI resume draft</span>
+                  <pre className="whitespace-pre-wrap text-sm">{cvAi}</pre>
+                </div>
+              ) : null}
             </Card>
           </div>
         )}
