@@ -17,6 +17,8 @@ Open http://localhost:3000 (or the port Next prints).
 | `NEXTAUTH_SECRET` / `NEXTAUTH_URL` | Auth |
 | `OPENAI_API_KEY` | Optional `POST /api/manuals/generate` |
 | `ADMIN_EMAIL` | Optional extra admin account (demo@hearth.study is always admin) |
+| `RESEND_API_KEY` | Email (approval notices + password reset codes). Without it, codes are logged and returned as `devCode` in non-production |
+| `EMAIL_FROM` | Optional From header (default `Hearth <noreply@hearth.study>`) |
 
 Copy from `.env` if a teammate has one. Gitignores `.env*`. A typical local file:
 
@@ -39,4 +41,5 @@ node --experimental-strip-types src/app/manuals/_lib/highlights.check.ts
 node --experimental-strip-types src/app/manuals/_ui/lessonFormat.check.ts
 node --experimental-strip-types scripts/check-library.ts
 node --experimental-strip-types scripts/check-pathwise-manuals.ts
+node --experimental-strip-types src/lib/passwordReset.check.ts
 ```

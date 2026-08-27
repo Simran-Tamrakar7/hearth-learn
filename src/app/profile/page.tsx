@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { useSession } from "next-auth/react";
 import { PERMISSION_LABELS, PERMISSION_KEYS, parsePermissions, type Permissions } from "@/lib/permissions";
 import {
@@ -154,7 +155,14 @@ export default function ProfilePage() {
               <input className="mt-1 w-full h-11 px-3 rounded-xl border border-[#E7E0D3]" value={image} onChange={(e) => setImage(e.target.value)} placeholder="https://…" />
             </label>
             <label className="block text-xs font-semibold text-[#52635E]">New password (optional)
-              <input type="password" className="mt-1 w-full h-11 px-3 rounded-xl border border-[#E7E0D3]" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Leave blank to keep current" />
+              <div className="mt-1">
+                <PasswordInput
+                  value={password}
+                  onChange={setPassword}
+                  placeholder="Leave blank to keep current"
+                  autoComplete="new-password"
+                />
+              </div>
             </label>
             <div className="flex gap-2">
               <Button variant="primary" size="sm" onClick={() => void saveProfile()}>Save</Button>

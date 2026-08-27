@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { purgeExpiredResetTokens } from "@/lib/mail";
 
 export async function POST(req: Request) {
   let token = "";
   let password = "";
+  let confirmPassword = "";
   try {
     const body = await req.json();
     token = typeof body?.token === "string" ? body.token.trim() : "";
     password = typeof body?.password === "string" ? body.password : "";
+    confirmPassword = typeof body?.confirmPassword === "string" ? body.confirmPassword : password;
   } catch {
     return NextResponse.json({ error: "Expected JSON { token, password }" }, { status: 400 });
   }
@@ -16,15 +19,20 @@ export async function POST(req: Request) {
   if (!token || password.length < 4) {
     return NextResponse.json({ error: "A new password of at least 4 characters is required." }, { status: 400 });
   }
+  if (password !== confirmPassword) {
+    return NextResponse.json({ error: "Passwords do not match." }, { status: 400 });
+  }
+
+  await purgeExpiredResetTokens();
 
   const row = await prisma.passwordResetToken.findUnique({ where: { token } });
-  if (!row || row.expiresAt.getTime() < Date.now()) {
-    return NextResponse.json({ error: "This reset link is invalid or has expired." }, { status: 400 });
+  if (!row || row.kind !== "session" || row.expiresAt.getTime() < Date.now()) {
+    return NextResponse.json({ error: "This reset session is invalid or has expired." }, { status: 400 });
   }
 
   const user = await prisma.user.findUnique({ where: { email: row.email } });
   if (!user) {
-    return NextResponse.json({ error: "This reset link is invalid or has expired." }, { status: 400 });
+    return NextResponse.json({ error: "This reset session is invalid or has expired." }, { status: 400 });
   }
 
   await prisma.user.update({

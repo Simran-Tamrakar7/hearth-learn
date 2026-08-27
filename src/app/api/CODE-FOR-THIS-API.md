@@ -5,7 +5,10 @@ These are server routes, not screens. Each `route.ts` has a `API:` comment at th
 | API file | Called from / used by |
 |---|---|
 | `auth/[...nextauth]/route.ts` | `/login` (next-auth) |
-| `auth/register/route.ts` | `/login` sign-up |
+| `auth/register/route.ts` | `/signup` |
+| `auth/forgot/route.ts` | `/forgot-password` — send 6-digit code (Resend) |
+| `auth/verify-code/route.ts` | `/forgot-password` — verify code → reset session |
+| `auth/reset/route.ts` | `/forgot-password` — set password after verify |
 | `notes/route.ts` | `/notes`, `/tags` |
 | `user/dashboard/route.ts` | `/dashboard` |
 | `user/profile/route.ts` | `/profile` |

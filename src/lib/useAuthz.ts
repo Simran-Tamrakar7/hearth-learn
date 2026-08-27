@@ -24,7 +24,6 @@ export function usePermissions() {
   return {
     ready: status !== "loading",
     isAdmin,
-    mustChangePassword: Boolean(data?.user?.mustChangePassword),
     canCreate: perms.canCreate,
     canEdit: perms.canEdit,
     canDelete: perms.canDelete,
