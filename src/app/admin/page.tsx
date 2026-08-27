@@ -2,8 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Navbar } from "@/components/layout/Navbar";
-import { CategoryManager } from "@/app/manuals/_ui/CategoryManager";
-import { FEATURE_KEYS, FEATURE_LABELS, parseSiteFeatures, type SiteFeatures } from "@/lib/prefs";
 import { PERMISSION_KEYS, PERMISSION_LABELS, STATUS_ACTIVE, STATUS_PENDING, STATUS_REJECTED, type Permissions } from "@/lib/permissions";
 import { usePermissions } from "@/lib/useAuthz";
 
@@ -48,7 +46,6 @@ export default function AdminPage() {
   const [statusFilter, setStatusFilter] = useState<(typeof STATUS_FILTERS)[number]>("ALL");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [detail, setDetail] = useState<UserRow | null>(null);
-  const [features, setFeatures] = useState<SiteFeatures>(parseSiteFeatures(null));
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
 
@@ -57,11 +54,6 @@ export default function AdminPage() {
     if (res.ok) {
       const data = await res.json();
       setUsers(Array.isArray(data.users) ? data.users : []);
-    }
-    const f = await fetch("/api/admin/features", { cache: "no-store" });
-    if (f.ok) {
-      const data = await f.json();
-      setFeatures(parseSiteFeatures(JSON.stringify(data.features)));
     }
   }, []);
 
@@ -104,15 +96,6 @@ export default function AdminPage() {
     }
   }
 
-  async function saveFeatures(next: SiteFeatures) {
-    setFeatures(next);
-    await fetch("/api/admin/features", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(next),
-    });
-  }
-
   if (!ready) {
     return (
       <div className="min-h-screen bg-[#FBF8F3]">
@@ -143,31 +126,12 @@ export default function AdminPage() {
           <p className="text-[11px] font-bold uppercase tracking-wider text-[#D97706]">Cabin staff</p>
           <h1 className="font-serif-display text-4xl font-semibold">Users</h1>
           <p className="mt-2 max-w-2xl text-sm text-[#52635E]">
-            Approve accounts, grant permissions, and inspect activity. New approved users start with viewing, highlighting, and pinning only.
+            Approve accounts and grant permissions. Room flags and categories live under Settings. Open Admin from your avatar menu.
           </p>
         </header>
 
         {error ? <p className="text-sm text-red-700">{error}</p> : null}
         {ok ? <p className="text-sm text-emerald-800">{ok}</p> : null}
-
-        <section className="bg-white border border-[#E7E0D3] rounded-2xl p-5 space-y-3">
-          <h2 className="font-serif-display text-lg font-semibold">Site features</h2>
-          <p className="text-sm text-[#8A9B95]">Global flags — not per-user toggles. Hidden rooms drop out of the navbar.</p>
-          <div className="flex flex-wrap gap-2">
-            {FEATURE_KEYS.map((key) => (
-              <button
-                key={key}
-                type="button"
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${
-                  features[key] ? "bg-[#1C2A26] text-[#FAF7F2] border-[#1C2A26]" : "bg-white text-[#52635E] border-[#E7E0D3]"
-                }`}
-                onClick={() => void saveFeatures({ ...features, [key]: !features[key] })}
-              >
-                {FEATURE_LABELS[key]}
-              </button>
-            ))}
-          </div>
-        </section>
 
         <section className="space-y-3">
           <div className="flex flex-wrap gap-2">
@@ -261,8 +225,6 @@ export default function AdminPage() {
         </section>
 
         {detail ? <UserDetail user={detail} onClose={() => setDetail(null)} onPatch={patch} /> : null}
-
-        <CategoryManager />
       </main>
     </div>
   );

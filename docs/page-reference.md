@@ -50,23 +50,23 @@ UI kit demo. Not catalog content.
 
 ## `/profile`
 
-GET `/api/user/profile`. PATCH name, avatar URL, password (show/hide via `PasswordInput`). Nav avatar opens this page. There is no forced first-login password change — users update passwords here (or via `/forgot-password`).
+User data only: name, email, avatar, password, stats, badges. Open from the avatar menu.
+
+## `/settings`
+
+Sidebar menu: Appearance, Reading, Data (`ThemeContext` → `/api/me/prefs`). Admins also see Cabin rooms (global feature flags) and Categories. Users & approvals stay on `/admin` (avatar → Admin).
+
+## `/admin`
+
+Admin-only users table (search/filter, bulk, detail with permissions + activity). Cabin flags/categories live under Settings. Map: `src/app/admin/CODE-FOR-THIS-PAGE.md`.
 
 ## `/login`
 
-Credentials + Google. “Forgot Password?” opens `/forgot-password` (email prefilled). `?reset=1` shows a success banner after a code-based reset.
+Credentials + Google (only when OAuth env vars are set). “Forgot Password?” opens `/forgot-password` (email prefilled). `?reset=1` shows a success banner after a code-based reset.
 
 ## `/forgot-password`
 
 Three steps: email → 6-digit verification code (15 min, Resend) → new password + confirm. APIs: `POST /api/auth/forgot`, `/api/auth/verify-code`, `/api/auth/reset`. Resend is rate-limited (60s cooldown, 5/hour). Legacy `/reset-password` redirects here.
-
-## `/settings`
-
-`ThemeContext` loads/saves `/api/me/prefs` (theme, accent, font size, line height, highlight legend). Room flags are Admin global.
-
-## `/admin`
-
-Admin-only. Users table (search/filter, bulk, detail with permissions + activity), global feature flags, Manage categories. Map: `src/app/admin/CODE-FOR-THIS-PAGE.md`.
 
 ## `/dashboard`
 

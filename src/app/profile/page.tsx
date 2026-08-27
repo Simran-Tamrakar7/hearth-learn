@@ -10,7 +10,6 @@ import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { useSession } from "next-auth/react";
-import { PERMISSION_LABELS, PERMISSION_KEYS, parsePermissions, type Permissions } from "@/lib/permissions";
 import {
   Flame,
   Trophy,
@@ -36,7 +35,6 @@ interface ProfileUser {
   image?: string | null;
   role?: string;
   status?: string;
-  permissions?: Permissions | string;
   createdAt: string;
   streak: { currentCount: number; longestCount: number };
   badges: BadgeData[];
@@ -114,7 +112,6 @@ export default function ProfilePage() {
     );
   }
 
-  const perms = parsePermissions(user.permissions, user.role);
   const letters = initials(user.name, user.email);
 
   return (
@@ -170,19 +167,6 @@ export default function ProfilePage() {
             </div>
           </Card>
         ) : null}
-
-        <Card variant="default" hoverable={false} className="p-6 space-y-2">
-          <h2 className="font-serif-display text-lg font-bold">Account</h2>
-          <p className="text-sm">Role: <strong>{user.role || "USER"}</strong></p>
-          <p className="text-sm">Date joined: {new Date(user.createdAt).toLocaleDateString()}</p>
-          <div className="flex flex-wrap gap-2 pt-2">
-            {PERMISSION_KEYS.map((key) => (
-              <span key={key} className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border ${perms[key] ? "bg-[#1C2A26] text-[#FAF7F2] border-[#1C2A26]" : "bg-white text-[#8A9B95] border-[#E7E0D3]"}`}>
-                {PERMISSION_LABELS[key]}: {perms[key] ? "on" : "off"}
-              </span>
-            ))}
-          </div>
-        </Card>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <Card variant="subtle" hoverable={false} className="p-6 space-y-2 text-center">
