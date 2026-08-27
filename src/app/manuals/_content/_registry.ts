@@ -105,7 +105,7 @@ export const MANUALS: ManualRegistryEntry[] = [
     tags: [
       "automation"
     ],
-    featured: false,
+    featured: true,
     pinnable: true,
     pinIcon: "🌲",
     body: cypress,
