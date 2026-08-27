@@ -35,17 +35,27 @@ function LoginFormContent() {
   const [email, setEmail] = useState(searchParams.get("email") || "");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [googleEnabled, setGoogleEnabled] = useState(false);
   const [errorMsg, setErrorMsg] = useState(
     searchParams.get("pending")
       ? "Your account is waiting for admin approval."
       : searchParams.get("rejected")
         ? "Your signup was not approved."
-        : ""
+        : searchParams.get("error") === "OAuthCallback" || searchParams.get("error") === "invalid_client"
+          ? "Google sign-in is not configured. Use email/password, or set GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET."
+          : ""
   );
   const [resetNotice] = useState(
     searchParams.get("reset") === "1" ? "Password updated. Sign in with your new password." : ""
   );
   const [isSuccess, setIsSuccess] = useState(false);
+
+  React.useEffect(() => {
+    fetch("/api/auth/providers")
+      .then((r) => r.json())
+      .then((providers) => setGoogleEnabled(Boolean(providers?.google)))
+      .catch(() => setGoogleEnabled(false));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,24 +167,28 @@ function LoginFormContent() {
         </Button>
       </form>
 
-      <div className="relative my-6 flex items-center justify-center">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-[#E7E0D3]" />
-        </div>
-        <span className="relative bg-white px-3 text-[11px] font-semibold text-[#8A9B95] uppercase tracking-wider">
-          Or
-        </span>
-      </div>
+      {googleEnabled ? (
+        <>
+          <div className="relative my-6 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-[#E7E0D3]" />
+            </div>
+            <span className="relative bg-white px-3 text-[11px] font-semibold text-[#8A9B95] uppercase tracking-wider">
+              Or
+            </span>
+          </div>
 
-      <Button
-        type="button"
-        variant="outline"
-        fullWidth
-        leftIcon={<GoogleIcon />}
-        onClick={() => signIn("google", { callbackUrl })}
-      >
-        Sign in with Google
-      </Button>
+          <Button
+            type="button"
+            variant="outline"
+            fullWidth
+            leftIcon={<GoogleIcon />}
+            onClick={() => signIn("google", { callbackUrl })}
+          >
+            Sign in with Google
+          </Button>
+        </>
+      ) : null}
 
       <p className="text-center text-xs text-[#52635E] mt-5">
         New here?{" "}
