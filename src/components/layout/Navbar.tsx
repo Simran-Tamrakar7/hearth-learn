@@ -10,7 +10,7 @@
  * Changing this file changes all of those pages at once.
  * ========================================================================== */
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,6 +31,7 @@ import {
   Globe,
   Sparkles,
   Shield,
+  User,
 } from "lucide-react";
 
 function initials(name?: string | null, email?: string | null) {
@@ -45,17 +46,17 @@ export function Navbar() {
   const { data: session } = useSession();
   const { features } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [isRestMode, setIsRestMode] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const isAdmin = session?.user?.role === "ADMIN";
 
-  const toggleRestMode = () => {
-    const nextRest = !isRestMode;
-    setIsRestMode(nextRest);
-    if (nextRest) {
-      document.body.classList.add("rest-mode");
-    } else {
-      document.body.classList.remove("rest-mode");
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (!menuRef.current?.contains(e.target as Node)) setMenuOpen(false);
     }
-  };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
 
   const allNavLinks = [
     { href: "/manuals", label: "Manuals", icon: Compass, featureKey: null },
@@ -63,16 +64,16 @@ export function Navbar() {
     { href: "/life-simulator", label: "Life Lab", icon: BrainCircuit, featureKey: "lifeLab" as const },
     { href: "/notes", label: "Notes", icon: BookOpen, featureKey: "notes" as const },
     { href: "/ai", label: "AI", icon: Sparkles, featureKey: "aiCoach" as const },
-    { href: "/rest", label: "Break Room", icon: Coffee, featureKey: "breakRoom" as const },
     { href: "/showcase-wall", label: "Showcase Wall", icon: Globe, featureKey: null },
     { href: "/settings", label: "Settings", icon: SettingsIcon, featureKey: null },
   ];
 
-  const navLinks = [
-    ...allNavLinks.filter((link) => link.featureKey === null || features[link.featureKey]),
-    ...(session?.user?.role === "ADMIN" ? [{ href: "/admin", label: "Admin", icon: Shield, featureKey: null }] : []),
-  ];
+  const navLinks = allNavLinks.filter(
+    (link) => link.featureKey === null || features[link.featureKey]
+  );
 
+  const restOn = features.breakRoom !== false;
+  const restActive = pathname === "/rest" || pathname.startsWith("/rest/");
   const avatar = session?.user?.image;
   const letters = initials(session?.user?.name, session?.user?.email);
 
@@ -116,45 +117,91 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={toggleRestMode}
-            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all border inline-flex items-center gap-1.5 ${
-              isRestMode
-                ? "bg-[#D97706] text-white border-[#D97706]"
-                : "bg-white border-[#E7E0D3] text-[#52635E] hover:text-[#1C2A26]"
-            }`}
-            title="Rest mode — dim the cabin lights"
-            aria-label="Rest mode — dim the cabin lights"
-          >
-            <Coffee className="w-4 h-4" />
-            <span className="hidden sm:inline">Rest</span>
-          </button>
+          {restOn ? (
+            <Link
+              href="/rest"
+              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all border inline-flex items-center gap-1.5 ${
+                restActive
+                  ? "bg-[#1C2A26] text-[#FAF7F2] border-[#1C2A26]"
+                  : "bg-white border-[#E7E0D3] text-[#52635E] hover:text-[#1C2A26]"
+              }`}
+              title="Break Room"
+              aria-label="Open Break Room"
+            >
+              <Coffee className="w-4 h-4" />
+              <span className="hidden sm:inline">Rest</span>
+            </Link>
+          ) : null}
 
           {session?.user ? (
             <div className="hidden sm:flex items-center gap-2">
-              <Link
-                href="/profile"
-                title="Profile"
-                aria-label="Open profile"
-                className={`h-9 w-9 rounded-full overflow-hidden border flex items-center justify-center text-[11px] font-bold shrink-0 ${
-                  pathname === "/profile" ? "border-[#1C2A26] ring-2 ring-[#D97706]/40" : "border-[#E7E0D3]"
-                }`}
-              >
-                {avatar ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={avatar} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <span className="bg-[#1C2A26] text-[#D97706] h-full w-full flex items-center justify-center">{letters}</span>
-                )}
-              </Link>
-              <button
-                onClick={() => signOut()}
-                className="p-2 text-[#52635E] hover:text-[#1C2A26] transition-colors"
-                title="Sign Out"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
+              <div className="relative" ref={menuRef}>
+                <button
+                  type="button"
+                  onClick={() => setMenuOpen((v) => !v)}
+                  title="Account"
+                  aria-label="Open account menu"
+                  aria-expanded={menuOpen}
+                  className={`h-9 w-9 rounded-full overflow-hidden border flex items-center justify-center text-[11px] font-bold shrink-0 ${
+                    pathname === "/profile" || pathname === "/admin" || pathname.startsWith("/settings")
+                      ? "border-[#1C2A26] ring-2 ring-[#D97706]/40"
+                      : "border-[#E7E0D3]"
+                  }`}
+                >
+                  {avatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={avatar} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="bg-[#1C2A26] text-[#D97706] h-full w-full flex items-center justify-center">
+                      {letters}
+                    </span>
+                  )}
+                </button>
+                <AnimatePresence>
+                  {menuOpen ? (
+                    <motion.div
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      className="absolute right-0 mt-2 w-48 rounded-2xl border border-[#E7E0D3] bg-white shadow-lg py-1 z-50"
+                    >
+                      <Link
+                        href="/profile"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-2 px-3 py-2.5 text-xs font-semibold text-[#52635E] hover:bg-[#FAF7F2] hover:text-[#1C2A26]"
+                      >
+                        <User className="w-3.5 h-3.5" /> Profile
+                      </Link>
+                      {isAdmin ? (
+                        <Link
+                          href="/admin"
+                          onClick={() => setMenuOpen(false)}
+                          className="flex items-center gap-2 px-3 py-2.5 text-xs font-semibold text-[#52635E] hover:bg-[#FAF7F2] hover:text-[#1C2A26]"
+                        >
+                          <Shield className="w-3.5 h-3.5" /> Admin
+                        </Link>
+                      ) : null}
+                      <Link
+                        href="/settings"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-2 px-3 py-2.5 text-xs font-semibold text-[#52635E] hover:bg-[#FAF7F2] hover:text-[#1C2A26]"
+                      >
+                        <SettingsIcon className="w-3.5 h-3.5" /> Settings
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          void signOut();
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-semibold text-[#52635E] hover:bg-[#FAF7F2] hover:text-[#1C2A26]"
+                      >
+                        <LogOut className="w-3.5 h-3.5" /> Sign out
+                      </button>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+              </div>
             </div>
           ) : (
             <Link href="/login" className="hidden sm:block">
@@ -201,17 +248,48 @@ export function Navbar() {
                 </Link>
               );
             })}
-            {session?.user ? (
+            {restOn ? (
               <Link
-                href="/profile"
+                href="/rest"
                 onClick={() => setMobileOpen(false)}
-                className="w-full px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-3 text-[#52635E]"
+                className={`w-full px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-3 ${
+                  restActive
+                    ? "bg-[#1C2A26] text-[#FAF7F2] font-bold"
+                    : "text-[#52635E] hover:text-[#1C2A26] hover:bg-[#EFE8DC]"
+                }`}
               >
-                <span className="h-6 w-6 rounded-full bg-[#1C2A26] text-[#D97706] flex items-center justify-center text-[10px] font-bold">
-                  {letters}
-                </span>
-                Profile
+                <Coffee className="w-4 h-4" /> Rest · Break Room
               </Link>
+            ) : null}
+            {session?.user ? (
+              <>
+                <Link
+                  href="/profile"
+                  onClick={() => setMobileOpen(false)}
+                  className="w-full px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-3 text-[#52635E]"
+                >
+                  <User className="w-4 h-4" /> Profile
+                </Link>
+                {isAdmin ? (
+                  <Link
+                    href="/admin"
+                    onClick={() => setMobileOpen(false)}
+                    className="w-full px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-3 text-[#52635E]"
+                  >
+                    <Shield className="w-4 h-4" /> Admin
+                  </Link>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    void signOut();
+                  }}
+                  className="w-full px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-3 text-[#52635E]"
+                >
+                  <LogOut className="w-4 h-4" /> Sign out
+                </button>
+              </>
             ) : null}
           </motion.div>
         )}

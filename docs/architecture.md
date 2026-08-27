@@ -43,15 +43,17 @@ Find a page: open `src/app/<url>/`. Example: dashboard is `src/app/dashboard/`. 
 | `/rest/cookbook` | Recipes |
 | `/toolkits` | Cheat sheets |
 | `/showcase` | Component demo |
-| `/profile` | Avatar, stats, badges, edit profile (incl. password), account |
-| `/settings` | Theme, type, highlight legend (account prefs) |
+| `/profile` | User data only (name, avatar, password, stats, badges) — open from avatar menu |
+| `/settings` | Sidebar settings menu (appearance, reading, data); admins also get cabin rooms + categories |
+| `/admin` | Users & approvals — avatar menu (admins), not main nav |
+| `/rest` | Break Room — opened via Rest button in the header |
 | `/tags` | Note tags |
 | `/certificates/[id]` | Printable certificate |
 | `/login` | Auth (credentials + Google) |
 | `/forgot-password` | Reset via emailed 6-digit code (Resend), then new password |
 | `/signup` | Request account (admin approval) |
 
-Navbar: Manuals, Library, Life Lab, Notes, AI, Break Room, Showcase Wall, Settings, circular profile avatar. Dashboard is the logo target. Rest mode is the labeled coffee control. `/admin` is admin-only.
+Navbar: Manuals, Library, Life Lab, Notes, AI, Showcase Wall, Settings. Rest opens Break Room. Avatar menu: Profile, Admin (admins), Settings, Sign out.
 
 ## Manual bodies
 
