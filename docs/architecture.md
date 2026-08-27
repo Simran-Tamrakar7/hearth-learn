@@ -4,7 +4,7 @@
 
 - **Next.js 16** (App Router), **React 19**, **Tailwind 4**
 - **Prisma + SQLite** for users, notes, Prisma-trails, showcase portfolio, certificates, streaks/badges, **manual chapter highlights**, Life Lab attempts, site feature flags
-- **next-auth** for sessions
+- **next-auth** for sessions (credentials + Google). Password reset codes and signup approval emails go through **Resend** (`RESEND_API_KEY` / `EMAIL_FROM` in `src/lib/mail.ts`).
 - Catalog learning content is **imported TypeScript/JavaScript**, not a CMS and not MDX. There is no glob indexer: each `_registry.ts` is an explicit array you edit by hand.
 
 ## Top-level folders
@@ -43,11 +43,13 @@ Find a page: open `src/app/<url>/`. Example: dashboard is `src/app/dashboard/`. 
 | `/rest/cookbook` | Recipes |
 | `/toolkits` | Cheat sheets |
 | `/showcase` | Component demo |
-| `/profile` | Avatar, stats, badges, edit profile, account |
+| `/profile` | Avatar, stats, badges, edit profile (incl. password), account |
 | `/settings` | Theme, type, highlight legend (account prefs) |
 | `/tags` | Note tags |
 | `/certificates/[id]` | Printable certificate |
-| `/login` | Auth |
+| `/login` | Auth (credentials + Google) |
+| `/forgot-password` | Reset via emailed 6-digit code (Resend), then new password |
+| `/signup` | Request account (admin approval) |
 
 Navbar: Manuals, Library, Life Lab, Notes, AI, Break Room, Showcase Wall, Settings, circular profile avatar. Dashboard is the logo target. Rest mode is the labeled coffee control. `/admin` is admin-only.
 

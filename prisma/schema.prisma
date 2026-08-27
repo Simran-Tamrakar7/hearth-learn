@@ -280,6 +280,10 @@ model PasswordResetToken {
   id        String   @id @default(uuid())
   email     String
   token     String   @unique
+  kind      String   @default("code") // code | session
+  attempts  Int      @default(0)
   expiresAt DateTime
   createdAt DateTime @default(now())
+
+  @@index([email, kind, createdAt])
 }

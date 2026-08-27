@@ -49,3 +49,11 @@ export async function notifyUserStatus(email: string, status: "ACTIVE" | "REJECT
 export async function purgeExpiredResetTokens() {
   await prisma.passwordResetToken.deleteMany({ where: { expiresAt: { lt: new Date() } } });
 }
+
+export async function sendPasswordResetCode(email: string, code: string) {
+  return sendAppEmail({
+    to: email,
+    subject: "Your Hearth password reset code",
+    text: `Your verification code is ${code}.\n\nIt expires in 15 minutes. If you did not request this, you can ignore this email.`,
+  });
+}

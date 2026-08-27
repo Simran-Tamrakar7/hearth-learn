@@ -32,7 +32,7 @@ function LoginFormContent() {
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const { toast } = useToast();
 
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(searchParams.get("email") || "");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState(
@@ -41,6 +41,9 @@ function LoginFormContent() {
       : searchParams.get("rejected")
         ? "Your signup was not approved."
         : ""
+  );
+  const [resetNotice] = useState(
+    searchParams.get("reset") === "1" ? "Password updated. Sign in with your new password." : ""
   );
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -87,7 +90,10 @@ function LoginFormContent() {
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <label className="block text-xs font-semibold text-[#52635E]">Password</label>
-            <Link href="/forgot-password" className="text-[11px] font-semibold text-[#D97706] hover:underline">
+            <Link
+              href={email.trim() ? `/forgot-password?email=${encodeURIComponent(email.trim())}` : "/forgot-password"}
+              className="text-[11px] font-semibold text-[#D97706] hover:underline"
+            >
               Forgot Password?
             </Link>
           </div>
@@ -104,6 +110,20 @@ function LoginFormContent() {
             />
           </div>
         </div>
+
+        <AnimatePresence>
+          {resetNotice && !errorMsg ? (
+            <motion.div
+              initial={{ opacity: 0, y: -6, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: "auto" }}
+              exit={{ opacity: 0, y: -6, height: 0 }}
+              className="flex items-center gap-2 p-3 bg-[#EBF3F0] border border-[#C5D9D0] text-[#1C2A26] text-xs rounded-xl"
+            >
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-[#2D4A43]" />
+              <span>{resetNotice}</span>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
 
         <AnimatePresence>
           {errorMsg ? (

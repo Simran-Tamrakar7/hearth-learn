@@ -17,16 +17,20 @@ import {
 } from "@/lib/permissions";
 
 export async function ensureSeedAdmin() {
+  // Drop any leftover first-login password gates (change password from Profile instead).
+  await prisma.user.updateMany({
+    where: { mustChangePassword: true },
+    data: { mustChangePassword: false },
+  });
   const existing = await prisma.user.findUnique({ where: { email: SEED_ADMIN_EMAIL } });
   if (existing) return existing;
-  // ponytail: seed password "admin" is hashed only on first create; mustChangePassword forces a real password.
   return prisma.user.create({
     data: {
       email: SEED_ADMIN_EMAIL,
       name: "Admin",
       role: ADMIN_ROLE,
       status: STATUS_ACTIVE,
-      mustChangePassword: true,
+      mustChangePassword: false,
       permissions: stringifyPermissions(ADMIN_PERMISSIONS),
       passwordHash: await bcrypt.hash("admin", 10),
     },
@@ -40,7 +44,6 @@ function sessionFields(user: {
   image?: string | null;
   role?: string | null;
   status?: string | null;
-  mustChangePassword?: boolean | null;
   permissions?: string | null;
 }) {
   const role = emailIsAdmin(user.email) ? ADMIN_ROLE : user.role || "USER";
@@ -51,7 +54,6 @@ function sessionFields(user: {
     image: user.image,
     role,
     status: user.status || STATUS_ACTIVE,
-    mustChangePassword: Boolean(user.mustChangePassword),
     permissions: effectivePermissions({ role, permissions: user.permissions }),
   };
 }
@@ -168,7 +170,6 @@ export const authOptions: NextAuthOptions = {
             email: true,
             role: true,
             status: true,
-            mustChangePassword: true,
             permissions: true,
           },
         });
@@ -176,7 +177,6 @@ export const authOptions: NextAuthOptions = {
           const fields = sessionFields(dbUser);
           token.role = fields.role;
           token.status = fields.status;
-          token.mustChangePassword = fields.mustChangePassword;
           token.permissions = fields.permissions;
           if (dbUser.status !== STATUS_ACTIVE) {
             token.status = dbUser.status;
@@ -184,7 +184,6 @@ export const authOptions: NextAuthOptions = {
         } else if (user) {
           token.role = user.role || "USER";
           token.status = user.status || STATUS_ACTIVE;
-          token.mustChangePassword = Boolean(user.mustChangePassword);
           token.permissions = user.permissions || VIEWER_PERMISSIONS;
         }
       }
@@ -195,7 +194,6 @@ export const authOptions: NextAuthOptions = {
         session.user.id = String(token.id || "");
         session.user.role = String(token.role || "USER");
         session.user.status = String(token.status || STATUS_ACTIVE);
-        session.user.mustChangePassword = Boolean(token.mustChangePassword);
         session.user.permissions = token.permissions || VIEWER_PERMISSIONS;
       }
       return session;

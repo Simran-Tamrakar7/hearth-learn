@@ -50,7 +50,15 @@ UI kit demo. Not catalog content.
 
 ## `/profile`
 
-GET `/api/user/profile`. PATCH name, avatar URL, password. Nav avatar opens this page.
+GET `/api/user/profile`. PATCH name, avatar URL, password (show/hide via `PasswordInput`). Nav avatar opens this page. There is no forced first-login password change — users update passwords here (or via `/forgot-password`).
+
+## `/login`
+
+Credentials + Google. “Forgot Password?” opens `/forgot-password` (email prefilled). `?reset=1` shows a success banner after a code-based reset.
+
+## `/forgot-password`
+
+Three steps: email → 6-digit verification code (15 min, Resend) → new password + confirm. APIs: `POST /api/auth/forgot`, `/api/auth/verify-code`, `/api/auth/reset`. Resend is rate-limited (60s cooldown, 5/hour). Legacy `/reset-password` redirects here.
 
 ## `/settings`
 
