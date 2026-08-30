@@ -1,7 +1,10 @@
+/* API: /api/auth/reset  — used by PAGE /forgot-password. Map: ../../CODE-FOR-THIS-API.md */
+
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { purgeExpiredResetTokens } from "@/lib/mail";
+import { passwordError } from "@/lib/passwordReset";
 
 export async function POST(req: Request) {
   let token = "";
@@ -16,11 +19,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Expected JSON { token, password }" }, { status: 400 });
   }
 
-  if (!token || password.length < 4) {
-    return NextResponse.json({ error: "A new password of at least 4 characters is required." }, { status: 400 });
-  }
-  if (password !== confirmPassword) {
-    return NextResponse.json({ error: "Passwords do not match." }, { status: 400 });
+  const invalid = passwordError(password, confirmPassword);
+  if (!token || invalid) {
+    return NextResponse.json(
+      { error: invalid || "A new password is required." },
+      { status: 400 }
+    );
   }
 
   await purgeExpiredResetTokens();

@@ -64,13 +64,9 @@ export async function PATCH(req: Request) {
     const userId = session?.user?.id;
     if (!userId) return NextResponse.json({ error: "Sign in required." }, { status: 401 });
     const body = await req.json();
-    const data: { name?: string; image?: string; passwordHash?: string } = {};
+    const data: { name?: string; image?: string } = {};
     if (typeof body.name === "string" && body.name.trim()) data.name = body.name.trim().slice(0, 80);
     if (typeof body.image === "string") data.image = body.image.trim().slice(0, 500);
-    if (typeof body.password === "string" && body.password.length >= 4) {
-      const bcrypt = await import("bcryptjs");
-      data.passwordHash = await bcrypt.hash(body.password, 10);
-    }
     const user = await prisma.user.update({ where: { id: userId }, data });
     return NextResponse.json({ user: { id: user.id, name: user.name, email: user.email, image: user.image } });
   } catch (error) {

@@ -17,7 +17,7 @@ Open http://localhost:3000 (or the port Next prints).
 | `NEXTAUTH_SECRET` / `NEXTAUTH_URL` | Auth |
 | `OPENAI_API_KEY` | Optional `POST /api/manuals/generate` |
 | `ADMIN_EMAIL` | Optional extra admin account (demo@hearth.study is always admin) |
-| `RESEND_API_KEY` | Email (approval notices + password reset codes). Without it, codes are logged and returned as `devCode` in non-production |
+| `RESEND_API_KEY` | Email (approval notices + password reset codes). Required on Vercel or forgot-password cannot deliver a code. Locally, without it, codes are logged and returned as `devCode` |
 | `EMAIL_FROM` | Optional From header (default `Hearth <noreply@hearth.study>`) |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Optional. Real Google OAuth client from Google Cloud Console. Without both, the “Sign in with Google” button is hidden (avoids `401: invalid_client`) |
 

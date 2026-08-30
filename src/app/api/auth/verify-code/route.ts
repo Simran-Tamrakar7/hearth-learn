@@ -1,3 +1,5 @@
+/* API: /api/auth/verify-code  — used by PAGE /forgot-password. Map: ../../CODE-FOR-THIS-API.md */
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { purgeExpiredResetTokens } from "@/lib/mail";
@@ -25,9 +27,15 @@ export async function POST(req: Request) {
 
   await purgeExpiredResetTokens();
 
+  const user =
+    (await prisma.user.findUnique({ where: { email } })) ||
+    (email !== email.toLowerCase()
+      ? await prisma.user.findUnique({ where: { email: email.toLowerCase() } })
+      : null);
+
   const row = await prisma.passwordResetToken.findFirst({
     where: {
-      email,
+      email: user?.email ?? email,
       kind: "code",
       expiresAt: { gt: new Date() },
     },
@@ -49,7 +57,7 @@ export async function POST(req: Request) {
     );
   }
 
-  if (row.token !== hashResetCode(email, code)) {
+  if (row.token !== hashResetCode(row.email, code)) {
     const attempts = row.attempts + 1;
     await prisma.passwordResetToken.update({
       where: { id: row.id },
@@ -76,7 +84,7 @@ export async function POST(req: Request) {
   });
   await prisma.passwordResetToken.create({
     data: {
-      email,
+      email: row.email,
       token: resetToken,
       kind: "session",
       expiresAt: new Date(Date.now() + SESSION_TTL_MS),

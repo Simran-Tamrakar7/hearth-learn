@@ -50,7 +50,7 @@ UI kit demo. Not catalog content.
 
 ## `/profile`
 
-User data only: name, email, avatar, password, stats, badges. Open from the avatar menu.
+User data only: name, email, avatar, stats, badges. Change password from Edit Profile (`POST /api/auth/change-password`). Open from the avatar menu.
 
 ## `/settings`
 
@@ -66,7 +66,7 @@ Credentials + Google (only when OAuth env vars are set). “Forgot Password?” 
 
 ## `/forgot-password`
 
-Three steps: email → 6-digit verification code (15 min, Resend) → new password + confirm. APIs: `POST /api/auth/forgot`, `/api/auth/verify-code`, `/api/auth/reset`. Resend is rate-limited (60s cooldown, 5/hour). Legacy `/reset-password` redirects here.
+Three steps: email → 6-digit verification code (15 min, Resend) → new password + confirm (min 8 chars). APIs: `POST /api/auth/forgot`, `/api/auth/verify-code`, `/api/auth/reset`. Resend is rate-limited (60s cooldown, 5/hour). If Resend isn’t configured in production, the send step returns an error instead of pretending the email went out. Legacy `/reset-password` redirects here.
 
 ## `/dashboard`
 
