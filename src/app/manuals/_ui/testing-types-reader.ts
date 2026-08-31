@@ -12,23 +12,28 @@ function partSlug(name: string): string {
   return `tt-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
 }
 
-function findPathwise(pathwise: ManualChapter[], tt: TestingChapterData, title?: string): ManualChapter | undefined {
-  const want = (title || tt.title).trim().toLowerCase();
-  return (
-    pathwise.find((p) => p.title.trim().toLowerCase() === want) ||
-    pathwise.find((p) => p.id === `tt-ch-${tt.no}` || p.slug === `ch-${tt.no}`)
-  );
-}
-
-function pickMarkdown(compiled?: string, saved?: string): string {
-  const c = compiled?.trim() || "";
-  const s = saved?.trim() || "";
-  if (!s) return c;
-  if (!c) return s;
-  // ponytail: stale localStorage often dropped MD sections — prefer disk when it has more structure
-  if (c.includes("##") && !s.includes("##")) return c;
-  if (c.length > s.length + 40) return c;
-  return s;
+/** Match compiled MD row — outline TOC label often differs from catalog/overlay title. */
+function findPathwise(
+  pathwise: ManualChapter[],
+  tt: TestingChapterData,
+  outlineTitle?: string
+): ManualChapter | undefined {
+  const wants = [tt.title, outlineTitle]
+    .filter(Boolean)
+    .map((t) => t!.trim().toLowerCase());
+  for (const want of wants) {
+    const exact = pathwise.find((p) => p.title.trim().toLowerCase() === want);
+    if (exact) return exact;
+  }
+  const primary = wants[0];
+  if (primary) {
+    const fuzzy = pathwise.find((p) => {
+      const pt = p.title.trim().toLowerCase();
+      return pt.includes(primary) || primary.includes(pt);
+    });
+    if (fuzzy) return fuzzy;
+  }
+  return pathwise.find((p) => p.id === `tt-ch-${tt.no}` || p.slug === `ch-${tt.no}`);
 }
 
 function chapterFromOverlay(
@@ -41,6 +46,7 @@ function chapterFromOverlay(
   order: number
 ): ManualChapter {
   const pw = findPathwise(pathwise, tt, title);
+  const md = pw?.contentMarkdown?.trim();
   return {
     ...(pw || {
       exercises: [],
@@ -59,7 +65,7 @@ function chapterFromOverlay(
     when: tt.when ?? pw?.when,
     practical: tt.practical ?? pw?.practical,
     tools: tt.tools ?? pw?.tools,
-    contentMarkdown: pw?.contentMarkdown || tt.desc,
+    contentMarkdown: md || tt.desc,
     exercises: pw?.exercises || [],
     resourceLinks: pw?.resourceLinks || [],
   };
@@ -70,22 +76,26 @@ function folderChapter(
   title: string,
   subtitle: string,
   partKey: string,
-  order: number
+  order: number,
+  pathwise: ManualChapter[]
 ): ManualChapter {
+  const pw = pathwise.find((p) => p.title.trim().toLowerCase() === title.trim().toLowerCase());
   const overview =
+    pw?.overviewText ||
+    pw?.contentMarkdown?.split("\n\n")[0]?.trim() ||
     "Quality attributes beside functional correctness: usability, accessibility, compliance, SEO / site health, and security.";
   return {
-    id,
+    id: pw?.id || id,
     order,
-    slug: "quality-attributes",
+    slug: pw?.slug || "quality-attributes",
     title,
-    estimatedMinutes: 5,
+    estimatedMinutes: pw?.estimatedMinutes || 5,
     subtitle,
     partKey,
     overviewText: overview,
-    contentMarkdown: overview,
-    exercises: [],
-    resourceLinks: [],
+    contentMarkdown: pw?.contentMarkdown?.trim() || overview,
+    exercises: pw?.exercises || [],
+    resourceLinks: pw?.resourceLinks || [],
   };
 }
 
@@ -101,7 +111,20 @@ export function testingOverlayForChapter(ch: { id?: string; slug?: string; title
   return TESTING_TYPES_CHAPTERS.find((t) => t.title === ch.title);
 }
 
-/** Apply saved reader edits without letting stale snapshots replace compiled MD bodies. */
+/** Extra MD body below overview — skips duplicate intro paragraph when overlay already shows it. */
+export function testingTypesMdSections(ch: ManualChapter, overlayDesc?: string): string {
+  const md = (ch.contentMarkdown || "").trim();
+  if (!md) return "";
+  const overview = (overlayDesc || ch.overviewText || "").trim();
+  if (!overview) return md;
+  if (md === overview) return "";
+  if (md.startsWith(overview) && (md.length === overview.length || md[overview.length] === "\n")) {
+    return md.slice(overview.length).trim();
+  }
+  return md;
+}
+
+/** Apply saved reader edits — never replace compiled MD bodies from stale localStorage. */
 export function mergeTestingTypesSavedEdits(rebuilt: ManualChapter[], saved: ManualChapter[]): ManualChapter[] {
   if (!saved.length) return rebuilt;
   const byId = new Map(saved.map((c) => [c.id, c]));
@@ -112,7 +135,6 @@ export function mergeTestingTypesSavedEdits(rebuilt: ManualChapter[], saved: Man
     if (!s) return ch;
     return {
       ...ch,
-      contentMarkdown: pickMarkdown(ch.contentMarkdown, s.contentMarkdown),
       customSummary: s.customSummary?.trim() ? s.customSummary : ch.customSummary,
       aiSummary: s.aiSummary?.trim() ? s.aiSummary : ch.aiSummary,
       codeSnippet: s.codeSnippet?.trim() ? s.codeSnippet : ch.codeSnippet,
@@ -143,7 +165,7 @@ export function readerChaptersFromOverlay(pathwise: ManualChapter[]): ManualChap
       if (tt) {
         parent = chapterFromOverlay(tt, pathwise, item.title, subtitle, partKey, undefined, out.length + 1);
       } else {
-        parent = folderChapter("tt-folder-quality-attributes", item.title, subtitle, partKey, out.length + 1);
+        parent = folderChapter("tt-folder-quality-attributes", item.title, subtitle, partKey, out.length + 1, pathwise);
       }
       out.push(parent);
       for (const child of item.children || []) {

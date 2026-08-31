@@ -43,7 +43,7 @@ import { TagInput } from "@/app/manuals/_ui/TagInput";
 import { usePermissions, useAppUserId } from "@/lib/useAuthz";
 import { highlightsStoreKey, isScopeReady, progressStoreKey, readScopedRaw, writeScopedRaw } from "@/lib/userScope";
 import { getResume, pushAccountProgress, setResume, touchRecentManual } from "@/lib/readerMemory";
-import { readerChaptersFromOverlay, testingOverlayForChapter, mergeCustomTestingTypesChapters, mergeTestingTypesSavedEdits } from "@/app/manuals/_ui/testing-types-reader";
+import { readerChaptersFromOverlay, testingOverlayForChapter, mergeCustomTestingTypesChapters, mergeTestingTypesSavedEdits, testingTypesMdSections } from "@/app/manuals/_ui/testing-types-reader";
 import { restoreTestingTypesToc, TESTING_TYPES_TOC_VERSION } from "@/app/manuals/_content/testing-types/outline";
 import {
   chapterIndexAfter,
@@ -2306,16 +2306,13 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                   )}
 
                   {(() => {
-                    const overview = (overlayChapter?.desc || activeChapter.overviewText || "").trim();
-                    const md = (activeChapter.contentMarkdown || "").trim();
-                    const showMd =
-                      md &&
-                      (md.includes("##") ||
-                        md.includes("```") ||
-                        (overview && md !== overview && !overview.startsWith(md.slice(0, Math.min(md.length, 120)))));
-                    return showMd ? (
+                    const mdExtra = isTestingTypesManual
+                      ? testingTypesMdSections(activeChapter, overlayChapter?.desc)
+                      : (activeChapter.contentMarkdown || "").trim();
+                    return mdExtra ? (
                       <div className="pt-3 border-t border-[#E7E0D3] space-y-3">
-                        {renderFormattedMarkdown(activeChapter.contentMarkdown)}
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-[#8A9B95]">From manual</p>
+                        {renderFormattedMarkdown(mdExtra)}
                       </div>
                     ) : null;
                   })()}
