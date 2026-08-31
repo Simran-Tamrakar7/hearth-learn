@@ -12,8 +12,23 @@ function partSlug(name: string): string {
   return `tt-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
 }
 
-function findPathwise(pathwise: ManualChapter[], tt: TestingChapterData): ManualChapter | undefined {
-  return pathwise.find((p) => p.title === tt.title);
+function findPathwise(pathwise: ManualChapter[], tt: TestingChapterData, title?: string): ManualChapter | undefined {
+  const want = (title || tt.title).trim().toLowerCase();
+  return (
+    pathwise.find((p) => p.title.trim().toLowerCase() === want) ||
+    pathwise.find((p) => p.id === `tt-ch-${tt.no}` || p.slug === `ch-${tt.no}`)
+  );
+}
+
+function pickMarkdown(compiled?: string, saved?: string): string {
+  const c = compiled?.trim() || "";
+  const s = saved?.trim() || "";
+  if (!s) return c;
+  if (!c) return s;
+  // ponytail: stale localStorage often dropped MD sections — prefer disk when it has more structure
+  if (c.includes("##") && !s.includes("##")) return c;
+  if (c.length > s.length + 40) return c;
+  return s;
 }
 
 function chapterFromOverlay(
@@ -25,7 +40,7 @@ function chapterFromOverlay(
   parentId: string | undefined,
   order: number
 ): ManualChapter {
-  const pw = findPathwise(pathwise, tt);
+  const pw = findPathwise(pathwise, tt, title);
   return {
     ...(pw || {
       exercises: [],
@@ -84,6 +99,35 @@ export function testingOverlayForChapter(ch: { id?: string; slug?: string; title
     if (hit) return hit;
   }
   return TESTING_TYPES_CHAPTERS.find((t) => t.title === ch.title);
+}
+
+/** Apply saved reader edits without letting stale snapshots replace compiled MD bodies. */
+export function mergeTestingTypesSavedEdits(rebuilt: ManualChapter[], saved: ManualChapter[]): ManualChapter[] {
+  if (!saved.length) return rebuilt;
+  const byId = new Map(saved.map((c) => [c.id, c]));
+  const byTitle = new Map(saved.map((c) => [c.title.trim().toLowerCase(), c]));
+  const bySlug = new Map(saved.map((c) => [c.slug, c]));
+  return rebuilt.map((ch) => {
+    const s = byId.get(ch.id) || bySlug.get(ch.slug) || byTitle.get(ch.title.trim().toLowerCase());
+    if (!s) return ch;
+    return {
+      ...ch,
+      contentMarkdown: pickMarkdown(ch.contentMarkdown, s.contentMarkdown),
+      customSummary: s.customSummary?.trim() ? s.customSummary : ch.customSummary,
+      aiSummary: s.aiSummary?.trim() ? s.aiSummary : ch.aiSummary,
+      codeSnippet: s.codeSnippet?.trim() ? s.codeSnippet : ch.codeSnippet,
+    };
+  });
+}
+
+/** Keep user-added rows that are not in the catalog outline (custom chapter / sub-chapter). */
+export function mergeCustomTestingTypesChapters(rebuilt: ManualChapter[], saved: ManualChapter[]): ManualChapter[] {
+  const ids = new Set(rebuilt.map((c) => c.id));
+  const extra = saved.filter(
+    (c) => (c.id.startsWith("custom-") || c.slug.startsWith("sub-")) && !ids.has(c.id)
+  );
+  if (!extra.length) return rebuilt;
+  return [...rebuilt, ...extra.map((c, i) => ({ ...c, order: rebuilt.length + i + 1 }))];
 }
 
 /** TOC + body follow the 15-chapter outline, not pathwise order or a shorter localStorage snapshot. */

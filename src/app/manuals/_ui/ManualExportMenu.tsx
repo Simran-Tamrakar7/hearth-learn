@@ -4,10 +4,12 @@ import React, { useEffect, useRef, useState } from "react";
 import { ChevronDown, FileDown, FileText, Printer } from "lucide-react";
 import type { ManualItem } from "@/app/manuals/_lib/manualsData";
 import { downloadManualDocx, downloadManualPdf, openManualPrintView } from "@/app/manuals/_lib/manualExport";
+import { useToast } from "@/components/ui/Toast";
 
 type ExportKind = "pdf" | "docx" | "print";
 
 export function ManualExportMenu({ manual, slug }: { manual: ManualItem; slug: string }) {
+  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<ExportKind | null>(null);
   const ref = useRef<HTMLDivElement>(null);
@@ -21,13 +23,34 @@ export function ManualExportMenu({ manual, slug }: { manual: ManualItem; slug: s
   }, []);
 
   const run = async (kind: ExportKind) => {
+    if (!manual.chapters?.length) {
+      toast({ type: "error", title: "Nothing to export", description: "This manual has no chapters yet." });
+      return;
+    }
     setBusy(kind);
     try {
       const base = slug.replace(/[^a-z0-9-]+/gi, "-");
       if (kind === "pdf") await downloadManualPdf(manual, `${base}.pdf`);
       else if (kind === "docx") await downloadManualDocx(manual, `${base}.docx`);
-      else openManualPrintView(manual);
+      else {
+        const opened = openManualPrintView(manual);
+        if (!opened) {
+          toast({
+            type: "error",
+            title: "Pop-up blocked",
+            description: "Allow pop-ups for this site to open the print view.",
+          });
+          return;
+        }
+      }
       setOpen(false);
+    } catch (err) {
+      console.error("Manual export failed:", err);
+      toast({
+        type: "error",
+        title: "Export failed",
+        description: err instanceof Error ? err.message : "Could not generate the file. Try Print instead.",
+      });
     } finally {
       setBusy(null);
     }

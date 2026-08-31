@@ -43,7 +43,7 @@ import { TagInput } from "@/app/manuals/_ui/TagInput";
 import { usePermissions, useAppUserId } from "@/lib/useAuthz";
 import { highlightsStoreKey, isScopeReady, progressStoreKey, readScopedRaw, writeScopedRaw } from "@/lib/userScope";
 import { getResume, pushAccountProgress, setResume, touchRecentManual } from "@/lib/readerMemory";
-import { readerChaptersFromOverlay, testingOverlayForChapter } from "@/app/manuals/_ui/testing-types-reader";
+import { readerChaptersFromOverlay, testingOverlayForChapter, mergeCustomTestingTypesChapters, mergeTestingTypesSavedEdits } from "@/app/manuals/_ui/testing-types-reader";
 import { restoreTestingTypesToc, TESTING_TYPES_TOC_VERSION } from "@/app/manuals/_content/testing-types/outline";
 import {
   chapterIndexAfter,
@@ -304,11 +304,14 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     }
     if (isTestingTypesManual) {
       const chaptersSaved = parsed?.chapters;
-      if (restoreTestingTypesToc(parsed) && Array.isArray(chaptersSaved) && chaptersSaved.length > 0) {
-        setChapters(chaptersSaved as ManualChapter[]);
-      } else {
-        setChapters(readerChaptersFromOverlay(initialManual.chapters));
+      const saved = Array.isArray(chaptersSaved) ? (chaptersSaved as ManualChapter[]) : [];
+      // ponytail: MD on disk (compiled.body) is source of truth — never use stale localStorage as pathwise
+      let next = readerChaptersFromOverlay(initialManual.chapters);
+      if (saved.length) {
+        next = mergeTestingTypesSavedEdits(next, saved);
+        next = mergeCustomTestingTypesChapters(next, saved);
       }
+      setChapters(next);
     } else if (parsed && Array.isArray(parsed.chapters) && parsed.chapters.length > 0) {
       setChapters(parsed.chapters as ManualChapter[]);
     }
@@ -756,6 +759,14 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   }, [perms.canEdit]);
 
   const addChapterInPart = (partIndex?: number) => {
+    if (!perms.canStructure) {
+      toast({
+        type: "error",
+        title: "Cannot add chapter",
+        description: "Sign in with edit permissions, or open Edit mode from the chapter menu first.",
+      });
+      return;
+    }
     const host =
       partIndex != null
         ? partGroups[partIndex]
@@ -784,6 +795,14 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   };
 
   const addSubchapter = (parentIdx?: number) => {
+    if (!perms.canStructure) {
+      toast({
+        type: "error",
+        title: "Cannot add sub-chapter",
+        description: "Sign in with edit permissions to add sub-chapters.",
+      });
+      return;
+    }
     const idx = parentIdx ?? parentIndexOf(chapters, activeChapterIndex);
     const parent = chapters[idx] || chapters[activeChapterIndex];
     if (!parent) return;
@@ -837,6 +856,10 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   });
 
   const handleCreatePart = () => {
+    if (!perms.canStructure) {
+      toast({ type: "error", title: "Cannot add part", description: "Sign in with edit permissions to add parts." });
+      return;
+    }
     const after = selectedPartIndices.length ? Math.max(...selectedPartIndices) : partGroups.length - 1;
     const newChap = emptyChapter();
     const updated = createPart(chapters, newChap, after);
@@ -2282,6 +2305,20 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                     </div>
                   )}
 
+                  {(() => {
+                    const overview = (overlayChapter?.desc || activeChapter.overviewText || "").trim();
+                    const md = (activeChapter.contentMarkdown || "").trim();
+                    const showMd =
+                      md &&
+                      (md.includes("##") ||
+                        md.includes("```") ||
+                        (overview && md !== overview && !overview.startsWith(md.slice(0, Math.min(md.length, 120)))));
+                    return showMd ? (
+                      <div className="pt-3 border-t border-[#E7E0D3] space-y-3">
+                        {renderFormattedMarkdown(activeChapter.contentMarkdown)}
+                      </div>
+                    ) : null;
+                  })()}
 
                 </motion.div>
               ) : (

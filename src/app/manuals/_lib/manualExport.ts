@@ -7,8 +7,49 @@ function groupTitle(index: number, name: string) {
 
 export type ExportSection = {
   partTitle: string;
-  chapters: { title: string; body: string }[];
+  chapters: { title: string; body: string; isSubchapter?: boolean }[];
 };
+
+function practicalBlock(p: NonNullable<ManualChapter["practical"]>) {
+  const lines = [`**${p.app}** — ${p.scenario}`];
+  if (p.fail) lines.push(`Fail: ${p.fail}`);
+  if (p.pass) lines.push(`Pass: ${p.pass}`);
+  if (p.value) lines.push(`Value: ${p.value}`);
+  return lines.join("\n\n");
+}
+
+function toolsBlock(tools: NonNullable<ManualChapter["tools"]>) {
+  return tools
+    .map((t) => {
+      const bits = [`### ${t.name}${t.sub ? ` (${t.sub})` : ""}`, t.desc];
+      if (t.adv?.length) bits.push("Advantages:\n" + t.adv.map((a) => `- ${a}`).join("\n"));
+      if (t.lim?.length) bits.push("Limitations:\n" + t.lim.map((l) => `- ${l}`).join("\n"));
+      if (t.steps?.length) {
+        for (const s of t.steps) {
+          bits.push(`**${s.t}**${s.p ? `\n${s.p}` : ""}${s.c ? `\n\`\`\`\n${s.c}\n\`\`\`` : ""}`);
+        }
+      }
+      return bits.join("\n\n");
+    })
+    .join("\n\n---\n\n");
+}
+
+/** Plain-text export body for one chapter — overlay fields + markdown. */
+export function chapterBodyForExport(ch: ManualChapter): string {
+  const parts: string[] = [];
+  if (ch.overviewText?.trim()) parts.push(ch.overviewText.trim());
+  if (ch.why?.trim()) parts.push(`**Why it matters**\n\n${ch.why.trim()}`);
+  if (ch.when?.trim()) parts.push(`**When to use it**\n\n${ch.when.trim()}`);
+  if (ch.practical) parts.push(`**Practical example**\n\n${practicalBlock(ch.practical)}`);
+  if (ch.contentMarkdown?.trim()) parts.push(ch.contentMarkdown.trim());
+  if (ch.tools?.length) parts.push(`**Tools**\n\n${toolsBlock(ch.tools)}`);
+  if (ch.codeSnippet?.trim()) parts.push("```\n" + ch.codeSnippet.trim() + "\n```");
+  if (ch.sections?.length) {
+    for (const s of ch.sections) parts.push(`**${s.title}**\n\n${s.body}`);
+  }
+  const joined = parts.join("\n\n");
+  return joined || ch.title;
+}
 
 export function buildManualExportSections(manual: Pick<ManualItem, "title" | "chapters">): ExportSection[] {
   const groups = groupChaptersIntoParts(manual.chapters);
@@ -16,10 +57,11 @@ export function buildManualExportSections(manual: Pick<ManualItem, "title" | "ch
     partTitle: groupTitle(g.index, g.name),
     chapters: g.chapterIndices
       .map((i) => manual.chapters[i])
-      .filter((ch): ch is ManualChapter => Boolean(ch) && !ch.parentId)
+      .filter((ch): ch is ManualChapter => Boolean(ch))
       .map((ch) => ({
-        title: ch.title,
-        body: ch.contentMarkdown || "",
+        title: ch.parentId ? `↳ ${ch.title}` : ch.title,
+        body: chapterBodyForExport(ch),
+        isSubchapter: Boolean(ch.parentId),
       })),
   }));
 }
@@ -51,6 +93,8 @@ function mdToSimpleHtml(md: string) {
       const lvl = line.match(/^#+/)![0].length;
       const text = line.replace(/^#+\s+/, "");
       out.push(`<h${Math.min(lvl + 2, 4)}>${escapeHtml(text)}</h${Math.min(lvl + 2, 4)}>`);
+    } else if (/^\*\*(.+)\*\*$/.test(line.trim())) {
+      out.push(`<p><strong>${escapeHtml(line.trim().slice(2, -2))}</strong></p>`);
     } else if (line.trim() === "") {
       out.push("<br/>");
     } else {
@@ -60,7 +104,7 @@ function mdToSimpleHtml(md: string) {
   return out.join("\n");
 }
 
-export function buildManualExportHtml(manual: Pick<ManualItem, "title" | "description" | "chapters">) {
+function buildManualExportInnerHtml(manual: Pick<ManualItem, "title" | "description" | "chapters">) {
   const sections = buildManualExportSections(manual);
   const body = sections
     .map(
@@ -68,25 +112,34 @@ export function buildManualExportHtml(manual: Pick<ManualItem, "title" | "descri
         `<section class="export-part"><h1>${escapeHtml(s.partTitle)}</h1>${s.chapters
           .map(
             (c) =>
-              `<article class="export-chapter"><h2>${escapeHtml(c.title)}</h2><div class="export-body">${mdToSimpleHtml(c.body)}</div></article>`
+              `<article class="export-chapter${c.isSubchapter ? " export-sub" : ""}"><h2>${escapeHtml(c.title)}</h2><div class="export-body">${mdToSimpleHtml(c.body)}</div></article>`
           )
           .join("")}</section>`
     )
     .join("");
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>${escapeHtml(manual.title)}</title>
-<style>
+  return `<header><h1 class="export-title">${escapeHtml(manual.title)}</h1>
+<p class="export-desc">${escapeHtml(manual.description || "")}</p></header>
+${body}`;
+}
+
+const EXPORT_CSS = `
   @page { margin: 2cm; }
   body { font-family: Georgia, 'Times New Roman', serif; color: #1a1a1a; line-height: 1.55; max-width: 720px; margin: 0 auto; padding: 1rem; }
+  .export-title { font-size: 1.75rem; page-break-before: avoid; margin: 0 0 0.5rem; }
+  .export-desc { color: #555; margin: 0 0 1.5rem; }
   h1 { font-size: 1.35rem; margin: 2rem 0 0.75rem; page-break-before: always; }
   h1:first-of-type { page-break-before: avoid; }
   h2 { font-size: 1.1rem; margin: 1.25rem 0 0.5rem; color: #333; }
+  .export-sub h2 { font-size: 1rem; margin-left: 1rem; color: #444; }
   p { margin: 0.4rem 0; }
-  pre { background: #f4f4f4; padding: 0.75rem; overflow-x: auto; font-size: 0.8rem; border-radius: 4px; }
+  pre { background: #f4f4f4; padding: 0.75rem; overflow-x: auto; font-size: 0.8rem; border-radius: 4px; white-space: pre-wrap; }
   .export-chapter { margin-bottom: 1.5rem; page-break-inside: avoid; }
-</style></head><body>
-<header><h1 style="page-break-before:avoid;font-size:1.75rem">${escapeHtml(manual.title)}</h1>
-<p style="color:#555">${escapeHtml(manual.description || "")}</p></header>
-${body}
+`;
+
+export function buildManualExportHtml(manual: Pick<ManualItem, "title" | "description" | "chapters">) {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>${escapeHtml(manual.title)}</title>
+<style>${EXPORT_CSS}</style></head><body>
+${buildManualExportInnerHtml(manual)}
 </body></html>`;
 }
 
@@ -100,7 +153,12 @@ export async function downloadManualDocx(manual: Pick<ManualItem, "title" | "cha
   for (const part of sections) {
     children.push(new Paragraph({ text: part.partTitle, heading: HeadingLevel.HEADING_1 }));
     for (const ch of part.chapters) {
-      children.push(new Paragraph({ text: ch.title, heading: HeadingLevel.HEADING_2 }));
+      children.push(
+        new Paragraph({
+          text: ch.title,
+          heading: ch.isSubchapter ? HeadingLevel.HEADING_3 : HeadingLevel.HEADING_2,
+        })
+      );
       for (const para of ch.body.split(/\n{2,}/).filter(Boolean)) {
         children.push(new Paragraph({ children: [new TextRun(para.replace(/\n/g, " "))] }));
       }
@@ -112,18 +170,19 @@ export async function downloadManualDocx(manual: Pick<ManualItem, "title" | "cha
 }
 
 export async function downloadManualPdf(manual: Pick<ManualItem, "title" | "description" | "chapters">, filename: string) {
-  const html2pdf = (await import("html2pdf.js")).default;
+  const mod = await import("html2pdf.js");
+  const html2pdf = mod.default ?? mod;
   const wrapper = document.createElement("div");
-  wrapper.innerHTML = buildManualExportHtml(manual);
-  wrapper.style.position = "fixed";
-  wrapper.style.left = "-9999px";
+  wrapper.innerHTML = buildManualExportInnerHtml(manual);
+  wrapper.style.cssText =
+    "position:fixed;left:0;top:0;width:720px;padding:1rem;background:#fff;font-family:Georgia,serif;color:#1a1a1a;line-height:1.55;z-index:-1;opacity:0;pointer-events:none;";
   document.body.appendChild(wrapper);
   try {
     await html2pdf()
       .set({
         margin: 15,
         filename,
-        html2canvas: { scale: 2 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
       })
       .from(wrapper)
@@ -136,9 +195,10 @@ export async function downloadManualPdf(manual: Pick<ManualItem, "title" | "desc
 export function openManualPrintView(manual: Pick<ManualItem, "title" | "description" | "chapters">) {
   const html = buildManualExportHtml(manual);
   const w = window.open("", "_blank", "noopener,noreferrer");
-  if (!w) return;
+  if (!w) return false;
   w.document.write(html);
   w.document.close();
   w.focus();
   w.onload = () => w.print();
+  return true;
 }
