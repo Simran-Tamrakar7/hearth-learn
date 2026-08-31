@@ -11,7 +11,7 @@ const nos = rows.map((r) => r.no).filter((n): n is number => n != null);
 assert.equal(nos.length, 92);
 assert.equal(new Set(nos).size, 92);
 for (let n = 1; n <= 92; n++) {
-  assert.ok(nos.includes(n), `missing overlay type #${n}`);
+  assert.ok(nos.includes(n), `missing catalog type #${n}`);
 }
 
 const bigBang = rows.find((r) => r.title === "Big Bang Integration Testing");
@@ -59,7 +59,8 @@ assert.equal(restoreTestingTypesToc({ tocManaged: true, tocCatalogVersion: 15 })
 assert.equal(restoreTestingTypesToc({ tocManaged: true, tocCatalogVersion: 16 }), false);
 assert.equal(restoreTestingTypesToc({ tocManaged: true, tocCatalogVersion: 17 }), false);
 assert.equal(restoreTestingTypesToc({ tocManaged: true, tocCatalogVersion: 18 }), false);
-assert.equal(restoreTestingTypesToc({ tocManaged: true, tocCatalogVersion: 19 }), true);
+assert.equal(restoreTestingTypesToc({ tocManaged: true, tocCatalogVersion: 19 }), false);
+assert.equal(restoreTestingTypesToc({ tocManaged: true, tocCatalogVersion: 20 }), true);
 assert.equal(restoreTestingTypesToc(null), false);
 
 console.log("testing-types-reader.check: ok");

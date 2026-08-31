@@ -5,10 +5,10 @@
  * Changing this file changes that reader.
  * ========================================================================== */
 
-/** 15-chapter Testing Types TOC. Overlay `no` is TESTING_TYPES_CHAPTERS id. */
+/** 15-chapter Testing Types TOC. `no` matches MD frontmatter overlayNo / compiled typeNo. */
 
 /** Bump when the catalog outline changes so an old localStorage TOC is not restored. */
-export const TESTING_TYPES_TOC_VERSION = 19;
+export const TESTING_TYPES_TOC_VERSION = 20;
 
 export function restoreTestingTypesToc(saved: unknown): boolean {
   if (!saved || typeof saved !== "object") return false;
@@ -16,7 +16,7 @@ export function restoreTestingTypesToc(saved: unknown): boolean {
   return Boolean(s.tocManaged) && s.tocCatalogVersion === TESTING_TYPES_TOC_VERSION;
 }
 
-/** One TOC row: overlay type `no`, or a folder with only children (Quality Attributes). */
+/** One TOC row: catalog type `no`, or a folder with only children (Quality Attributes). */
 export type TestingTypesOutlineNode = {
   no?: number;
   title: string;
@@ -28,7 +28,7 @@ export type TestingTypesOutlinePart = {
   items: TestingTypesOutlineNode[];
 };
 
-/** 15 chapters / 92 types. `no` is TESTING_TYPES_CHAPTERS overlay id (matched by title when the printed # differed). */
+/** 15 parts / 92 types. `no` is the catalog type id in part-N/chapter-M.md frontmatter. */
 export const TESTING_TYPES_OUTLINE: TestingTypesOutlinePart[] = [
   {
     name: "Testing by Level",

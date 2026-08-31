@@ -56,6 +56,8 @@ export interface ManualChapter {
   partKey?: string;
   /** If set, this row is a sub-chapter of that chapter id (one level only). */
   parentId?: string;
+  /** Testing Types catalog type number (outline `no` / MD frontmatter overlayNo). */
+  typeNo?: number;
   subtitle?: string;
   overviewText?: string;
   why?: string;

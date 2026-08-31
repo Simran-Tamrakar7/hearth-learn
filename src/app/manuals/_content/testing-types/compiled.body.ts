@@ -29,6 +29,21 @@ export const pathwiseManual = {
         "pass": "calculate_tax(500000) returns 5000.0 — the 1% slab applies correctly.",
         "fail": "calculate_tax(500000) returns 100000.0 — the boundary bug is caught instantly, before it reaches payroll."
       },
+      "advantages": [
+        "Catches bugs within seconds of code being written — the fastest feedback loop in all of testing",
+        "Tests run in milliseconds — hundreds of tests complete in under a second",
+        "Forces developers to write modular, clean, single-responsibility functions",
+        "Acts as living documentation — tests show exactly how every function is expected to behave",
+        "Makes refactoring safe — change internal implementation confidently as long as tests pass",
+        "All three tools integrate with CI/CD — tests run automatically on every code push"
+      ],
+      "limitations": [
+        "Only tests individual units — does not catch bugs that emerge when components interact",
+        "Mocks give false confidence — the real database or API may behave very differently from the mock",
+        "Poor unit tests (testing implementation instead of behaviour) break on every refactor",
+        "High coverage percentage does not mean all bugs are caught — it only measures lines executed",
+        "Cannot test UI, user flows, network calls, or any real-world integration"
+      ],
       "tools": [
         {
           "name": "JUnit",
@@ -176,6 +191,20 @@ export const pathwiseManual = {
         "pass": "All 7 steps succeed — balance drops from 12 to 9 on request, notification is created, and stays at 9 after approval.",
         "fail": "Balance still shows 12 after the request — the leave service isn't wired to the balance service, a bug unit tests would never catch."
       },
+      "advantages": [
+        "Catches interface bugs that unit tests are structurally unable to find",
+        "Tests real data flow across modules — authentication, database reads/writes, notifications",
+        "Postman collections are reusable across dev, staging, and production environments",
+        "Faster than system testing — direct API calls without full browser rendering",
+        "Automated with Newman or PyTest in CI/CD — runs on every pull request"
+      ],
+      "limitations": [
+        "All integrated components must be running — more infrastructure than unit tests",
+        "Harder to isolate failure root cause — bug could be in any connected component",
+        "Test data management is complex — requests create real records that need cleanup",
+        "Slower than unit tests — network calls and service responses add time",
+        "Undocumented APIs make integration tests hard to write without trial and error"
+      ],
       "tools": [
         {
           "name": "Postman",
@@ -303,6 +332,20 @@ export const pathwiseManual = {
         "pass": "All 10 steps succeed — payroll flows end-to-end correctly.",
         "fail": "The employee can't see their payslip after generation — a cross-module visibility bug only detectable at system level."
       },
+      "advantages": [
+        "Tests the complete application exactly as users experience it — most realistic test level",
+        "Validates end-to-end workflows that cross every module and service",
+        "Catches bugs that only appear when the full system runs together",
+        "Provides the most business-relevant pass/fail evidence for stakeholders and sign-off",
+        "Playwright's trace viewer makes debugging system test failures significantly faster than traditional tools"
+      ],
+      "limitations": [
+        "Slowest test level — full browser automation takes seconds to minutes per scenario",
+        "Most expensive to maintain — UI changes require corresponding test updates",
+        "Difficult to isolate root cause when a system test fails across multiple layers",
+        "Requires a complete, stable environment with realistic test data",
+        "Cannot cover every possible user path — combinatorial explosion makes full coverage impossible"
+      ],
       "tools": [
         {
           "name": "Playwright",
@@ -390,6 +433,20 @@ export const pathwiseManual = {
         "pass": "System now shows \"Insufficient casual leave balance. Available: 2 days, Requested: 3 days. Request rejected.\"",
         "fail": "The system approves the request with no warning, allowing a negative leave balance — a Blocker, since it breaks policy and causes payroll complications."
       },
+      "advantages": [
+        "Validates business requirements in real-world terms — not just technical specifications",
+        "Performed by people who understand the actual business workflows and exceptions",
+        "Catches requirement mismatches and specification gaps that technical testing misses entirely",
+        "Builds genuine user confidence and buy-in before go-live",
+        "Produces formal signed documentation for compliance, audit, and contractual purposes"
+      ],
+      "limitations": [
+        "Business users are not trained testers — they may miss edge cases or test inconsistently",
+        "Time and schedule coordination with busy stakeholders is consistently challenging",
+        "UAT environments need realistic data — hard to prepare without touching sensitive production data",
+        "Feedback can be subjective or vague — requires a QA engineer to translate into actionable bug reports",
+        "Running UAT on an unstable system wastes stakeholder time and damages confidence in the project"
+      ],
       "tools": [
         {
           "name": "Manual Testing",
@@ -5991,6 +6048,18 @@ export const pathwiseManual = {
         "pass": "All 15 rows execute against the same script logic, including the 30-day consecutive maximum accepted without a dedicated script for that one case.",
         "fail": "Adding coverage for a public-holiday start date would have required a new script if data and logic were still mixed together."
       },
+      "advantages": [
+        "Dramatically reduces script duplication and maintenance burden compared to writing a separate script per input variation",
+        "Non-technical team members can often contribute new test cases just by adding rows to a spreadsheet, without touching the script itself",
+        "Naturally pairs well with boundary value analysis and equivalence partitioning (Chapters 51, 52), since those techniques also produce sets of representative input values",
+        "Scales cleanly to a large number of input variations with minimal added engineering effort"
+      ],
+      "limitations": [
+        "The underlying script logic itself still needs to be genuinely correct and well-designed — bad script logic multiplied across many data rows just produces many identically wrong results",
+        "External data sources need their own maintenance and version control discipline, or they can drift out of sync with what the script actually expects",
+        "Debugging a specific failing row can be less immediately obvious than debugging a single, self-contained hardcoded test",
+        "Doesn't fit every scenario — flows genuinely needing unique, custom logic per case don't benefit from this generic data/logic separation"
+      ],
       "tools": [],
       "contentMarkdown": "## Separate data from logic\n\nOne script, many CSV rows.",
       "steps": [],
@@ -6012,6 +6081,18 @@ export const pathwiseManual = {
         "pass": "The full approval flow runs end-to-end, written and reviewed by the analyst because every needed keyword already existed.",
         "fail": "A missing Reject Request keyword would have blocked the analyst until an engineer added it."
       },
+      "advantages": [
+        "Makes automated test case authorship and review accessible to non-programmers, broadening who can meaningfully contribute",
+        "Test cases themselves double as clear, readable documentation of exactly what's being verified, in plain language",
+        "The underlying keyword library promotes genuine reuse — a well-built keyword is written once and used across many test cases",
+        "Robot Framework's reporting is detailed and readable without requiring any technical interpretation"
+      ],
+      "limitations": [
+        "Building and maintaining the underlying keyword library still requires real technical/programming skill, even if writing test cases using it doesn't",
+        "Can become a genuine bottleneck if the keyword library doesn't yet cover a needed new action, requiring engineering time before non-technical authors can proceed",
+        "Less flexible than raw code for handling complex, one-off logic that doesn't map cleanly onto existing or easily-added keywords",
+        "An additional abstraction layer between test cases and actual code, adding some complexity for anyone needing to debug at a deeper level"
+      ],
       "tools": [],
       "contentMarkdown": "## Author in keywords\n\nEngineers maintain the library; analysts write cases.",
       "steps": [],
@@ -6033,6 +6114,18 @@ export const pathwiseManual = {
         "pass": "The invalid Approved→Draft edge is removed from the model and a clean suite is regenerated.",
         "fail": "A generated path tries Approved→Draft and the leftover API actually allows resetting an approved request to draft."
       },
+      "advantages": [
+        "Automatically and systematically generates test coverage across complex state spaces that would be genuinely difficult for a human to fully enumerate by hand",
+        "The model itself becomes clear, explicit documentation of the system's intended states and valid transitions",
+        "Different coverage strategies (every edge, every state, random walk) can be applied to the same model without redesigning test cases from scratch",
+        "Particularly effective at finding invalid or unexpected transitions a manual test designer might not think to specifically try"
+      ],
+      "limitations": [
+        "Building an accurate model in the first place requires real upfront effort and a genuinely clear understanding of the system's actual states and transitions",
+        "Connecting each abstract modeled step to real, executable automation code is additional engineering work beyond the model itself",
+        "Best suited specifically to systems with well-defined, discrete states — less naturally applicable to more continuous or unstructured behavior",
+        "An inaccurate or incomplete model produces test coverage that only reflects the model's own gaps, not the real system's actual full behavior"
+      ],
       "tools": [],
       "contentMarkdown": "## Model then generate\n\nBind abstract steps to real automation.",
       "steps": [],
@@ -6054,6 +6147,18 @@ export const pathwiseManual = {
         "pass": "Payroll gets functional, boundary, negative, security, and parallel testing; news gets a single smoke test — a deliberate trade-off.",
         "fail": "Equal shallow coverage on both would have left the payroll edge-case uncaught."
       },
+      "advantages": [
+        "Directs limited testing time and resources toward the areas where a defect would actually matter most, rather than spreading effort evenly and inefficiently",
+        "Makes testing scope decisions explicit and defensible, especially valuable under real schedule or resource pressure",
+        "Naturally integrates with and prioritizes among every other testing type in this manual, rather than being a separate, competing technique",
+        "Encourages ongoing reassessment, keeping testing focus aligned with the system's actual, current risk profile rather than a stale, one-time judgment"
+      ],
+      "limitations": [
+        "The risk assessment itself is inherently somewhat subjective — different stakeholders can reasonably disagree on likelihood or impact ratings",
+        "A genuinely under-assessed \"low risk\" area can still fail and cause real harm if the initial risk judgment turns out to be wrong",
+        "Requires real discipline to revisit and update as the project evolves, or the risk assessment itself becomes stale and misleading",
+        "Doesn't eliminate the need for baseline coverage everywhere — even low-risk areas need some minimum testing, not zero"
+      ],
       "tools": [],
       "contentMarkdown": "## Score then allocate\n\nLikelihood × impact → High/Medium/Low → testing depth.",
       "steps": [],
@@ -6075,6 +6180,18 @@ export const pathwiseManual = {
         "pass": "Proration by hire date is confirmed for a range of employees after the fix.",
         "fail": "Mid-month hires received a full month accrual — invisible from the API because the job has no request/response to inspect."
       },
+      "advantages": [
+        "Verifies business logic and data correctness directly at the source, rather than only inferring it indirectly through the UI or API response",
+        "Catches issues in scheduled/background processing that UI-only testing would never naturally exercise",
+        "Combining API-level and database-level checks together provides stronger, more complete confidence than either alone",
+        "Backend issues are typically diagnosed and fixed faster when caught here, before they propagate up through the API and UI layers"
+      ],
+      "limitations": [
+        "Requires both API and database access/knowledge to be done thoroughly, a broader skill set than pure UI-focused testing",
+        "Doesn't verify how the backend's output is actually presented or used by the UI — pairs with, but doesn't replace, frontend/system testing",
+        "Testing scheduled or background jobs can require specific tooling or manual triggering not always readily available in every environment",
+        "Business logic spanning many interrelated tables can require deep domain knowledge to verify correctly and completely"
+      ],
       "tools": [],
       "contentMarkdown": "## Trigger then inspect storage\n\nPostman for the API surface; DBeaver for stored state.",
       "steps": [],
@@ -6096,6 +6213,18 @@ export const pathwiseManual = {
         "pass": "Timeout, retry, and an informative error — the user is never left on an unexplained spinner.",
         "fail": "Submit hangs indefinitely with no timeout, retry, or error."
       },
+      "advantages": [
+        "Verifies actual real network behavior and data transmission directly, rather than assuming it based on application-layer logs alone",
+        "Directly confirms whether sensitive data is genuinely encrypted in transit, a real security-relevant check",
+        "Reveals inefficient or excessive network usage (redundant requests, oversized payloads) invisible from the application's own logs",
+        "Essential for verifying graceful behavior under the poor network conditions a real portion of users will actually experience"
+      ],
+      "limitations": [
+        "Requires real networking knowledge to interpret packet captures meaningfully",
+        "Simulating realistic poor-network conditions accurately (not just simple throttling) can require additional tooling beyond Wireshark alone",
+        "Packet-level analysis can be time-consuming for complex applications with heavy, continuous network traffic",
+        "Doesn't by itself fix poor network handling — it identifies the gap, but the resilience logic (retries, timeouts, offline handling) still needs to be separately designed and built"
+      ],
       "tools": [],
       "contentMarkdown": "## Capture and throttle\n\nWireshark for packets; DevTools/OS tools for poor conditions.",
       "steps": [],
@@ -6117,6 +6246,18 @@ export const pathwiseManual = {
         "pass": "The unintended wrapping div is removed; the original snapshot passes again.",
         "fail": "An unrelated styling change adds an extra wrapping div that no hand-written assertion was checking."
       },
+      "advantages": [
+        "Catches any unintended change to a component's output automatically, without needing to write and maintain individual assertions for every possible detail",
+        "Very fast to write initially — a single line captures comprehensive coverage of the entire current output",
+        "Makes the review process explicit: every actual change requires a deliberate accept/reject decision, rather than silently passing or silently failing",
+        "Particularly efficient for components with large, complex, deeply nested output structures"
+      ],
+      "limitations": [
+        "Can create a habit of blindly approving/updating snapshots without genuinely reviewing what changed, which defeats the entire purpose of the technique",
+        "A snapshot failure indicates that something changed, but not why it changed or whether that change is actually correct — still requires human judgment every time",
+        "Large, complex snapshots can be hard for a human to meaningfully review in detail, especially as they grow",
+        "Doesn't test actual interactive behavior at all — pairs with, but doesn't replace, functional/interaction testing of the same component"
+      ],
       "tools": [],
       "contentMarkdown": "## toMatchSnapshot then review diffs\n\nNever blindly update.",
       "steps": [],
@@ -6138,6 +6279,18 @@ export const pathwiseManual = {
         "pass": "After a connection-release fix, a repeat 48-hour soak stays flat.",
         "fail": "Open connections climb and never return to baseline; by hour 36 requests fail with pool exhausted."
       },
+      "advantages": [
+        "The only testing type specifically designed to catch slow, cumulative problems invisible to any short test run, however thorough",
+        "Builds real, evidence-based confidence that a system can run unattended for genuine production-length durations",
+        "Directly targets memory leaks and resource exhaustion, a class of bug that's often expensive and disruptive to diagnose after it's already caused a real production outage",
+        "Complements, and gives a specific, focused name to, the more general reliability testing practice from Chapter 20"
+      ],
+      "limitations": [
+        "Inherently slow to run — a meaningful soak test genuinely takes hours to days, not minutes, and can't be meaningfully rushed",
+        "Requires a stable, dedicated test environment tied up for the full duration of the run, unavailable for other testing meanwhile",
+        "A particularly slow leak might need an even longer run than initially planned before it becomes clearly visible in the collected data",
+        "Identifies that degradation occurred, not automatically why — still requires follow-up profiling or log investigation to find the specific root cause"
+      ],
       "tools": [],
       "contentMarkdown": "## Moderate load, long duration\n\nWatch drift, not just spikes.",
       "steps": [],
@@ -6159,6 +6312,18 @@ export const pathwiseManual = {
         "pass": "The rounding bug is caught within four minutes of the PR opening, blocking merge while the change is still fresh.",
         "fail": "The same bug is only caught two weeks later in pre-release testing, after six other commits have touched the file."
       },
+      "advantages": [
+        "Shrinks the gap between a bug being introduced and being caught from days/weeks down to minutes",
+        "Makes running tests a mandatory, automatic part of delivery rather than something that depends on someone remembering to do it",
+        "Gives every pull request an objective, consistent quality gate before it can be merged",
+        "Both tools have generous free tiers well within reach of a small-to-mid-sized team"
+      ],
+      "limitations": [
+        "A slow, poorly-organized pipeline can itself become a bottleneck the team starts trying to work around rather than benefit from",
+        "Only as good as the underlying test suite — continuous testing amplifies a strong suite, but doesn't create test coverage that doesn't already exist",
+        "Jenkins in particular carries real setup and ongoing maintenance overhead compared to a hosted option",
+        "Flaky tests in a CI pipeline are especially costly, since they erode trust in the pipeline and get ignored/re-run rather than fixed"
+      ],
       "tools": [],
       "contentMarkdown": "## Wire the suite into CI\n\nFail the check on red; block merge with branch protection.",
       "steps": [],
@@ -6180,6 +6345,18 @@ export const pathwiseManual = {
         "pass": "Export matches the bank's fixed-width spec; sandbox import is clean.",
         "fail": "Internal validation passes; the bank rejects a variable-width routing number."
       },
+      "advantages": [
+        "Confirms real-world integrations actually work, rather than only working against your own internal assumptions of them",
+        "Catches format/contract mismatches with a partner system before a real client or user is affected by them",
+        "Specifically tests failure-mode behavior (partner system down/slow/erroring), which is exactly when integration bugs cause the most visible damage",
+        "Turning the check into a saved Postman collection makes it repeatable instead of a one-off manual verification"
+      ],
+      "limitations": [
+        "Requires access to a real or realistic sandbox of the external system, which isn't always available or fully representative of production behavior",
+        "External systems can change behavior outside your control, silently breaking a previously-passing interoperability check",
+        "Doesn't cover UI-level integration issues (e.g. an embedded third-party widget rendering incorrectly) — that's closer to compatibility or GUI testing",
+        "Testing failure-mode behavior realistically (a partner truly going down) can be hard to simulate faithfully against a live external system"
+      ],
       "tools": [],
       "contentMarkdown": "## Hit the real partner\n\nSave the exchange as a Postman collection.",
       "steps": [],
@@ -6201,6 +6378,18 @@ export const pathwiseManual = {
         "pass": "Unclosed tags and missing labels fixed; re-validation returns zero errors.",
         "fail": "Unclosed divs and a form input without a label render in the usual browser but fail the spec."
       },
+      "advantages": [
+        "Checks against an objective, authoritative external standard rather than \"does it look right in my browser\"",
+        "Free, instant, and requires no setup — just a URL or pasted markup",
+        "Improves compatibility with standards-compliant tools and assistive technology beyond just mainstream browsers",
+        "Catches structural markup issues that often correlate with, and contribute to, accessibility problems"
+      ],
+      "limitations": [
+        "A page can be fully standards-conformant and still be a poor user experience — conformance and quality/usability are related but distinct",
+        "Doesn't test JavaScript-driven dynamic content well if the validator only sees the initial server-rendered markup",
+        "Some flagged warnings are genuinely minor and not worth the effort to chase down immediately",
+        "Doesn't cover protocols or specifications outside HTML/CSS — a different, dedicated validator is needed for other kinds of conformance (e.g. specific API/data-format standards)"
+      ],
       "tools": [],
       "contentMarkdown": "## Validate then fix the template\n\nPrioritize unclosed tags and invalid nesting.",
       "steps": [],
@@ -6222,6 +6411,18 @@ export const pathwiseManual = {
         "pass": "Labels moved to resource files; column layout handles doubled text.",
         "fail": "Hard-coded labels; “Deal Stage” overlaps adjacent columns when text doubles."
       },
+      "advantages": [
+        "Catches foundational internationalization gaps before they're compounded by actual translation and localization work built on top of them",
+        "Automated string-scanning finds hard-coded text far more reliably and completely than manual code review alone",
+        "Much cheaper to fix at this stage than to retrofit after the codebase has grown around the assumption of a single hard-coded language",
+        "Directly de-risks future expansion into new markets, which frequently arrives later as a business requirement with a tight timeline"
+      ],
+      "limitations": [
+        "Automated scanning for hard-coded strings can still produce false positives/negatives depending on how the codebase is structured",
+        "Testing with an artificially lengthened placeholder locale approximates, but doesn't perfectly predict, how every real target language will actually behave",
+        "Doesn't verify translation quality or cultural appropriateness at all — that's the separate concern of localization testing (Chapter 23)",
+        "Requires genuine buy-in to fix flagged issues structurally, rather than working around them locally each time they cause a visible problem"
+      ],
       "tools": [],
       "contentMarkdown": "## Scan then lengthen\n\nMove UI copy into resources; test a doubled placeholder locale.",
       "steps": [],
@@ -6243,6 +6444,18 @@ export const pathwiseManual = {
         "pass": "2.1s baseline vs 0.9s after, under identical conditions.",
         "fail": "Vague sense it “feels the same, maybe faster” — no way to confirm or catch later creep."
       },
+      "advantages": [
+        "Turns \"does this feel slower?\" into an objective, documented comparison against a real number",
+        "Cheap to set up once and reusable across many future comparisons, not a one-time cost",
+        "Makes gradual, release-over-release performance creep visible, which is easy to miss when only ever comparing the current build to the last one",
+        "Gives a concrete, defensible reference point to cite when discussing performance with stakeholders"
+      ],
+      "limitations": [
+        "Only as meaningful as how faithfully the comparison conditions match the original baseline conditions",
+        "A baseline captured on an already-subtly-degraded build simply preserves that degradation as the new \"normal\"",
+        "Doesn't identify why a regression happened, only that one did — still requires follow-up investigation",
+        "Needs periodic re-baselining as the application legitimately evolves, or the comparison stops being useful"
+      ],
       "tools": [],
       "contentMarkdown": "## Capture, document, compare\n\nSame plan, same conditions; re-baseline on purpose.",
       "steps": [],
@@ -6264,6 +6477,18 @@ export const pathwiseManual = {
         "pass": "After redesign, the same 9-vs-5-screen scenario is re-run to confirm the gap closed.",
         "fail": "Bizlevate: 9 screens and name re-entered twice. Competitor: 5 screens, no repeats."
       },
+      "advantages": [
+        "Converts a vague competitive impression into specific, evidence-based, defensible findings",
+        "A consistent scenario list and scoring makes the comparison fair and reproducible, not dependent on who happened to look at it",
+        "Directly informs prioritization and roadmap decisions with concrete gaps, not just gut feeling",
+        "Reusable framework — the same scenario list can be re-run against a later version of either product to track whether a gap has closed"
+      ],
+      "limitations": [
+        "Only as fair as how carefully the comparison conditions (data, account state, environment) are matched between the two products",
+        "A competitor's product can change at any time, so findings can go stale and need periodic re-verification",
+        "Doesn't explain why a competitor made a particular design choice, only that a measurable difference exists",
+        "Scoring inherently involves some subjectivity even with defined criteria, especially for qualitative aspects like \"clarity\""
+      ],
       "tools": [],
       "contentMarkdown": "## Same scenarios, matched captures\n\nSpreadsheet scores; LambdaTest for equivalent screenshots.",
       "steps": [],
@@ -6285,6 +6510,18 @@ export const pathwiseManual = {
         "pass": "Inside, at-max, and above-max cases catch silent truncation at the cap.",
         "fail": "Only mid-range values tested; a salary at the configured cap is silently truncated."
       },
+      "advantages": [
+        "Produces systematic, complete input coverage rather than test cases clustered around intuitive guesses",
+        "Combines the strengths of boundary value analysis and equivalence partitioning into one consistent, repeatable technique",
+        "Documenting test cases in TestLink makes the domain coverage reusable and auditable across releases, not redesigned from scratch each time",
+        "Easy to explain and apply consistently across an entire form, even by testers less familiar with the specific feature"
+      ],
+      "limitations": [
+        "Defining the \"true\" valid domain correctly requires accurate, up-to-date knowledge of the actual business rule — an incorrect domain assumption produces confidently wrong test cases",
+        "Can still miss defects arising from combinations of fields, since domain testing is typically applied one field at a time",
+        "Maintaining documented test cases in a separate tool (TestLink) adds process overhead compared to purely ad-hoc testing",
+        "Doesn't cover non-input-related defects (UI rendering, workflow logic) — it's specifically a technique for input validation coverage"
+      ],
       "tools": [],
       "contentMarkdown": "## Inside, edge, outside per field\n\nDocument in TestLink; reuse across releases.",
       "steps": [],
@@ -6306,6 +6543,18 @@ export const pathwiseManual = {
         "pass": "Submit is idempotent; a second rapid click creates only one record.",
         "fail": "Two identical leave records; days deducted twice."
       },
+      "advantages": [
+        "Targets exactly the \"usual suspect\" actions real users actually perform, which scripted test cases frequently don't anticipate",
+        "Leverages accumulated tester experience efficiently, often finding high-value bugs with relatively little time invested",
+        "Confirms error handling specifically — not just \"did the happy path work,\" but \"did the failure path fail gracefully\"",
+        "Pairing with an OWASP ZAP scan catches a class of error-handling issue (verbose/leaky error responses) manual guessing alone might overlook"
+      ],
+      "limitations": [
+        "Inherently less systematic and reproducible than a scripted technique — coverage depends heavily on the specific tester's experience and instincts",
+        "Findings can be harder to formally track/report against, since there's no predefined test-case list to check off",
+        "Different testers will guess differently, so error-guessing coverage can vary significantly by who's doing the testing",
+        "Doesn't replace systematic negative testing (Chapter 49) or boundary value analysis (Chapter 51) — it's a complementary, intuition-driven layer on top of them"
+      ],
       "tools": [],
       "contentMarkdown": "## Checklist plus ZAP\n\nUsual suspects, then scan for leaky errors.",
       "steps": [],
@@ -6327,6 +6576,18 @@ export const pathwiseManual = {
         "pass": "A test for that branch; fallback approver corrected; the line is green.",
         "fail": "Suite is 100% green; deactivated manager throws instead of routing to a fallback."
       },
+      "advantages": [
+        "Converts a vague sense of \"we probably test this reasonably well\" into a specific, objective, line-level number",
+        "Directly identifies exactly which lines/branches need a new test, rather than leaving the tester to guess",
+        "Both tools are free, well-established, and integrate directly into standard JS/Python test workflows",
+        "Branch coverage specifically catches the common and risky gap of an entirely untested else/error-handling path"
+      ],
+      "limitations": [
+        "A high coverage percentage confirms code was executed, not that it was correctly verified — a test can execute a line without meaningfully asserting on its result",
+        "Chasing 100% coverage as a goal in itself can produce low-value tests written purely to hit an uncovered line, not to verify real behavior",
+        "Path coverage in particular can grow combinatorially explosive for functions with many conditions, making full path coverage impractical for complex logic",
+        "Coverage tooling measures code that ran, not code that's missing entirely — it can't reveal a scenario nobody wrote any code path for"
+      ],
       "tools": [],
       "contentMarkdown": "## Report, then write the missing branch test\n\nPrefer branch coverage over statement-only.",
       "steps": [],
@@ -6348,6 +6609,18 @@ export const pathwiseManual = {
         "pass": "Backup corrected; restore drill recovers complete, correct data.",
         "fail": "Nightly backup “succeeds”; restore reveals files have been silently incomplete for weeks."
       },
+      "advantages": [
+        "Confirms the system can actually be operated and supported, not just that its business features work",
+        "Catches operational gaps (a backup that silently doesn't work, an alert that's misconfigured) while the stakes are still low, before a real incident",
+        "Deliberately triggering failures to test alerting is a meaningfully stronger check than passively assuming a dashboard means monitoring works",
+        "Directly reduces the risk of a production incident being made worse by operational unreadiness on top of the original problem"
+      ],
+      "limitations": [
+        "Requires genuine collaboration with the operations team, who may have limited availability during a busy pre-launch period",
+        "Some operational scenarios (a full regional outage, a genuine hardware failure) are hard to simulate faithfully in a lower environment",
+        "A runbook that works when followed by its author may still fail when followed by someone else seeing it for the first time — worth deliberately testing with a different person",
+        "Doesn't cover business-feature correctness at all — it specifically complements, and doesn't replace, standard UAT (Chapter 4)"
+      ],
       "tools": [],
       "contentMarkdown": "## Trigger the alert; restore the backup\n\nA dashboard existing is not the same as an alert firing.",
       "steps": [],
@@ -6369,6 +6642,18 @@ export const pathwiseManual = {
         "pass": "Permissions moved to a shared cache; data stays consistent through the scale event.",
         "fail": "Per-instance memory cache; requests return stale permissions during the transition."
       },
+      "advantages": [
+        "Verifies the application actually benefits from, and correctly handles, the elasticity cloud infrastructure is specifically built to provide",
+        "Free tier is genuinely capable of generating load sufficient to trigger real auto-scaling behavior, unlike many local-only load tools",
+        "Specifically tests cloud-native failure modes (instance restart, zone outage) that a standard single-server load test would never naturally exercise",
+        "Multi-region test locations reveal genuine consistency issues across zones that a single-location test would miss entirely"
+      ],
+      "limitations": [
+        "Generating load sufficient to trigger real auto-scaling can incur real cloud infrastructure costs on the environment under test, separate from BlazeMeter's own pricing",
+        "Free tier load/duration limits may fall short of what's needed to fully exercise scaling behavior for a large-scale application",
+        "Cloud-provider-specific auto-scaling configuration and behavior varies significantly, so findings don't always transfer cleanly between different cloud platforms",
+        "Deliberately simulating a genuine zone-level failure isn't always possible or safe to do against a real production environment"
+      ],
       "tools": [],
       "contentMarkdown": "## Ramp past the scale threshold\n\nWatch the transition, not only steady state.",
       "steps": [],
@@ -6390,6 +6675,18 @@ export const pathwiseManual = {
         "pass": "Boundary bug fixed; same inputs diff clean against the master.",
         "fail": "Diff shows a different result exactly at a tax-bracket boundary — a regression nobody could have asserted in advance."
       },
+      "advantages": [
+        "Protects legacy code during a refactor without requiring the refactoring team to first fully reverse-engineer every business rule inside it",
+        "Very low setup cost — no need to write assertions from scratch, only to capture and trust the existing output",
+        "The plain-text diff tools required are free and already present on virtually every development machine",
+        "Provides genuine, concrete confidence during a refactor that would otherwise be an unverified leap of faith"
+      ],
+      "limitations": [
+        "Only as trustworthy as the assumption that the original captured output was actually correct — a golden master captured from already-buggy output simply preserves that bug",
+        "A flagged diff shows that something changed, not why, or whether the change is actually correct — still requires human judgment every time",
+        "Doesn't explain or document the underlying business rules at all — it's a safety net for refactoring, not a substitute for genuinely understanding and testing the logic",
+        "Large or highly complex outputs can produce diffs that are tedious and error-prone for a human to meaningfully review in full"
+      ],
       "tools": [],
       "contentMarkdown": "## Capture, change, diff\n\nIf unintentional, fix the code, not the master.",
       "steps": [],
@@ -6411,6 +6708,18 @@ export const pathwiseManual = {
         "pass": "Dashboard label corrected to “Leave Balance”; Vale is clean for the term.",
         "fail": "“Leave Credit” on the dashboard vs “Leave Balance” everywhere else — already causing support tickets."
       },
+      "advantages": [
+        "Catches typos, unclear labels, and confusing wording that hurt usability and undermine user trust",
+        "Ensures the same concept is referred to consistently everywhere in the product, reducing user confusion",
+        "Automated linting with Vale finds terminology drift across many screens far more completely than manual review alone can",
+        "Cheap, high-visibility improvement — content fixes are typically low-risk and low-effort relative to their impact on perceived quality"
+      ],
+      "limitations": [
+        "Vale checks consistency and defined style rules, not genuine clarity or correctness — a human review is still needed for that",
+        "Requires an actively maintained style/terminology guide to be useful; a stale or incomplete guide limits what it can catch",
+        "Doesn't cover translated content in other locales — that's the separate concern of localization testing (Chapter 23)",
+        "Reviewing dynamic/templated text for every real-data edge case (pluralization, unusual name lengths) can be easy to under-scope"
+      ],
       "tools": [],
       "contentMarkdown": "## Guide, then lint, then human clarity\n\nVale catches drift; people catch unclear wording.",
       "steps": [],
@@ -6432,6 +6741,18 @@ export const pathwiseManual = {
         "pass": "Secure flag set; timeout forces re-authentication after 30 minutes idle.",
         "fail": "No Secure flag; dashboard stays interactive past the configured timeout."
       },
+      "advantages": [
+        "Confirms session tokens are handled with appropriate security flags, directly reducing a real attack surface",
+        "Free and built directly into the browser — no extra tooling or setup required",
+        "Catches session-timeout and multi-tab consistency bugs that standard single-session functional testing naturally misses",
+        "Manually tampering with the cookie is a cheap, immediate way to verify graceful handling of an invalid/expired session"
+      ],
+      "limitations": [
+        "DevTools inspection is inherently manual, tab-by-tab — not easily automated at scale without additional scripting",
+        "Verifying long-timeout behavior (e.g. an 8-hour session expiry) realistically can require genuinely waiting, or manually manipulating the system clock/cookie",
+        "Doesn't cover server-side session storage/validation logic directly — only what's observable from the client side",
+        "Security flag correctness (Secure, HttpOnly) is necessary but not sufficient on its own for full session security; it's one check among several"
+      ],
       "tools": [],
       "contentMarkdown": "## Flags, second tab, timeout, tamper\n\nApplication panel → Cookies.",
       "steps": [],
@@ -6453,6 +6774,18 @@ export const pathwiseManual = {
         "pass": "Override calls the base minimum-wage check before overtime logic.",
         "fail": "Override skips the mandatory minimum-wage floor every other subclass inherits."
       },
+      "advantages": [
+        "Catches OO-specific defects — broken inheritance contracts, incorrect polymorphic dispatch — that generic functional testing routinely misses",
+        "Improves confidence specifically in shared, reusable base classes, where a defect can silently propagate to every subclass built on top of them",
+        "Complements standard unit testing by adding an OO-specific lens rather than duplicating the same generic checks",
+        "Structured code review catches design-level OO risk patterns before they even manifest as a runtime bug"
+      ],
+      "limitations": [
+        "Requires genuine familiarity with object-oriented design principles to review or test effectively — not a technique every tester is equally equipped for",
+        "Manual-only testing here means it's not automatically re-verified on every future change without separately maintained test cases",
+        "Deep inheritance hierarchies can make it genuinely difficult to reason about every possible interaction and override combination",
+        "Doesn't cover procedural or non-OO parts of a codebase at all — it's specifically scoped to OO-structured code"
+      ],
       "tools": [],
       "contentMarkdown": "## Overrides, lifecycle, polymorphism\n\nReview that overrides specialize meaning, they do not change it.",
       "steps": [],
@@ -6474,6 +6807,18 @@ export const pathwiseManual = {
         "pass": "Last-synced schedule shown with an “offline — showing last synced data” indicator.",
         "fail": "Generic browser “no internet” page — SW registered, schedule data not cached."
       },
+      "advantages": [
+        "Directly verifies the app delivers the native-app-like experience a PWA is specifically supposed to provide, not just that it's technically configured as one",
+        "Free, built directly into Chrome, and requires no additional setup or tooling",
+        "Gives a specific, scored, actionable checklist rather than a vague pass/fail impression",
+        "Manually testing offline mode and the install flow catches gaps a passing Lighthouse score alone can miss, since the audit checks configuration more than lived experience"
+      ],
+      "limitations": [
+        "A high Lighthouse score confirms the PWA criteria are technically met, but doesn't guarantee the offline experience is actually well-designed or usable, only that it exists",
+        "Manually testing the install flow requires a real mobile device (or realistic emulation) for a fully trustworthy result",
+        "Service worker caching logic can be genuinely tricky to get right, and Lighthouse won't catch every subtle caching bug (stale content served incorrectly, for instance)",
+        "Offline testing only covers the specific offline scenario tested — a partially degraded connection can behave differently from a fully offline one"
+      ],
       "tools": [],
       "contentMarkdown": "## Audit, then live offline and install\n\nLighthouse score is configuration; offline and home-screen are lived experience.",
       "steps": [],
@@ -6495,6 +6840,18 @@ export const pathwiseManual = {
         "fail": "Leave treats Attendance’s 8 hours as 0.33 days — caught at this step, before Payroll is wired in.",
         "pass": "Unit conversion is fixed at the Attendance–Leave boundary; Payroll inherits a known-good mapping."
       },
+      "advantages": [
+        "Pinpoints a new defect to the single module just added, rather than the entire assembled system",
+        "Catches integration bugs early, while the new piece is still small and cheap to fix",
+        "Builds confidence in the core progressively — each green step is a known-good base for the next",
+        "Does not require every module to be finished before any integration testing can begin"
+      ],
+      "limitations": [
+        "Requires a planned sequence, stubs or drivers for modules not yet joined, and the discipline to stop and verify at each step",
+        "Takes more calendar time than a single Big Bang pass, because each addition is a testing stage of its own",
+        "A poorly chosen order (integrating a leaf before its dependency) recreates Big Bang confusion in miniature",
+        "Stubs that do not faithfully stand in for the real module can hide the very boundary bugs the sequence is meant to find"
+      ],
       "tools": [],
       "contentMarkdown": "## Add one module to a known-good core\n\nStop on red before the next join. Do not collapse stages into one Big Bang script.",
       "steps": [],
@@ -6516,6 +6873,18 @@ export const pathwiseManual = {
         "fail": "p95 past 12s, 18% 503s/timeouts; endpoint stays slow after the surge because the pool does not recover.",
         "pass": "Queue and pool absorb the jump; p95 under 2s, errors under 1%, baseline latency restored within 30s of drop-back."
       },
+      "advantages": [
+        "Exposes failures that only appear on a sudden jump, which a gradual load ramp (Chapter 14) will never produce",
+        "Checks recovery after the surge, not only survival at the peak — a system that stays degraded is still a failure",
+        "Gives concrete numbers for auto-scale lag, queue depth, and error rate under a realistic clock-in or launch spike",
+        "k6 scripts make the jump itself explicit in stages, so the test cannot accidentally turn into a slow ramp"
+      ],
+      "limitations": [
+        "A single designed spike is not every possible surge — shape, duration, and mix of endpoints still have to match the real event",
+        "Shared staging infrastructure can absorb or distort the jump, hiding the production failure mode",
+        "Auto-scale that is slow in production but instant in a small test environment will look healthier than it is",
+        "Does not replace load testing (expected sustained crowd) or stress testing (finding the ceiling past that crowd)"
+      ],
       "tools": [],
       "contentMarkdown": "## Jump, hold, drop, recover\n\nA multi-minute climb is load; raising the peak to find a ceiling is stress.",
       "steps": [],
@@ -6537,6 +6906,18 @@ export const pathwiseManual = {
         "fail": "Second group’s overtime cap is silently ignored when two groups are assigned to one team.",
         "pass": "Debrief files the bug; a scripted dual-group regression case is added so the finding survives the session."
       },
+      "advantages": [
+        "Keeps exploratory testing's ability to find unscripted bugs, with a record of charter, time, and notes",
+        "The debrief turns a finding into a tracked follow-up — bug, question, or new scripted case — instead of a forgotten observation",
+        "Time-boxing makes exploration plannable: a lead can schedule three 90-minute sessions instead of \"go explore\"",
+        "Rapid Reporter (and similar session loggers) timestamp notes so a reproduction is tied to what the tester was doing"
+      ],
+      "limitations": [
+        "Still not repeatable the way a script is — two sessions on the same charter can produce different findings",
+        "Quality still depends on the tester's skill and on an honest debrief; a filled-in charter is not coverage by itself",
+        "Charters that are too broad (\"test Rule Groups\") waste the time-box; too narrow and they become a script in disguise",
+        "Note-taking tools do not find bugs — they only capture what the tester bothers to write down"
+      ],
       "tools": [],
       "contentMarkdown": "## Charter, time-box, notes, debrief\n\nA finding without a ticket or new scripted case is only a note.",
       "steps": [],
@@ -6558,6 +6939,18 @@ export const pathwiseManual = {
         "fail": "Follow-up starts a new session; first turn returns casual balance when the user asked for sick leave.",
         "pass": "Intents split, context kept, unknown-intent fallback passes on the same convo after the fix."
       },
+      "advantages": [
+        "Catches wrong answers, dropped context, and brittle NLU that API or UI tests never see",
+        "Botium (Community Edition) turns a conversation into a repeatable script, so a wording or intent change cannot silently break the happy path",
+        "Forces explicit coverage of fallback and clarification turns, which are where users actually get stuck",
+        "The same convo file documents the intended dialogue for product and support, not only for QA"
+      ],
+      "limitations": [
+        "Scripted convos still miss live speech noise, accents, and barge-in unless you add a real voice channel and audio tests",
+        "NLU is probabilistic — a passing utterance set is not every phrasing a user will try",
+        "Botium Community Edition covers the dialogue core; vendor-specific voice hardware and wake-words need extra tooling",
+        "A green bot test does not prove the leave engine itself is correct — that remains a payroll/leave functional concern"
+      ],
       "tools": [],
       "contentMarkdown": "## Script the dialogue, including fallback\n\nAssert the bot’s words and context, not only HTTP 200.",
       "steps": [],

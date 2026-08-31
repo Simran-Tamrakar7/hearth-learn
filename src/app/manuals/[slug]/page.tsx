@@ -43,7 +43,7 @@ import { TagInput } from "@/app/manuals/_ui/TagInput";
 import { usePermissions, useAppUserId } from "@/lib/useAuthz";
 import { highlightsStoreKey, isScopeReady, progressStoreKey, readScopedRaw, writeScopedRaw } from "@/lib/userScope";
 import { getResume, pushAccountProgress, setResume, touchRecentManual } from "@/lib/readerMemory";
-import { readerChaptersFromOverlay, testingOverlayForChapter, mergeCustomTestingTypesChapters, mergeTestingTypesSavedEdits, testingTypesMdSections } from "@/app/manuals/_ui/testing-types-reader";
+import { readerChaptersFromOutline, mergeCustomTestingTypesChapters, mergeTestingTypesSavedEdits, testingTypesMdSections } from "@/app/manuals/_ui/testing-types-reader";
 import { restoreTestingTypesToc, TESTING_TYPES_TOC_VERSION } from "@/app/manuals/_content/testing-types/outline";
 import {
   chapterIndexAfter,
@@ -174,9 +174,9 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   const groupTitle = (index: number, name: string) =>
     displayPartTitle(index, name, isTestingTypesManual ? "chapter" : "part");
 
-  // Testing Types TOC must follow TESTING_TYPES_CHAPTERS, not a stale localStorage snapshot (was freezing at 64).
+  // Testing Types TOC follows outline.ts + compiled MD, not a stale localStorage snapshot.
   const catalogChapters = isTestingTypesManual
-    ? readerChaptersFromOverlay(initialManual.chapters)
+    ? readerChaptersFromOutline(initialManual.chapters)
     : initialManual.chapters;
 
   // State for editable chapters list
@@ -306,7 +306,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       const chaptersSaved = parsed?.chapters;
       const saved = Array.isArray(chaptersSaved) ? (chaptersSaved as ManualChapter[]) : [];
       // ponytail: MD on disk (compiled.body) is source of truth — never use stale localStorage as pathwise
-      let next = readerChaptersFromOverlay(initialManual.chapters);
+      let next = readerChaptersFromOutline(initialManual.chapters);
       if (saved.length) {
         next = mergeTestingTypesSavedEdits(next, saved);
         next = mergeCustomTestingTypesChapters(next, saved);
@@ -587,10 +587,6 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   const completedCount = completedChapterIds.filter((id) => chapters.some((c) => c.id === id)).length;
   const progressPercent = totalChapters > 0 ? Math.round((completedCount / totalChapters) * 100) : 0;
   const partGroups = React.useMemo(() => groupChaptersIntoParts(chapters), [chapters]);
-  const overlayChapter = React.useMemo(() => {
-    if (!isTestingTypesManual) return undefined;
-    return testingOverlayForChapter(activeChapter);
-  }, [isTestingTypesManual, activeChapter]);
   const activePartGroup = partGroups.find((g) => g.chapterIndices.includes(activeChapterIndex));
   const activeMove = React.useMemo(() => {
     const chap = chapters[activeChapterIndex];
@@ -2149,9 +2145,9 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                   animate={{ opacity: 1, y: 0 }}
                   className="space-y-4"
                 >
-                  {(activeChapter.overviewText || overlayChapter?.desc) && (
+                  {(activeChapter.overviewText) && (
                     <p className="text-xs sm:text-sm text-[#52635E] leading-relaxed font-sans">
-                      <MarkedText text={activeChapter.overviewText || overlayChapter?.desc || ""} highlights={activeFieldHighlights} />
+                      <MarkedText text={activeChapter.overviewText || ""} highlights={activeFieldHighlights} />
                     </p>
                   )}
 
@@ -2162,7 +2158,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                         <span>Why it matters</span>
                       </div>
                       <p className="text-xs sm:text-[13px] text-[#52635E] leading-relaxed">
-                        <MarkedText text={activeChapter.why || overlayChapter?.why || ""} highlights={activeFieldHighlights} />
+                        <MarkedText text={activeChapter.why || ""} highlights={activeFieldHighlights} />
                       </p>
                     </div>
 
@@ -2172,12 +2168,12 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                         <span>When to use it</span>
                       </div>
                       <p className="text-xs sm:text-[13px] text-[#52635E] leading-relaxed">
-                        <MarkedText text={activeChapter.when || overlayChapter?.when || ""} highlights={activeFieldHighlights} />
+                        <MarkedText text={activeChapter.when || ""} highlights={activeFieldHighlights} />
                       </p>
                     </div>
                   </div>
 
-                  {(activeChapter.practical || overlayChapter?.practical) && (
+                  {(activeChapter.practical) && (
                     <div className="p-4 sm:p-5 rounded-xl border border-[#D0E2FF] bg-[#F4F8FF] space-y-3 shadow-2xs">
                       <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#0062D2]">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#0062D2]" />
@@ -2186,42 +2182,42 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
 
                       <p className="text-xs sm:text-sm text-[#1C2A26] leading-relaxed">
                         <strong className="font-bold text-[#0F172A]">
-                          <MarkedText text={(overlayChapter?.practical || activeChapter.practical)?.app || ""} highlights={activeFieldHighlights} />
+                          <MarkedText text={activeChapter.practical?.app || ""} highlights={activeFieldHighlights} />
                         </strong>{" "}
                         —{" "}
-                        <MarkedText text={(overlayChapter?.practical || activeChapter.practical)?.scenario || ""} highlights={activeFieldHighlights} />
+                        <MarkedText text={activeChapter.practical?.scenario || ""} highlights={activeFieldHighlights} />
                       </p>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                        {(overlayChapter?.practical || activeChapter.practical)?.fail ? (
+                        {activeChapter.practical?.fail ? (
                         <div className="p-3.5 rounded-xl border border-rose-200 border-t-2 border-t-rose-500 bg-white space-y-1 shadow-2xs">
                           <span className="block font-mono text-[10px] uppercase tracking-wider font-bold text-rose-700">
-                            {(overlayChapter?.practical as { failLabel?: string } | undefined)?.failLabel || "Fail Condition"}
+                            {activeChapter.practical?.failLabel || "Fail Condition"}
                           </span>
                           <p className="text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed">
-                            <MarkedText text={(overlayChapter?.practical || activeChapter.practical)?.fail || ""} highlights={activeFieldHighlights} />
+                            <MarkedText text={activeChapter.practical?.fail || ""} highlights={activeFieldHighlights} />
                           </p>
                         </div>
                         ) : null}
 
-                        {(overlayChapter?.practical || activeChapter.practical)?.pass ? (
+                        {activeChapter.practical?.pass ? (
                         <div className="p-3.5 rounded-xl border border-emerald-200 border-t-2 border-t-emerald-500 bg-white space-y-1 shadow-2xs">
                           <span className="block font-mono text-[10px] uppercase tracking-wider font-bold text-emerald-700">
-                            {(overlayChapter?.practical as { passLabel?: string } | undefined)?.passLabel || "Pass Condition"}
+                            {activeChapter.practical?.passLabel || "Pass Condition"}
                           </span>
                           <p className="text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed">
-                            <MarkedText text={(overlayChapter?.practical || activeChapter.practical)?.pass || ""} highlights={activeFieldHighlights} />
+                            <MarkedText text={activeChapter.practical?.pass || ""} highlights={activeFieldHighlights} />
                           </p>
                         </div>
                         ) : null}
 
-                        {(overlayChapter?.practical as { value?: string } | undefined)?.value ? (
+                        {activeChapter.practical?.value ? (
                         <div className="p-3.5 rounded-xl border border-sky-200 border-t-2 border-t-sky-500 bg-white space-y-1 shadow-2xs sm:col-span-2">
                           <span className="block font-mono text-[10px] uppercase tracking-wider font-bold text-sky-700">
                             Value delivered
                           </span>
                           <p className="text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed">
-                            <MarkedText text={(overlayChapter?.practical as { value?: string } | undefined)?.value || ""} highlights={activeFieldHighlights} />
+                            <MarkedText text={activeChapter.practical?.value || ""} highlights={activeFieldHighlights} />
                           </p>
                         </div>
                         ) : null}
@@ -2230,8 +2226,8 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                   )}
 
                   {/* General Level Advantages & Limitations */}
-                  {((activeChapter.advantages?.length || overlayChapter?.advantages?.length) &&
-                    (activeChapter.limitations?.length || overlayChapter?.limitations?.length)) && (
+                  {(activeChapter.advantages?.length &&
+                    activeChapter.limitations?.length) && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                       <div className="p-4 sm:p-5 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] space-y-2 shadow-2xs">
                         <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-emerald-700">
@@ -2239,7 +2235,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                           <span>Advantages</span>
                         </div>
                         <ul className="space-y-1.5 text-xs sm:text-[13px] text-[#52635E] pl-4 list-disc marker:text-emerald-600/70 leading-relaxed">
-                          {(activeChapter.advantages || overlayChapter?.advantages || []).map((adv, ai) => (
+                          {activeChapter.advantages?.map((adv, ai) => (
                             <li key={ai}>
                               <MarkedText text={adv} highlights={activeFieldHighlights} />
                             </li>
@@ -2253,7 +2249,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                           <span>Limitations</span>
                         </div>
                         <ul className="space-y-1.5 text-xs sm:text-[13px] text-[#52635E] pl-4 list-disc marker:text-rose-600/70 leading-relaxed">
-                          {(activeChapter.limitations || overlayChapter?.limitations || []).map((lim, li) => (
+                          {activeChapter.limitations?.map((lim, li) => (
                             <li key={li}>
                               <MarkedText text={lim} highlights={activeFieldHighlights} />
                             </li>
@@ -2264,10 +2260,10 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                   )}
 
                   {/* Interactive Tool Switcher (Exact 8080 Design) */}
-                  {(overlayChapter?.tools || activeChapter.tools) && (
+                  {activeChapter.tools?.length && (
                     <div className="pt-1">
                       <ToolSwitcher
-                        tools={overlayChapter?.tools || activeChapter.tools!}
+                        tools={activeChapter.tools!}
                         onNavigateChapter={handleNavigateChapter}
                       />
                     </div>

@@ -65,15 +65,7 @@ const playwrightFiles = readdirSync(new URL("./playwright", manualsRoot)).sort()
 assert.deepEqual(playwrightFiles, ["data.js"], "Playwright body must be one file in src/app/manuals/_content/playwright/");
 
 const testingTypesFiles = readdirSync(new URL("./testing-types", manualsRoot));
-for (const name of [
-  "data.js",
-  "overlay.ts",
-  "outline.ts",
-  "types.ts",
-  "overlay-part17-18.ts",
-  "overlay-part19-22.ts",
-  "overlay-part23.ts",
-]) {
+for (const name of ["outline.ts", "catalog.ts", "types.ts", "meta.json", "compiled.body.ts"]) {
   assert.ok(testingTypesFiles.includes(name), `testing-types missing ${name}`);
 }
 

@@ -186,6 +186,7 @@ function chapterToHearth(ch: Record<string, unknown>, order: number): ManualChap
     tools: Array.isArray(ch.tools) ? (ch.tools as ManualChapter["tools"]) : undefined,
     advantages: Array.isArray(ch.advantages) ? (ch.advantages as string[]) : undefined,
     limitations: Array.isArray(ch.limitations) ? (ch.limitations as string[]) : undefined,
+    typeNo: ch.overlayNo != null ? Number(ch.overlayNo) : undefined,
     exercises,
     resourceLinks: resourcesFrom(ch as Parameters<typeof resourcesFrom>[0]),
   };
