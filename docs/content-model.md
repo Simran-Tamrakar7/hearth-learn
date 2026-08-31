@@ -19,7 +19,8 @@ Structured lessons with chapters. **Only two builtin manuals remain:** `playwrig
 - **Listing:** `src/app/manuals/_content/_registry.ts`
 - **Chapter source of truth:** `part-N/chapter-M.md` under each manual folder
 - **Build:** `node scripts/compile-manuals-from-md.mjs` → `compiled.body.ts` (runs on `dev` / `build`)
-- **Testing Types TOC:** `outline.ts` defines part order and parent/child rows; reader resolves bodies from compiled MD via `typeNo` / frontmatter `overlayNo`
+- **Legacy bodies:** `data.js` kept for re-migration via `scripts/migrate-manuals-to-md.mjs`
+- **Testing Types overlay:** `overlay.ts` + `outline.ts` for rich tool-switcher UI (supplements markdown body)
 - **Export:** manual-wide PDF / .docx / Print from reader header (`ManualExportMenu`)
 - **User-created manuals:** `localStorage` with `part-0` / `partKey` convention until disk scaffold API exists
 
