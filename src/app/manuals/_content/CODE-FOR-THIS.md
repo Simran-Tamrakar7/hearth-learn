@@ -4,12 +4,15 @@ Chapter text for `/manuals`. The screen is the sibling `page.tsx` / `[slug]/page
 
 | File | What it is |
 |---|---|
-| `_registry.ts` | Hide / feature / pin / order + `body:` import of each `data.js` |
+| `_registry.ts` | Hide / feature / pin / order + `body:` import of each manual’s `compiled.body.ts` |
 | `_helpers.js` | `ch()`, `genres`, title numbering |
-| `<slug>/data.js` | That manual’s chapters |
-| `testing-types/part-N/chapter-M.md` | **Source of truth** — full chapter record in frontmatter (`why`, `when`, `tools`, `practical`, …) + markdown body |
-| `testing-types/overlay.ts` | Legacy merge layer (prefer MD frontmatter; used as fallback only) |
-| `playwright/data.js` | Merged Playwright manual (not split across files) |
+| `<slug>/meta.json` | Manual title, category, tagline |
+| `<slug>/part-N/chapter-M.md` | **Source of truth** — full chapter record in frontmatter + markdown body |
+| `testing-types/outline.ts` | **TOC structure** — 15 parts, 92 types; reader walks this and loads bodies by `overlayNo` / `typeNo` |
+| `testing-types/catalog.ts` | Flat catalog view derived from compiled MD (legacy interactive export) |
+| `playwright/part-N/chapter-M.md` | Playwright chapters (compiled to `compiled.body.ts`) |
 | `_archive/` | Soft-deleted or unused bodies |
+
+Build: `node scripts/compile-manuals-from-md.mjs` (runs on `dev` / `build`).
 
 Converter (not data): `../_lib/pathwiseToHearth.ts`.
