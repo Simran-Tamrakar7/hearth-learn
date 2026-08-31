@@ -4,7 +4,7 @@
 
 Catalog of 65 builtin manuals + user manuals. Reads `MANUALS_DATA` filtered by `src/app/manuals/_content/_registry.ts` (`status: "active"`). Featured cards and dashboard pins also come from that registry. Writes nothing to the server. Pins, user manuals, categories, and tags use `localStorage`. `+` add is `AddManualControl` (name + category + tags).
 
-Key UI: `src/app/manuals/page.tsx` (labeled **PAGE: /manuals**). Other manuals-only files sit in `src/app/manuals/_ui/`. Map: `src/app/manuals/CODE-FOR-THIS-PAGE.md`. Site-wide index: [where-to-edit.md](./where-to-edit.md).
+Key UI: `src/app/manuals/page.tsx` (labeled **PAGE: /manuals**). Other manuals-only files sit in `src/app/manuals/_ui/`. Map: `src/app/manuals/page_details-code_routes.md`. Site-wide index: [where-to-edit.md](./where-to-edit.md).
 
 ## `/manuals/[slug]`
 
@@ -58,7 +58,7 @@ Sidebar menu: Appearance, Reading, Data (`ThemeContext` → `/api/me/prefs`). Ad
 
 ## `/admin`
 
-Admin-only users table (search/filter, bulk, detail with permissions + activity). Cabin flags/categories live under Settings. Map: `src/app/admin/CODE-FOR-THIS-PAGE.md`.
+Admin-only users table (search/filter, bulk, detail with permissions + activity). Cabin flags/categories live under Settings. Map: `src/app/admin/page_details-code_routes.md`.
 
 ## `/login`
 

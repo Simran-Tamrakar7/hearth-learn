@@ -17,12 +17,12 @@ Set **only in that type’s `_registry.ts`** (library: optional `status` on the 
 Structured lessons with chapters. **Only two builtin manuals remain:** `playwright` and `testing-types`.
 
 - **Listing:** `src/app/manuals/_content/_registry.ts`
-- **Chapter source of truth:** `part-N/chapter-M.md` under each manual folder
+- **Chapter source of truth:** `src/app/manuals/<slug>/part-N/chapter-M.md` (frontmatter holds why/when/tools/practical + markdown body)
+- **TOC ordering:** `src/app/manuals/<slug>/toc.ts` (no content — ordering only)
 - **Build:** `node scripts/compile-manuals-from-md.mjs` → `compiled.body.ts` (runs on `dev` / `build`)
-- **Legacy bodies:** `data.js` kept for re-migration via `scripts/migrate-manuals-to-md.mjs`
-- **Testing Types overlay:** `overlay.ts` + `outline.ts` for rich tool-switcher UI (supplements markdown body)
+- **Other catalog manuals:** `_content/<slug>/data.js` (legacy single-file bodies)
 - **Export:** manual-wide PDF / .docx / Print from reader header (`ManualExportMenu`)
-- **User-created manuals:** `localStorage` with `part-0` / `partKey` convention until disk scaffold API exists
+- **User-created manuals:** `localStorage`; new disk manuals use `<slug>/toc.ts` + `part-0/chapter-1.md`
 
 Do not change manual / chapter ids for the two kept manuals.
 

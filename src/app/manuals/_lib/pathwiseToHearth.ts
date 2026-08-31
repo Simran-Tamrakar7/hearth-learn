@@ -2,7 +2,8 @@
  * HEADING: SHARED — pathwise JS → Hearth manuals
  * Not a page. Used by:
  *   /manuals  /manuals/[slug]  /dashboard   (via manualsData.ts)
- * Chapter files: src/app/manuals/_content/<slug>/data.js
+ * Chapter bodies: src/app/manuals/testing-types|playwright/part-N/chapter-M.md (compiled via _registry.ts)
+ * User manuals: localStorage — disk shape is <slug>/toc.ts + part-0/chapter-1.md when scaffolded to repo
  * ========================================================================== */
 
 import { MANUALS } from "../_content/_registry.ts";
@@ -179,6 +180,7 @@ function chapterToHearth(ch: Record<string, unknown>, order: number): ManualChap
       : overview.slice(0, 400),
     sections: sections.filter((s) => s.body),
     codeSnippet: firstCode ? String(firstCode) : undefined,
+    overlayNo: ch.overlayNo != null ? Number(ch.overlayNo) : undefined,
     overviewText: ch.overviewText ? String(ch.overviewText) : overview || undefined,
     why: ch.why ? String(ch.why) : undefined,
     when: ch.when ? String(ch.when) : undefined,

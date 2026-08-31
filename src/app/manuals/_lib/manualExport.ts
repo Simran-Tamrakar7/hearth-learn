@@ -1,7 +1,6 @@
 import type { ManualChapter, ManualItem } from "./manualsData";
 import { groupChaptersIntoParts } from "./manualParts";
 import { isTestingTypesSlug } from "@/app/manuals/_ui/TestingTypesGuide";
-import { testingOverlayForChapter } from "@/app/manuals/_ui/testing-types-reader";
 
 function groupTitle(index: number, name: string) {
   return `Part ${index + 1} · ${name}`;
@@ -12,23 +11,7 @@ export type ExportSection = {
   chapters: { title: string; body: string; isSubchapter?: boolean }[];
 };
 
-function enrichChapterFromOverlay(ch: ManualChapter): ManualChapter {
-  const ov = testingOverlayForChapter(ch);
-  if (!ov) return ch;
-  return {
-    ...ch,
-    overviewText: ov.desc || ch.overviewText,
-    why: ov.why ?? ch.why,
-    when: ov.when ?? ch.when,
-    practical: ov.practical ?? ch.practical,
-    tools: ov.tools?.length ? ov.tools : ch.tools,
-    advantages: ov.advantages?.length ? ov.advantages : ch.advantages,
-    limitations: ov.limitations?.length ? ov.limitations : ch.limitations,
-    contentMarkdown: ch.contentMarkdown?.trim() || ov.desc,
-  };
-}
-
-/** Testing Types keeps rich fields on overlay — merge before export. */
+/** Testing Types chapters already carry full fields from MD frontmatter — pass through. */
 export function prepareManualForExport(
   manual: Pick<ManualItem, "title" | "description" | "chapters">,
   slug: string
@@ -38,7 +21,7 @@ export function prepareManualForExport(
     slug === "testing-types-manual" ||
     isTestingTypesSlug(slug);
   if (!testing) return manual;
-  return { ...manual, chapters: manual.chapters.map(enrichChapterFromOverlay) };
+  return manual;
 }
 
 async function loadHtml2Pdf(): Promise<(opts?: object) => { set: (o: object) => unknown; from: (el: HTMLElement) => { save: () => Promise<void> } }> {
@@ -84,7 +67,7 @@ function toolsBlock(tools: NonNullable<ManualChapter["tools"]>) {
     .join("\n\n---\n\n");
 }
 
-/** Plain-text export body for one chapter — overlay fields + markdown. */
+/** Plain-text export body for one chapter — MD frontmatter fields + markdown body. */
 export function chapterBodyForExport(ch: ManualChapter): string {
   const parts: string[] = [];
   if (ch.overviewText?.trim()) parts.push(ch.overviewText.trim());
@@ -236,7 +219,6 @@ export async function downloadManualPdf(
   const html2pdf = await loadHtml2Pdf();
   const html = buildManualExportHtml(ready);
 
-  // ponytail: html2canvas needs a painted document — opacity:0 / off-DOM innerHTML fails
   const iframe = document.createElement("iframe");
   iframe.setAttribute("aria-hidden", "true");
   iframe.style.cssText =

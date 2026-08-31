@@ -1,8 +1,8 @@
 import type { CatalogStatus } from "../../_catalog";
 import { KEPT_BUILTIN_SLUGS } from "../_lib/keptManuals";
 
-import { pathwiseManual as testingTypes } from "./testing-types/compiled.body.ts";
-import { pathwiseManual as playwright } from "./playwright/compiled.body.ts";
+import { pathwiseManual as testingTypes } from "../testing-types/compiled.body.ts";
+import { pathwiseManual as playwright } from "../playwright/compiled.body.ts";
 
 /** Builtin manuals. Listing + bodies. A folder is invisible until this file imports its data.js. */
 export type ManualRegistryEntry = {

@@ -35,14 +35,14 @@ Server **APIs** stay under `src/app/api/` (URLs). Shared chrome is `src/componen
 | `/certificates/[id]` | `src/app/certificates/[id]/` |
 | `/trails` | `src/app/trails/` (redirects to manuals) |
 
-Each of those folders has `CODE-FOR-THIS-PAGE.md`.
+Each of those folders has `page_details-code_routes.md`.
 
 ## Other maps
 
 | Kind | Open |
 |---|---|
-| APIs | `src/app/api/CODE-FOR-THIS-API.md` |
-| Shared UI | `src/components/CODE-FOR-SHARED.md` |
-| Auth / Prisma | `src/lib/CODE-FOR-SHARED.md` |
-| Theme | `src/context/CODE-FOR-THIS.md` |
-| Database schema | `prisma/CODE-FOR-THIS.md` |
+| APIs | `src/app/api/page_details-code_routes.md` |
+| Shared UI | `src/components/page_details-code_routes.md` |
+| Auth / Prisma | `src/lib/page_details-code_routes.md` |
+| Theme | `src/context/page_details-code_routes.md` |
+| Database schema | `prisma/page_details-code_routes.md` |
