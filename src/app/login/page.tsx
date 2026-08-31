@@ -101,7 +101,7 @@ function LoginFormContent() {
           <div className="flex items-center justify-between">
             <label className="block text-xs font-semibold text-[#52635E]">Password</label>
             <Link
-              href={email.trim() ? `/forgot-password?email=${encodeURIComponent(email.trim())}` : "/forgot-password"}
+              href={email.trim() ? `/login/forgot-password?email=${encodeURIComponent(email.trim())}` : "/login/forgot-password"}
               className="text-[11px] font-semibold text-[#D97706] hover:underline"
             >
               Forgot Password?
@@ -192,7 +192,7 @@ function LoginFormContent() {
 
       <p className="text-center text-xs text-[#52635E] mt-5">
         New here?{" "}
-        <Link href="/signup" className="font-semibold text-[#D97706] hover:underline">
+        <Link href="/login/signup" className="font-semibold text-[#D97706] hover:underline">
           Create an account
         </Link>
       </p>

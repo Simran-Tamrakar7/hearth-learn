@@ -14,7 +14,7 @@ function RedirectLegacy() {
 
   useEffect(() => {
     // Old email links land here; send people to the code flow.
-    router.replace("/forgot-password");
+    router.replace("/login/forgot-password");
   }, [router, token]);
 
   return (
@@ -28,7 +28,7 @@ export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen bg-[#FBF8F3] flex flex-col justify-center items-center p-4">
       <div className="w-full max-w-md space-y-6">
-        <Link href="/forgot-password" className="inline-flex items-center gap-2 text-xs font-semibold text-[#52635E]">
+        <Link href="/login/forgot-password" className="inline-flex items-center gap-2 text-xs font-semibold text-[#52635E]">
           <ArrowLeft className="w-4 h-4" /> Forgot password
         </Link>
         <Suspense fallback={<Card className="p-8 text-xs text-[#8A9B95]">Loading…</Card>}>

@@ -1,4 +1,4 @@
-/* API: /api/auth/forgot  — used by PAGE /forgot-password. Map: ../../CODE-FOR-THIS-API.md */
+/* API: /api/auth/forgot  — used by PAGE /login/forgot-password. Map: ../../CODE-FOR-THIS-API.md */
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";

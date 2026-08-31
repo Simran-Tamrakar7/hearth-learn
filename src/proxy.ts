@@ -2,7 +2,14 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
-const PUBLIC_PREFIXES = ["/login", "/signup", "/forgot-password", "/reset-password", "/api/auth"];
+const PUBLIC_PREFIXES = ["/login", "/api/auth"];
+
+/** Old auth URLs → nested under /login */
+const AUTH_LEGACY: Record<string, string> = {
+  "/signup": "/login/signup",
+  "/forgot-password": "/login/forgot-password",
+  "/reset-password": "/login/reset-password",
+};
 
 function isPublic(pathname: string) {
   return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
@@ -10,6 +17,14 @@ function isPublic(pathname: string) {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  const legacy = AUTH_LEGACY[pathname];
+  if (legacy) {
+    const url = request.nextUrl.clone();
+    url.pathname = legacy;
+    return NextResponse.redirect(url);
+  }
+
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
@@ -22,7 +37,12 @@ export async function proxy(request: NextRequest) {
   const token = await getToken({ req: request, secret });
 
   if (isPublic(pathname)) {
-    if (token && (pathname === "/login" || pathname === "/signup") && !request.nextUrl.searchParams.get("pending")) {
+    const isSignInSurface =
+      pathname === "/login" ||
+      pathname === "/login/signup" ||
+      pathname.startsWith("/login/forgot-password") ||
+      pathname.startsWith("/login/reset-password");
+    if (token && isSignInSurface && !request.nextUrl.searchParams.get("pending")) {
       if (pathname === "/login" && request.nextUrl.searchParams.get("reset")) {
         return NextResponse.next();
       }
