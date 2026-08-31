@@ -1,5 +1,7 @@
 import type { ManualChapter, ManualItem } from "./manualsData";
 import { groupChaptersIntoParts } from "./manualParts";
+import { isTestingTypesSlug } from "@/app/manuals/_ui/TestingTypesGuide";
+import { testingOverlayForChapter } from "@/app/manuals/_ui/testing-types-reader";
 
 function groupTitle(index: number, name: string) {
   return `Part ${index + 1} · ${name}`;
@@ -9,6 +11,54 @@ export type ExportSection = {
   partTitle: string;
   chapters: { title: string; body: string; isSubchapter?: boolean }[];
 };
+
+function enrichChapterFromOverlay(ch: ManualChapter): ManualChapter {
+  const ov = testingOverlayForChapter(ch);
+  if (!ov) return ch;
+  return {
+    ...ch,
+    overviewText: ov.desc || ch.overviewText,
+    why: ov.why ?? ch.why,
+    when: ov.when ?? ch.when,
+    practical: ov.practical ?? ch.practical,
+    tools: ov.tools?.length ? ov.tools : ch.tools,
+    advantages: ov.advantages?.length ? ov.advantages : ch.advantages,
+    limitations: ov.limitations?.length ? ov.limitations : ch.limitations,
+    contentMarkdown: ch.contentMarkdown?.trim() || ov.desc,
+  };
+}
+
+/** Testing Types keeps rich fields on overlay — merge before export. */
+export function prepareManualForExport(
+  manual: Pick<ManualItem, "title" | "description" | "chapters">,
+  slug: string
+): Pick<ManualItem, "title" | "description" | "chapters"> {
+  const testing =
+    slug === "testing-types" ||
+    slug === "testing-types-manual" ||
+    isTestingTypesSlug(slug);
+  if (!testing) return manual;
+  return { ...manual, chapters: manual.chapters.map(enrichChapterFromOverlay) };
+}
+
+async function loadHtml2Pdf(): Promise<(opts?: object) => { set: (o: object) => unknown; from: (el: HTMLElement) => { save: () => Promise<void> } }> {
+  const mod = await import("html2pdf.js");
+  const fn = mod.default ?? mod;
+  if (typeof fn !== "function") {
+    throw new Error("PDF library failed to load");
+  }
+  return fn as (opts?: object) => {
+    set: (o: object) => unknown;
+    from: (el: HTMLElement) => { save: () => Promise<void> };
+  };
+}
+
+async function loadSaveAs() {
+  const mod = await import("file-saver");
+  const saveAs = mod.saveAs ?? (mod as { default?: { saveAs?: (b: Blob, n: string) => void } }).default?.saveAs;
+  if (!saveAs) throw new Error("Download helper failed to load");
+  return saveAs;
+}
 
 function practicalBlock(p: NonNullable<ManualChapter["practical"]>) {
   const lines = [`**${p.app}** — ${p.scenario}`];
@@ -41,6 +91,8 @@ export function chapterBodyForExport(ch: ManualChapter): string {
   if (ch.why?.trim()) parts.push(`**Why it matters**\n\n${ch.why.trim()}`);
   if (ch.when?.trim()) parts.push(`**When to use it**\n\n${ch.when.trim()}`);
   if (ch.practical) parts.push(`**Practical example**\n\n${practicalBlock(ch.practical)}`);
+  if (ch.advantages?.length) parts.push(`**Advantages**\n\n${ch.advantages.map((a) => `- ${a}`).join("\n")}`);
+  if (ch.limitations?.length) parts.push(`**Limitations**\n\n${ch.limitations.map((l) => `- ${l}`).join("\n")}`);
   if (ch.contentMarkdown?.trim()) parts.push(ch.contentMarkdown.trim());
   if (ch.tools?.length) parts.push(`**Tools**\n\n${toolsBlock(ch.tools)}`);
   if (ch.codeSnippet?.trim()) parts.push("```\n" + ch.codeSnippet.trim() + "\n```");
@@ -143,12 +195,17 @@ ${buildManualExportInnerHtml(manual)}
 </body></html>`;
 }
 
-export async function downloadManualDocx(manual: Pick<ManualItem, "title" | "chapters">, filename: string) {
+export async function downloadManualDocx(
+  manual: Pick<ManualItem, "title" | "chapters">,
+  filename: string,
+  slug = ""
+) {
+  const ready = prepareManualForExport(manual, slug);
   const { Document, Packer, Paragraph, HeadingLevel, TextRun } = await import("docx");
-  const { saveAs } = await import("file-saver");
-  const sections = buildManualExportSections(manual);
+  const saveAs = await loadSaveAs();
+  const sections = buildManualExportSections(ready);
   const children: InstanceType<typeof Paragraph>[] = [
-    new Paragraph({ text: manual.title, heading: HeadingLevel.TITLE }),
+    new Paragraph({ text: ready.title, heading: HeadingLevel.TITLE }),
   ];
   for (const part of sections) {
     children.push(new Paragraph({ text: part.partTitle, heading: HeadingLevel.HEADING_1 }));
@@ -160,7 +217,8 @@ export async function downloadManualDocx(manual: Pick<ManualItem, "title" | "cha
         })
       );
       for (const para of ch.body.split(/\n{2,}/).filter(Boolean)) {
-        children.push(new Paragraph({ children: [new TextRun(para.replace(/\n/g, " "))] }));
+        const text = para.replace(/\n/g, " ").slice(0, 12000);
+        children.push(new Paragraph({ children: [new TextRun(text)] }));
       }
     }
   }
@@ -169,36 +227,69 @@ export async function downloadManualDocx(manual: Pick<ManualItem, "title" | "cha
   saveAs(blob, filename);
 }
 
-export async function downloadManualPdf(manual: Pick<ManualItem, "title" | "description" | "chapters">, filename: string) {
-  const mod = await import("html2pdf.js");
-  const html2pdf = mod.default ?? mod;
-  const wrapper = document.createElement("div");
-  wrapper.innerHTML = buildManualExportInnerHtml(manual);
-  wrapper.style.cssText =
-    "position:fixed;left:0;top:0;width:720px;padding:1rem;background:#fff;font-family:Georgia,serif;color:#1a1a1a;line-height:1.55;z-index:-1;opacity:0;pointer-events:none;";
-  document.body.appendChild(wrapper);
+export async function downloadManualPdf(
+  manual: Pick<ManualItem, "title" | "description" | "chapters">,
+  filename: string,
+  slug = ""
+) {
+  const ready = prepareManualForExport(manual, slug);
+  const html2pdf = await loadHtml2Pdf();
+  const html = buildManualExportHtml(ready);
+
+  // ponytail: html2canvas needs a painted document — opacity:0 / off-DOM innerHTML fails
+  const iframe = document.createElement("iframe");
+  iframe.setAttribute("aria-hidden", "true");
+  iframe.style.cssText =
+    "position:fixed;left:-10000px;top:0;width:720px;height:100vh;border:0;opacity:1;background:#fff;";
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentDocument;
+  if (!doc) {
+    document.body.removeChild(iframe);
+    throw new Error("Could not create print frame");
+  }
+  doc.open();
+  doc.write(html);
+  doc.close();
+
+  await new Promise<void>((resolve) => {
+    iframe.onload = () => resolve();
+    setTimeout(resolve, 300);
+  });
+
   try {
     await html2pdf()
       .set({
-        margin: 15,
+        margin: 12,
         filename,
-        html2canvas: { scale: 2, useCORS: true, logging: false },
+        pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+        html2canvas: { scale: 1.25, useCORS: true, logging: false, scrollY: 0 },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
       })
-      .from(wrapper)
+      .from(doc.body)
       .save();
   } finally {
-    document.body.removeChild(wrapper);
+    document.body.removeChild(iframe);
   }
 }
 
-export function openManualPrintView(manual: Pick<ManualItem, "title" | "description" | "chapters">) {
-  const html = buildManualExportHtml(manual);
-  const w = window.open("", "_blank", "noopener,noreferrer");
+export function openManualPrintView(
+  manual: Pick<ManualItem, "title" | "description" | "chapters">,
+  slug = ""
+) {
+  const ready = prepareManualForExport(manual, slug);
+  const html = buildManualExportHtml(ready);
+  const w = window.open("", "_blank");
   if (!w) return false;
   w.document.write(html);
   w.document.close();
   w.focus();
-  w.onload = () => w.print();
+  window.setTimeout(() => {
+    try {
+      w.print();
+    } catch {
+      /* print may be blocked until user focuses tab */
+    }
+  }, 400);
   return true;
 }

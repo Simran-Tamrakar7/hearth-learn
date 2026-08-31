@@ -8,18 +8,34 @@ const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const contentRoot = path.join(root, "src/app/manuals/_content");
 const SLUGS = ["playwright", "testing-types"];
 
+function parseValue(raw) {
+  const v = raw.trim();
+  if (!v) return "";
+  if (v.startsWith("[") || v.startsWith("{")) {
+    try {
+      return JSON.parse(v);
+    } catch {
+      return v;
+    }
+  }
+  if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+    try {
+      return JSON.parse(v);
+    } catch {
+      return v.slice(1, -1);
+    }
+  }
+  return v;
+}
+
 function parseFrontmatter(raw) {
   const m = /^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/.exec(raw);
   if (!m) return { meta: {}, body: raw.trim() };
   const meta = {};
   for (const line of m[1].split("\n")) {
-    const kv = /^(\w+):\s*(.+)$/.exec(line.trim());
+    const kv = /^([\w]+):\s*(.+)$/.exec(line.trim());
     if (!kv) continue;
-    try {
-      meta[kv[1]] = JSON.parse(kv[2]);
-    } catch {
-      meta[kv[1]] = kv[2];
-    }
+    meta[kv[1]] = parseValue(kv[2]);
   }
   return { meta, body: m[2].trim() };
 }
@@ -45,15 +61,22 @@ function loadManualFromMd(slug) {
     for (const file of files) {
       const { meta: fm, body } = parseFrontmatter(fs.readFileSync(path.join(fullPart, file), "utf8"));
       const partName = fm.partName || `Part ${pn}`;
+      const overview = fm.overviewText ? String(fm.overviewText) : body.split("\n\n")[0]?.slice(0, 500) || "";
       chapters.push({
         id: fm.id || `${slug}-${pn}-${file}`,
         phase: partName,
         title: fm.title || file,
         minutes: fm.minutes || 20,
         level: fm.level || "beginner",
-        overviewText: body.split("\n\n")[0]?.slice(0, 500) || "",
+        overlayNo: fm.overlayNo,
+        overviewText: overview,
+        why: fm.why,
+        when: fm.when,
+        practical: fm.practical,
+        advantages: fm.advantages,
+        limitations: fm.limitations,
+        tools: Array.isArray(fm.tools) ? fm.tools : [],
         contentMarkdown: body,
-        tools: [],
         steps: [],
         learn: [],
       });

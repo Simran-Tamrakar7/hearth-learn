@@ -18,8 +18,8 @@ import { PLAYWRIGHT_ROADMAP_PHASES, downloadRoadmapSVG } from "@/app/manuals/_li
 import { stripLeadingNumber } from "@/app/manuals/_content/_helpers.js";
 import { PinButton, getPinnedItems, PinnedItemMetadata, manualPinId } from "@/components/ui/PinButton";
 import { ManualExportMenu } from "@/app/manuals/_ui/ManualExportMenu";
+import { ChapterContentEditor } from "@/app/manuals/_ui/ChapterContentEditor";
 import { ToolSwitcher } from "@/app/manuals/_ui/ToolSwitcher";
-import { LessonContentEditor } from "@/app/manuals/_ui/LessonContentEditor";
 import { kebabItems, KebabMenu } from "@/app/manuals/_ui/KebabMenu";
 import { Highlightable, HighlightsList, MarkedText } from "@/app/manuals/_ui/Highlightable";
 import {
@@ -43,7 +43,7 @@ import { TagInput } from "@/app/manuals/_ui/TagInput";
 import { usePermissions, useAppUserId } from "@/lib/useAuthz";
 import { highlightsStoreKey, isScopeReady, progressStoreKey, readScopedRaw, writeScopedRaw } from "@/lib/userScope";
 import { getResume, pushAccountProgress, setResume, touchRecentManual } from "@/lib/readerMemory";
-import { readerChaptersFromOverlay, testingOverlayForChapter, mergeCustomTestingTypesChapters, mergeTestingTypesSavedEdits } from "@/app/manuals/_ui/testing-types-reader";
+import { readerChaptersFromOverlay, testingOverlayForChapter, mergeCustomTestingTypesChapters, mergeTestingTypesSavedEdits, testingTypesMdSections } from "@/app/manuals/_ui/testing-types-reader";
 import { restoreTestingTypesToc, TESTING_TYPES_TOC_VERSION } from "@/app/manuals/_content/testing-types/outline";
 import {
   chapterIndexAfter,
@@ -2095,42 +2095,12 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
               {/* CONTENT VIEW OR AI SUMMARY VIEW */}
               {chapterEdit ? (
                 <div className="space-y-3">
-                  {viewMode === "summary" ? (
-                    <textarea
-                      value={chapterCustomSummary(activeChapter)}
-                      onChange={(e) => patchActiveChapter({ customSummary: e.target.value })}
-                      rows={10}
-                      placeholder="Write your summary for this chapter. This is never overwritten by AI."
-                      className="w-full p-3.5 text-sm bg-[#FAF7F2] border border-[#E7E0D3] rounded-xl focus:outline-none focus:border-[#D97706]"
-                    />
-                  ) : viewMode === "aiSummary" ? (
-                    <textarea
-                      value={chapterAiSummary(activeChapter)}
-                      onChange={(e) => patchActiveChapter({ aiSummary: e.target.value, summaryMarkdown: e.target.value })}
-                      rows={10}
-                      placeholder="AI summary"
-                      className="w-full p-3.5 text-sm bg-[#FAF7F2] border border-[#E7E0D3] rounded-xl focus:outline-none focus:border-[#D97706]"
-                    />
-                  ) : (
-                    <>
-                      <LessonContentEditor
-                        value={activeChapter.contentMarkdown || ""}
-                        onChange={(next) => patchActiveChapter({ contentMarkdown: next })}
-                        preview={(text) => renderFormattedMarkdown(text)}
-                      />
-                      <div className="space-y-1.5 pt-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#52635E] flex items-center gap-1.5 font-sans">
-                          <Code className="w-3 h-3 text-[#D97706]" /> CODE EXAMPLE
-                        </span>
-                        <textarea
-                          value={activeChapter.codeSnippet || ""}
-                          onChange={(e) => patchActiveChapter({ codeSnippet: e.target.value })}
-                          rows={4}
-                          className="w-full p-3.5 sm:p-4 bg-[#1C2A26] text-[#A7F3D0] rounded-xl font-mono text-xs sm:text-[13px] leading-relaxed border border-[#2D3F3A] focus:outline-none focus:border-[#D97706]"
-                        />
-                      </div>
-                    </>
-                  )}
+                  <ChapterContentEditor
+                    chapter={activeChapter}
+                    viewMode={viewMode}
+                    onPatch={patchActiveChapter}
+                    renderMarkdown={renderFormattedMarkdown}
+                  />
                   <button
                     type="button"
                     onClick={() => addChapterInPart(activePartGroup?.index)}
@@ -2179,14 +2149,12 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                   animate={{ opacity: 1, y: 0 }}
                   className="space-y-4"
                 >
-                  {/* Overview Text */}
-                  {(overlayChapter?.desc || activeChapter.overviewText) && (
+                  {(activeChapter.overviewText || overlayChapter?.desc) && (
                     <p className="text-xs sm:text-sm text-[#52635E] leading-relaxed font-sans">
-                      <MarkedText text={overlayChapter?.desc || activeChapter.overviewText || ""} highlights={activeFieldHighlights} />
+                      <MarkedText text={activeChapter.overviewText || overlayChapter?.desc || ""} highlights={activeFieldHighlights} />
                     </p>
                   )}
 
-                  {/* Why it matters & When to use it Strip (8080 Format) */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                     <div className="p-4 sm:p-5 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] space-y-2 shadow-2xs">
                       <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#D97706]">
@@ -2194,7 +2162,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                         <span>Why it matters</span>
                       </div>
                       <p className="text-xs sm:text-[13px] text-[#52635E] leading-relaxed">
-                        <MarkedText text={overlayChapter?.why || activeChapter.why || ""} highlights={activeFieldHighlights} />
+                        <MarkedText text={activeChapter.why || overlayChapter?.why || ""} highlights={activeFieldHighlights} />
                       </p>
                     </div>
 
@@ -2204,13 +2172,12 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                         <span>When to use it</span>
                       </div>
                       <p className="text-xs sm:text-[13px] text-[#52635E] leading-relaxed">
-                        <MarkedText text={overlayChapter?.when || activeChapter.when || ""} highlights={activeFieldHighlights} />
+                        <MarkedText text={activeChapter.when || overlayChapter?.when || ""} highlights={activeFieldHighlights} />
                       </p>
                     </div>
                   </div>
 
-                  {/* Practical Example Block (8080 Format) */}
-                  {(overlayChapter?.practical || activeChapter.practical) && (
+                  {(activeChapter.practical || overlayChapter?.practical) && (
                     <div className="p-4 sm:p-5 rounded-xl border border-[#D0E2FF] bg-[#F4F8FF] space-y-3 shadow-2xs">
                       <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#0062D2]">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#0062D2]" />
@@ -2263,7 +2230,8 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                   )}
 
                   {/* General Level Advantages & Limitations */}
-                  {overlayChapter?.advantages && overlayChapter?.limitations && (
+                  {((activeChapter.advantages?.length || overlayChapter?.advantages?.length) &&
+                    (activeChapter.limitations?.length || overlayChapter?.limitations?.length)) && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                       <div className="p-4 sm:p-5 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] space-y-2 shadow-2xs">
                         <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-emerald-700">
@@ -2271,7 +2239,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                           <span>Advantages</span>
                         </div>
                         <ul className="space-y-1.5 text-xs sm:text-[13px] text-[#52635E] pl-4 list-disc marker:text-emerald-600/70 leading-relaxed">
-                          {overlayChapter.advantages!.map((adv, ai) => (
+                          {(activeChapter.advantages || overlayChapter?.advantages || []).map((adv, ai) => (
                             <li key={ai}>
                               <MarkedText text={adv} highlights={activeFieldHighlights} />
                             </li>
@@ -2285,7 +2253,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                           <span>Limitations</span>
                         </div>
                         <ul className="space-y-1.5 text-xs sm:text-[13px] text-[#52635E] pl-4 list-disc marker:text-rose-600/70 leading-relaxed">
-                          {overlayChapter.limitations!.map((lim, li) => (
+                          {(activeChapter.limitations || overlayChapter?.limitations || []).map((lim, li) => (
                             <li key={li}>
                               <MarkedText text={lim} highlights={activeFieldHighlights} />
                             </li>
@@ -2306,16 +2274,13 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                   )}
 
                   {(() => {
-                    const overview = (overlayChapter?.desc || activeChapter.overviewText || "").trim();
-                    const md = (activeChapter.contentMarkdown || "").trim();
-                    const showMd =
-                      md &&
-                      (md.includes("##") ||
-                        md.includes("```") ||
-                        (overview && md !== overview && !overview.startsWith(md.slice(0, Math.min(md.length, 120)))));
-                    return showMd ? (
+                    const mdExtra = isTestingTypesManual
+                      ? testingTypesMdSections(activeChapter, activeChapter.overviewText)
+                      : (activeChapter.contentMarkdown || "").trim();
+                    return mdExtra ? (
                       <div className="pt-3 border-t border-[#E7E0D3] space-y-3">
-                        {renderFormattedMarkdown(activeChapter.contentMarkdown)}
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-[#8A9B95]">From manual</p>
+                        {renderFormattedMarkdown(mdExtra)}
                       </div>
                     ) : null;
                   })()}

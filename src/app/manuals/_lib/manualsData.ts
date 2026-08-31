@@ -71,6 +71,8 @@ export interface ManualChapter {
   sections?: { title: string; body: string }[];
   codeSnippet?: string;
   tools?: ToolItem[];
+  advantages?: string[];
+  limitations?: string[];
   exercises: ManualExercise[];
   resourceLinks: GoDeeperResource[];
 }

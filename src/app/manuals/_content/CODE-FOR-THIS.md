@@ -7,7 +7,8 @@ Chapter text for `/manuals`. The screen is the sibling `page.tsx` / `[slug]/page
 | `_registry.ts` | Hide / feature / pin / order + `body:` import of each `data.js` |
 | `_helpers.js` | `ch()`, `genres`, title numbering |
 | `<slug>/data.js` | That manual’s chapters |
-| `testing-types/` | Pathwise body **and** overlay + 15-chapter TOC |
+| `testing-types/part-N/chapter-M.md` | **Source of truth** — full chapter record in frontmatter (`why`, `when`, `tools`, `practical`, …) + markdown body |
+| `testing-types/overlay.ts` | Legacy merge layer (prefer MD frontmatter; used as fallback only) |
 | `playwright/data.js` | Merged Playwright manual (not split across files) |
 | `_archive/` | Soft-deleted or unused bodies |
 
