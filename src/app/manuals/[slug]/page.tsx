@@ -223,7 +223,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   // Overlay + chapter edit (no dialogs)
   const [isRoadmapModalOpen, setIsRoadmapModalOpen] = useState<boolean>(false);
   const [chapterEdit, setChapterEdit] = useState(false);
-  const [saveHint, setSaveHint] = useState<"" | "Saving…" | "Saved">("");
+  const [saveHint, setSaveHint] = useState<"" | "Saving…" | "Saved" | "Undone">("");
   const [selectedPartIndices, setSelectedPartIndices] = useState<number[]>([]);
   const [selectedChapterIndices, setSelectedChapterIndices] = useState<number[]>([]);
   const [tocEdit, setTocEdit] = useState<null | "part" | "chapter" | "sub">(null);
