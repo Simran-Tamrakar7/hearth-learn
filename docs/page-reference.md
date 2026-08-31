@@ -8,7 +8,7 @@ Key UI: `src/app/manuals/page.tsx` (labeled **PAGE: /manuals**). Other manuals-o
 
 ## `/manuals/[slug]`
 
-Reader + TOC editor + inline chapter edit (no dialog). Builtin: `findHearthManual`. User: `getUserManual`. Testing Types: overlay + outline. Writes `hearth_manual_custom_data_*` (debounced while editing) and progress keys. Highlights: localStorage plus `POST /api/highlights` (userId, chapterId, tabType, text, start). Click an existing mark to remove it. Three tabs (Full Content / Summary / AI Summary) keep highlights separate. TOC shows minutes per chapter and scrolls the active row into view. Resume + recently viewed dual-write to account prefs. Related manuals by category/tags at the end.
+Reader + TOC editor + inline chapter edit (no dialog). Builtin: `findHearthManual`. User: `getUserManual`. Testing Types: overlay + outline. Writes `hearth_manual_custom_data_*` (debounced while editing) and progress keys. **Undo** during edit: stack of snapshots before merge/delete/reorder/content changes; Undo button + ⌘Z/Ctrl+Z; Cancel still reverts the whole session. Highlights: localStorage plus `POST /api/highlights` (userId, chapterId, tabType, text, start). Click an existing mark to remove it. Three tabs (Full Content / Summary / AI Summary) keep highlights separate. TOC shows minutes per chapter and scrolls the active row into view. Resume + recently viewed dual-write to account prefs. Related manuals by category/tags at the end.
 
 Key UI: `src/app/manuals/[slug]/page.tsx` (labeled **PAGE: /manuals/[slug]**), `_ui/LessonContentEditor`, `_ui/ToolSwitcher`, `_ui/Highlightable`, `_lib/manualParts.ts`.
 

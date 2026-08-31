@@ -94,6 +94,7 @@ import {
   Award,
   Info,
   Pin,
+  Undo2,
 } from "lucide-react";
 
 export default function ManualDetailPage() {
@@ -240,6 +241,17 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     chapters: ManualChapter[];
     meta: { title: string; description: string; category: string; estimatedTime: string; tags: string[] };
   } | null>(null);
+  type EditSnapshot = {
+    chapters: ManualChapter[];
+    meta: { title: string; description: string; category: string; estimatedTime: string; tags: string[] };
+    activeChapterIndex: number;
+    selectedChapterIndices: number[];
+    selectedPartIndices: number[];
+  };
+  const editUndoStack = useRef<EditSnapshot[]>([]);
+  const contentUndoPushed = useRef(false);
+  const metaUndoPushed = useRef(false);
+  const [undoStackLen, setUndoStackLen] = useState(0);
   const [pinnedShowcase, setPinnedShowcase] = useState<PinnedItemMetadata[]>([]);
   const [highlights, setHighlights] = useState<HighlightStore>({});
 
@@ -353,8 +365,64 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     });
   };
 
-  const persistChapters = (updated: ManualChapter[], keepId?: string) => {
+  const isEditSession = () => chapterEdit || tocEdit != null;
+
+  const captureEditSnapshot = (): EditSnapshot => ({
+    chapters: JSON.parse(JSON.stringify(chapters)),
+    meta: {
+      title: manualTitle,
+      description: manualDescription,
+      category: manualCategory,
+      estimatedTime: manualEstimatedTime,
+      tags: manualTags,
+    },
+    activeChapterIndex,
+    selectedChapterIndices: [...selectedChapterIndices],
+    selectedPartIndices: [...selectedPartIndices],
+  });
+
+  const clearEditUndo = () => {
+    editUndoStack.current = [];
+    contentUndoPushed.current = false;
+    metaUndoPushed.current = false;
+    setUndoStackLen(0);
+  };
+
+  const pushEditUndo = () => {
+    if (!isEditSession()) return;
+    editUndoStack.current.push(captureEditSnapshot());
+    // ponytail: cap at 50 steps; older entries drop off
+    if (editUndoStack.current.length > 50) editUndoStack.current.shift();
+    setUndoStackLen(editUndoStack.current.length);
+  };
+
+  const undoLastEdit = () => {
+    const snap = editUndoStack.current.pop();
+    if (!snap) return;
+    setUndoStackLen(editUndoStack.current.length);
+    contentUndoPushed.current = false;
+    metaUndoPushed.current = false;
+    if (persistTimer.current) {
+      clearTimeout(persistTimer.current);
+      persistTimer.current = null;
+    }
+    pendingSave.current = null;
+    pendingMeta.current = null;
+    setManualTitle(snap.meta.title);
+    setManualDescription(snap.meta.description);
+    setManualCategory(snap.meta.category);
+    setManualEstimatedTime(snap.meta.estimatedTime);
+    setManualTags(snap.meta.tags || []);
+    setSelectedChapterIndices(snap.selectedChapterIndices);
+    setSelectedPartIndices(snap.selectedPartIndices);
+    const keepId = snap.chapters[snap.activeChapterIndex]?.id ?? snap.chapters[0]?.id;
+    persistChapters(snap.chapters, keepId, { skipUndo: true });
+    setSaveHint("Undone");
+  };
+
+  const persistChapters = (updated: ManualChapter[], keepId?: string, opts?: { skipUndo?: boolean }) => {
     if (!perms.canStructure) return;
+    if (!opts?.skipUndo) pushEditUndo();
     if (persistTimer.current) {
       clearTimeout(persistTimer.current);
       persistTimer.current = null;
@@ -401,6 +469,8 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     pendingSave.current = null;
     pendingMeta.current = null;
     if (!nextChapters && !meta) return;
+    contentUndoPushed.current = false;
+    metaUndoPushed.current = false;
     const ch = nextChapters || chapters;
     const m = meta || {
       title: manualTitle,
@@ -437,6 +507,10 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   };
 
   const patchActiveChapter = (patch: Partial<ManualChapter>) => {
+    if (chapterEdit && !contentUndoPushed.current) {
+      pushEditUndo();
+      contentUndoPushed.current = true;
+    }
     const idx = activeChapterIndex;
     const updated = chapters.map((chap, i) => (i === idx ? { ...chap, ...patch } : chap));
     setChapters(updated);
@@ -450,6 +524,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     }
     commitPending();
     chapterEditSnapshot.current = null;
+    clearEditUndo();
     setChapterEdit(false);
   };
 
@@ -467,9 +542,10 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       setManualCategory(snap.meta.category);
       setManualEstimatedTime(snap.meta.estimatedTime);
       setManualTags(snap.meta.tags || []);
-      persistChapters(snap.chapters);
+      persistChapters(snap.chapters, snap.chapters[activeChapterIndex]?.id, { skipUndo: true });
     }
     chapterEditSnapshot.current = null;
+    clearEditUndo();
     setChapterEdit(false);
   };
 
@@ -583,6 +659,10 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     tags: string[] = manualTags
   ) => {
     if (!perms.canEdit) return;
+    if (chapterEdit && !metaUndoPushed.current) {
+      pushEditUndo();
+      metaUndoPushed.current = true;
+    }
     pendingMeta.current = { title, description, category, estimatedTime, tags };
     setSaveHint("Saving…");
     if (persistTimer.current) clearTimeout(persistTimer.current);
@@ -631,9 +711,23 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
         tags: manualTags,
       },
     };
+    clearEditUndo();
     setActiveChapterIndex(idx);
     setChapterEdit(true);
   };
+
+  useEffect(() => {
+    if (!isEditSession() || undoStackLen === 0) return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        undoLastEdit();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chapterEdit, tocEdit, undoStackLen]);
 
   useEffect(() => {
     if (perms.canEdit && searchParams.get("edit") === "1") enterChapterEdit(0);
@@ -806,6 +900,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     setEditingPartIndex(null);
     setTocEdit(null);
     setTocEditOpen(false);
+    if (!chapterEdit) clearEditUndo();
   };
 
   const handleMoveSelectedChapters = (direction: -1 | 1) => {
@@ -1468,6 +1563,17 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                           {mode === "part" ? "Part" : mode === "chapter" ? "Chapter" : "Sub-chapter"}
                         </button>
                       ))}
+                      {undoStackLen > 0 ? (
+                        <button
+                          type="button"
+                          onClick={undoLastEdit}
+                          className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-lg text-[#52635E] bg-white border border-[#E7E0D3] hover:border-[#D97706] hover:text-[#1C2A26]"
+                          title="Undo last change (⌘Z)"
+                        >
+                          <Undo2 className="w-3.5 h-3.5" />
+                          Undo
+                        </button>
+                      ) : null}
                       <button
                         type="button"
                         onClick={exitTocEdit}
@@ -1812,6 +1918,11 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                   ) : null}
                   {chapterEdit ? (
                     <>
+                      {undoStackLen > 0 ? (
+                        <Button variant="outline" size="sm" onClick={undoLastEdit} title="Undo last change (⌘Z)" leftIcon={<Undo2 className="w-3.5 h-3.5" />}>
+                          Undo
+                        </Button>
+                      ) : null}
                       <Button variant="outline" size="sm" onClick={cancelChapterEdit}>
                         Cancel
                       </Button>
