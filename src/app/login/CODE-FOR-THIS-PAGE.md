@@ -3,8 +3,9 @@
 | What you want to change | Open this file |
 |---|---|
 | Login UI | `page.tsx` |
-| Sign up | `src/app/signup/page.tsx` |
-| Forgot / reset password | `src/app/forgot-password/page.tsx` (email → code → new password) |
+| Sign up | `src/app/login/signup/page.tsx` → `/login/signup` |
+| Forgot / reset password | `src/app/login/forgot-password/page.tsx` → `/login/forgot-password` (email → code → new password) |
+| Legacy reset link | `src/app/login/reset-password/page.tsx` → `/login/reset-password` (redirects to forgot flow) |
 | Change password | `/profile` (Edit Profile) |
 | Approvals + per-user permissions | `src/app/admin/page.tsx` |
 | Manage categories | `src/app/admin/page.tsx` |
