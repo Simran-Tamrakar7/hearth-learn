@@ -184,6 +184,8 @@ function chapterToHearth(ch: Record<string, unknown>, order: number): ManualChap
     when: ch.when ? String(ch.when) : undefined,
     practical: ch.practical ? (ch.practical as ManualChapter["practical"]) : undefined,
     tools: Array.isArray(ch.tools) ? (ch.tools as ManualChapter["tools"]) : undefined,
+    advantages: Array.isArray(ch.advantages) ? (ch.advantages as string[]) : undefined,
+    limitations: Array.isArray(ch.limitations) ? (ch.limitations as string[]) : undefined,
     exercises,
     resourceLinks: resourcesFrom(ch as Parameters<typeof resourcesFrom>[0]),
   };

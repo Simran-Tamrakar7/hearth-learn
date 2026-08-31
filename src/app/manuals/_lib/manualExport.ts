@@ -22,6 +22,8 @@ function enrichChapterFromOverlay(ch: ManualChapter): ManualChapter {
     when: ov.when ?? ch.when,
     practical: ov.practical ?? ch.practical,
     tools: ov.tools?.length ? ov.tools : ch.tools,
+    advantages: ov.advantages?.length ? ov.advantages : ch.advantages,
+    limitations: ov.limitations?.length ? ov.limitations : ch.limitations,
     contentMarkdown: ch.contentMarkdown?.trim() || ov.desc,
   };
 }
@@ -89,6 +91,8 @@ export function chapterBodyForExport(ch: ManualChapter): string {
   if (ch.why?.trim()) parts.push(`**Why it matters**\n\n${ch.why.trim()}`);
   if (ch.when?.trim()) parts.push(`**When to use it**\n\n${ch.when.trim()}`);
   if (ch.practical) parts.push(`**Practical example**\n\n${practicalBlock(ch.practical)}`);
+  if (ch.advantages?.length) parts.push(`**Advantages**\n\n${ch.advantages.map((a) => `- ${a}`).join("\n")}`);
+  if (ch.limitations?.length) parts.push(`**Limitations**\n\n${ch.limitations.map((l) => `- ${l}`).join("\n")}`);
   if (ch.contentMarkdown?.trim()) parts.push(ch.contentMarkdown.trim());
   if (ch.tools?.length) parts.push(`**Tools**\n\n${toolsBlock(ch.tools)}`);
   if (ch.codeSnippet?.trim()) parts.push("```\n" + ch.codeSnippet.trim() + "\n```");
