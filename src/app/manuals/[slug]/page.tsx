@@ -43,7 +43,7 @@ import { TagInput } from "@/app/manuals/_ui/TagInput";
 import { usePermissions, useAppUserId } from "@/lib/useAuthz";
 import { highlightsStoreKey, isScopeReady, progressStoreKey, readScopedRaw, writeScopedRaw } from "@/lib/userScope";
 import { getResume, pushAccountProgress, setResume, touchRecentManual } from "@/lib/readerMemory";
-import { readerChaptersFromOverlay, testingOverlayForChapter, mergeCustomTestingTypesChapters } from "@/app/manuals/_ui/testing-types-reader";
+import { readerChaptersFromOverlay, testingOverlayForChapter, mergeCustomTestingTypesChapters, mergeTestingTypesSavedEdits } from "@/app/manuals/_ui/testing-types-reader";
 import { restoreTestingTypesToc, TESTING_TYPES_TOC_VERSION } from "@/app/manuals/_content/testing-types/outline";
 import {
   chapterIndexAfter,
@@ -304,14 +304,14 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     }
     if (isTestingTypesManual) {
       const chaptersSaved = parsed?.chapters;
-      // ponytail: always re-merge overlay (tools, why, practical) — stale localStorage skipped readerChaptersFromOverlay
-      const pathwise =
-        restoreTestingTypesToc(parsed) && Array.isArray(chaptersSaved) && chaptersSaved.length > 0
-          ? (chaptersSaved as ManualChapter[])
-          : initialManual.chapters;
-      const rebuilt = readerChaptersFromOverlay(pathwise);
       const saved = Array.isArray(chaptersSaved) ? (chaptersSaved as ManualChapter[]) : [];
-      setChapters(saved.length ? mergeCustomTestingTypesChapters(rebuilt, saved) : rebuilt);
+      // ponytail: MD on disk (compiled.body) is source of truth — never use stale localStorage as pathwise
+      let next = readerChaptersFromOverlay(initialManual.chapters);
+      if (saved.length) {
+        next = mergeTestingTypesSavedEdits(next, saved);
+        next = mergeCustomTestingTypesChapters(next, saved);
+      }
+      setChapters(next);
     } else if (parsed && Array.isArray(parsed.chapters) && parsed.chapters.length > 0) {
       setChapters(parsed.chapters as ManualChapter[]);
     }
@@ -2305,11 +2305,20 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                     </div>
                   )}
 
-                  {activeChapter.contentMarkdown?.includes("##") ? (
-                    <div className="pt-3 border-t border-[#E7E0D3] space-y-3">
-                      {renderFormattedMarkdown(activeChapter.contentMarkdown)}
-                    </div>
-                  ) : null}
+                  {(() => {
+                    const overview = (overlayChapter?.desc || activeChapter.overviewText || "").trim();
+                    const md = (activeChapter.contentMarkdown || "").trim();
+                    const showMd =
+                      md &&
+                      (md.includes("##") ||
+                        md.includes("```") ||
+                        (overview && md !== overview && !overview.startsWith(md.slice(0, Math.min(md.length, 120)))));
+                    return showMd ? (
+                      <div className="pt-3 border-t border-[#E7E0D3] space-y-3">
+                        {renderFormattedMarkdown(activeChapter.contentMarkdown)}
+                      </div>
+                    ) : null;
+                  })()}
 
                 </motion.div>
               ) : (

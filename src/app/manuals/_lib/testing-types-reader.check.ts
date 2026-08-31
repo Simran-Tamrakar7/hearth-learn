@@ -55,7 +55,8 @@ assert.equal(flow?.parentTitle, undefined);
 
 assert.equal(restoreTestingTypesToc({ tocManaged: true }), false);
 assert.equal(restoreTestingTypesToc({ tocManaged: true, tocCatalogVersion: 14 }), false);
-assert.equal(restoreTestingTypesToc({ tocManaged: true, tocCatalogVersion: 15 }), true);
+assert.equal(restoreTestingTypesToc({ tocManaged: true, tocCatalogVersion: 15 }), false);
+assert.equal(restoreTestingTypesToc({ tocManaged: true, tocCatalogVersion: 16 }), true);
 assert.equal(restoreTestingTypesToc(null), false);
 
 console.log("testing-types-reader.check: ok");
