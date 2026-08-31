@@ -365,7 +365,8 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     });
   };
 
-  const isEditSession = () => chapterEdit || tocEdit != null;
+  const isEditSession = () => chapterEdit || tocEditOpen || tocEdit != null;
+  const inAnyEditMode = chapterEdit || tocEditOpen;
 
   const captureEditSnapshot = (): EditSnapshot => ({
     chapters: JSON.parse(JSON.stringify(chapters)),
@@ -745,7 +746,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chapterEdit, tocEdit, undoStackLen]);
+  }, [chapterEdit, tocEditOpen, tocEdit, undoStackLen]);
 
   useEffect(() => {
     if (perms.canEdit && searchParams.get("edit") === "1") enterChapterEdit(0);
@@ -1933,17 +1934,25 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                   {saveHint ? (
                     <span className="text-[11px] font-bold text-[#8A9B95]">{saveHint}</span>
                   ) : null}
-                  {chapterEdit ? (
+                  {inAnyEditMode ? (
                     <>
                       <Button variant="outline" size="sm" onClick={undoLastEdit} disabled={undoStackLen === 0} title="Undo last change (⌘Z)" leftIcon={<Undo2 className="w-3.5 h-3.5" />}>
                         Undo
                       </Button>
-                      <Button variant="outline" size="sm" onClick={cancelChapterEdit}>
-                        Cancel
-                      </Button>
-                      <Button variant="primary" size="sm" onClick={() => setChapterEditMode(false)}>
-                        Done editing
-                      </Button>
+                      {chapterEdit ? (
+                        <>
+                          <Button variant="outline" size="sm" onClick={cancelChapterEdit}>
+                            Cancel
+                          </Button>
+                          <Button variant="primary" size="sm" onClick={() => setChapterEditMode(false)}>
+                            Done editing
+                          </Button>
+                        </>
+                      ) : (
+                        <Button variant="outline" size="sm" onClick={exitTocEdit}>
+                          Done editing
+                        </Button>
+                      )}
                     </>
                   ) : (
                     <KebabMenu
