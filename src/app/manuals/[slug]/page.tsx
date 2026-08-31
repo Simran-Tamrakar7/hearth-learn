@@ -223,7 +223,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   // Overlay + chapter edit (no dialogs)
   const [isRoadmapModalOpen, setIsRoadmapModalOpen] = useState<boolean>(false);
   const [chapterEdit, setChapterEdit] = useState(false);
-  const [saveHint, setSaveHint] = useState<"" | "Saving…" | "Saved">("");
+  const [saveHint, setSaveHint] = useState<"" | "Saving…" | "Saved" | "Undone">("");
   const [selectedPartIndices, setSelectedPartIndices] = useState<number[]>([]);
   const [selectedChapterIndices, setSelectedChapterIndices] = useState<number[]>([]);
   const [tocEdit, setTocEdit] = useState<null | "part" | "chapter" | "sub">(null);
@@ -415,8 +415,26 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     setManualTags(snap.meta.tags || []);
     setSelectedChapterIndices(snap.selectedChapterIndices);
     setSelectedPartIndices(snap.selectedPartIndices);
-    const keepId = snap.chapters[snap.activeChapterIndex]?.id ?? snap.chapters[0]?.id;
-    persistChapters(snap.chapters, keepId, { skipUndo: true });
+    setActiveChapterIndex(snap.activeChapterIndex);
+    setChapters(snap.chapters);
+    saveCustomDataToStorage({
+      title: snap.meta.title,
+      description: snap.meta.description,
+      category: snap.meta.category,
+      estimatedTime: snap.meta.estimatedTime,
+      tags: snap.meta.tags,
+      chapters: snap.chapters,
+      tocManaged: true,
+      ...(isTestingTypesManual ? { tocCatalogVersion: TESTING_TYPES_TOC_VERSION } : {}),
+    });
+    persistUserManual({
+      title: snap.meta.title,
+      description: snap.meta.description,
+      category: snap.meta.category,
+      estimatedTime: snap.meta.estimatedTime,
+      tags: snap.meta.tags,
+      chapters: snap.chapters,
+    });
     setSaveHint("Undone");
   };
 
@@ -1563,17 +1581,16 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                           {mode === "part" ? "Part" : mode === "chapter" ? "Chapter" : "Sub-chapter"}
                         </button>
                       ))}
-                      {undoStackLen > 0 ? (
-                        <button
-                          type="button"
-                          onClick={undoLastEdit}
-                          className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-lg text-[#52635E] bg-white border border-[#E7E0D3] hover:border-[#D97706] hover:text-[#1C2A26]"
-                          title="Undo last change (⌘Z)"
-                        >
-                          <Undo2 className="w-3.5 h-3.5" />
-                          Undo
-                        </button>
-                      ) : null}
+                      <button
+                        type="button"
+                        onClick={undoLastEdit}
+                        disabled={undoStackLen === 0}
+                        className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-lg text-[#52635E] bg-white border border-[#E7E0D3] hover:border-[#D97706] hover:text-[#1C2A26] disabled:opacity-40 disabled:pointer-events-none"
+                        title="Undo last change (⌘Z)"
+                      >
+                        <Undo2 className="w-3.5 h-3.5" />
+                        Undo
+                      </button>
                       <button
                         type="button"
                         onClick={exitTocEdit}
@@ -1918,11 +1935,9 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                   ) : null}
                   {chapterEdit ? (
                     <>
-                      {undoStackLen > 0 ? (
-                        <Button variant="outline" size="sm" onClick={undoLastEdit} title="Undo last change (⌘Z)" leftIcon={<Undo2 className="w-3.5 h-3.5" />}>
-                          Undo
-                        </Button>
-                      ) : null}
+                      <Button variant="outline" size="sm" onClick={undoLastEdit} disabled={undoStackLen === 0} title="Undo last change (⌘Z)" leftIcon={<Undo2 className="w-3.5 h-3.5" />}>
+                        Undo
+                      </Button>
                       <Button variant="outline" size="sm" onClick={cancelChapterEdit}>
                         Cancel
                       </Button>
