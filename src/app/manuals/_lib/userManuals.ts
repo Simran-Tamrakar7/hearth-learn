@@ -6,6 +6,7 @@
  * Changing this file changes all of those pages at once.
  * ========================================================================== */
 
+import { KEPT_BUILTIN_SLUGS } from "./keptManuals";
 import type { ManualChapter, ManualItem } from "@/app/manuals/_lib/manualsData";
 import { pinsStoreKey, progressStoreKey, readScopedRaw, removeScopedRaw, writeScopedRaw } from "../../../lib/userScope.ts";
 
@@ -219,7 +220,8 @@ export function emptyManual(title: string, opts?: { category?: string; tags?: st
     order: 1,
     slug: "ch-1",
     title: "Untitled chapter",
-    subtitle: "Untitled part",
+    subtitle: "Part 1 · Getting started",
+    partKey: "part-0",
     estimatedMinutes: 15,
     contentMarkdown: "",
     customSummary: "",
@@ -303,6 +305,42 @@ function unpinSlug(slug: string) {
   } catch {
     /* pin cleanup is best-effort */
   }
+}
+
+/** Remove user manuals + orphaned local data for deleted builtin slugs. Call once on /manuals mount. */
+export function purgeRemovedManualCatalog() {
+  if (typeof window === "undefined") return;
+  const keptIds = KEPT_BUILTIN_SLUGS.map((s) => `manual-${s}`);
+  localStorage.setItem(STORE, JSON.stringify([]));
+  const hidden = [...hiddenManualSlugs()].filter((s) => KEPT_BUILTIN_SLUGS.includes(s as (typeof KEPT_BUILTIN_SLUGS)[number]));
+  localStorage.setItem(HIDDEN, JSON.stringify(hidden));
+  try {
+    const raw = readScopedRaw(pinsStoreKey());
+    if (raw) {
+      const pins = JSON.parse(raw);
+      if (Array.isArray(pins)) {
+        const next = pins.filter((p: { url?: string }) =>
+          KEPT_BUILTIN_SLUGS.some((s) => String(p.url || "").includes(`/manuals/${s}`))
+        );
+        writeScopedRaw(pinsStoreKey(), JSON.stringify(next));
+        window.dispatchEvent(new Event("hearth_pins_updated"));
+      }
+    }
+  } catch {
+    /* best-effort */
+  }
+  const removeKeys: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k?.startsWith("hearth_manual_")) continue;
+    if (keptIds.some((id) => k.includes(id))) continue;
+    removeKeys.push(k);
+  }
+  for (const k of removeKeys) {
+    if (k.includes("::")) removeScopedRaw(k.split("::")[0]!);
+    else localStorage.removeItem(k);
+  }
+  window.dispatchEvent(new Event(EVENT));
 }
 
 export function hideManual(slug: string): boolean {

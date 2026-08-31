@@ -19,7 +19,7 @@ import {
   PinnedItemMetadata,
   manualPinId,
 } from "@/components/ui/PinButton";
-import { applyManualOverlay, getUserManual, hiddenManualSlugs, removeCatalogManual, subscribeUserManuals } from "@/app/manuals/_lib/userManuals";
+import { applyManualOverlay, getUserManual, hiddenManualSlugs, purgeRemovedManualCatalog, removeCatalogManual, subscribeUserManuals } from "@/app/manuals/_lib/userManuals";
 import { subscribeCategories } from "@/app/manuals/_lib/categories";
 import { AddManualControl } from "@/app/manuals/_ui/AddManualControl";
 import { ManualCard } from "@/app/manuals/_ui/ManualCard";
@@ -87,6 +87,7 @@ export default function ManualsCatalogPage() {
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
+    purgeRemovedManualCatalog();
     return subscribeUserManuals((items) => {
       setUserManuals(items);
       setHiddenSlugs(hiddenManualSlugs());

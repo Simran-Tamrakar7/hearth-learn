@@ -74,7 +74,6 @@ function getManualCoverImage(id: string, cat: string, title: string): string {
 }
 
 const SLUG: Record<string, string> = {
-  git: "git-version-control",
   playwright: "playwright",
 };
 
@@ -124,22 +123,25 @@ function chapterToHearth(ch: Record<string, unknown>, order: number): ManualChap
   const steps = (Array.isArray(ch.steps) ? ch.steps : []) as Record<string, unknown>[];
   const learn = (Array.isArray(ch.learn) ? ch.learn : []) as string[];
   const overview = String(ch.overview || "");
+  const mdBody = ch.contentMarkdown ? String(ch.contentMarkdown) : "";
 
-  const parts = [
-    overview,
-    ...steps.map((s) => {
-      const title = String(s.title || "Step");
-      const body = String(s.body || "");
-      const items = Array.isArray(s.items) ? (s.items as string[]) : [];
-      const tip = s.tip ? `\n\nPro tip: ${s.tip}` : "";
-      const doThis = s.doThis ? `\n\nDo this now: ${s.doThis}` : "";
-      const list = items.length ? "\n\n" + items.map((i) => `- ${i}`).join("\n") : "";
-      const code = s.code
-        ? `\n\n${s.codeTitle ? `#### ${s.codeTitle}\n\n` : ""}` + "```\n" + String(s.code) + "\n```"
-        : "";
-      return `## ${title}\n\n${body}${list}${code}${tip}${doThis}`.trim();
-    }),
-  ].filter(Boolean);
+  const parts = mdBody
+    ? [mdBody]
+    : [
+        overview,
+        ...steps.map((s) => {
+          const title = String(s.title || "Step");
+          const body = String(s.body || "");
+          const items = Array.isArray(s.items) ? (s.items as string[]) : [];
+          const tip = s.tip ? `\n\nPro tip: ${s.tip}` : "";
+          const doThis = s.doThis ? `\n\nDo this now: ${s.doThis}` : "";
+          const list = items.length ? "\n\n" + items.map((i) => `- ${i}`).join("\n") : "";
+          const code = s.code
+            ? `\n\n${s.codeTitle ? `#### ${s.codeTitle}\n\n` : ""}` + "```\n" + String(s.code) + "\n```"
+            : "";
+          return `## ${title}\n\n${body}${list}${code}${tip}${doThis}`.trim();
+        }),
+      ].filter(Boolean);
 
   const firstCode = steps.find((s) => s.code)?.code;
   const exercises: ManualChapter["exercises"] = [];
@@ -213,7 +215,6 @@ export const PATHWISE_HEARTH_MANUALS: ManualItem[] = MANUALS.map((m) => pathwise
 export function findHearthManual(slug: string): ManualItem | undefined {
   const aliases: Record<string, string> = {
     "playwright-test-automation": "playwright",
-    git: "git-version-control",
     "testing-by-level": "testing-types",
     "testing-levels": "testing-types",
     "testing-types-by-level": "testing-types",

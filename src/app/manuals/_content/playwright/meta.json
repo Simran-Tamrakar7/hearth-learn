@@ -1,0 +1,15 @@
+{
+  "id": "playwright",
+  "title": "Playwright with Python",
+  "tagline": "Complete Beginner-to-Pro Manual — background through job-ready capstone, plus a full resources library.",
+  "category": "automation",
+  "who": "Beginners and manual QAs aiming to become Playwright Automation Engineers with Python.",
+  "outcomes": [
+    "Automate Chromium/Firefox/WebKit with sync Playwright + pytest",
+    "Build POM frameworks with data, mocking, auth reuse, and CI reporting",
+    "Ship a capstone portfolio and interview-ready stories",
+    "Know where to keep learning — books, communities, and ecosystem signals"
+  ],
+  "duration": "4–6 months (1–2 hrs/day)",
+  "levelSpan": "Zero → Job-ready"
+}
