@@ -4,6 +4,8 @@ import {
   generateResetCode,
   hashResetCode,
   MAX_SENDS_PER_HOUR,
+  MIN_PASSWORD_LENGTH,
+  passwordError,
   RESEND_COOLDOWN_MS,
 } from "./passwordReset.ts";
 
@@ -26,5 +28,10 @@ const cooled = canResendCode({
   now: justNow.getTime(),
 });
 assert.equal(cooled.ok, true);
+
+assert.equal(MIN_PASSWORD_LENGTH, 8);
+assert.equal(passwordError("short"), "Password must be at least 8 characters.");
+assert.equal(passwordError("longenough", "different"), "New password and confirmation do not match.");
+assert.equal(passwordError("longenough", "longenough"), null);
 
 console.log("passwordReset.check: ok");

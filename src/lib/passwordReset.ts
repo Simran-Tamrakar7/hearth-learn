@@ -5,6 +5,17 @@ export const SESSION_TTL_MS = 15 * 60 * 1000;
 export const RESEND_COOLDOWN_MS = 60 * 1000;
 export const MAX_SENDS_PER_HOUR = 5;
 export const MAX_VERIFY_ATTEMPTS = 5;
+export const MIN_PASSWORD_LENGTH = 8;
+
+export function passwordError(password: string, confirm?: string) {
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
+  }
+  if (confirm !== undefined && password !== confirm) {
+    return "New password and confirmation do not match.";
+  }
+  return null;
+}
 
 export function generateResetCode() {
   return String(randomInt(0, 1_000_000)).padStart(6, "0");

@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { ArrowLeft, Mail, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -42,7 +43,10 @@ function ForgotForm() {
         return;
       }
       setInfo(data.message || "If that account exists, we sent a verification code.");
-      if (typeof data.devCode === "string") setDevCode(data.devCode);
+      if (typeof data.devCode === "string") {
+        setDevCode(data.devCode);
+        setCode(data.devCode);
+      }
       setStep("verify");
     } finally {
       setBusy(false);
@@ -91,6 +95,7 @@ function ForgotForm() {
         setError(data.error || "Could not reset password");
         return;
       }
+      await signOut({ redirect: false });
       router.push("/login?reset=1");
     } finally {
       setBusy(false);
@@ -188,7 +193,7 @@ function ForgotForm() {
               value={password}
               onChange={setPassword}
               required
-              minLength={4}
+              minLength={8}
               placeholder="New password"
               autoComplete="new-password"
             />
@@ -199,7 +204,7 @@ function ForgotForm() {
               value={confirmPassword}
               onChange={setConfirmPassword}
               required
-              minLength={4}
+              minLength={8}
               placeholder="Confirm new password"
               autoComplete="new-password"
             />

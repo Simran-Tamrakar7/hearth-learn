@@ -23,6 +23,9 @@ export async function proxy(request: NextRequest) {
 
   if (isPublic(pathname)) {
     if (token && (pathname === "/login" || pathname === "/signup") && !request.nextUrl.searchParams.get("pending")) {
+      if (pathname === "/login" && request.nextUrl.searchParams.get("reset")) {
+        return NextResponse.next();
+      }
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
     return NextResponse.next();

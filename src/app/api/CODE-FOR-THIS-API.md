@@ -9,9 +9,10 @@ These are server routes, not screens. Each `route.ts` has a `API:` comment at th
 | `auth/forgot/route.ts` | `/forgot-password` — send 6-digit code (Resend) |
 | `auth/verify-code/route.ts` | `/forgot-password` — verify code → reset session |
 | `auth/reset/route.ts` | `/forgot-password` — set password after verify |
-| `notes/route.ts` | `/notes`, `/tags` |
+| `auth/change-password/route.ts` | `/profile` (current + new + confirm) |
 | `user/dashboard/route.ts` | `/dashboard` |
-| `user/profile/route.ts` | `/profile` |
+| `user/profile/route.ts` | `/profile` (GET + PATCH name/avatar; password is `auth/change-password`) |
+| `notes/route.ts` | `/notes`, `/tags` |
 | `settings/route.ts` | exists; `/settings` page does **not** call it |
 | `showcase/route.ts` | `/showcase-wall` |
 | `trails/route.ts` | notes/dashboard trail pickers |
