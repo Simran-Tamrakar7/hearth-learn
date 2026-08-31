@@ -30,10 +30,10 @@ export function ManualExportMenu({ manual, slug }: { manual: ManualItem; slug: s
     setBusy(kind);
     try {
       const base = slug.replace(/[^a-z0-9-]+/gi, "-");
-      if (kind === "pdf") await downloadManualPdf(manual, `${base}.pdf`);
-      else if (kind === "docx") await downloadManualDocx(manual, `${base}.docx`);
+      if (kind === "pdf") await downloadManualPdf(manual, `${base}.pdf`, slug);
+      else if (kind === "docx") await downloadManualDocx(manual, `${base}.docx`, slug);
       else {
-        const opened = openManualPrintView(manual);
+        const opened = openManualPrintView(manual, slug);
         if (!opened) {
           toast({
             type: "error",
