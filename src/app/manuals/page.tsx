@@ -1,6 +1,6 @@
 "use client";
 
-/* PAGE: /manuals  — catalog grid (this file). Reader: ./[slug]/page.tsx. Map: ./CODE-FOR-THIS-PAGE.md */
+/* PAGE: /manuals  — catalog grid (this file). Reader: ./[slug]/page.tsx. Map: ./page_details-code_routes.md */
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";

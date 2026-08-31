@@ -3,10 +3,31 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, Search, Copy, Check, ChevronRight } from "lucide-react";
-import { TESTING_TYPES_CHAPTERS } from "@/app/manuals/_content/testing-types/overlay";
+import { pathwiseManual } from "@/app/manuals/testing-types/compiled.body";
 
-export type { TestingChapterData } from "@/app/manuals/_content/testing-types/overlay";
-export { TESTING_TYPES_CHAPTERS };
+type TestingChapterView = {
+  no: string;
+  title: string;
+  category: string;
+  desc: string;
+  why: string;
+  when: string;
+  tools: NonNullable<(typeof pathwiseManual.chapters)[0]["tools"]>;
+};
+
+export const TESTING_TYPES_CHAPTERS: TestingChapterView[] = (
+  pathwiseManual.chapters as Record<string, unknown>[]
+).map((ch) => ({
+  no: String(ch.overlayNo ?? "").padStart(2, "0"),
+  title: String(ch.title ?? ""),
+  category: String(ch.phase ?? "").replace(/^Part \d+\s*[·•:\-–—]\s*/, ""),
+  desc: String(ch.overviewText ?? ""),
+  why: String(ch.why ?? ""),
+  when: String(ch.when ?? ""),
+  tools: (Array.isArray(ch.tools) ? ch.tools : []) as TestingChapterView["tools"],
+}));
+
+export type { TestingChapterView as TestingChapterData };
 
 export function TestingTypesInteractiveManual() {
   const [searchQuery, setSearchQuery] = useState("");

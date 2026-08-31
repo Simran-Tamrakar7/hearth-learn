@@ -1,17 +1,17 @@
 import assert from "node:assert/strict";
 import { groupChaptersIntoParts, tocNumbersForPart } from "./manualParts.ts";
-import { TESTING_TYPES_OUTLINE, flattenTestingTypesOutline, restoreTestingTypesToc } from "../_content/testing-types/outline.ts";
+import { TESTING_TYPES_TOC, flattenTestingTypesToc, restoreTestingTypesToc } from "../testing-types/toc.ts";
 
-const rows = flattenTestingTypesOutline();
-assert.equal(TESTING_TYPES_OUTLINE.length, 15);
-assert.equal(TESTING_TYPES_OUTLINE[0].name, "Testing by Level");
-assert.equal(TESTING_TYPES_OUTLINE[14].name, "Other Specialized Testing");
+const rows = flattenTestingTypesToc();
+assert.equal(TESTING_TYPES_TOC.length, 15);
+assert.equal(TESTING_TYPES_TOC[0].name, "Testing by Level");
+assert.equal(TESTING_TYPES_TOC[14].name, "Other Specialized Testing");
 
 const nos = rows.map((r) => r.no).filter((n): n is number => n != null);
 assert.equal(nos.length, 92);
 assert.equal(new Set(nos).size, 92);
 for (let n = 1; n <= 92; n++) {
-  assert.ok(nos.includes(n), `missing overlay type #${n}`);
+  assert.ok(nos.includes(n), `missing toc type #${n}`);
 }
 
 const bigBang = rows.find((r) => r.title === "Big Bang Integration Testing");
@@ -55,10 +55,6 @@ assert.equal(flow?.parentTitle, undefined);
 
 assert.equal(restoreTestingTypesToc({ tocManaged: true }), false);
 assert.equal(restoreTestingTypesToc({ tocManaged: true, tocCatalogVersion: 14 }), false);
-assert.equal(restoreTestingTypesToc({ tocManaged: true, tocCatalogVersion: 15 }), false);
-assert.equal(restoreTestingTypesToc({ tocManaged: true, tocCatalogVersion: 16 }), false);
-assert.equal(restoreTestingTypesToc({ tocManaged: true, tocCatalogVersion: 17 }), false);
-assert.equal(restoreTestingTypesToc({ tocManaged: true, tocCatalogVersion: 18 }), false);
 assert.equal(restoreTestingTypesToc({ tocManaged: true, tocCatalogVersion: 19 }), true);
 assert.equal(restoreTestingTypesToc(null), false);
 

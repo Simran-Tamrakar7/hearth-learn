@@ -2,7 +2,7 @@
  * HEADING: SHARED — Manual catalog types + findHearthManual
  * Not a page. These pages all use this same file:
  *   /manuals  /manuals/[slug]  /dashboard
- * Chapter bodies: src/app/manuals/_content/<slug>/data.js (listed in _registry.ts).
+ * Chapter bodies: src/app/manuals/<slug>/part-N/chapter-M.md or _content/<slug>/data.js (see _registry.ts).
  * Changing this file changes all of those pages at once.
  * ========================================================================== */
 
@@ -58,6 +58,8 @@ export interface ManualChapter {
   parentId?: string;
   subtitle?: string;
   overviewText?: string;
+  /** Maps to toc.ts `no` / MD frontmatter overlayNo. */
+  overlayNo?: number;
   why?: string;
   when?: string;
   practical?: PracticalExample;

@@ -1,4 +1,4 @@
-/* API: /api/manuals/generate  — AI notes→manual for PAGE /manuals. Map: ../../CODE-FOR-THIS-API.md */
+/* API: /api/manuals/generate  — AI notes→manual for PAGE /manuals. Map: page_details-code_routes.md */
 
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/roles";
@@ -12,7 +12,8 @@ STRUCTURE:
 - Clear, concise, instructional tone — not conversational
 - Do not skip or shorten meaning — reorganize and clarify only
 
-OUTPUT FORMAT:
+OUTPUT FORMAT (for disk-backed manuals, each chapter becomes part-N/chapter-M.md with YAML frontmatter: title, why, when, tools, practical, advantages, limitations — plus markdown body):
+
 Part [N]: [Title]
 [One-line summary]
 

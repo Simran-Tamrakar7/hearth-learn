@@ -1,39 +1,42 @@
 import type { ManualChapter } from "@/app/manuals/_lib/manualsData";
-import { TESTING_TYPES_CHAPTERS, type TestingChapterData } from "@/app/manuals/_content/testing-types/overlay";
-import { TESTING_TYPES_OUTLINE } from "@/app/manuals/_content/testing-types/outline";
+import {
+  TESTING_TYPES_TOC,
+  type TestingTypesTocPart,
+  type TestingTypesTocNode,
+} from "@/app/manuals/testing-types/toc";
 
-export { TESTING_TYPES_OUTLINE } from "@/app/manuals/_content/testing-types/outline";
+export {
+  TESTING_TYPES_TOC,
+  TESTING_TYPES_TOC_VERSION,
+  restoreTestingTypesToc,
+  flattenTestingTypesToc as flattenTestingTypesOutline,
+  type TestingTypesTocPart,
+  type TestingTypesTocNode,
+} from "@/app/manuals/testing-types/toc";
 
-function overlayByNo(n: number): TestingChapterData | undefined {
-  return TESTING_TYPES_CHAPTERS.find((t) => Number(t.no) === n);
+function overlayByNo(pathwise: ManualChapter[], n: number): ManualChapter | undefined {
+  return pathwise.find(
+    (p) => Number(p.overlayNo) === n || p.id === `tt-ch-${n}` || p.slug === `ch-${n}`
+  );
 }
 
 function partSlug(name: string): string {
   return `tt-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
 }
 
-/** Match compiled MD row — outline TOC label often differs from catalog/overlay title. */
-function findPathwise(
-  pathwise: ManualChapter[],
-  tt: TestingChapterData,
-  outlineTitle?: string
-): ManualChapter | undefined {
-  const wants = [tt.title, outlineTitle]
-    .filter(Boolean)
-    .map((t) => t!.trim().toLowerCase());
-  for (const want of wants) {
-    const exact = pathwise.find((p) => p.title.trim().toLowerCase() === want);
-    if (exact) return exact;
+/** Match compiled MD row — TOC label may differ from catalog title. */
+function findPathwise(pathwise: ManualChapter[], outlineTitle: string, overlayNo?: number): ManualChapter | undefined {
+  if (overlayNo != null) {
+    const byNo = overlayByNo(pathwise, overlayNo);
+    if (byNo) return byNo;
   }
-  const primary = wants[0];
-  if (primary) {
-    const fuzzy = pathwise.find((p) => {
-      const pt = p.title.trim().toLowerCase();
-      return pt.includes(primary) || primary.includes(pt);
-    });
-    if (fuzzy) return fuzzy;
-  }
-  return pathwise.find((p) => p.id === `tt-ch-${tt.no}` || p.slug === `ch-${tt.no}`);
+  const want = outlineTitle.trim().toLowerCase();
+  const exact = pathwise.find((p) => p.title.trim().toLowerCase() === want);
+  if (exact) return exact;
+  return pathwise.find((p) => {
+    const pt = p.title.trim().toLowerCase();
+    return pt.includes(want) || want.includes(pt);
+  });
 }
 
 function pickMarkdown(compiled?: string, saved?: string): string {
@@ -46,41 +49,35 @@ function pickMarkdown(compiled?: string, saved?: string): string {
   return s;
 }
 
-/** One complete chapter row — overlay + MD merged onto ManualChapter. */
-function chapterFromOverlay(
-  tt: TestingChapterData,
-  pathwise: ManualChapter[],
+function chapterFromMd(
+  pw: ManualChapter,
   title: string,
   subtitle: string,
   partKey: string,
   parentId: string | undefined,
-  order: number
+  order: number,
+  overlayNo?: number
 ): ManualChapter {
-  const pw = findPathwise(pathwise, tt, title);
-  const md = pw?.contentMarkdown?.trim();
   return {
-    ...(pw || {
-      exercises: [],
-      resourceLinks: [],
-    }),
-    id: pw?.id || `tt-ch-${tt.no}`,
+    ...pw,
+    id: pw.id || (overlayNo != null ? `tt-ch-${overlayNo}` : `tt-ch-${order}`),
     order,
-    slug: `ch-${tt.no}`,
+    slug: overlayNo != null ? `ch-${overlayNo}` : pw.slug || `ch-${order}`,
     title,
-    estimatedMinutes: pw?.estimatedMinutes || 25,
     subtitle,
     partKey,
     parentId,
-    overviewText: pw?.overviewText || tt.desc,
-    why: pw?.why || tt.why,
-    when: pw?.when || tt.when,
-    practical: pw?.practical || tt.practical,
-    tools: pw?.tools?.length ? pw.tools : tt.tools,
-    advantages: pw?.advantages?.length ? pw.advantages : tt.advantages,
-    limitations: pw?.limitations?.length ? pw.limitations : tt.limitations,
-    contentMarkdown: md || tt.desc,
-    exercises: pw?.exercises || [],
-    resourceLinks: pw?.resourceLinks || [],
+    overviewText: pw.overviewText || "",
+    why: pw.why || "",
+    when: pw.when || "",
+    practical: pw.practical,
+    tools: pw.tools?.length ? pw.tools : [],
+    advantages: pw.advantages?.length ? pw.advantages : [],
+    limitations: pw.limitations?.length ? pw.limitations : [],
+    contentMarkdown: pw.contentMarkdown || pw.overviewText || "",
+    exercises: pw.exercises || [],
+    resourceLinks: pw.resourceLinks || [],
+    overlayNo,
   };
 }
 
@@ -110,17 +107,6 @@ function folderChapter(
     exercises: pw?.exercises || [],
     resourceLinks: pw?.resourceLinks || [],
   };
-}
-
-export function testingOverlayForChapter(ch: { id?: string; slug?: string; title?: string }): TestingChapterData | undefined {
-  const fromSlug = /^ch-(\d+)$/.exec(ch.slug || "");
-  const fromId = /(?:^|-)ch-(\d+)$/.exec(ch.id || "");
-  const n = Number(fromSlug?.[1] || fromId?.[1] || 0);
-  if (n) {
-    const hit = overlayByNo(n);
-    if (hit) return hit;
-  }
-  return TESTING_TYPES_CHAPTERS.find((t) => t.title === ch.title);
 }
 
 export function testingTypesMdSections(ch: ManualChapter, overview?: string): string {
@@ -175,29 +161,75 @@ export function mergeCustomTestingTypesChapters(rebuilt: ManualChapter[], saved:
   return [...rebuilt, ...extra.map((c, i) => ({ ...c, order: rebuilt.length + i + 1 }))];
 }
 
-export function readerChaptersFromOverlay(pathwise: ManualChapter[]): ManualChapter[] {
-  if (!TESTING_TYPES_CHAPTERS.length) return pathwise;
+/** Build reader chapter list from toc.ts ordering + compiled MD chapters (no overlay merge). */
+export function readerChaptersFromToc(pathwise: ManualChapter[]): ManualChapter[] {
   const out: ManualChapter[] = [];
-  for (const part of TESTING_TYPES_OUTLINE) {
+  for (const part of TESTING_TYPES_TOC) {
     const subtitle = part.name;
     const partKey = partSlug(part.name);
     for (const item of part.items) {
-      const tt = item.no != null ? overlayByNo(item.no) : undefined;
+      const pw = item.no != null ? findPathwise(pathwise, item.title, item.no) : undefined;
       let parent: ManualChapter;
-      if (tt) {
-        parent = chapterFromOverlay(tt, pathwise, item.title, subtitle, partKey, undefined, out.length + 1);
+      if (item.no != null && pw) {
+        parent = chapterFromMd(pw, item.title, subtitle, partKey, undefined, out.length + 1, item.no);
+      } else if (item.no != null) {
+        parent = chapterFromMd(
+          {
+            id: `tt-ch-${item.no}`,
+            order: out.length + 1,
+            slug: `ch-${item.no}`,
+            title: item.title,
+            estimatedMinutes: 25,
+            subtitle,
+            partKey,
+            overviewText: item.title,
+            contentMarkdown: "",
+            exercises: [],
+            resourceLinks: [],
+          },
+          item.title,
+          subtitle,
+          partKey,
+          undefined,
+          out.length + 1,
+          item.no
+        );
       } else {
         parent = folderChapter("tt-folder-quality-attributes", item.title, subtitle, partKey, out.length + 1, pathwise);
       }
       out.push(parent);
       for (const child of item.children || []) {
-        const childTt = overlayByNo(child.no);
-        if (!childTt) continue;
+        const childPw = findPathwise(pathwise, child.title, child.no);
+        if (!childPw && child.no == null) continue;
         out.push(
-          chapterFromOverlay(childTt, pathwise, child.title, subtitle, partKey, parent.id, out.length + 1)
+          chapterFromMd(
+            childPw || {
+              id: `tt-ch-${child.no}`,
+              order: out.length + 1,
+              slug: `ch-${child.no}`,
+              title: child.title,
+              estimatedMinutes: 25,
+              subtitle,
+              partKey,
+              parentId: parent.id,
+              overviewText: child.title,
+              contentMarkdown: "",
+              exercises: [],
+              resourceLinks: [],
+            },
+            child.title,
+            subtitle,
+            partKey,
+            parent.id,
+            out.length + 1,
+            child.no
+          )
         );
       }
     }
   }
   return out;
 }
+
+/** @deprecated use readerChaptersFromToc — alias kept for call sites during migration */
+export const readerChaptersFromOverlay = readerChaptersFromToc;

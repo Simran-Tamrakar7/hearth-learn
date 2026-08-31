@@ -11,11 +11,11 @@
 
 ```
 /docs             How the site is put together. Start: docs/where-to-edit.md
-/prisma           Schema + seed. Map: prisma/CODE-FOR-THIS.md
+/prisma           Schema + seed. Map: prisma/page_details-code_routes.md
 /src/app          One folder per URL. Screen is page.tsx; that page’s copy is _content (not a route)
-/src/app/api      Server routes (`API:` comment). Map: src/app/api/CODE-FOR-THIS-API.md
-/src/components   Shared UI. Map: src/components/CODE-FOR-SHARED.md
-/src/lib          Auth + Prisma only. Map: src/lib/CODE-FOR-SHARED.md
+/src/app/api      Server routes (`API:` comment). Map: src/app/api/page_details-code_routes.md
+/src/components   Shared UI. Map: src/components/page_details-code_routes.md
+/src/lib          Auth + Prisma only. Map: src/lib/page_details-code_routes.md
 /public           Static assets
 ```
 
