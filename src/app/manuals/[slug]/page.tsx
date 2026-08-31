@@ -18,6 +18,7 @@ import { PLAYWRIGHT_ROADMAP_PHASES, downloadRoadmapSVG } from "@/app/manuals/_li
 import { stripLeadingNumber } from "@/app/manuals/_content/_helpers.js";
 import { PinButton, getPinnedItems, PinnedItemMetadata, manualPinId } from "@/components/ui/PinButton";
 import { ManualExportMenu } from "@/app/manuals/_ui/ManualExportMenu";
+import { ToolSwitcher } from "@/app/manuals/_ui/ToolSwitcher";
 import { LessonContentEditor } from "@/app/manuals/_ui/LessonContentEditor";
 import { kebabItems, KebabMenu } from "@/app/manuals/_ui/KebabMenu";
 import { Highlightable, HighlightsList, MarkedText } from "@/app/manuals/_ui/Highlightable";
@@ -42,7 +43,7 @@ import { TagInput } from "@/app/manuals/_ui/TagInput";
 import { usePermissions, useAppUserId } from "@/lib/useAuthz";
 import { highlightsStoreKey, isScopeReady, progressStoreKey, readScopedRaw, writeScopedRaw } from "@/lib/userScope";
 import { getResume, pushAccountProgress, setResume, touchRecentManual } from "@/lib/readerMemory";
-import { readerChaptersFromOverlay, testingOverlayForChapter } from "@/app/manuals/_ui/testing-types-reader";
+import { readerChaptersFromOverlay, testingOverlayForChapter, mergeCustomTestingTypesChapters } from "@/app/manuals/_ui/testing-types-reader";
 import { restoreTestingTypesToc, TESTING_TYPES_TOC_VERSION } from "@/app/manuals/_content/testing-types/outline";
 import {
   chapterIndexAfter,
@@ -303,11 +304,14 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     }
     if (isTestingTypesManual) {
       const chaptersSaved = parsed?.chapters;
-      if (restoreTestingTypesToc(parsed) && Array.isArray(chaptersSaved) && chaptersSaved.length > 0) {
-        setChapters(chaptersSaved as ManualChapter[]);
-      } else {
-        setChapters(readerChaptersFromOverlay(initialManual.chapters));
-      }
+      // ponytail: always re-merge overlay (tools, why, practical) — stale localStorage skipped readerChaptersFromOverlay
+      const pathwise =
+        restoreTestingTypesToc(parsed) && Array.isArray(chaptersSaved) && chaptersSaved.length > 0
+          ? (chaptersSaved as ManualChapter[])
+          : initialManual.chapters;
+      const rebuilt = readerChaptersFromOverlay(pathwise);
+      const saved = Array.isArray(chaptersSaved) ? (chaptersSaved as ManualChapter[]) : [];
+      setChapters(saved.length ? mergeCustomTestingTypesChapters(rebuilt, saved) : rebuilt);
     } else if (parsed && Array.isArray(parsed.chapters) && parsed.chapters.length > 0) {
       setChapters(parsed.chapters as ManualChapter[]);
     }
@@ -755,6 +759,14 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   }, [perms.canEdit]);
 
   const addChapterInPart = (partIndex?: number) => {
+    if (!perms.canStructure) {
+      toast({
+        type: "error",
+        title: "Cannot add chapter",
+        description: "Sign in with edit permissions, or open Edit mode from the chapter menu first.",
+      });
+      return;
+    }
     const host =
       partIndex != null
         ? partGroups[partIndex]
@@ -783,6 +795,14 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   };
 
   const addSubchapter = (parentIdx?: number) => {
+    if (!perms.canStructure) {
+      toast({
+        type: "error",
+        title: "Cannot add sub-chapter",
+        description: "Sign in with edit permissions to add sub-chapters.",
+      });
+      return;
+    }
     const idx = parentIdx ?? parentIndexOf(chapters, activeChapterIndex);
     const parent = chapters[idx] || chapters[activeChapterIndex];
     if (!parent) return;
@@ -836,6 +856,10 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   });
 
   const handleCreatePart = () => {
+    if (!perms.canStructure) {
+      toast({ type: "error", title: "Cannot add part", description: "Sign in with edit permissions to add parts." });
+      return;
+    }
     const after = selectedPartIndices.length ? Math.max(...selectedPartIndices) : partGroups.length - 1;
     const newChap = emptyChapter();
     const updated = createPart(chapters, newChap, after);
@@ -2281,6 +2305,11 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                     </div>
                   )}
 
+                  {activeChapter.contentMarkdown?.includes("##") ? (
+                    <div className="pt-3 border-t border-[#E7E0D3] space-y-3">
+                      {renderFormattedMarkdown(activeChapter.contentMarkdown)}
+                    </div>
+                  ) : null}
 
                 </motion.div>
               ) : (

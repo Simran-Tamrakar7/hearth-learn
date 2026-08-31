@@ -86,6 +86,16 @@ export function testingOverlayForChapter(ch: { id?: string; slug?: string; title
   return TESTING_TYPES_CHAPTERS.find((t) => t.title === ch.title);
 }
 
+/** Keep user-added rows that are not in the catalog outline (custom chapter / sub-chapter). */
+export function mergeCustomTestingTypesChapters(rebuilt: ManualChapter[], saved: ManualChapter[]): ManualChapter[] {
+  const ids = new Set(rebuilt.map((c) => c.id));
+  const extra = saved.filter(
+    (c) => (c.id.startsWith("custom-") || c.slug.startsWith("sub-")) && !ids.has(c.id)
+  );
+  if (!extra.length) return rebuilt;
+  return [...rebuilt, ...extra.map((c, i) => ({ ...c, order: rebuilt.length + i + 1 }))];
+}
+
 /** TOC + body follow the 15-chapter outline, not pathwise order or a shorter localStorage snapshot. */
 export function readerChaptersFromOverlay(pathwise: ManualChapter[]): ManualChapter[] {
   if (!TESTING_TYPES_CHAPTERS.length) return pathwise;
