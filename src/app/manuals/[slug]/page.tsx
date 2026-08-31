@@ -17,7 +17,7 @@ import { isTestingTypesSlug, TestingTypesGuide } from "@/app/manuals/_ui/Testing
 import { PLAYWRIGHT_ROADMAP_PHASES, downloadRoadmapSVG } from "@/app/manuals/_lib/roadmapData";
 import { stripLeadingNumber } from "@/app/manuals/_content/_helpers.js";
 import { PinButton, getPinnedItems, PinnedItemMetadata, manualPinId } from "@/components/ui/PinButton";
-import { ToolSwitcher } from "@/app/manuals/_ui/ToolSwitcher";
+import { ManualExportMenu } from "@/app/manuals/_ui/ManualExportMenu";
 import { LessonContentEditor } from "@/app/manuals/_ui/LessonContentEditor";
 import { kebabItems, KebabMenu } from "@/app/manuals/_ui/KebabMenu";
 import { Highlightable, HighlightsList, MarkedText } from "@/app/manuals/_ui/Highlightable";
@@ -1385,6 +1385,15 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                     },
                   },
                 ])}
+              />
+              <ManualExportMenu
+                slug={slug}
+                manual={{
+                  ...initialManual,
+                  title: manualTitle,
+                  description: manualDescription,
+                  chapters,
+                }}
               />
               <PinButton
                 itemId={manualPinId(slug)}

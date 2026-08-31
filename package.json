@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "export DATABASE_URL=\"${DATABASE_URL:-file:./dev.db}\" && prisma generate && prisma db push && next build",
+    "dev": "node scripts/compile-manuals-from-md.mjs && next dev",
+    "build": "node scripts/compile-manuals-from-md.mjs && export DATABASE_URL=\"${DATABASE_URL:-file:./dev.db}\" && prisma generate && prisma db push && next build",
     "start": "next start",
     "lint": "eslint"
   },
@@ -15,7 +15,10 @@
     "bcryptjs": "^3.0.3",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
+    "docx": "^9.7.1",
+    "file-saver": "^2.0.5",
     "framer-motion": "^13.1.0",
+    "html2pdf.js": "^0.14.0",
     "lucide-react": "^1.31.0",
     "next": "16.3.0",
     "next-auth": "^4.24.15",
@@ -25,6 +28,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/file-saver": "^2.0.7",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

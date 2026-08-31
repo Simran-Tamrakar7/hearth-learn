@@ -14,15 +14,17 @@ Set **only in that type’s `_registry.ts`** (library: optional `status` on the 
 
 ## Manuals
 
-Structured lessons with chapters, optional tools, optional Testing Types overlay.
+Structured lessons with chapters. **Only two builtin manuals remain:** `playwright` and `testing-types`.
 
-- **Listing + bodies:** `src/app/manuals/_content/_registry.ts` (slug, flags, and a `body:` import of `./<slug>/data.js`)
-- **Chapters:** `src/app/manuals/_content/<slug>/data.js`, converted by `_lib/pathwiseToHearth.ts`
-- **Testing Types extra:** `src/app/manuals/_content/testing-types/` (`overlay.ts`, `outline.ts`, `data.js`)
-- **Playwright:** `src/app/manuals/_content/playwright/data.js` (merged; not split across files)
-- **User-created manuals:** `localStorage`, not the registry
+- **Listing:** `src/app/manuals/_content/_registry.ts`
+- **Chapter source of truth:** `part-N/chapter-M.md` under each manual folder
+- **Build:** `node scripts/compile-manuals-from-md.mjs` → `compiled.body.ts` (runs on `dev` / `build`)
+- **Legacy bodies:** `data.js` kept for re-migration via `scripts/migrate-manuals-to-md.mjs`
+- **Testing Types overlay:** `overlay.ts` + `outline.ts` for rich tool-switcher UI (supplements markdown body)
+- **Export:** manual-wide PDF / .docx / Print from reader header (`ManualExportMenu`)
+- **User-created manuals:** `localStorage` with `part-0` / `partKey` convention until disk scaffold API exists
 
-Do not change manual / chapter ids.
+Do not change manual / chapter ids for the two kept manuals.
 
 Trails in the URL sense **are manuals**. Prisma `Trail` rows are a separate catalog (dashboard/API only).
 

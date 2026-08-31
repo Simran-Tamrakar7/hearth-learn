@@ -1,0 +1,14 @@
+{
+  "id": "testing-types",
+  "title": "Testing Types & Levels",
+  "tagline": "The complete software testing reference — Unit, Integration, System, and Acceptance levels with practical tools, real scenarios, and workflows.",
+  "category": "automation",
+  "who": "QA engineers, SDETs, and software developers who want to master testing levels from function isolation to production release.",
+  "outcomes": [
+    "Distinguish between Unit, Integration, System, and UAT levels with clear boundaries",
+    "Choose the right free tools (JUnit, PyTest, Jest, Postman, Selenium, Playwright, TestRail, Jira) for each level",
+    "Evaluate tool advantages and limitations with practical step-by-step implementations"
+  ],
+  "duration": "4–6 weeks",
+  "levelSpan": "Beginner → Architect"
+}
