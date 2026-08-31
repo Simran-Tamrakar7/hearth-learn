@@ -58,7 +58,8 @@ assert.equal(restoreTestingTypesToc({ tocManaged: true, tocCatalogVersion: 14 })
 assert.equal(restoreTestingTypesToc({ tocManaged: true, tocCatalogVersion: 15 }), false);
 assert.equal(restoreTestingTypesToc({ tocManaged: true, tocCatalogVersion: 16 }), false);
 assert.equal(restoreTestingTypesToc({ tocManaged: true, tocCatalogVersion: 17 }), false);
-assert.equal(restoreTestingTypesToc({ tocManaged: true, tocCatalogVersion: 18 }), true);
+assert.equal(restoreTestingTypesToc({ tocManaged: true, tocCatalogVersion: 18 }), false);
+assert.equal(restoreTestingTypesToc({ tocManaged: true, tocCatalogVersion: 19 }), true);
 assert.equal(restoreTestingTypesToc(null), false);
 
 console.log("testing-types-reader.check: ok");

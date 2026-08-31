@@ -8,7 +8,7 @@
 /** 15-chapter Testing Types TOC. Overlay `no` is TESTING_TYPES_CHAPTERS id. */
 
 /** Bump when the catalog outline changes so an old localStorage TOC is not restored. */
-export const TESTING_TYPES_TOC_VERSION = 18;
+export const TESTING_TYPES_TOC_VERSION = 19;
 
 export function restoreTestingTypesToc(saved: unknown): boolean {
   if (!saved || typeof saved !== "object") return false;
