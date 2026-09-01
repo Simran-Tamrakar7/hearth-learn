@@ -1,0 +1,85 @@
+import type { ChapterRecord } from "../../types";
+
+/** Network Testing */
+export const chapter = {
+  "id": "tt-network-testing",
+  "overlayNo": 70,
+  "title": "Network Testing",
+  "minutes": 25,
+  "level": "intermediate",
+  "phase": "Part 18 · Backend, Network, Snapshot & Soak",
+  "partName": "Part 18 · Backend, Network, Snapshot & Soak",
+  "overviewText": "Network testing verifies an application's behavior under real-world network conditions — latency, packet loss, bandwidth limits, intermittent connectivity, and the raw network traffic an application actually generates — checking correctness and resilience specifically at the network layer, distinct from application logic itself.",
+  "why": "Applications are commonly built and tested on fast, stable, low-latency connections, but real users frequently operate under far worse conditions — a spotty mobile connection, high latency on a long-distance link, intermittent drops entirely. An application that assumes network calls will simply succeed quickly and reliably can behave badly (hanging indefinitely, losing data, showing confusing states) the moment that assumption breaks down in the real world, and network testing is what deliberately verifies the application handles that gracefully.",
+  "when": "For applications where users are known or expected to operate under variable or poor network conditions (mobile apps, applications used in regions with less reliable connectivity) — tested deliberately alongside standard functional testing, since good-network testing alone won't reveal these gaps at all.",
+  "practical": {
+    "app": "HRMS Mobile App Under Poor Connectivity",
+    "scenario": "The leave request submission flow is tested with simulated high latency and intermittent packet loss.",
+    "fail": "Under simulated poor connectivity, submitting a leave request hangs indefinitely with no timeout, no retry, and no error message — leaving the user staring at a spinner with no way to know whether the request actually went through.",
+    "pass": "A reasonable timeout with a clear retry option and an informative error message is added, verified by re-running the same poor-connectivity simulation and confirming the user is never left in an indefinite, unexplained hang.",
+    "passLabel": "Pass (after fix)"
+  },
+  "advantages": [
+    "Verifies actual real network behavior and data transmission directly, rather than assuming it based on application-layer logs alone",
+    "Directly confirms whether sensitive data is genuinely encrypted in transit, a real security-relevant check",
+    "Reveals inefficient or excessive network usage (redundant requests, oversized payloads) invisible from the application's own logs",
+    "Essential for verifying graceful behavior under the poor network conditions a real portion of users will actually experience"
+  ],
+  "limitations": [
+    "Requires real networking knowledge to interpret packet captures meaningfully",
+    "Simulating realistic poor-network conditions accurately (not just simple throttling) can require additional tooling beyond Wireshark alone",
+    "Packet-level analysis can be time-consuming for complex applications with heavy, continuous network traffic",
+    "Doesn't by itself fix poor network handling — it identifies the gap, but the resilience logic (retries, timeouts, offline handling) still needs to be separately designed and built"
+  ],
+  "tools": [
+    {
+      "name": "Wireshark",
+      "sub": "Packet capture",
+      "url": "https://wireshark.org",
+      "desc": "A free, open-source network protocol analyzer that captures and inspects actual network traffic in detail — every packet an application sends and receives — useful both for verifying what data is actually being transmitted and for diagnosing network-related behavior directly at the packet level.",
+      "adv": [
+        "Verifies real network behavior and data transmission, not just application logs",
+        "Confirms sensitive data is genuinely encrypted in transit",
+        "Reveals redundant requests and oversized payloads",
+        "Essential for poor-network user conditions"
+      ],
+      "lim": [
+        "Packet captures need real networking knowledge to interpret",
+        "Realistic poor-network simulation often needs extra tooling",
+        "Heavy traffic makes packet-level analysis slow",
+        "Identifies the gap; retries and timeouts still have to be built"
+      ],
+      "steps": [
+        {
+          "t": "Step 1 — Start a capture",
+          "p": "Wireshark on the relevant interface while using the app normally."
+        },
+        {
+          "t": "Step 2 — Filter to the app's traffic",
+          "p": "Inspect what is actually sent and received at packet level."
+        },
+        {
+          "t": "Step 3 — Confirm encryption in transit",
+          "p": "HTTPS is genuinely used — not silently falling back to HTTP anywhere."
+        },
+        {
+          "t": "Step 4 — Simulate poor conditions",
+          "p": "Browser DevTools throttling or OS-level tools: high latency, low bandwidth, intermittent connectivity."
+        },
+        {
+          "t": "Step 5 — Drop or delay a request mid-flight",
+          "p": "Does the app retry, show a clear error, or hang with no feedback?"
+        },
+        {
+          "t": "Step 6 — Hunt wasteful patterns",
+          "p": "Unexpectedly large payloads, excessive or redundant requests."
+        }
+      ]
+    }
+  ],
+  "contentMarkdown": "## Capture and throttle\n\nWireshark for packets; DevTools/OS tools for poor conditions.",
+  "exercises": [],
+  "resourceLinks": [],
+  "steps": [],
+  "learn": []
+} as ChapterRecord;

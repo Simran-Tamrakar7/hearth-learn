@@ -1,0 +1,86 @@
+import type { ChapterRecord } from "../../types";
+
+/** Error Handling / Error Guessing Testing */
+export const chapter = {
+  "id": "tt-error-guessing-testing",
+  "overlayNo": 80,
+  "title": "Error Handling / Error Guessing Testing",
+  "minutes": 25,
+  "level": "intermediate",
+  "phase": "Part 20 · Baseline, Comparative, Domain & Error Guessing",
+  "partName": "Part 20 · Baseline, Comparative, Domain & Error Guessing",
+  "overviewText": "Error guessing is an experience-driven testing technique where a tester deliberately targets the areas and actions most likely to reveal defects — based on tester intuition and pattern recognition from past bugs — rather than following a fully scripted test case, specifically probing how the application handles errors once they occur (clear messaging, no data corruption, no exposed internals).",
+  "why": "Scripted test cases are designed around what's supposed to happen; real users routinely do the things nobody scripted for — double-clicking submit, hitting the browser back button mid-form, leaving a session open until it times out, then continuing anyway. Error guessing is what deliberately anticipates and tests exactly those \"usual suspect\" actions before a real user stumbles into them, drawing on the pattern-recognition experienced testers build up over time about where problems tend to actually hide.",
+  "when": "As a deliberate supplement layered on top of scripted functional testing, especially for any feature involving state transitions, multi-step forms, or external system boundaries — applied by testers who bring genuine prior experience of where these kinds of bugs tend to live.",
+  "practical": {
+    "app": "HRMS Leave Request Submission",
+    "scenario": "A tester deliberately double-clicks the Submit button on Bizlevate's leave-request form, simulating a real, common user action never explicitly scripted.",
+    "fail": "The double-click creates two identical leave-request records instead of one, silently doubling the days deducted from the employee's balance — a data-integrity bug invisible to any test case that only ever clicks Submit exactly once.",
+    "pass": "The submit action is made idempotent (a second rapid click while the first request is still processing is ignored), re-verified by repeating the same double-click action and confirming only a single leave-request record is created.",
+    "passLabel": "Pass (after fix)"
+  },
+  "advantages": [
+    "Targets exactly the \"usual suspect\" actions real users actually perform, which scripted test cases frequently don't anticipate",
+    "Leverages accumulated tester experience efficiently, often finding high-value bugs with relatively little time invested",
+    "Confirms error handling specifically — not just \"did the happy path work,\" but \"did the failure path fail gracefully\"",
+    "Pairing with an OWASP ZAP scan catches a class of error-handling issue (verbose/leaky error responses) manual guessing alone might overlook"
+  ],
+  "limitations": [
+    "Inherently less systematic and reproducible than a scripted technique — coverage depends heavily on the specific tester's experience and instincts",
+    "Findings can be harder to formally track/report against, since there's no predefined test-case list to check off",
+    "Different testers will guess differently, so error-guessing coverage can vary significantly by who's doing the testing",
+    "Doesn't replace systematic negative testing (Chapter 49) or boundary value analysis (Chapter 51) — it's a complementary, intuition-driven layer on top of them"
+  ],
+  "tools": [
+    {
+      "name": "OWASP ZAP + guessing checklist",
+      "sub": "Usual suspects + leaky errors",
+      "url": "https://zaproxy.org",
+      "seeChapter": 40,
+      "desc": "Manual error guessing covers application-level and workflow-level error handling (double submits, back-button state, session timeouts), while running OWASP ZAP alongside it automatically probes for a specific, well-known class of error-handling failures — unhandled exceptions, verbose error messages that leak internal details — that a human guessing session might not think to specifically try.",
+      "adv": [
+        "Hits the actions real users do that scripts skip",
+        "High-value bugs for relatively little time",
+        "Checks that failure paths fail gracefully",
+        "ZAP catches verbose/leaky errors guessing may miss"
+      ],
+      "lim": [
+        "Coverage depends on the tester's instincts",
+        "Harder to track without a predefined case list",
+        "Different testers guess differently",
+        "Complements, does not replace, Chapters 49 and 51"
+      ],
+      "steps": [
+        {
+          "t": "Step 1 — Usual-suspect checklist",
+          "p": "Double-submit, back mid-flow, refresh mid-submit, timeout then continue."
+        },
+        {
+          "t": "Step 2 — Perform each action",
+          "p": "Against the target feature; observe the result."
+        },
+        {
+          "t": "Step 3 — Messages must be clear, never leaky",
+          "p": "No stack traces, raw database errors, or internal file paths."
+        },
+        {
+          "t": "Step 4 — State stays consistent",
+          "p": "No duplicate records, no partial data left behind."
+        },
+        {
+          "t": "Step 5 — ZAP in parallel",
+          "p": "Review verbose error responses or unhandled exceptions."
+        },
+        {
+          "t": "Step 6 — Log exact repro steps",
+          "p": "Guessing findings are otherwise not documented anywhere."
+        }
+      ]
+    }
+  ],
+  "contentMarkdown": "## Checklist plus ZAP\n\nUsual suspects, then scan for leaky errors.",
+  "exercises": [],
+  "resourceLinks": [],
+  "steps": [],
+  "learn": []
+} as ChapterRecord;

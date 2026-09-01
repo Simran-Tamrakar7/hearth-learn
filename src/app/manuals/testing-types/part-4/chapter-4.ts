@@ -1,0 +1,85 @@
+import type { ChapterRecord } from "../../types";
+
+/** Scalability Testing */
+export const chapter = {
+  "id": "tt-scalability-testing",
+  "overlayNo": 16,
+  "title": "Scalability Testing",
+  "minutes": 25,
+  "level": "advanced",
+  "phase": "Part 4 · Non-Functional",
+  "partName": "Part 4 · Non-Functional",
+  "overviewText": "Scalability testing measures how an application's performance changes as load increases in stages, specifically to determine whether — and how — adding more resources (servers, database capacity, workers) allows the system to keep pace with growing demand, rather than just finding a single breaking point.",
+  "why": "Knowing a system breaks at 650 users (stress testing) is different from knowing whether adding a second application server lets it comfortably handle 1,300. Scalability testing is what informs real infrastructure and cost decisions — whether the application scales roughly linearly with added resources, or whether some bottleneck (a single database, a shared cache, a non-parallelizable process) caps growth no matter how much hardware is thrown at it.",
+  "when": "During capacity planning ahead of expected growth, before infrastructure investment decisions, and whenever the architecture changes in ways that could affect how well it scales (moving to microservices, adding caching layers, changing database sharding). It's less about a single test and more an ongoing question revisited as both load and architecture evolve.",
+  "practical": {
+    "app": "HRMS Application Server Scaling",
+    "scenario": "The team tests whether adding application servers behind a load balancer lets the system handle proportionally more concurrent users.",
+    "pass": "Going from 1 to 2 application servers roughly doubles the concurrent users handled at acceptable response times (300 → 580), confirming the application layer scales close to linearly.",
+    "fail": "Going from 2 to 4 servers barely improves capacity (580 → 620) — the database, still a single instance, is now the bottleneck, and no amount of additional application servers will fix it without addressing the database layer itself."
+  },
+  "advantages": [
+    "Directly answers whether adding resources actually solves the capacity problem, not just whether a problem exists",
+    "Produces a real cost/benefit curve for infrastructure decisions rather than guesswork",
+    "Surfaces architectural bottlenecks (a single shared database, for example) that no amount of added compute will fix",
+    "Reusable methodology as the application grows — the same matrix approach applies at every stage"
+  ],
+  "limitations": [
+    "Time-consuming — requires running the full test matrix across multiple resource configurations, not a single run",
+    "Needs the ability to actually provision and tear down different resource configurations for testing, which isn't always trivial",
+    "Results are specific to the exact architecture tested — a major architecture change invalidates the previous scalability curve",
+    "Doesn't by itself identify the root cause of a bottleneck, only that one exists — deeper profiling is needed to pinpoint it"
+  ],
+  "tools": [
+    {
+      "name": "Apache JMeter",
+      "sub": "Multi-Node Benchmark Matrix",
+      "url": "https://jmeter.apache.org",
+      "seeChapter": 14,
+      "desc": "Apache JMeter is used here (see Chapter 14) across a series of progressively increasing load levels, each measured against a specific resource configuration (1 node, 2 nodes, 4 nodes), to see how the throughput curve responds.",
+      "adv": [
+        "Directly answers whether adding resources actually solves the capacity problem",
+        "Produces a real cost/benefit curve for infrastructure decisions rather than guesswork",
+        "Surfaces architectural bottlenecks before large cloud investments",
+        "Reusable matrix methodology as application grows"
+      ],
+      "lim": [
+        "Time-consuming — requires running full test matrix across multiple resource configurations",
+        "Needs ability to provision and teardown cloud infrastructure for testing",
+        "Results specific to tested architecture"
+      ],
+      "steps": [
+        {
+          "t": "Step 1 — Define test matrix of load vs compute configurations",
+          "p": "Matrix: Load levels (100, 300, 600, 1000 users) across Config A (1 server), Config B (2 servers), Config C (4 servers).",
+          "c": "Matrix:\n- Config A: 1 App Server (2 CPU, 4GB RAM)\n- Config B: 2 App Servers + Load Balancer\n- Config C: 4 App Servers + Load Balancer"
+        },
+        {
+          "t": "Step 2 — Execute identical JMeter test plan across each configuration",
+          "p": "Run benchmark suite against Config A, record throughput and p95 latency.",
+          "c": "Run 1 (Config A): 300 VUs -> 1.4s p95, 210 req/sec"
+        },
+        {
+          "t": "Step 3 — Scale application layer to Config B (2 nodes)",
+          "p": "Repeat identical load and scale up to 600 users.",
+          "c": "Run 2 (Config B): 600 VUs -> 1.5s p95, 410 req/sec (Linear Scaling 97%)"
+        },
+        {
+          "t": "Step 4 — Scale to Config C (4 nodes) and test for database bottleneck",
+          "p": "Test 1000 users to verify if database queries become the primary bottleneck.",
+          "c": "Run 3 (Config C): 1000 VUs -> 4.8s p95, 440 req/sec (Bottleneck at Postgres connection limits)"
+        },
+        {
+          "t": "Step 5 — Chart scalability curve and report ROI",
+          "p": "Inform engineering that scaling beyond 2 app servers requires database read replicas or connection pooling (PgBouncer).",
+          "c": "Decision: Introduce PgBouncer and Read Replicas before provisioning additional App instances"
+        }
+      ]
+    }
+  ],
+  "contentMarkdown": "## Horizontal & Vertical Scaling Verification\n\nMeasure compute resource throughput scaling efficiency across 1x, 2x, and 4x infrastructure configurations.\n\n```\njmeter -n -t scalability_matrix.jmx -l scale_results.jtl\n```",
+  "exercises": [],
+  "resourceLinks": [],
+  "steps": [],
+  "learn": []
+} as ChapterRecord;

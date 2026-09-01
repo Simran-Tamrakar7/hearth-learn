@@ -1,0 +1,87 @@
+import type { ChapterRecord } from "../../types";
+
+/** Positive Testing */
+export const chapter = {
+  "id": "tt-positive-testing",
+  "overlayNo": 50,
+  "title": "Positive Testing",
+  "minutes": 15,
+  "level": "beginner",
+  "phase": "Part 13 · Test Design Techniques & Partitioning",
+  "partName": "Part 13 · Test Design Techniques & Partitioning",
+  "overviewText": "Positive testing verifies that an application behaves correctly when given valid, expected input exactly as the requirements describe — confirming the system does what it's supposed to do under normal, correct-usage conditions, the direct counterpart to negative testing's focus on invalid input.",
+  "why": "Before checking that a system correctly rejects what it shouldn't accept, it has to first be confirmed that it correctly accepts and processes what it should — positive testing is the foundational baseline check that a feature actually works at all under its intended, expected conditions. Without it as a deliberate, explicit practice, teams can end up assuming a feature works simply because no one has reported it broken yet.",
+  "when": "As the first, most basic layer of test coverage for any new feature — typically the very first test case written for any given piece of functionality, establishing the expected-behavior baseline that other test types (negative, boundary) build outward from.",
+  "practical": {
+    "app": "HRMS Leave Request Submission",
+    "scenario": "The leave request form is positive-tested with a straightforward, entirely valid submission.",
+    "pass": "Submitting a leave request for 3 valid future dates, with a valid reason and an employee who has sufficient balance, correctly creates the request and shows a confirmation — establishing that the core intended flow works exactly as designed before any edge case or invalid input is considered.",
+    "fail": "A valid submission fails with an unhandled exception or hangs indefinitely on submission, indicating core baseline functional logic is broken."
+  },
+  "advantages": [
+    "Establishes the essential baseline confirmation that a feature actually works as intended before anything else is tested",
+    "Simple and fast to design and execute, directly following from stated business requirements",
+    "Forms the foundation that negative and boundary testing build on and complement",
+    "Directly validates the core business value the feature was built to deliver"
+  ],
+  "limitations": [
+    "On its own, says nothing about how the system handles invalid input, edge cases, or real-world imperfect usage",
+    "Can create false confidence if treated as sufficient coverage without negative testing",
+    "Does not stress-test the edges of valid ranges — that is Boundary Value Analysis's role (Chapter 51)",
+    "A feature that only gets positive-tested will have its failure modes discovered by real users"
+  ],
+  "tools": [
+    {
+      "name": "Manual Positive Flow Verification",
+      "sub": "Baseline Specification Verification",
+      "url": "https://hearth-learn.vercel.app/manuals/testing-types",
+      "seeChapter": 5,
+      "desc": "Positive testing uses standard manual verification (see Chapter 5) with the specific, deliberate goal of confirming valid, expected input produces valid, expected output.",
+      "adv": [
+        "Directly verifies requirement acceptance criteria",
+        "Fastest validation method during early development spikes"
+      ],
+      "lim": [
+        "Subject to human tester bias toward happy-path only testing"
+      ],
+      "steps": [
+        {
+          "t": "Step 1 — Prepare valid dataset matching requirements",
+          "p": "Select active employee with 15 days balance, set valid future dates, and provide normal text reason.",
+          "c": "Payload: { employeeId: \"EMP-1042\", startDate: \"2026-09-01\", days: 3, reason: \"Annual Vacation\" }"
+        },
+        {
+          "t": "Step 2 — Submit request and verify confirmation banner",
+          "p": "Confirm database updates balance from 15 to 12 and UI shows 'Application Submitted Successfully'.",
+          "c": "Result: HTTP 201 Created | Leave Balance: 12 | Status: Pending Manager Approval -> PASS"
+        }
+      ]
+    },
+    {
+      "name": "Playwright / Selenium Positive Automation",
+      "sub": "Automated Happy Path Regression Suite",
+      "url": "https://playwright.dev",
+      "seeChapter": 6,
+      "desc": "Automates positive end-to-end flows (see Chapter 6) ensuring new builds don't regress core functional happy paths.",
+      "adv": [
+        "Executes in CI on every commit in under 30 seconds",
+        "Captures trace recordings and screenshots of successful completions"
+      ],
+      "lim": [
+        "Must be paired with negative suites for comprehensive safety"
+      ],
+      "steps": [
+        {
+          "t": "Step 1 — Script automated positive test in Playwright",
+          "p": "Fill valid inputs and assert redirect to confirmation view.",
+          "c": "test('Valid leave request submits successfully', async ({ page }) => {\n  await page.goto('/leave/new');\n  await page.fill('#startDate', '2026-09-01');\n  await page.fill('#days', '3');\n  await page.fill('#reason', 'Vacation');\n  await page.click('#submitBtn');\n  await expect(page.locator('.success-alert')).toBeVisible();\n});"
+        }
+      ]
+    }
+  ],
+  "contentMarkdown": "## Happy-Path Baseline Specification Verification\n\nVerify primary business user flows with valid, compliant inputs confirming intended functionality executes cleanly.\n\n```\nnpx playwright test tests/positive/leave-creation.spec.ts\n```",
+  "exercises": [],
+  "resourceLinks": [],
+  "steps": [],
+  "learn": []
+} as ChapterRecord;

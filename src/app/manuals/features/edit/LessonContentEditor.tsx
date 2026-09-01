@@ -31,10 +31,13 @@ const TOOLS: { kind: LessonFormatKind; label: string; Icon: typeof Heading1 }[] 
 export function LessonContentEditor({
   value,
   onChange,
+  onAdd,
   preview,
 }: {
   value: string;
   onChange: (next: string) => void;
+  /** Toolbar insertions (headings, lists, code blocks) — distinct from typing edits. */
+  onAdd?: (next: string) => void;
   preview: (text: string) => ReactNode;
 }) {
   const [view, setView] = useState<"write" | "preview">("write");
@@ -45,7 +48,7 @@ export function LessonContentEditor({
     const start = el?.selectionStart ?? value.length;
     const end = el?.selectionEnd ?? value.length;
     const { next, innerStart, innerLen } = applyLessonFormat(value, start, end, kind);
-    onChange(next);
+    (onAdd ?? onChange)(next);
     requestAnimationFrame(() => {
       const node = ref.current;
       if (!node) return;

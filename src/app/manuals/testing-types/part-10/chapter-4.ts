@@ -1,0 +1,108 @@
+import type { ChapterRecord } from "../../types";
+
+/** Penetration Testing */
+export const chapter = {
+  "id": "tt-penetration-testing",
+  "overlayNo": 40,
+  "title": "Penetration Testing",
+  "minutes": 30,
+  "level": "advanced",
+  "phase": "Part 10 · Device, Platform & Security",
+  "partName": "Part 10 · Device, Platform & Security",
+  "overviewText": "Penetration testing simulates a real, motivated attacker deliberately trying to break into an application — going beyond automated vulnerability scanning (Chapter 18) to manually chain together weaknesses, exploit business logic flaws, and attempt actual unauthorized access, exactly as a real adversary would.",
+  "why": "Automated security scanning (Chapter 18) is good at catching known vulnerability patterns, but a skilled human attacker doesn't stop at a single flagged issue — they chain a minor information leak with a weak permission check with a predictable ID to achieve something far more damaging than any single automated finding would suggest. Penetration testing is what reveals that real, combined risk, which automated tools structurally can't discover on their own.",
+  "when": "Before major releases involving authentication, payment, or sensitive data handling, and periodically (e.g. annually, or after significant architecture changes) for applications handling genuinely sensitive data — as a deeper complement to continuous automated security scanning in CI.",
+  "practical": {
+    "app": "HRMS Cross-Account Data Access",
+    "scenario": "A penetration tester manually chains two individually minor findings: predictable, sequential employee IDs in the URL, and a payslip endpoint that only checks for a valid session rather than verifying it belongs to the requested employee.",
+    "pass": "The severity is escalated from a routine backlog item to an emergency fix, based on the demonstrated real-world impact rather than the automated scanner's more abstract finding.",
+    "fail": "By iterating sequential employee IDs, the tester demonstrates systematic access to every employee's payslip data in the company with a single valid low-privilege login — a full-scale data exposure that automated scanning had only flagged as an isolated finding without demonstrating its true scope."
+  },
+  "advantages": [
+    "Finds real, chained risk that automated scanning alone structurally cannot discover",
+    "Directly tests business logic flaws (e.g. broken object-level authorization across user accounts) that pattern scanners miss",
+    "Produces concrete, demonstrated exploit paths that create urgent prioritization for critical fixes",
+    "Complements continuous automated scanning (Chapter 18) rather than duplicating it"
+  ],
+  "limitations": [
+    "Requires genuine security expertise to be effective — cannot be replaced by running an automated tool",
+    "Time-consuming and typically run periodically, not continuously on every commit",
+    "Must have explicit authorization and clearly defined scope — unauthorized testing is illegal",
+    "A clean test result today doesn't guarantee safety after future code changes"
+  ],
+  "tools": [
+    {
+      "name": "OWASP ZAP",
+      "sub": "Interactive Interception Proxy & Penetration Suite",
+      "url": "https://www.zaproxy.org",
+      "seeChapter": 18,
+      "desc": "Used here (see Chapter 18) not just for automated scanning but as an interactive proxy — a human tester actively manipulates requests, chains findings together, and probes business logic manually, using ZAP as a tool to intercept and modify traffic.",
+      "adv": [
+        "Intercept and rewrite HTTP/HTTPS requests in flight (Breakpoints)",
+        "Fuzzer tool sends thousands of boundary payloads against specific parameter fields",
+        "Custom payload scripting in JavaScript and Python"
+      ],
+      "lim": [
+        "Requires configuring local proxy certificate in target browser"
+      ],
+      "steps": [
+        {
+          "t": "Step 1 — Configure ZAP as intercepting proxy",
+          "p": "Route browser traffic through localhost:8080 to inspect and pause live requests.",
+          "c": "Browser Network Proxy -> 127.0.0.1:8080 (ZAP Proxy)"
+        },
+        {
+          "t": "Step 2 — Set breakpoint on sensitive endpoint",
+          "p": "Trap request before it reaches server to manipulate payload parameters.",
+          "c": "GET /api/v1/employees/1042/payslip\nHeader: Authorization: Bearer <Emp1042_Token>"
+        },
+        {
+          "t": "Step 3 — Manually tamper employee ID to probe Broken Object Level Authorization (BOLA)",
+          "p": "Change employee ID to 1043 while keeping Emp 1042 token to verify authorization enforcement.",
+          "c": "Tampered Request: GET /api/v1/employees/1043/payslip\nExpected: 403 Forbidden\nActual (Vulnerable): 200 OK with Emp 1043 salary data -> CRITICAL VULNERABILITY CONFIRMED"
+        },
+        {
+          "t": "Step 4 — Document reproduction steps and provide patch recommendation",
+          "p": "Produce proof-of-concept exploit report for developers with required session check.",
+          "c": "Fix in controller: if (req.user.id !== requestedEmpId && !req.user.isAdmin) throw new ForbiddenException();"
+        }
+      ]
+    },
+    {
+      "name": "Nikto",
+      "sub": "Open-Source Web Server Infrastructure Vulnerability Scanner",
+      "url": "https://github.com/sullo/nikto",
+      "desc": "A free, open-source web server scanner that checks specifically for dangerous files, outdated server software, and known server-level misconfigurations — a useful complement to ZAP's application-layer focus.",
+      "adv": [
+        "Scans web servers for over 6700 potentially dangerous files and CGIs",
+        "Checks for outdated server components, exposed .git directories, and open admin endpoints",
+        "Fast CLI execution suitable for infrastructure auditing"
+      ],
+      "lim": [
+        "Generates high volume of server log traffic — easily detected by WAFs"
+      ],
+      "steps": [
+        {
+          "t": "Step 1 — Install and run Nikto against staging target",
+          "p": "Execute comprehensive web server configuration scan.",
+          "c": "nikto -h https://staging.hrms.internal -ssl -port 443"
+        },
+        {
+          "t": "Step 2 — Analyze security header and exposed file findings",
+          "p": "Check for missing security headers (X-Frame-Options, CSP) and backup file disclosures.",
+          "c": "+ OSVDB-3092: /admin.bak: Backup file found containing server credentials.\n+ Missing security header: X-Content-Type-Options\n+ Server leaks Nginx version: nginx/1.18.0"
+        },
+        {
+          "t": "Step 3 — Remediate server configuration",
+          "p": "Harden Nginx config by deleting exposed backup files and hiding server banners.",
+          "c": "server_tokens off;\nadd_header X-Content-Type-Options nosniff;"
+        }
+      ]
+    }
+  ],
+  "contentMarkdown": "## Manual Business Logic & BOLA Vulnerability Assessment\n\nProbe endpoints using intercepting proxies manipulating parameter authorization states to discover chained exploit chains.\n\n```\nzap.sh -cmd -quickurl https://staging.hrms.internal -quickout report-pentest.html\n```",
+  "exercises": [],
+  "resourceLinks": [],
+  "steps": [],
+  "learn": []
+} as ChapterRecord;

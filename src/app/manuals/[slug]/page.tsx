@@ -11,41 +11,30 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
-import { MANUALS_DATA, findHearthManual, ManualItem, ManualChapter, chapterAiSummary, chapterCustomSummary } from "@/app/manuals/_lib/manualsData";
-import { getUserManual, saveUserManual, removeCatalogManual } from "@/app/manuals/_lib/userManuals";
-import { isTestingTypesSlug, TestingTypesGuide } from "@/app/manuals/_ui/TestingTypesGuide";
-import { PLAYWRIGHT_ROADMAP_PHASES, downloadRoadmapSVG } from "@/app/manuals/_lib/roadmapData";
-import { stripLeadingNumber } from "@/app/manuals/_content/_helpers.js";
+import { MANUALS_DATA, findHearthManual, chapterAiSummary, chapterCustomSummary, type ManualItem, type ManualChapter } from "@/app/manuals/types";
+import { getUserManual, saveUserManual, removeCatalogManual } from "@/app/manuals/features/local-storage";
+import { isTestingTypesSlug, TestingTypesGuide } from "@/app/manuals/testing-types/TestingTypesGuide";
+import { PLAYWRIGHT_ROADMAP_PHASES, downloadRoadmapSVG } from "@/app/manuals/playwright/roadmapData";
+import { stripLeadingNumber } from "@/app/manuals/registry";
 import { PinButton, getPinnedItems, PinnedItemMetadata, manualPinId } from "@/components/ui/PinButton";
-import { ManualExportMenu } from "@/app/manuals/_ui/ManualExportMenu";
+import { ManualExportMenu } from "@/app/manuals/features/export";
 import { ChapterContentEditor } from "@/app/manuals/features/edit/ChapterContentEditor";
-import { ToolSwitcher } from "@/app/manuals/_ui/ToolSwitcher";
-import { kebabItems, KebabMenu } from "@/app/manuals/_ui/KebabMenu";
-import { Highlightable, HighlightsList, MarkedText } from "@/app/manuals/_ui/Highlightable";
-import {
-  addHighlight,
-  allHighlights,
-  deleteManualHighlight,
-  fetchManualHighlights,
-  highlightsForField,
-  HL_COLORS,
-  lastAdded,
-  mergeHighlightStores,
-  parseHighlightStore,
-  postManualHighlight,
-  removeHighlight,
-  type ChapterHighlight,
-  type HighlightStore,
-  wrapHighlightHtml,
-} from "@/app/manuals/_lib/highlights";
-import { listedCategories, subscribeCategories } from "@/app/manuals/_lib/categories";
-import { TagInput } from "@/app/manuals/_ui/TagInput";
+import { ToolSwitcher } from "@/app/manuals/features/reader";
+import { kebabItems, KebabMenu } from "@/app/manuals/features/catalog";
+import { Highlightable, HighlightsList, MarkedText, addHighlight, allHighlights, deleteManualHighlight, fetchManualHighlights, highlightsForField, HL_COLORS, lastAdded, mergeHighlightStores, parseHighlightStore, postManualHighlight, removeHighlight, wrapHighlightHtml, type ChapterHighlight, type HighlightStore } from "@/app/manuals/features/highlights";
+import { listedCategories, subscribeCategories, TagInput } from "@/app/manuals/features/categorization";
 import { usePermissions, useAppUserId } from "@/lib/useAuthz";
 import { highlightsStoreKey, isScopeReady, progressStoreKey, readScopedRaw, writeScopedRaw } from "@/lib/userScope";
 import { getResume, pushAccountProgress, setResume, touchRecentManual } from "@/lib/readerMemory";
-import { readerChaptersFromToc, mergeCustomTestingTypesChapters, mergeTestingTypesSavedEdits, testingTypesMdSections } from "@/app/manuals/_ui/testing-types-reader";
-import { restoreTestingTypesToc, TESTING_TYPES_TOC_VERSION } from "@/app/manuals/testing-types/toc";
+import { saveChapterToDisk } from "@/app/manuals/features/edit/chapterDisk";
+import { KEPT_BUILTIN_SLUGS } from "@/app/manuals/registry";
 import {
+  readerChaptersFromToc,
+  mergeCustomTestingTypesChapters,
+  mergeTestingTypesSavedEdits,
+  testingTypesMdSections,
+  restoreTestingTypesToc,
+  TESTING_TYPES_TOC_VERSION,
   chapterIndexAfter,
   createPart,
   createSubchapter,
@@ -62,7 +51,7 @@ import {
   parentIndexOf,
   renamePart,
   tocNumbersForPart,
-} from "@/app/manuals/_lib/manualParts";
+} from "@/app/manuals/features/reader";
 
 import {
   ChevronLeft,
@@ -517,6 +506,10 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       chapters: ch,
     });
     setSaveHint("Saved");
+    if ((KEPT_BUILTIN_SLUGS as readonly string[]).includes(slug)) {
+      const savedCh = ch[activeChapterIndex];
+      if (savedCh?.sourceFile) void saveChapterToDisk(slug, savedCh);
+    }
   };
 
   const scheduleChapterSave = (updated: ManualChapter[]) => {

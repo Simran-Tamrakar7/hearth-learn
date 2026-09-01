@@ -12,7 +12,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useTheme, ThemeId, AccentId } from "@/context/ThemeContext";
 import { usePermissions } from "@/lib/useAuthz";
 import { FEATURE_KEYS, FEATURE_LABELS, parseSiteFeatures, type SiteFeatures } from "@/lib/prefs";
-import { CategoryManager } from "@/app/manuals/_ui/CategoryManager";
+import { CategoryManager } from "@/app/manuals/features/categorization";
 import {
   Download,
   Check,

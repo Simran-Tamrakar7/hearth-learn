@@ -7,9 +7,8 @@ import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
-import { MANUALS_DATA, findHearthManual, ManualItem } from "@/app/manuals/_lib/manualsData";
-import { activeManualSlugs } from "@/app/manuals/_content/_registry";
-import { genres } from "@/app/manuals/_content/_helpers.js";
+import { MANUALS_DATA, findHearthManual, type ManualItem } from "@/app/manuals/types";
+import { activeManualSlugs, genres } from "@/app/manuals/registry";
 import { Compass, Search, BookOpen, ArrowRight, Pin, ExternalLink, Code2 } from "lucide-react";
 import {
   PinButton,
@@ -19,11 +18,9 @@ import {
   PinnedItemMetadata,
   manualPinId,
 } from "@/components/ui/PinButton";
-import { applyManualOverlay, getUserManual, hiddenManualSlugs, purgeRemovedManualCatalog, removeCatalogManual, subscribeUserManuals } from "@/app/manuals/_lib/userManuals";
-import { subscribeCategories } from "@/app/manuals/_lib/categories";
-import { AddManualControl } from "@/app/manuals/_ui/AddManualControl";
-import { ManualCard } from "@/app/manuals/_ui/ManualCard";
-import { RecentlyViewed } from "@/app/manuals/_ui/RecentlyViewed";
+import { applyManualOverlay, getUserManual, hiddenManualSlugs, purgeRemovedManualCatalog, removeCatalogManual, subscribeUserManuals } from "@/app/manuals/features/local-storage";
+import { subscribeCategories } from "@/app/manuals/features/categorization";
+import { AddManualControl, ManualCard, RecentlyViewed } from "@/app/manuals/features/catalog";
 import { usePermissions } from "@/lib/useAuthz";
 
 const GENRE_CATEGORY: Record<string, string> = {

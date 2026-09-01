@@ -1,0 +1,197 @@
+import type { ChapterRecord } from "../../types";
+
+/** Acceptance Testing (UAT) */
+export const chapter = {
+  "id": "tt-acceptance-testing",
+  "overlayNo": 4,
+  "title": "Acceptance Testing (UAT)",
+  "minutes": 30,
+  "level": "advanced",
+  "phase": "Part 1 · By Level",
+  "partName": "Part 1 · By Level",
+  "overviewText": "User Acceptance Testing, universally called UAT, is the final testing level before software is released to real users or goes live in production. Unlike every preceding test level which is performed by technical teams, UAT is performed by the actual business stakeholders — the end users, the client representatives, the department heads, or the product owners. The fundamental purpose of UAT is not to find technical bugs but to confirm business fitness — that the software genuinely delivers the value it was commissioned to deliver, works the way the business actually operates, and solves the real problems users face in their daily work. UAT is built on real business scenarios, not technical test cases. A payroll manager testing whether the system handles Nepal's fiscal year 2081/82 tax slabs correctly is UAT. A department head verifying that the leave approval chain matches the company's four-level hierarchy is UAT. An HR director confirming that the appraisal cycle timelines match the performance review calendar is UAT. The software may have passed every unit, integration, and system test in the automation suite and still fail UAT — because the system was technically correct but did not match the reality of how the business operates.",
+  "why": "Requirements are written by humans, interpreted by developers, and reviewed by project managers — three levels of communication where meaning can drift significantly from the original business intent. UAT is where that drift is discovered and corrected before it becomes a production problem. Technical teams sometimes build exactly what the specification said but not what the business actually needed — because the specification itself was incomplete, ambiguous, or misunderstood. UAT catches these gaps when they are still fixable with configuration or code changes rather than costly post-production hotfixes. In regulated industries like banking, healthcare, or government, UAT sign-off is a legal and compliance requirement, not optional.",
+  "when": "UAT is mandatory before every production release without exception. In agile projects, a lightweight UAT review happens at the Sprint Review with product owners. Full formal UAT with sign-off happens before every major release to production. It is never skipped — if a go-live proceeds without UAT sign-off, the business must document that decision and accept the risk formally in writing.",
+  "practical": {
+    "app": "HRMS — Leave policy compliance UAT",
+    "scenario": "UAT Tester: HR Director with 15 years of company HR experience.\nScenario tested: Over-limit leave request.\nThe HR Director tests applying 3 days of casual leave for an employee who has only 2 days remaining. She expects the system to reject this with a clear message showing the available balance. In UAT, the system approves the request without warning. All unit tests, integration tests, and system tests passed because test data always had sufficient leave balances — nobody tested the boundary condition with real business knowledge.",
+    "pass": "System now shows \"Insufficient casual leave balance. Available: 2 days, Requested: 3 days. Request rejected.\" HR Director signs UAT acceptance.",
+    "fail": "The system violates the company's HR policy by allowing negative leave balances. The HR Director marks this as a Blocker — the system cannot go live with this behaviour because it would cause payroll complications and policy non-compliance."
+  },
+  "advantages": [
+    "Validates business requirements in real-world terms — not just technical specifications",
+    "Performed by people who understand the actual business workflows and exceptions",
+    "Catches requirement mismatches and specification gaps that technical testing misses entirely",
+    "Builds genuine user confidence and buy-in before go-live",
+    "Produces formal signed documentation for compliance, audit, and contractual purposes"
+  ],
+  "limitations": [
+    "Business users are not trained testers — they may miss edge cases or test inconsistently",
+    "Time and schedule coordination with busy stakeholders is consistently challenging",
+    "UAT environments need realistic data — hard to prepare without touching sensitive production data",
+    "Feedback can be subjective or vague — requires a QA engineer to translate into actionable bug reports",
+    "Running UAT on an unstable system wastes stakeholder time and damages confidence in the project"
+  ],
+  "tools": [
+    {
+      "name": "Manual Testing",
+      "sub": "Primary UAT method",
+      "url": null,
+      "desc": "Manual testing in the context of UAT means real business users sitting with the application and testing it against their actual job responsibilities. There is no tool that replaces human business judgment in UAT — a payroll accountant knows immediately whether a tax calculation looks right in the context of their company, in a way no automated test can assess. The process is structured but not scripted line-by-line: UAT testers are given business scenarios, background context, and test data, and they work through the system the way they would on a normal working day. A UAT tester does not follow a step-by-step script saying \"click this button\" — they are told \"process the August payroll for department Engineering and confirm the output matches the pre-approved salary sheet.\" How they get there is their business expertise.",
+      "adv": [
+        "Applies real business judgment automation structurally cannot replicate",
+        "Scenarios are business-driven, surfacing exceptions a spec never anticipated",
+        "Catches requirement drift and specification gaps before go-live",
+        "Produces the formal, signed acceptance record required for sign-off"
+      ],
+      "lim": [
+        "Business users aren't trained testers — coverage can be inconsistent",
+        "Scheduling time with busy stakeholders is a recurring bottleneck",
+        "Feedback is often vague and needs a QA engineer to turn into an actionable bug",
+        "Doesn't scale to frequent releases the way automated levels do"
+      ],
+      "steps": [
+        {
+          "t": "Step 1 — Define UAT entry criteria",
+          "p": "Confirm system tests pass, dedicated UAT environment is deployed, and realistic test data is loaded.",
+          "c": "Checklist:\n- System tests passed\n- Isolated UAT environment running\n- Realistic seed data loaded\n- Business users onboarded with role-based access"
+        },
+        {
+          "t": "Step 2 — Write UAT scenarios in business language",
+          "p": "Write business tasks rather than technical test steps:",
+          "c": "UAT Scenario: Process Monthly Payroll — August 2025\n\nBusiness context:\nOur company has 47 employees across 5 departments.\nSalary sheet for August was approved by Finance Director on Aug 25.\n\nWhat to test:\n1. Log in as Payroll Manager\n2. Navigate to Payroll Processing\n3. Select August 2025 pay period\n4. Confirm all 47 active employees appear — note any missing\n5. Verify gross salaries match the approved salary sheet (compare 5 random employees)\n6. Process payroll and confirm the system accepts it\n7. Generate payslips and confirm they look correct and professional\n8. Mark as disbursed\n\nExpected outcome:\nAll employees processed correctly, payslips generated with correct tax breakdown,\ndisbursement status updated, employees can view their payslips."
+        },
+        {
+          "t": "Step 3 — Brief UAT testers",
+          "p": "Run a 30-minute orientation session on marking pass/fail, reporting bugs, and detailing observations.",
+          "c": "Briefing Agenda:\n1. Purpose of UAT cycle\n2. How to mark pass/fail\n3. How to capture clear bug observations with attachments"
+        },
+        {
+          "t": "Step 4 — Execute UAT sessions",
+          "p": "Have business users execute scenarios with QA engineer observing and taking environment notes.",
+          "c": "// QA observes real business behaviour without biasing tester decisions."
+        },
+        {
+          "t": "Step 5 — Log all findings",
+          "p": "Classify findings into Blocker, Major, and Minor severity:",
+          "c": "- Blocker: System cannot go live (wrong calculation, data loss, crash)\n- Major: Significant business impact but workaround exists\n- Minor: Cosmetic or minor inconvenience"
+        },
+        {
+          "t": "Step 6 — Fix, retest, and obtain formal sign-off",
+          "p": "Developers fix blockers, testers retest specific flows, and authorized stakeholders sign acceptance.",
+          "c": "Blocker fixes verified -> Stakeholder sign-off granted"
+        },
+        {
+          "t": "Step 7 — Document UAT results",
+          "p": "Produce formal completion memo with scenario matrices, bug lists, and signature block.",
+          "c": "UAT Completion Report & Sign-off Memo generated for compliance and release archive."
+        }
+      ]
+    },
+    {
+      "name": "TestRail",
+      "sub": "Test case management",
+      "url": "https://testrail.com",
+      "desc": "TestRail is a web-based test case management tool made by Gurock (now part of Idera). For UAT specifically, TestRail lets you create test plans containing business scenarios, assign them to specific UAT testers, and collect structured pass/fail results with comments and attachments. Testers access TestRail through a browser, click each step, and mark it pass or fail — no technical knowledge required. Managers see real-time UAT progress dashboards showing how many scenarios are complete, how many passed, and how many have defects. TestRail's free plan supports small teams and is sufficient for most UAT projects. It integrates with Jira so bugs logged in TestRail automatically create Jira tickets.",
+      "adv": [
+        "Structured scenario tracking that non-technical testers can execute unaided",
+        "Real-time dashboards show UAT progress without chasing anyone for status",
+        "Direct Jira integration turns a failed case into a bug ticket automatically",
+        "Free tier is workable for a typical small UAT cycle"
+      ],
+      "lim": [
+        "Free tier caps users and projects — a constraint on larger UAT rounds",
+        "Someone still has to author good business-language scenarios up front",
+        "One more tool for already-busy stakeholders to get oriented in",
+        "Limited value on its own without a bug tracker connected to it"
+      ],
+      "steps": [
+        {
+          "t": "Step 1 — Create a free TestRail account",
+          "p": "Sign up at testrail.com for free tier or hosted trial.",
+          "c": "// Access https://testrail.com"
+        },
+        {
+          "t": "Step 2 — Create a Project",
+          "p": "Click 'Add Project' → Name it 'HRMS UAT — August 2025 Release'.",
+          "c": "Project: \"HRMS UAT — August 2025 Release\""
+        },
+        {
+          "t": "Step 3 — Create a Test Suite with UAT scenarios",
+          "p": "Add test cases written in plain business language with expected results.",
+          "c": "Suite: \"Payroll Module UAT\"\nSections: Salary verification, Tax calculation, Payslip disbursal"
+        },
+        {
+          "t": "Step 4 — Create a Test Plan and assign to UAT testers",
+          "p": "Assign payroll scenarios to Payroll Manager and leave scenarios to HR Director.",
+          "c": "Test Plan: Assignees mapped per stakeholder role"
+        },
+        {
+          "t": "Step 5 — Testers execute and record results",
+          "p": "Stakeholders log in and mark each case Pass, Fail, or Blocked with comments.",
+          "c": "Pass / Fail / Blocked status recording with screenshots."
+        },
+        {
+          "t": "Step 6 — Track progress and export report",
+          "p": "Monitor live completion dashboard and export PDF report for sign-off archives.",
+          "c": "Export UAT Sign-off PDF with live pass/fail percentage graphs."
+        }
+      ]
+    },
+    {
+      "name": "Jira",
+      "sub": "Bug & feedback tracking",
+      "url": "https://atlassian.com/software/jira",
+      "desc": "Jira is the most widely used issue tracking platform, made by Atlassian. During UAT, it serves as the bug and feedback repository — when a UAT tester finds a problem, a Jira ticket is created. The ticket captures: what was being tested, what was expected, what happened, and the severity. Developers pick up these tickets, fix the issues, and transition the ticket to 'Ready for Retest'. The UAT tester retests and closes the ticket or reopens it. Jira's free tier supports up to 10 users, making it accessible for small UAT teams. Its Kanban board gives a visual overview of all UAT findings and their current fix status.",
+      "adv": [
+        "Industry-standard issue tracking most teams already know",
+        "Kanban board gives a visual read on every open UAT finding at a glance",
+        "Free tier covers up to 10 users, enough for most UAT teams",
+        "Clear fix loop: open → fixed → ready for retest → closed"
+      ],
+      "lim": [
+        "Not a test case manager by itself — needs TestRail or similar alongside it",
+        "10-user free cap can be limiting once stakeholders are added in",
+        "Can get cluttered and noisy without disciplined ticket hygiene",
+        "UAT-specific workflows and fields need to be configured, not default"
+      ],
+      "steps": [
+        {
+          "t": "Step 1 — Create a free Jira account",
+          "p": "Create project named 'HRMS UAT Bugs'.",
+          "c": "Project: \"HRMS UAT Bugs\" (Kanban)"
+        },
+        {
+          "t": "Step 2 — Configure issue types",
+          "p": "Configure Bug, Task, and Feedback issue types with custom severity fields.",
+          "c": "Issue Types: Bug, Task, Feedback\nSeverities: Blocker, Major, Minor"
+        },
+        {
+          "t": "Step 3 — UAT testers log bugs",
+          "p": "Structure detailed defect tickets:",
+          "c": "Summary: [UAT-Blocker] Leave request approves negative balance\nPriority: Blocker\nDescription: Expected reject toast on exceeding balance; actual: approved without validation\nAttachment: screenshot_negative_balance.png"
+        },
+        {
+          "t": "Step 4 — Development team works the queue",
+          "p": "Developers fix defects and transition to 'Fixed — Ready for UAT Retest'.",
+          "c": "Status: In Progress -> Fixed — Ready for UAT Retest"
+        },
+        {
+          "t": "Step 5 — UAT tester retests and closes",
+          "p": "Business tester validates fix on staging and closes ticket.",
+          "c": "Status: Closed (Verified by HR Director)"
+        },
+        {
+          "t": "Step 6 — UAT sign-off",
+          "p": "Generate zero-blocker report and attach to formal sign-off document.",
+          "c": "Final Triage: 0 Blockers, 0 Majors open -> Ready for Production Release"
+        }
+      ]
+    }
+  ],
+  "contentMarkdown": "## Stakeholder UAT Process\n\nEngage business domain experts with clear business task scenarios and formal sign-off gates.\n\n```\nUAT Scenario: Monthly Payroll Disbursal Verification\n1. Log in as Payroll Manager\n2. Verify gross and tax amounts\n3. Export sign-off report\n```",
+  "exercises": [],
+  "resourceLinks": [],
+  "steps": [],
+  "learn": []
+} as ChapterRecord;

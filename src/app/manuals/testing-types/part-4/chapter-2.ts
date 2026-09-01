@@ -1,0 +1,139 @@
+import type { ChapterRecord } from "../../types";
+
+/** Load Testing */
+export const chapter = {
+  "id": "tt-load-testing",
+  "overlayNo": 14,
+  "title": "Load Testing",
+  "minutes": 30,
+  "level": "advanced",
+  "phase": "Part 4 · Non-Functional",
+  "partName": "Part 4 · Non-Functional",
+  "overviewText": "Load testing simulates a realistic, expected number of concurrent users hitting the application at once, to verify it performs acceptably under the traffic it's actually expected to handle in production — not a single user's speed, but the system's behavior under a real crowd.",
+  "why": "An application that's fast for one user can behave completely differently under 500 concurrent users — database connections get exhausted, response times climb, and requests start queuing or timing out. Load testing answers a concrete business question before launch day: can this system actually handle the traffic we expect, or will it buckle the moment real users show up?",
+  "when": "Before any launch or event expected to bring a surge or a sustained new baseline of traffic (a new product launch, a marketing campaign, a payroll deadline where every employee logs in the same morning), and periodically as the user base grows, since 'acceptable load' from a year ago may no longer reflect today's real usage.",
+  "practical": {
+    "app": "HRMS Payroll Deadline Morning",
+    "scenario": "Every month on payroll day, roughly 300 employees log in within the same 30-minute window to check their payslip. A load test simulates 300 concurrent virtual users hitting login and the payslip endpoint.",
+    "pass": "95th percentile response time stays under 2 seconds, zero failed requests at 300 concurrent users.",
+    "fail": "Response times climb past 8 seconds and 12% of requests start timing out past 250 concurrent users — a capacity ceiling discovered in testing, not on the actual payroll morning."
+  },
+  "advantages": [
+    "Free, mature, and widely supported open-source tooling options",
+    "Validates database connection pools and API throughput under realistic peak demand",
+    "Defines concrete SLA thresholds (e.g. 95th percentile under 2s)",
+    "Can be automated in continuous integration for continuous capacity assurance"
+  ],
+  "limitations": [
+    "Requires representative test environments and sanitized test datasets",
+    "Generating high concurrency (10,000+ users) requires distributed load generators",
+    "Test scripts need regular maintenance as API signatures evolve"
+  ],
+  "tools": [
+    {
+      "name": "Apache JMeter",
+      "sub": "Open-Source Protocol & Thread Simulation",
+      "url": "https://jmeter.apache.org",
+      "desc": "A mature, GUI-based open-source load testing tool that simulates many virtual users executing a sequence of requests (HTTP, but also databases, FTP, and more), with built-in graphical reports showing response times, throughput, and error rates as load increases.",
+      "adv": [
+        "Free, mature, and extremely widely used — extensive documentation and plugin ecosystem",
+        "GUI mode makes building and visualizing tests approachable without heavy scripting",
+        "Supports many protocols beyond HTTP (databases, message queues, FTP), not just web APIs",
+        "Detailed built-in reporting on response time, throughput, and error rate under load"
+      ],
+      "lim": [
+        "GUI mode itself consumes significant memory, so large-scale load generation needs command-line/headless mode instead",
+        "Test plans (XML-based) are less readable and harder to version-control cleanly than code-based scripts",
+        "Steeper learning curve for anything beyond a basic linear request sequence",
+        "Realistic large-scale load generation may need distributed JMeter across multiple machines"
+      ],
+      "steps": [
+        {
+          "t": "Step 1 — Download & launch Apache JMeter",
+          "p": "Run jmeter.bat (Windows) or jmeter.sh (macOS/Linux).",
+          "c": "./bin/jmeter"
+        },
+        {
+          "t": "Step 2 — Create Thread Group for target users",
+          "p": "Configure Number of Threads (Users): 300, Ramp-up period: 60s, Loop count: 10.",
+          "c": "Thread Group Configuration:\n- Number of Threads: 300\n- Ramp-Up: 60 seconds\n- Duration: 300 seconds"
+        },
+        {
+          "t": "Step 3 — Add HTTP Request samplers",
+          "p": "Add POST /api/v1/auth/login and GET /api/v1/payslips/latest.",
+          "c": "Sampler 1: POST https://staging.hrms-app.com/api/v1/auth/login\nSampler 2: GET https://staging.hrms-app.com/api/v1/payslips/latest"
+        },
+        {
+          "t": "Step 4 — Add Response Assertions",
+          "p": "Verify HTTP status code 200 and response body contains valid JSON keys.",
+          "c": "Response Assertion: Response Code = 200 AND Body contains \"net_salary\""
+        },
+        {
+          "t": "Step 5 — Add Listeners for live reporting",
+          "p": "Add Summary Report and Aggregate Graph listeners to track p90, p95, and throughput.",
+          "c": "Listeners Added: Summary Report, View Results Tree, Aggregate Report"
+        },
+        {
+          "t": "Step 6 — Execute headlessly via CLI for true benchmarking",
+          "p": "Run in non-GUI mode to prevent client memory consumption.",
+          "c": "jmeter -n -t hrms_payroll_load.jmx -l results.jtl -e -o ./html_report"
+        },
+        {
+          "t": "Step 7 — Validate against SLA metrics",
+          "p": "Inspect generated HTML dashboard for error rate (0%) and 95th percentile response times.",
+          "c": "Report Summary: 300 VUs | Error Rate: 0.00% | 95th Percentile: 1.42s -> PASS"
+        }
+      ]
+    },
+    {
+      "name": "k6",
+      "sub": "Developer-Centric Code-First Load Testing",
+      "url": "https://k6.io",
+      "desc": "A modern, developer-centric, code-first load testing tool where tests are written in JavaScript rather than configured through a GUI, designed specifically to fit into CI/CD pipelines as version-controlled, readable test scripts.",
+      "adv": [
+        "Code-based scripts are readable, version-controllable, and fit naturally into CI/CD",
+        "Lightweight — far lower resource usage than JMeter for generating the same load",
+        "Built-in threshold checks let the test itself pass/fail automatically against defined SLAs",
+        "Clean, modern JavaScript API with a shallow learning curve for developers"
+      ],
+      "lim": [
+        "Free/open-source tier lacks a built-in GUI — results are terminal/CLI or need external visualization",
+        "Distributed, large-scale load generation across multiple machines requires the paid Cloud offering",
+        "JavaScript-only test scripting, unlike JMeter's protocol flexibility",
+        "Smaller plugin/protocol ecosystem than JMeter's two-decade head start"
+      ],
+      "steps": [
+        {
+          "t": "Step 1 — Install k6 CLI",
+          "p": "Install via brew or direct standalone binary.",
+          "c": "brew install k6"
+        },
+        {
+          "t": "Step 2 — Write load test in JavaScript with stages",
+          "p": "Define ramp-up, steady peak, and ramp-down stages.",
+          "c": "import http from 'k6/http';\nimport { check, sleep } from 'k6';\n\nconst options = {\n  stages: [\n    { duration: '1m', target: 300 }, // ramp-up to 300 users\n    { duration: '3m', target: 300 }, // stay at 300 users\n    { duration: '1m', target: 0 },   // ramp-down\n  ],\n  thresholds: {\n    http_req_duration: ['p(95)<2000'], // 95% of requests must finish within 2s\n    http_req_failed: ['rate<0.01'],    // error rate less than 1%\n  },\n};"
+        },
+        {
+          "t": "Step 3 — Implement authenticated API flow",
+          "p": "Send login request, extract JWT token, and hit payslip endpoint.",
+          "c": "export default function () {\n  const loginRes = http.post('https://staging.hrms-app.com/api/login', {\n    email: 'user@hrms.com',\n    password: 'password123',\n  });\n  check(loginRes, { 'status is 200': (r) => r.status === 200 });\n  const token = loginRes.json('token');\n\n  const res = http.get('https://staging.hrms-app.com/api/payslips/latest', {\n    headers: { Authorization: `Bearer ${token}` },\n  });\n  check(res, { 'payslip status 200': (r) => r.status === 200 });\n  sleep(1);\n}"
+        },
+        {
+          "t": "Step 4 — Execute test in terminal",
+          "p": "Run test locally and view real-time metrics stream.",
+          "c": "k6 run load-test.js"
+        },
+        {
+          "t": "Step 5 — Evaluate threshold exit code in CI",
+          "p": "k6 automatically returns non-zero exit code if SLA thresholds are breached.",
+          "c": "http_req_duration..............: avg=640ms min=120ms med=480ms max=1820ms p(95)=1.4s ✓\nhttp_req_failed................: 0.00% ✓"
+        }
+      ]
+    }
+  ],
+  "contentMarkdown": "## Concurrency Simulation & SLA Verification\n\nModel peak concurrent user traffic and assert response latency under 2 seconds for the 95th percentile.\n\n```\nk6 run --vus 300 --duration 5m load-test.js\n```",
+  "exercises": [],
+  "resourceLinks": [],
+  "steps": [],
+  "learn": []
+} as ChapterRecord;
