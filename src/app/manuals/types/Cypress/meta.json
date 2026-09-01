@@ -1,1 +1,14 @@
 
+{
+  "id": "cypress",
+  "title": "Cypress E2E Testing",
+  "tagline": "Browser automation from first spec to CI-ready suites.",
+  "category": "automation",
+  "who": "QA engineers and developers new to Cypress.",
+  "outcomes": [
+    "Write and run your first Cypress spec",
+    "Understand Cypress architecture vs Selenium"
+  ],
+  "duration": "2–4 weeks",
+  "levelSpan": "Beginner → Intermediate"
+}
