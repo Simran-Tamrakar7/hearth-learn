@@ -118,9 +118,40 @@ export const chapter = {
       ]
     }
   ],
-  "contentMarkdown": "● Public \"practice\" websites built for automation training (e.g., demo e-commerce sites, form-heavy test sites) ● Playwright's own test fixtures/demo apps used in their official examples repo ● Open API sandboxes (e.g., public REST test APIs) for practicing the API-testing chapters\n\n## Overview\n\nsites, form-heavy test sites)",
+  "contentMarkdown": "## 63. Sample Data & Practice Sites\n\nHands-on practice requires stable demo apps and public APIs.\n\n### Demo sites\n\n- **demo.playwright.dev/todomvc** — official Playwright demo app; ideal for CRUD and locator practice.\n- **the-internet.herokuapp.com** — classic automation practice site (login, dropdowns, alerts, frames).\n- **automationexercise.com** — e-commerce flows for cart, checkout, and registration.\n\n### Official examples\n\n- **github.com/microsoft/playwright/examples** — runnable examples for Python, JS, Java, and C# covering auth, API, mobile, and CI patterns.\n\n### Public APIs for setup/teardown\n\n- **jsonplaceholder.typicode.com** — fake REST API for CRUD practice without a real backend.\n- **reqres.in** — user registration and login API for auth fixture practice.\n\n### Practice project idea\n\nBuild a capstone against TodoMVC: login (if applicable), add/edit/delete todos, API validation via a mock or jsonplaceholder, CI on GitHub Actions. Complete in a weekend.",
   "exercises": [],
-  "resourceLinks": [],
+  "resourceLinks": [
+    {
+      "title": "Playwright TodoMVC Demo",
+      "url": "https://demo.playwright.dev/todomvc",
+      "description": "Official demo app — stable, fast, ideal for CRUD and locator practice."
+    },
+    {
+      "title": "Playwright Examples (GitHub)",
+      "url": "https://github.com/microsoft/playwright/tree/main/examples",
+      "description": "Official runnable examples — auth, API, mobile, CI patterns."
+    },
+    {
+      "title": "The Internet (Herokuapp)",
+      "url": "https://the-internet.herokuapp.com/",
+      "description": "Classic practice site — login, alerts, frames, dynamic content."
+    },
+    {
+      "title": "JSONPlaceholder",
+      "url": "https://jsonplaceholder.typicode.com/",
+      "description": "Free fake REST API for API testing and setup/teardown practice."
+    },
+    {
+      "title": "Automation Exercise",
+      "url": "https://automationexercise.com/",
+      "description": "E-commerce demo site for cart, checkout, and registration flows."
+    },
+    {
+      "title": "ReqRes — Fake REST API",
+      "url": "https://reqres.in/",
+      "description": "User registration and login endpoints for auth fixture practice."
+    }
+  ],
   "steps": [],
   "learn": []
 } as ChapterRecord;

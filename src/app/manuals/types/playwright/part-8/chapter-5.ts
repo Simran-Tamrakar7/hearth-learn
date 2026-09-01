@@ -137,9 +137,35 @@ export const chapter = {
       ]
     }
   ],
-  "contentMarkdown": "● Udemy/Coursera Playwright with Python courses (structured, project-based) ● LinkedIn Learning automation testing tracks ● Test Automation University (free, vendor-agnostic courses including Playwright modules) ● Official Microsoft Learn modules referencing Playwright (if available)\n\n## Overview\n\nmodules)",
+  "contentMarkdown": "## 56. Courses & Structured Learning Platforms\n\nStructured courses complement hands-on capstone work with guided progression.\n\n### Recommended platforms\n\n- **Test Automation University (Applitools)** — free courses on Selenium, Cypress, Playwright-adjacent topics, CI, and visual testing.\n- **Microsoft Learn** — official Playwright modules including framework building and CI integration.\n- **Udemy / Pluralsight** — paid courses for deep dives; check recency (Playwright changes fast — prefer courses updated within the last 12 months).\n\n### Course selection criteria\n\n- Does it use pytest-playwright (Python) or Playwright Test (JS)? Match your stack.\n- Does it cover CI integration, not just local `pytest`?\n- Are reviews recent and mentioning current Playwright versions?",
   "exercises": [],
-  "resourceLinks": [],
+  "resourceLinks": [
+    {
+      "title": "Test Automation University",
+      "url": "https://testautomationu.applitools.com/",
+      "description": "Free courses on automation fundamentals, CI, visual testing, and more."
+    },
+    {
+      "title": "Microsoft Learn — Playwright modules",
+      "url": "https://learn.microsoft.com/en-us/training/browse/?products=playwright",
+      "description": "Official Microsoft training paths for Playwright and test automation."
+    },
+    {
+      "title": "Udemy — Playwright courses",
+      "url": "https://www.udemy.com/topic/playwright/",
+      "description": "Paid courses — filter by recent updates and Python/pytest content."
+    },
+    {
+      "title": "Playwright Python documentation",
+      "url": "https://playwright.dev/python/docs/intro",
+      "description": "Free official docs with runnable examples — the best zero-cost course."
+    },
+    {
+      "title": "Ministry of Testing — Courses",
+      "url": "https://www.ministryoftesting.com/courses",
+      "description": "Community courses on testing fundamentals and automation strategy."
+    }
+  ],
   "steps": [],
   "learn": []
 } as ChapterRecord;

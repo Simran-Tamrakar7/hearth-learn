@@ -125,9 +125,35 @@ export const chapter = {
       ]
     }
   ],
-  "contentMarkdown": "● Software testing-focused newsletters (e.g., Ministry of Testing's newsletter) that regularly cover Playwright updates ● Python Weekly / PyCoder's Weekly — occasional Playwright-Python coverage ● Browser engine/web platform newsletters — useful for understanding what's changing under the hood\n\n## Overview\n\nKey points:",
+  "contentMarkdown": "## 54. Newsletters\n\nCurated weekly digests save time versus scrolling Twitter/X or Reddit.\n\n### Recommended newsletters\n\n- **Ministry of Testing** — community events, articles, job postings, and testing culture.\n- **Python Weekly** — Python ecosystem news including pytest and tooling updates.\n- **Test Guild Newsletter** — automation-focused links, podcast episodes, and tool reviews.\n\n### How to use them\n\nSkim subject lines on Monday. Save one article per week to read deeply. Forward relevant links to your team Slack channel — it builds your reputation as the person who stays current.",
   "exercises": [],
-  "resourceLinks": [],
+  "resourceLinks": [
+    {
+      "title": "Ministry of Testing",
+      "url": "https://www.ministryoftesting.com/",
+      "description": "Global testing community — events, articles, courses, and newsletter."
+    },
+    {
+      "title": "Python Weekly",
+      "url": "https://www.pythonweekly.com/",
+      "description": "Weekly Python ecosystem roundup — pytest, packaging, and tooling news."
+    },
+    {
+      "title": "Test Guild Newsletter",
+      "url": "https://testguild.com/newsletter/",
+      "description": "Automation-focused weekly digest from Joe Colantonio."
+    },
+    {
+      "title": "Software Testing Weekly",
+      "url": "https://softwaretestingweekly.com/",
+      "description": "Curated testing links from across the web, delivered weekly."
+    },
+    {
+      "title": "PyCoder's Weekly",
+      "url": "https://pycoders.com/",
+      "description": "Python articles and projects — useful for framework code quality."
+    }
+  ],
   "steps": [],
   "learn": []
 } as ChapterRecord;

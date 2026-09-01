@@ -113,9 +113,35 @@ export const chapter = {
       ]
     }
   ],
-  "contentMarkdown": "● State of JS / State of Testing surveys — annual data on tool adoption trends ● Vendor-neutral comparison articles (Playwright vs Cypress vs Selenium vs WebdriverIO) ● Framework benchmark repositories (community-run speed/reliability comparisons)\n\n## Overview\n\nWebdriverIO)\n\ncomparisons)",
+  "contentMarkdown": "## 61. Comparison & Decision-Making References\n\nTooling decisions should be evidence-based, not hype-driven.\n\n### State of Testing surveys\n\nAnnual surveys from Ministry of Testing, TestRail, and others report adoption trends, pain points, and team practices. Use them to:\n\n- Justify Playwright adoption to management with industry data\n- Understand common flake rates and CI maturity benchmarks\n- Identify skills gaps (e.g., \"60% of teams lack API testing\")\n\n### Comparison frameworks\n\nWhen evaluating Playwright vs. Selenium vs. Cypress, compare on:\n\n- **Browser support** — Chromium, Firefox, WebKit\n- **Language bindings** — Python, JS, Java, C#\n- **Auto-waiting** — built-in vs. explicit waits\n- **Debugging** — trace viewer, video, screenshot\n- **CI integration** — Docker, sharding, cloud runners\n- **API testing** — native context vs. separate tool",
   "exercises": [],
-  "resourceLinks": [],
+  "resourceLinks": [
+    {
+      "title": "State of Testing Report (Capgemini / Sogeti)",
+      "url": "https://www.capgemini.com/insights/research-library/world-quality-report/",
+      "description": "Annual enterprise QA trends — adoption, skills gaps, and maturity."
+    },
+    {
+      "title": "Ministry of Testing — State of Testing Survey",
+      "url": "https://www.ministryoftesting.com/testing-surveys",
+      "description": "Practitioner-focused survey on tools, practices, and community trends."
+    },
+    {
+      "title": "Testing Tools Dev",
+      "url": "https://testingtools.dev/",
+      "description": "Side-by-side comparison of test automation frameworks and tools."
+    },
+    {
+      "title": "Playwright vs Selenium (official comparison)",
+      "url": "https://playwright.dev/python/docs/why-playwright",
+      "description": "Playwright team's own comparison — useful starting point, read critically."
+    },
+    {
+      "title": "TestRail — Testing Trends Report",
+      "url": "https://www.testrail.com/resource/testrail-test-report/",
+      "description": "Annual report on testing practices, tools, and team structure."
+    }
+  ],
   "steps": [],
   "learn": []
 } as ChapterRecord;

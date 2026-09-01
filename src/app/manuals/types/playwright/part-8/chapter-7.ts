@@ -129,9 +129,35 @@ export const chapter = {
       ]
     }
   ],
-  "contentMarkdown": "● SeleniumConf / TestJS Summit — cross-tool automation conference talks ● PyCon talks on testing and automation (search \"playwright\" in PyCon archives) ● Ministry of Testing's TestBash conference sessions ● Recorded keynote/AMA sessions from Playwright maintainers at Microsoft Build or similar events\n\n## Overview\n\nKey points:",
+  "contentMarkdown": "## 58. Conferences & Talks\n\nConferences expose you to patterns, tools, and people you won't find in docs.\n\n### Must-know events\n\n- **TestBash** (Ministry of Testing) — practitioner-focused, inclusive, strong automation track.\n- **PyCon** — Python ecosystem including pytest, tooling, and testing libraries.\n- **SeleniumConf / Automation conferences** — broader automation community; many talks cover Playwright migration.\n\n### Getting value without travel\n\nMost conferences publish talk recordings on YouTube within weeks. Search \"TestBash Playwright\" or \"PyCon pytest\" for free, high-quality sessions. Submit a CFP (Call for Papers) once your capstone is solid — speaking accelerates career visibility.",
   "exercises": [],
-  "resourceLinks": [],
+  "resourceLinks": [
+    {
+      "title": "TestBash Events",
+      "url": "https://www.ministryoftesting.com/events/testbash",
+      "description": "Ministry of Testing flagship conference — online and in-person."
+    },
+    {
+      "title": "PyCon US",
+      "url": "https://us.pycon.org/",
+      "description": "Annual Python conference — pytest, tooling, and testing talks."
+    },
+    {
+      "title": "SeleniumConf",
+      "url": "https://seleniumconf.com/",
+      "description": "Broad automation community conference; Playwright migration talks common."
+    },
+    {
+      "title": "Ministry of Testing — All Events",
+      "url": "https://www.ministryoftesting.com/events",
+      "description": "TestBash, masterclasses, and community meetups worldwide."
+    },
+    {
+      "title": "Playwright Community Events",
+      "url": "https://playwright.dev/community/events",
+      "description": "Official Playwright meetups and community gatherings."
+    }
+  ],
   "steps": [],
   "learn": []
 } as ChapterRecord;

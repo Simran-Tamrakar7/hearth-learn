@@ -30,7 +30,7 @@ export const chapter = {
     "Does not cover CI integration — that comes in later parts"
   ],
   "tools": [],
-  "contentMarkdown": "Pytest fixtures, markers, POM pages, config, and data-driven tests form a maintainable suite.\n\n## Pass criteria\n\nPytest fixtures, markers, POM pages, config, and data-driven tests form a maintainable suite.",
+  "contentMarkdown": "## Checkpoint — Framework\n\nVerify you can apply Part 3 concepts before moving to advanced topics.\n\n- [ ] I can write a Playwright test that requests the `page` fixture and runs with `pytest`.\n- [ ] I have a `conftest.py` with at least one shared fixture using `yield` teardown.\n- [ ] I understand fixture scopes and default to `function` unless I have a measured reason not to.\n- [ ] I can run `pytest -m smoke` and `pytest -m regression` with markers registered in `pytest.ini`.\n- [ ] I have used `@pytest.mark.parametrize` for at least one data-driven test.\n- [ ] My project has a `pages/` folder with a `BasePage` and at least one page object class.\n- [ ] Tests call page-object methods, not raw locators scattered in test files.\n- [ ] `BASE_URL` is read from an environment variable, not hard-coded.\n- [ ] Test data lives in JSON files or Faker-generated fixtures, not inline strings.\n- [ ] Created test data is cleaned up via a `yield` fixture after each test.\n\n**Score:** 8–10 checked — ready for Part 4. 5–7 — revisit the gaps. Below 5 — rework Part 3 before continuing.",
   "exercises": [],
   "resourceLinks": [],
   "steps": [],

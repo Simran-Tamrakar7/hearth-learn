@@ -135,9 +135,35 @@ export const chapter = {
       ]
     }
   ],
-  "contentMarkdown": "● Official Playwright blog (release announcements, feature rationale) ● Individual QA engineer blogs on Medium/Dev.to/Hashnode tagged \"playwright-python\" ● Company engineering blogs (e.g., from teams that document their migration or scaling journey) ● Personal portfolio blogs from automation leads — often show real POM structures\n\n## Overview\n\nscaling journey)",
+  "contentMarkdown": "## 53. Blogs & Written Tutorials\n\nStay current with Playwright releases, community patterns, and real-world engineering stories.\n\n### Primary sources\n\n- **playwright.dev/blog** — release announcements, feature deep-dives, migration guides from the core team.\n- **dev.to** — practitioner tutorials, troubleshooting posts, and comparison articles tagged #playwright and #testing.\n- **Company engineering blogs** — Netflix, Spotify, Microsoft, Atlassian, and others publish migration stories and CI integration patterns at scale.\n\n### Reading strategy\n\nSubscribe to the Playwright blog RSS. Skim dev.to weekly for one new pattern. When preparing a tooling proposal, search `\"migrated to Playwright\" site:engineering.*` for case studies with real metrics.",
   "exercises": [],
-  "resourceLinks": [],
+  "resourceLinks": [
+    {
+      "title": "Playwright Blog",
+      "url": "https://playwright.dev/blog",
+      "description": "Official release notes, feature announcements, and migration guides."
+    },
+    {
+      "title": "dev.to — Playwright tag",
+      "url": "https://dev.to/t/playwright",
+      "description": "Community tutorials, tips, and troubleshooting from practitioners."
+    },
+    {
+      "title": "Microsoft Playwright Blog (Dev Blogs)",
+      "url": "https://devblogs.microsoft.com/playwright/",
+      "description": "Deep technical posts from the core engineering team."
+    },
+    {
+      "title": "Ministry of Testing — Articles",
+      "url": "https://www.ministryoftesting.com/software-testing-articles",
+      "description": "Broad QA community articles including automation strategy and tooling."
+    },
+    {
+      "title": "Atlassian Engineering Blog",
+      "url": "https://www.atlassian.com/engineering",
+      "description": "Example of a company engineering blog with test infrastructure stories."
+    }
+  ],
   "steps": [],
   "learn": []
 } as ChapterRecord;

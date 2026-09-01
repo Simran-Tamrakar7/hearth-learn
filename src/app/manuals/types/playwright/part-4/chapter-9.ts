@@ -30,7 +30,7 @@ export const chapter = {
     "Performance targets (5-minute smoke, 45-minute full suite) vary by application complexity"
   ],
   "tools": [],
-  "contentMarkdown": "You can mock network, hit APIs, reuse auth, run parallel/cross-browser, and debug with traces.\n\n## Pass criteria\n\nYou can mock network, hit APIs, reuse auth, run parallel/cross-browser, and debug with traces.",
+  "contentMarkdown": "## Checkpoint — Advanced\n\nConfirm you can apply Part 4 techniques before considering the manual complete.\n\n- [ ] I can mock an API response with `page.route()` and `route.fulfill()`.\n- [ ] I can block images with `route.abort()` to speed up non-visual tests.\n- [ ] I have written at least one `APIRequestContext` test (GET or POST).\n- [ ] I use API calls to seed data and the browser to verify UI behavior.\n- [ ] I have a visual regression test using `to_have_screenshot()` with committed baselines.\n- [ ] I have run an axe-core accessibility scan and fixed any violations.\n- [ ] Auth state is saved with `storage_state` and loaded via `browser_context_args`.\n- [ ] I can interact with open shadow DOM using standard locators.\n- [ ] I have run tests in parallel with `pytest -n auto`.\n- [ ] I can open a trace file with `playwright show-trace` and read the timeline.\n\n**Score:** 8–10 checked — you have solid advanced Playwright skills. 5–7 — revisit specific chapters. Below 5 — work through Part 4 hands-on before moving on.",
   "exercises": [],
   "resourceLinks": [],
   "steps": [],

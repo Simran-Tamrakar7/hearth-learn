@@ -130,9 +130,30 @@ export const chapter = {
       ]
     }
   ],
-  "contentMarkdown": "● Testing-focused podcasts (e.g., \"TestGuild,\" \"The Testing Show\") with Playwright-specific episodes ● General Python podcasts that occasionally cover test automation tooling ● Maintainer interviews/AMAs on software testing podcasts\n\n## Overview\n\nKey points:",
+  "contentMarkdown": "## 55. Podcasts\n\nPodcasts are ideal for commute listening and staying aware of industry trends.\n\n### Top picks for automation engineers\n\n- **TestGuild Automation Podcast** (Joe Colantonio) — tool comparisons, guest interviews with QA leaders, career advice.\n- **The Testing Show** (Qualitest) — testing strategy, team structure, and industry trends beyond any single tool.\n\n### Listening tips\n\nNote one actionable idea per episode — a CI pattern, a flake-reduction technique, a career tip. Search episode archives for \"Playwright\", \"pytest\", or \"flaky tests\" when preparing for interviews.",
   "exercises": [],
-  "resourceLinks": [],
+  "resourceLinks": [
+    {
+      "title": "TestGuild Automation Podcast",
+      "url": "https://testguild.com/automation-testing-podcast/",
+      "description": "Long-running automation podcast — tool reviews, interviews, career advice."
+    },
+    {
+      "title": "The Testing Show",
+      "url": "https://testingpodcast.com/",
+      "description": "Broad testing strategy and industry trends from Qualitest."
+    },
+    {
+      "title": "TestGuild YouTube Channel",
+      "url": "https://www.youtube.com/@TestGuild",
+      "description": "Video versions of podcast topics plus live conference recordings."
+    },
+    {
+      "title": "Ministry of Testing Podcast",
+      "url": "https://www.ministryoftesting.com/podcast",
+      "description": "Community stories, testing culture, and practitioner interviews."
+    }
+  ],
   "steps": [],
   "learn": []
 } as ChapterRecord;

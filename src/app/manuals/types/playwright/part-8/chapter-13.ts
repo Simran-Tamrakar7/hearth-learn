@@ -142,9 +142,35 @@ export const chapter = {
       ]
     }
   ],
-  "contentMarkdown": "● GitHub \"Watch\" the Playwright repo for release notifications ● Follow the Python Package Index (PyPI) page for playwright and pytest-playwright version history ● Bookmark the \"Migration guides\" section of official docs — reviewed every major version bump ● Set a recurring calendar reminder (quarterly) to review this entire resource list for dead links or better replacements\n\n## Overview\n\nKey points:\n\n```\nfor dead links or better replacements\n\npytest-playwright version history\n```",
+  "contentMarkdown": "## 64. Staying Plugged Into the Ecosystem\n\nPlaywright evolves fast. A quarterly audit habit keeps your skills and suite current.\n\n### GitHub watch list\n\n- **github.com/microsoft/playwright** — watch Releases for breaking changes.\n- **github.com/microsoft/playwright-python** — Python binding updates.\n- **Your dependencies** — `pip list --outdated` monthly; update pytest-playwright deliberately, not blindly.\n\n### PyPI & version tracking\n\n- Check [pypi.org/project/playwright](https://pypi.org/project/playwright/) for latest stable.\n- Read [playwright.dev/docs/release-notes](https://playwright.dev/docs/release-notes) before upgrading — note deprecated APIs.\n\n### Migration guides\n\nWhen upgrading major versions, follow official migration guides. Search release notes for APIs you use: `page.wait_for_selector`, `context.storage_state`, fixture scopes.\n\n### Quarterly audit checklist\n\nEvery 3 months:\n\n1. Update Playwright + pytest-playwright to latest stable\n2. Run full suite locally and in CI after update\n3. Review release notes for deprecated APIs in your codebase\n4. Re-read one Part 8 resource (blog, podcast, or doc page)\n5. Check CI runtime — if suite exceeds 15 minutes, evaluate sharding (Chapter 27)\n\nStaying current is a habit, not a one-time event. Block 30 minutes quarterly on your calendar.",
   "exercises": [],
-  "resourceLinks": [],
+  "resourceLinks": [
+    {
+      "title": "Playwright GitHub Releases",
+      "url": "https://github.com/microsoft/playwright/releases",
+      "description": "Watch for breaking changes, new features, and bug fixes."
+    },
+    {
+      "title": "Playwright Python on PyPI",
+      "url": "https://pypi.org/project/playwright/",
+      "description": "Latest stable version and release history for the Python package."
+    },
+    {
+      "title": "Playwright Release Notes",
+      "url": "https://playwright.dev/docs/release-notes",
+      "description": "Official changelog with migration notes for each version."
+    },
+    {
+      "title": "pytest-playwright on PyPI",
+      "url": "https://pypi.org/project/pytest-playwright/",
+      "description": "Pytest plugin version — keep in sync with Playwright core."
+    },
+    {
+      "title": "Playwright GitHub Discussions",
+      "url": "https://github.com/microsoft/playwright/discussions",
+      "description": "Community Q&A, feature requests, and migration help from the team."
+    }
+  ],
   "steps": [],
   "learn": []
 } as ChapterRecord;

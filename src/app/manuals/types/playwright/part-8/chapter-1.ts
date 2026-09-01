@@ -150,9 +150,35 @@ export const chapter = {
       ]
     }
   ],
-  "contentMarkdown": "● \"Python Testing with pytest\" by Brian Okken — foundational pytest knowledge that underpins pytest-playwright ● \"Fluent Python\" — for writing cleaner, more idiomatic framework code ● General test-automation architecture books (POM, design patterns for QA) — not Playwright-specific but transferable ● Whitepapers/case studies published by companies who migrated to Playwright at scale\n\n## Overview\n\nKey points:",
+  "contentMarkdown": "## 52. Books & Long-Form Reading\n\nBooks provide the deepest foundation for Playwright and Python test automation — far beyond what a single tutorial covers.\n\n### Recommended reading\n\n- **Python Testing with pytest** (Brian Okken) — fixtures, parametrization, conftest.py, markers, plugins. Every concept maps directly to pytest-playwright.\n- **Fluent Python** (Luciano Ramalho) — write cleaner page objects, test data builders, and custom fixtures with idiomatic Python.\n- **Test automation architecture** — Martin Fowler's Page Object bliki, \"Experiences of Test Automation\" (Dot Graham et al.). Patterns transfer across Playwright, Selenium, and Cypress.\n- **Migration case studies** — engineering blog posts from teams that migrated to Playwright at scale reveal flake reduction, CI choices, and locator strategy lessons.\n\n### How to use books effectively\n\nPair every chapter with a small exercise in your own repo. Read pytest fixtures → refactor your login into a yield-based fixture. Read POM bliki → extract inline locators into a page class.\n\nCross-check API details against current Playwright docs — books lag behind release cadence.",
   "exercises": [],
-  "resourceLinks": [],
+  "resourceLinks": [
+    {
+      "title": "Python Testing with pytest (2nd Edition)",
+      "url": "https://www.manning.com/books/python-testing-with-pytest-second-edition",
+      "description": "Foundational pytest book — fixtures, conftest.py, parametrization, plugins."
+    },
+    {
+      "title": "pytest official documentation",
+      "url": "https://docs.pytest.org/en/stable/",
+      "description": "Free reference alongside the Okken book; always current."
+    },
+    {
+      "title": "Fluent Python (2nd Edition)",
+      "url": "https://www.oreilly.com/library/view/fluent-python-2nd/9781098113408/",
+      "description": "Idiomatic Python for cleaner framework code — type hints, dataclasses, context managers."
+    },
+    {
+      "title": "Page Object — Martin Fowler",
+      "url": "https://martinfowler.com/bliki/PageObject.html",
+      "description": "The canonical POM pattern reference; tool-agnostic architecture guidance."
+    },
+    {
+      "title": "Experiences of Test Automation",
+      "url": "https://www.amazon.com/Experiences-Test-Automation-Case-Studies/dp/0321754069",
+      "description": "Real-world case studies on framework design, team structure, and scaling."
+    }
+  ],
   "steps": [],
   "learn": []
 } as ChapterRecord;

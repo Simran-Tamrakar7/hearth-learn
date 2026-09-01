@@ -137,9 +137,35 @@ export const chapter = {
       ]
     }
   ],
-  "contentMarkdown": "● X/Twitter accounts of Playwright maintainers and core contributors — early signal on roadmap ● LinkedIn groups for QA automation professionals ● Playwright's official Discord (real-time help, maintainer presence) ● Slack communities for test automation (Ministry of Testing Slack, regional QA meetup Slacks)\n\n## Overview\n\nmeetup Slacks)",
+  "contentMarkdown": "## 59. Social & Real-Time Communities\n\nReal-time communities solve problems docs can't — edge cases, CI quirks, and \"has anyone seen this?\"\n\n### Where to participate\n\n- **Playwright Discord** — fastest help for Playwright-specific issues; core team members often respond.\n- **GitHub microsoft/playwright** — file issues, read discussions, watch releases.\n- **Reddit r/QualityAssurance** and **r/softwaretesting** — career advice, tool comparisons, interview prep.\n- **Ministry of Testing Slack** — global QA community with automation channels.\n\n### Community etiquette\n\nSearch before asking. Share a minimal reproducible example (repo or trace). When you solve a problem, post the answer — it builds reputation and helps the next person.",
   "exercises": [],
-  "resourceLinks": [],
+  "resourceLinks": [
+    {
+      "title": "Playwright Discord",
+      "url": "https://aka.ms/playwright/discord",
+      "description": "Official community Discord — fastest channel for Playwright help."
+    },
+    {
+      "title": "microsoft/playwright on GitHub",
+      "url": "https://github.com/microsoft/playwright",
+      "description": "Source, issues, discussions, and release notes."
+    },
+    {
+      "title": "Playwright Community page",
+      "url": "https://playwright.dev/community",
+      "description": "Links to Discord, Stack Overflow, Twitter, and meetups."
+    },
+    {
+      "title": "Ministry of Testing Slack",
+      "url": "https://www.ministryoftesting.com/slack",
+      "description": "Global testing community with dedicated automation channels."
+    },
+    {
+      "title": "Stack Overflow — Playwright tag",
+      "url": "https://stackoverflow.com/questions/tagged/playwright",
+      "description": "Searchable Q&A archive for specific technical problems."
+    }
+  ],
   "steps": [],
   "learn": []
 } as ChapterRecord;

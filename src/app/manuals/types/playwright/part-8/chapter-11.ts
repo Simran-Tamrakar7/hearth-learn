@@ -114,9 +114,35 @@ export const chapter = {
       ]
     }
   ],
-  "contentMarkdown": "● A living glossary of terms used throughout this manual: locator, fixture, flaky test, auto-waiting, storage state, trace, sharding, POM, etc. ● Recommend maintaining this as a one-page internal reference for onboarding new team members ● Update it whenever the team adopts new Playwright terminology (e.g., new API additions)\n\n## Overview\n\nauto-waiting, storage state, trace, sharding, POM, etc.\n\nadditions)",
+  "contentMarkdown": "## 62. Glossary of Terms\n\nKey vocabulary for Playwright + pytest automation interviews and code reviews.\n\n| Term | Definition |\n|---|---|\n| **Locator** | A reference to one or more DOM elements. Playwright locators auto-retry until the element is actionable or timeout expires. Example: `page.get_by_role(\"button\", name=\"Save\")`. |\n| **Fixture** | A pytest function that provides setup/teardown for tests. Declared as a parameter; conftest.py shares fixtures across files. Example: `authenticated_page` fixture that logs in once. |\n| **Flaky test** | A test that passes and fails non-deterministically on the same code. Usually caused by timing, test isolation, or environment differences — not by Playwright itself. |\n| **storage_state** | Saved cookies + localStorage from a browser context. Loaded into new contexts to skip login UI. Equivalent concept to Cypress cy.session(). |\n| **Trace** | A Playwright recording of test execution — DOM snapshots, network, console, screenshots at each step. Opened in trace.playwright.dev for post-mortem debugging. |\n| **Sharding** | Splitting test suite across multiple CI machines. Each shard runs a subset: `pytest --shard=1/4`. Reduces total CI time. |\n| **POM (Page Object Model)** | Design pattern where each page/screen is a class encapsulating locators and actions. Tests call page methods, not raw locators. |\n| **Auto-waiting** | Playwright's default behavior: actions and assertions retry until conditions are met or timeout. Replaces explicit `time.sleep()`. |\n| **APIRequestContext** | Playwright's HTTP client for API calls independent of browser. Accessed via the `request` fixture in pytest-playwright. |\n| **Headless** | Running browser without visible UI. Default in CI. Use `--headed` locally for debugging. |",
   "exercises": [],
-  "resourceLinks": [],
+  "resourceLinks": [
+    {
+      "title": "Playwright Glossary (Locators)",
+      "url": "https://playwright.dev/python/docs/locators",
+      "description": "Official locator strategies — role, text, label, test-id, CSS, XPath."
+    },
+    {
+      "title": "pytest Fixtures documentation",
+      "url": "https://docs.pytest.org/en/stable/explanation/fixtures.html",
+      "description": "How fixtures work — scope, autouse, yield, and conftest.py."
+    },
+    {
+      "title": "Playwright — Authentication (storage_state)",
+      "url": "https://playwright.dev/python/docs/auth",
+      "description": "Saving and reusing login state across tests and sessions."
+    },
+    {
+      "title": "Playwright — Trace Viewer",
+      "url": "https://playwright.dev/python/docs/trace-viewer",
+      "description": "Recording, opening, and analyzing traces for failed tests."
+    },
+    {
+      "title": "Playwright — Sharding",
+      "url": "https://playwright.dev/python/docs/test-sharding",
+      "description": "Splitting test suites across parallel CI workers."
+    }
+  ],
   "steps": [],
   "learn": []
 } as ChapterRecord;

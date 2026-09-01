@@ -152,9 +152,35 @@ export const chapter = {
       ]
     }
   ],
-  "contentMarkdown": "● Chrome/Firefox DevTools (Elements, Network tabs) — essential for building locators and debugging ● Accessibility inspector extensions (axe DevTools browser extension) — pairs with axe-core testing ● Locator-picker style extensions that complement Playwright's own Codegen tool\n\n## Overview\n\nKey points:",
+  "contentMarkdown": "## 60. Browser Extensions & Developer Tools\n\nThe right browser tools make writing and debugging Playwright tests faster.\n\n### Accessibility testing\n\n- **axe DevTools** (Deque) — run accessibility scans in-browser; pairs with `axe-playwright-python` for automated a11y checks in CI.\n\n### Built-in DevTools\n\n- **Chrome DevTools** — inspect elements, network tab, console, and performance. Essential for writing locators and understanding why a test fails.\n- **Playwright Inspector** — launched via `PWDEBUG=1 pytest` or `--headed --slowmo=500`; step through tests interactively.\n\n### Locator discovery workflow\n\n1. Open app in browser → DevTools → inspect element\n2. Note role, label, text, or test-id\n3. Translate to Playwright: `page.get_by_role(\"button\", name=\"Submit\")`\n4. Verify in Playwright Inspector before committing to the test",
   "exercises": [],
-  "resourceLinks": [],
+  "resourceLinks": [
+    {
+      "title": "axe DevTools Browser Extension",
+      "url": "https://www.deque.com/axe/devtools/",
+      "description": "In-browser accessibility scanning — pairs with axe-playwright for CI."
+    },
+    {
+      "title": "Chrome DevTools Documentation",
+      "url": "https://developer.chrome.com/docs/devtools/",
+      "description": "Official guide to Elements, Network, Console, and Performance panels."
+    },
+    {
+      "title": "Playwright Inspector",
+      "url": "https://playwright.dev/python/docs/debug",
+      "description": "Interactive test debugging — step through, pick locators, edit live."
+    },
+    {
+      "title": "axe-core (open source engine)",
+      "url": "https://github.com/dequelabs/axe-core",
+      "description": "The accessibility engine behind axe DevTools and axe-playwright."
+    },
+    {
+      "title": "Playwright Trace Viewer",
+      "url": "https://trace.playwright.dev/",
+      "description": "Web-based trace inspector — open CI failure traces without local setup."
+    }
+  ],
   "steps": [],
   "learn": []
 } as ChapterRecord;

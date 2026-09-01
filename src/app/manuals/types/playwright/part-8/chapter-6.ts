@@ -118,9 +118,30 @@ export const chapter = {
       ]
     }
   ],
-  "contentMarkdown": "● ISTQB (general testing foundation — not Playwright-specific, but often expected alongside tool skills) ● Vendor/community-issued Playwright certificates of completion (from course platforms above) ● Internal company certification tracks, if your organization has one\n\n## Overview\n\nalongside tool skills)\n\nplatforms above)",
+  "contentMarkdown": "## 57. Certifications\n\nCertifications validate breadth; your GitHub portfolio validates depth. Both matter at different career stages.\n\n### ISTQB\n\nThe **International Software Testing Qualifications Board** offers the most widely recognized testing certifications:\n\n- **Foundation Level (CTFL)** — testing fundamentals, test design, tools, and process. Useful for manual QA transitioning to automation.\n- **Test Automation Engineer** — specifically covers automation architecture, frameworks, and CI.\n\n### When certifications help\n\n- Enterprise/regulated industries that require formal credentials\n- Early career when you lack portfolio projects\n- Complementing a strong GitHub capstone — not replacing it\n\n### When they don't\n\nStartups and product companies typically care more about your repo, CI badge, and ability to explain POM/fixtures in an interview.",
   "exercises": [],
-  "resourceLinks": [],
+  "resourceLinks": [
+    {
+      "title": "ISTQB Official Site",
+      "url": "https://www.istqb.org/",
+      "description": "Certification syllabus, exam providers, and accredited training."
+    },
+    {
+      "title": "ISTQB Certified Tester Foundation Level",
+      "url": "https://www.istqb.org/certifications/certified-tester-foundation-level",
+      "description": "Entry-level certification covering testing fundamentals."
+    },
+    {
+      "title": "ISTQB Test Automation Engineer",
+      "url": "https://www.istqb.org/certifications/certified-tester-advanced-level-test-automation-engineer",
+      "description": "Advanced certification focused on automation architecture and tools."
+    },
+    {
+      "title": "ASTQB (American Software Testing Qualifications Board)",
+      "url": "https://astqb.org/",
+      "description": "US exam board for ISTQB certifications."
+    }
+  ],
   "steps": [],
   "learn": []
 } as ChapterRecord;
