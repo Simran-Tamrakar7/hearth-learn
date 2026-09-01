@@ -1,4 +1,4 @@
-import { PATHWISE_HEARTH_MANUALS, findHearthManual } from "../src/app/manuals/_lib/pathwiseToHearth.ts";
+import { PATHWISE_HEARTH_MANUALS, findHearthManual } from "../src/app/manuals/features/reader.tsx";
 import { existsSync } from "node:fs";
 
 if (PATHWISE_HEARTH_MANUALS.length < 20) throw new Error("too few manuals");

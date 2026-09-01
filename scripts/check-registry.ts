@@ -1,9 +1,8 @@
 import assert from "node:assert/strict";
 import { existsSync, readdirSync } from "node:fs";
-import { MANUALS } from "../src/app/manuals/_content/_registry.ts";
+import { MANUALS } from "../src/app/manuals/registry.ts";
 
 const manualsRoot = new URL("../src/app/manuals/", import.meta.url);
-const contentRoot = new URL("../src/app/manuals/_content/", import.meta.url);
 
 function uniqueIds(rows: { id: string }[], label: string) {
   const ids = rows.map((r) => r.id);
@@ -23,13 +22,14 @@ for (const row of MANUALS) {
   assert.ok(existsSync(mdManualDir), `registry id ${row.id} missing src/app/manuals/${row.id}/`);
   assert.ok(existsSync(new URL("./toc.ts", mdManualDir)), `${row.id} missing toc.ts`);
   assert.ok(existsSync(new URL("./meta.json", mdManualDir)), `${row.id} missing meta.json`);
-  assert.ok(existsSync(new URL("./compiled.body.ts", mdManualDir)), `${row.id} missing compiled.body.ts`);
+  assert.ok(existsSync(new URL("./chapters-index.ts", mdManualDir)), `${row.id} missing chapters-index.ts`);
+  assert.ok(!existsSync(new URL("./compiled.body.ts", mdManualDir)), `${row.id} must not have compiled.body.ts`);
   const partDirs = readdirSync(mdManualDir).filter((n) => /^part-\d+$/.test(n));
   assert.ok(partDirs.length > 0, `${row.id} has no part-N folders`);
 }
 
 const ttFiles = readdirSync(new URL("./testing-types/", manualsRoot));
-for (const forbidden of ["overlay.ts", "outline.ts", "data.js"]) {
+for (const forbidden of ["overlay.ts", "outline.ts", "data.js", "compiled.body.ts"]) {
   assert.ok(!ttFiles.includes(forbidden), `testing-types should not contain ${forbidden}`);
 }
 

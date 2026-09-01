@@ -24,17 +24,15 @@ import {
   ExternalLink,
   Play,
 } from "lucide-react";
-import { MANUALS_DATA, type ManualItem } from "@/app/manuals/_lib/manualsData";
-import { activeManualSlugs } from "@/app/manuals/_content/_registry";
+import { MANUALS_DATA, type ManualItem } from "@/app/manuals/types";
+import { activeManualSlugs } from "@/app/manuals/registry";
 import {
   applyManualOverlay,
   hiddenManualSlugs,
   removeCatalogManual,
   subscribeUserManuals,
-} from "@/app/manuals/_lib/userManuals";
-import { AddManualControl } from "@/app/manuals/_ui/AddManualControl";
-import { ManualCard } from "@/app/manuals/_ui/ManualCard";
-import { RecentlyViewed } from "@/app/manuals/_ui/RecentlyViewed";
+} from "@/app/manuals/features/local-storage";
+import { AddManualControl, ManualCard, RecentlyViewed } from "@/app/manuals/features/catalog";
 import { isManualsCatalogPin, manualPinId, subscribePinnedItems } from "@/components/ui/PinButton";
 import { usePermissions } from "@/lib/useAuthz";
 

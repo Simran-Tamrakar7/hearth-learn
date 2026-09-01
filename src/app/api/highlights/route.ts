@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { isHighlightColor, tabTypeToField } from "@/app/manuals/_lib/highlights";
+import { isHighlightColor, tabTypeToField } from "@/app/manuals/features/highlights";
 
 const TABS = new Set(["fullContent", "summary", "aiSummary"]);
 

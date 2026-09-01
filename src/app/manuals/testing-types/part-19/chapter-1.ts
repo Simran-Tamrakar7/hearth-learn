@@ -1,0 +1,124 @@
+import type { ChapterRecord } from "../../types";
+
+/** Continuous Testing (CI/CD) */
+export const chapter = {
+  "id": "tt-continuous-testing-cicd",
+  "overlayNo": 73,
+  "title": "Continuous Testing (CI/CD)",
+  "minutes": 25,
+  "level": "intermediate",
+  "phase": "Part 19 · Continuous, Interop, Conformance & Globalization",
+  "partName": "Part 19 · Continuous, Interop, Conformance & Globalization",
+  "overviewText": "Continuous testing is the practice of wiring automated tests directly into the CI/CD pipeline so they run automatically on every commit, pull request, or deployment — not a distinct kind of test in itself, but a delivery strategy that determines when and how automatically every other test type in this manual actually gets executed.",
+  "why": "A great automated test suite that only ever gets run manually, occasionally, before a release, provides almost none of its real value — bugs sit undetected for days or weeks before anyone notices, and by the time someone does, the change that caused them is buried under dozens of other commits, making it far harder to isolate. Continuous testing closes that gap by making test execution an automatic, unavoidable part of the delivery process itself, so feedback arrives within minutes of the change that caused a problem, while it's still fresh and easy to trace.",
+  "when": "From the very start of a project, growing in scope as the test suite grows — unit and fast integration tests wired in first since they need to run on every single commit, with slower suites (full regression, performance, soak tests) scheduled less frequently (nightly, or before release) so the fast feedback loop on every commit stays fast.",
+  "practical": {
+    "app": "HRMS Payroll Calculation Regression",
+    "scenario": "The Bizlevate team wires its regression suite into GitHub Actions to run on every pull request touching the Payroll module.",
+    "fail": "A developer changes the tax-bracket rounding logic; the change is only caught two weeks later during manual pre-release testing, by which point six other commits have touched the same file, making it much harder to isolate exactly which change caused the regression.",
+    "failLabel": "Fail (before)",
+    "pass": "With the regression suite wired into GitHub Actions, the same rounding bug is caught within four minutes of the pull request being opened, blocking the merge with a clear failing-test link directly in the PR, while the change is still fresh in the developer's mind.",
+    "passLabel": "Pass (after fix)"
+  },
+  "advantages": [
+    "Shrinks the gap between a bug being introduced and being caught from days/weeks down to minutes",
+    "Makes running tests a mandatory, automatic part of delivery rather than something that depends on someone remembering to do it",
+    "Gives every pull request an objective, consistent quality gate before it can be merged",
+    "Both tools have generous free tiers well within reach of a small-to-mid-sized team"
+  ],
+  "limitations": [
+    "A slow, poorly-organized pipeline can itself become a bottleneck the team starts trying to work around rather than benefit from",
+    "Only as good as the underlying test suite — continuous testing amplifies a strong suite, but doesn't create test coverage that doesn't already exist",
+    "Jenkins in particular carries real setup and ongoing maintenance overhead compared to a hosted option",
+    "Flaky tests in a CI pipeline are especially costly, since they erode trust in the pipeline and get ignored/re-run rather than fixed"
+  ],
+  "tools": [
+    {
+      "name": "GitHub Actions",
+      "sub": "Hosted CI in the repo",
+      "url": "https://github.com/features/actions",
+      "desc": "A CI/CD platform built directly into GitHub — workflows are defined as YAML files stored in the repository itself, triggered automatically by events like a push or pull request, with no separate server to host or maintain.",
+      "adv": [
+        "No separate server to host or maintain",
+        "Runs on every push and pull request from a file in the repo",
+        "Failed checks can block merge when branch protection is on",
+        "Generous free tier for small-to-mid-sized teams"
+      ],
+      "lim": [
+        "A slow workflow becomes a bottleneck the team starts to work around",
+        "Only as good as the tests it runs",
+        "Flaky tests erode trust and get ignored",
+        "Hosted minutes can run out on very large matrices"
+      ],
+      "steps": [
+        {
+          "t": "Step 1 — Add a workflow file",
+          "p": "Create .github/workflows/test.yml that installs dependencies and runs the suite.",
+          "c": "name: Test\non: [push, pull_request]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: 22\n      - run: npm ci && npm test"
+        },
+        {
+          "t": "Step 2 — Trigger on every relevant change",
+          "p": "on: [push, pull_request] so it is not optional."
+        },
+        {
+          "t": "Step 3 — Fail the check on a red suite",
+          "p": "With branch protection, a failed run blocks the merge."
+        },
+        {
+          "t": "Step 4 — Use a build matrix when needed",
+          "p": "Same suite across Node versions, browsers, or OS in parallel."
+        },
+        {
+          "t": "Step 5 — Read failures in the Actions tab",
+          "p": "Which test failed and why, in the GitHub UI on the PR."
+        }
+      ]
+    },
+    {
+      "name": "Jenkins",
+      "sub": "Self-hosted pipeline",
+      "url": "https://jenkins.io",
+      "desc": "A free, self-hosted automation server with a long track record — more setup and maintenance overhead than a hosted service like GitHub Actions, but highly flexible and well suited to complex, multi-stage, or on-premises pipelines.",
+      "adv": [
+        "Highly flexible for complex or on-premises pipelines",
+        "Pipeline as code via a Jenkinsfile in the repo",
+        "Build history shows pass/fail trends, not just the latest run",
+        "Free and self-hosted — no per-minute hosted cost"
+      ],
+      "lim": [
+        "Real setup and ongoing maintenance overhead vs a hosted option",
+        "A slow, poorly-organized pipeline becomes a bottleneck",
+        "Does not create coverage the suite does not already have",
+        "Flaky stages get re-run instead of fixed"
+      ],
+      "steps": [
+        {
+          "t": "Step 1 — Install Jenkins",
+          "p": "Dedicated server or container, then a new Pipeline job."
+        },
+        {
+          "t": "Step 2 — Check in a Jenkinsfile",
+          "p": "Stages for build, test, deploy live in the repository.",
+          "c": "pipeline {\n  agent any\n  stages {\n    stage('Test') {\n      steps { sh 'npm ci && npm test' }\n    }\n  }\n}"
+        },
+        {
+          "t": "Step 3 — Webhook on every commit",
+          "p": "Jenkins triggers automatically when the repo is pushed."
+        },
+        {
+          "t": "Step 4 — Fail the build and notify",
+          "p": "Email or Slack when the test stage fails."
+        },
+        {
+          "t": "Step 5 — Watch trends on the dashboard",
+          "p": "Pass/fail history over time, not only the latest run."
+        }
+      ]
+    }
+  ],
+  "contentMarkdown": "## Wire the suite into CI\n\nFail the check on red; block merge with branch protection.",
+  "exercises": [],
+  "resourceLinks": [],
+  "steps": [],
+  "learn": []
+} as ChapterRecord;

@@ -1,0 +1,86 @@
+import type { ChapterRecord } from "../../types";
+
+/** Cloud Testing */
+export const chapter = {
+  "id": "tt-cloud-testing",
+  "overlayNo": 83,
+  "title": "Cloud Testing",
+  "minutes": 25,
+  "level": "advanced",
+  "phase": "Part 21 · Coverage, OAT, Cloud & Golden Master",
+  "partName": "Part 21 · Coverage, OAT, Cloud & Golden Master",
+  "overviewText": "Cloud testing verifies an application's performance, scalability, and functional correctness specifically in a cloud-hosted environment — checking behaviors unique to the cloud itself, like auto-scaling under load, resilience across multiple regions or availability zones, and recovery from cloud-specific failure events, rather than testing generic application logic that happens to run on cloud infrastructure.",
+  "why": "Cloud infrastructure's core promise — elastic scaling, redundancy across zones — only actually delivers real value if the application is genuinely built and verified to take advantage of it; an application that silently assumes a single fixed server will behave badly the moment it's auto-scaled across multiple instances (inconsistent session state, race conditions between instances) or a zone genuinely fails. Cloud testing is what specifically verifies the application handles these cloud-native realities correctly, rather than merely running on cloud infrastructure without actually being cloud-resilient.",
+  "when": "After migrating to, or building specifically for, cloud infrastructure — tested deliberately under conditions that exercise auto-scaling and multi-zone behavior, which won't be naturally exercised by standard functional or single-instance load testing.",
+  "practical": {
+    "app": "HRMS Roles & Permissions Under Auto-Scaling",
+    "scenario": "Bizlevate's Roles & Permissions module is load-tested with BlazeMeter at a level sufficient to trigger the environment's auto-scaling from one instance to three.",
+    "fail": "Once traffic is distributed across the newly-scaled instances, some requests intermittently return stale permission data — the module was caching permissions in each instance's local memory rather than a shared cache, so different instances briefly disagree with each other during the scaling transition.",
+    "pass": "Permission data is moved to a shared, centralized cache accessible by every instance; re-running the same auto-scaling load test confirms permission data now stays consistent across all instances throughout the scaling event.",
+    "passLabel": "Pass (after fix)"
+  },
+  "advantages": [
+    "Verifies the application actually benefits from, and correctly handles, the elasticity cloud infrastructure is specifically built to provide",
+    "Free tier is genuinely capable of generating load sufficient to trigger real auto-scaling behavior, unlike many local-only load tools",
+    "Specifically tests cloud-native failure modes (instance restart, zone outage) that a standard single-server load test would never naturally exercise",
+    "Multi-region test locations reveal genuine consistency issues across zones that a single-location test would miss entirely"
+  ],
+  "limitations": [
+    "Generating load sufficient to trigger real auto-scaling can incur real cloud infrastructure costs on the environment under test, separate from BlazeMeter's own pricing",
+    "Free tier load/duration limits may fall short of what's needed to fully exercise scaling behavior for a large-scale application",
+    "Cloud-provider-specific auto-scaling configuration and behavior varies significantly, so findings don't always transfer cleanly between different cloud platforms",
+    "Deliberately simulating a genuine zone-level failure isn't always possible or safe to do against a real production environment"
+  ],
+  "tools": [
+    {
+      "name": "BlazeMeter",
+      "sub": "Cloud-scale load, multi-region",
+      "url": "https://blazemeter.com",
+      "seeChapter": 14,
+      "desc": "A free-tier-available, JMeter-compatible load-testing platform built specifically for cloud-scale testing — able to generate load sufficient to actually trigger real auto-scaling behavior and to distribute test traffic across multiple geographic locations, closer to how real global cloud traffic actually arrives.",
+      "adv": [
+        "Exercises elasticity, not just single-instance capacity",
+        "Free tier can trigger real auto-scaling",
+        "Cloud-native failures a local load test never hits",
+        "Multi-region locations find cross-zone inconsistency"
+      ],
+      "lim": [
+        "The environment under test can incur real cloud cost",
+        "Free-tier limits may be too small for large-scale apps",
+        "Findings do not always transfer across cloud vendors",
+        "True zone failure is not always safe to simulate in prod"
+      ],
+      "steps": [
+        {
+          "t": "Step 1 — Target the cloud-hosted environment",
+          "p": "BlazeMeter builder or an imported JMeter plan."
+        },
+        {
+          "t": "Step 2 — Ramp past the auto-scale threshold",
+          "p": "Not just a single instance's comfortable capacity."
+        },
+        {
+          "t": "Step 3 — Watch the scaling event itself",
+          "p": "Session or data inconsistency as new instances join."
+        },
+        {
+          "t": "Step 4 — Multi-region if the app spans zones",
+          "p": "Compare consistency of results across test locations."
+        },
+        {
+          "t": "Step 5 — Simulate instance/zone failure where safe",
+          "p": "App continues via remaining healthy capacity."
+        },
+        {
+          "t": "Step 6 — Read the scaling transition, not only steady state",
+          "p": "Response time and error rate during the change."
+        }
+      ]
+    }
+  ],
+  "contentMarkdown": "## Ramp past the scale threshold\n\nWatch the transition, not only steady state.",
+  "exercises": [],
+  "resourceLinks": [],
+  "steps": [],
+  "learn": []
+} as ChapterRecord;

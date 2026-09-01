@@ -38,9 +38,9 @@ import {
 } from "lucide-react";
 import { COOKBOOK_DISHES } from "@/app/rest/cookbook/_content";
 import { ARCADIA_GAMES } from "@/app/rest/games/_content";
-import { findHearthManual } from "@/app/manuals/_lib/manualsData";
-import { pinnableManuals } from "@/app/manuals/_content/_registry";
-import { hiddenManualSlugs, subscribeUserManuals } from "@/app/manuals/_lib/userManuals";
+import { findHearthManual } from "@/app/manuals/types";
+import { pinnableManuals } from "@/app/manuals/registry";
+import { hiddenManualSlugs, subscribeUserManuals } from "@/app/manuals/features/local-storage";
 import { PinButton, getPinnedItems, savePinnedItems, PinnedItemMetadata } from "@/components/ui/PinButton";
 
 interface DashboardData {

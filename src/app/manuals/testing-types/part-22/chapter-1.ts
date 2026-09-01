@@ -1,0 +1,85 @@
+import type { ChapterRecord } from "../../types";
+
+/** Content Testing */
+export const chapter = {
+  "id": "tt-content-testing",
+  "overlayNo": 85,
+  "title": "Content Testing",
+  "minutes": 20,
+  "level": "beginner",
+  "phase": "Part 22 · Content, Session, OO & PWA",
+  "partName": "Part 22 · Content, Session, OO & PWA",
+  "overviewText": "Content testing reviews the actual text, labels, and messaging displayed throughout an application — accuracy, clarity, tone, and above all consistency of terminology — checking the words themselves as a distinct concern from whether the underlying feature functionally works correctly.",
+  "why": "A feature can be functionally flawless and still confuse or frustrate users through its content alone — an unclear label, a typo that undermines trust, or the same underlying concept called two different things in two different places (\"Leave Balance\" on one screen, \"Leave Credit\" on another), leaving a user genuinely unsure whether they're looking at the same thing or something different. Content testing is what deliberately catches these issues, which functional and even usability testing can easily pass right over if the reviewer is focused on behavior rather than the words themselves.",
+  "when": "Across every screen as part of standard review, and specifically whenever new copy is introduced or an existing screen is reworked — checked against a consistent internal terminology/style reference, not left to each screen's author to phrase independently.",
+  "practical": {
+    "app": "HRMS Leave Terminology Inconsistency",
+    "scenario": "Vale, configured with Bizlevate's internal terminology guide, is run against the application's content files.",
+    "fail": "The scan flags \"Leave Credit\" appearing on the employee dashboard while every other screen consistently uses \"Leave Balance\" for the identical concept — a small inconsistency, but one that had already generated confused support tickets from employees genuinely unsure if the two labels meant different things.",
+    "pass": "The dashboard label is corrected to \"Leave Balance\" to match the rest of the application; re-running Vale against the updated content confirms no remaining terminology inconsistencies for this term.",
+    "passLabel": "Pass (after fix)"
+  },
+  "advantages": [
+    "Catches typos, unclear labels, and confusing wording that hurt usability and undermine user trust",
+    "Ensures the same concept is referred to consistently everywhere in the product, reducing user confusion",
+    "Automated linting with Vale finds terminology drift across many screens far more completely than manual review alone can",
+    "Cheap, high-visibility improvement — content fixes are typically low-risk and low-effort relative to their impact on perceived quality"
+  ],
+  "limitations": [
+    "Vale checks consistency and defined style rules, not genuine clarity or correctness — a human review is still needed for that",
+    "Requires an actively maintained style/terminology guide to be useful; a stale or incomplete guide limits what it can catch",
+    "Doesn't cover translated content in other locales — that's the separate concern of localization testing (Chapter 23)",
+    "Reviewing dynamic/templated text for every real-data edge case (pluralization, unusual name lengths) can be easy to under-scope"
+  ],
+  "tools": [
+    {
+      "name": "Vale",
+      "sub": "Prose linter + custom style",
+      "url": "https://vale.sh",
+      "desc": "A free, open-source prose linter that can be configured with a custom style guide (approved terminology, banned phrases, tone rules) and then automatically scan written content against it — catching terminology drift across many screens far more reliably and completely than manual review alone.",
+      "adv": [
+        "Catches typos and confusing labels functional tests skip",
+        "Same concept, same term, everywhere",
+        "Finds drift across dozens of screens",
+        "Low-risk, high-visibility fixes"
+      ],
+      "lim": [
+        "Consistency is not the same as clarity",
+        "A stale style guide limits what it can catch",
+        "Does not cover translated locales (Chapter 23)",
+        "Dynamic/templated edge cases are easy to under-scope"
+      ],
+      "steps": [
+        {
+          "t": "Step 1 — Write the terminology guide",
+          "p": "Approved term per concept — always \"Leave Balance,\" never \"Leave Credit.\""
+        },
+        {
+          "t": "Step 2 — Configure Vale as a custom style",
+          "p": "So it can check content automatically against approved terms."
+        },
+        {
+          "t": "Step 3 — Scan copy files",
+          "p": "Or exported screen text — flag inconsistent and banned phrases."
+        },
+        {
+          "t": "Step 4 — Human review for clarity",
+          "p": "Vale checks consistency; a person checks whether wording is actually clear."
+        },
+        {
+          "t": "Step 5 — Dynamic/templated text with real data",
+          "p": "Pluralization that breaks for exactly one item, unusual name lengths."
+        },
+        {
+          "t": "Step 6 — Re-run when copy changes",
+          "p": "Same review process as the functional change itself."
+        }
+      ]
+    }
+  ],
+  "contentMarkdown": "## Guide, then lint, then human clarity\n\nVale catches drift; people catch unclear wording.",
+  "exercises": [],
+  "resourceLinks": [],
+  "steps": [],
+  "learn": []
+} as ChapterRecord;
