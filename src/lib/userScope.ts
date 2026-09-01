@@ -62,6 +62,10 @@ export function pinsStoreKey() {
   return "hearth_pinned_items_v2";
 }
 
+export function librarySavedStoreKey() {
+  return "hearth_library_saved";
+}
+
 export function progressStoreKey(manualId: string) {
   return `hearth_manual_progress_${manualId}`;
 }

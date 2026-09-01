@@ -3,8 +3,7 @@
 import { listedShowcaseFeatured } from "@/app/showcase-wall/_content/_registry";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireSessionUser } from "@/lib/apiSession";
 
 type Link = { label: string; url: string };
 
@@ -53,11 +52,9 @@ function serialize(item: {
   };
 }
 
-async function sessionUserId() {
-  const session = await getServerSession(authOptions);
-  const id = session?.user?.id;
-  if (!id || session.user.status === "PENDING" || session.user.status === "REJECTED") return null;
-  return id;
+async function activeUserId() {
+  const gate = await requireSessionUser();
+  return gate.userId;
 }
 
 export async function GET(req: Request) {
@@ -87,7 +84,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ items: [...dbItems.map(serialize), ...featured] });
   }
 
-  const userId = await sessionUserId();
+  const userId = await activeUserId();
   if (!userId) return NextResponse.json({ items: [] }, { status: 401 });
   const dbItems = await prisma.showcaseItem.findMany({
     where: { userId },
@@ -98,7 +95,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const userId = await sessionUserId();
+  const userId = await activeUserId();
   if (!userId) return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   const body = await req.json().catch(() => ({}));
   const title = String(body.title || "").trim();
@@ -124,7 +121,7 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  const userId = await sessionUserId();
+  const userId = await activeUserId();
   if (!userId) return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   const body = await req.json().catch(() => ({}));
   const id = String(body.id || "");
@@ -154,7 +151,7 @@ export async function PATCH(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const userId = await sessionUserId();
+  const userId = await activeUserId();
   if (!userId) return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");

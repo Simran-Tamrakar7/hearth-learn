@@ -263,3 +263,21 @@ function generateComprehensiveGamesDataset(): ArcadiaGame[] {
 }
 
 export const ARCADIA_GAMES: ArcadiaGame[] = generateComprehensiveGamesDataset();
+
+export function filterArcadiaGames(
+  games: ArcadiaGame[],
+  opts: { catId?: string; genre?: string; query?: string }
+) {
+  let list = games;
+  if (opts.catId && opts.catId !== "all") {
+    list = list.filter((g) => g.cat === opts.catId);
+  }
+  if (opts.genre && opts.genre !== "all") {
+    list = list.filter((g) => g.genre === opts.genre);
+  }
+  const q = opts.query?.trim().toLowerCase();
+  if (q) {
+    list = list.filter((g) => g.t.toLowerCase().includes(q) || g.d.toLowerCase().includes(q));
+  }
+  return list;
+}

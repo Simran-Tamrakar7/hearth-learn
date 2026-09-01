@@ -2,8 +2,9 @@
 
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/roles";
+import { chatCompletion } from "@/lib/openai";
 
-const SYSTEM = `You are a manual-formatting assistant. Convert raw, unstructured content into a structured manual:
+const SYSTEM = `You are a manual-formatting assistant. Convert raw, unstructured content into a structured manual for Hearth's TypeScript chapter model.
 
 STRUCTURE:
 - Break content into logical PARTS (major sections), each titled "Part N: [Title]" with a one-line summary
@@ -12,7 +13,7 @@ STRUCTURE:
 - Clear, concise, instructional tone — not conversational
 - Do not skip or shorten meaning — reorganize and clarify only
 
-OUTPUT FORMAT (for disk-backed manuals, each chapter becomes part-N/chapter-M.md with YAML frontmatter: title, why, when, tools, practical, advantages, limitations — plus markdown body):
+OUTPUT FORMAT (each chapter will become part-N/chapter-M.ts with fields: overviewText, why, when, practical, advantages, limitations, contentMarkdown):
 
 Part [N]: [Title]
 [One-line summary]
@@ -49,40 +50,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Paste some notes first." }, { status: 400 });
   }
 
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) {
+  const user = title ? `Forced title: ${title}\n\n${notes}` : notes;
+  const result = await chatCompletion(SYSTEM, user, 0.3);
+  if (!result.usedAI) {
     return NextResponse.json({ fallback: true });
   }
-
-  try {
-    const user = title ? `Forced title: ${title}\n\n${notes}` : notes;
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${key}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        temperature: 0.3,
-        messages: [
-          { role: "system", content: SYSTEM },
-          { role: "user", content: user },
-        ],
-      }),
-    });
-    if (!res.ok) {
-      return NextResponse.json({ fallback: true });
-    }
-    const data = (await res.json()) as {
-      choices?: { message?: { content?: string } }[];
-    };
-    const markdown = data.choices?.[0]?.message?.content?.trim();
-    if (!markdown) {
-      return NextResponse.json({ fallback: true });
-    }
-    return NextResponse.json({ markdown, usedAI: true });
-  } catch {
-    return NextResponse.json({ fallback: true });
-  }
+  return NextResponse.json({ markdown: result.text, usedAI: true });
 }

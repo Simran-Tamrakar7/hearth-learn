@@ -2,44 +2,37 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { resolveActorUserId } from "@/lib/apiSession";
+
+function parseJsonField<T>(raw: string | null | undefined, fallback: T): T {
+  if (!raw) return fallback;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-
-    let user = null;
-    if (session?.user) {
-      user = await prisma.user.findUnique({
-        where: { id: (session.user as any).id },
-      });
+    const userId = await resolveActorUserId();
+    if (!userId) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    if (!user) {
-      user = await prisma.user.findUnique({
-        where: { email: "demo@hearth.study" },
-      });
-    }
-
+    const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    let featureToggles = { toolkits: true, showcaseWall: true, gamesShelf: true };
-    try {
-      if (user.featureToggles) featureToggles = JSON.parse(user.featureToggles);
-    } catch (e) {}
-
-    let pulseCheck = {};
-    try {
-      if (user.pulseCheck) pulseCheck = JSON.parse(user.pulseCheck);
-    } catch (e) {}
-
     return NextResponse.json({
       theme: user.theme || "daylight",
-      featureToggles,
-      pulseCheck,
+      featureToggles: parseJsonField(user.featureToggles, {
+        toolkits: true,
+        showcaseWall: true,
+        gamesShelf: true,
+      }),
+      pulseCheck: parseJsonField(user.pulseCheck, {}),
     });
   } catch (error) {
     return NextResponse.json({ error: "Failed to load settings" }, { status: 500 });
@@ -49,23 +42,12 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const { theme, featureToggles, pulseCheck, action } = await req.json();
-    const session = await getServerSession(authOptions);
-
-    let userId: string | null = null;
-    if (session?.user) {
-      userId = (session.user as any).id;
-    } else {
-      const demoUser = await prisma.user.findUnique({
-        where: { email: "demo@hearth.study" },
-      });
-      if (demoUser) userId = demoUser.id;
-    }
+    const userId = await resolveActorUserId();
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Action: Data Export
     if (action === "export") {
       const userData = await prisma.user.findUnique({
         where: { id: userId },
@@ -78,11 +60,9 @@ export async function POST(req: Request) {
           certificates: { include: { trail: true } },
         },
       });
-
       return NextResponse.json({ exportData: userData });
     }
 
-    // Action: Reset Progress
     if (action === "reset_progress") {
       await prisma.progress.deleteMany({ where: { userId } });
       await prisma.note.deleteMany({ where: { userId } });
@@ -92,12 +72,10 @@ export async function POST(req: Request) {
         where: { userId },
         data: { currentCount: 1, lastCheckIn: new Date() },
       });
-
       return NextResponse.json({ message: "Progress reset successfully" });
     }
 
-    // Standard settings update
-    const updateData: any = {};
+    const updateData: Record<string, string> = {};
     if (theme) updateData.theme = theme;
     if (featureToggles) updateData.featureToggles = JSON.stringify(featureToggles);
     if (pulseCheck) updateData.pulseCheck = JSON.stringify(pulseCheck);

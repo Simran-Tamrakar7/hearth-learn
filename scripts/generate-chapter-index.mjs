@@ -6,7 +6,7 @@ import { fileURLToPath } from "url";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const manualsRoot = path.join(root, "src/app/manuals");
-const SLUGS = ["testing-types", "playwright"];
+const SLUGS = ["testing-types", "playwright", "hearth-manual"];
 
 for (const slug of SLUGS) {
   const manualDir = path.join(manualsRoot, "types", slug);

@@ -1,22 +1,16 @@
 /* API: /api/highlights  — used by PAGE /manuals/[slug]. Map: ../CODE-FOR-THIS-API.md */
 
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireSessionUser } from "@/lib/apiSession";
 import { isHighlightColor, tabTypeToField } from "@/app/manuals/features/highlights";
 
 const TABS = new Set(["fullContent", "summary", "aiSummary"]);
 
-function sessionUserId(session: { user?: { id?: string; status?: string } } | null) {
-  if (!session?.user?.id || session.user.status === "PENDING" || session.user.status === "REJECTED") return null;
-  return session.user.id;
-}
-
 export async function GET(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    const userId = sessionUserId(session);
+    const gate = await requireSessionUser();
+    const userId = gate.userId;
     if (!userId) return NextResponse.json({ highlights: [] });
 
     const { searchParams } = new URL(req.url);
@@ -45,8 +39,8 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    const userId = sessionUserId(session);
+    const gate = await requireSessionUser();
+    const userId = gate.userId;
     if (!userId) return NextResponse.json({ error: "Sign in to save highlights." }, { status: 401 });
 
     const body = await req.json();
@@ -98,8 +92,8 @@ export async function POST(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    const userId = sessionUserId(session);
+    const gate = await requireSessionUser();
+    const userId = gate.userId;
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { searchParams } = new URL(req.url);

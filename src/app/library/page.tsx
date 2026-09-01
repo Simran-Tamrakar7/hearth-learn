@@ -35,12 +35,16 @@ import {
 import { AddManualControl, ManualCard, RecentlyViewed } from "@/app/manuals/features/catalog";
 import { isManualsCatalogPin, manualPinId, subscribePinnedItems } from "@/components/ui/PinButton";
 import { usePermissions } from "@/lib/useAuthz";
-
-const SAVED_KEY = "hearth_library_saved";
+import {
+  librarySavedStoreKey,
+  readScopedRaw,
+  subscribeUserScope,
+  writeScopedRaw,
+} from "@/lib/userScope";
 
 function loadSaved(): Set<string> {
   try {
-    const raw = localStorage.getItem(SAVED_KEY);
+    const raw = readScopedRaw(librarySavedStoreKey());
     return new Set(raw ? (JSON.parse(raw) as string[]) : []);
   } catch {
     return new Set();
@@ -133,7 +137,9 @@ export default function LibraryPage() {
   const [selectedTag, setSelectedTag] = useState("");
 
   useEffect(() => {
-    setSaved(loadSaved());
+    const refresh = () => setSaved(loadSaved());
+    refresh();
+    return subscribeUserScope(refresh);
   }, []);
 
   useEffect(() => {
@@ -174,7 +180,7 @@ export default function LibraryPage() {
     if (next.has(id)) next.delete(id);
     else next.add(id);
     setSaved(next);
-    localStorage.setItem(SAVED_KEY, JSON.stringify([...next]));
+    writeScopedRaw(librarySavedStoreKey(), JSON.stringify([...next]));
     toast({
       type: next.has(id) ? "achievement" : "info",
       title: next.has(id) ? "Saved to your shelf" : "Removed from saved",

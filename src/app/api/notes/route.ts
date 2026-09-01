@@ -2,23 +2,11 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { resolveActorUserId } from "@/lib/apiSession";
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-
-    let userId: string | null = null;
-    if (session?.user) {
-      userId = (session.user as any).id;
-    } else {
-      const demoUser = await prisma.user.findUnique({
-        where: { email: "demo@hearth.study" },
-      });
-      if (demoUser) userId = demoUser.id;
-    }
-
+    const userId = await resolveActorUserId();
     if (!userId) {
       return NextResponse.json({ notes: [] });
     }
@@ -39,40 +27,21 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const { title, body, trailId } = await req.json();
-    const session = await getServerSession(authOptions);
-
-    let userId: string | null = null;
-    if (session?.user) {
-      userId = (session.user as any).id;
-    } else {
-      const demoUser = await prisma.user.findUnique({
-        where: { email: "demo@hearth.study" },
-      });
-      if (demoUser) userId = demoUser.id;
-    }
+    const userId = await resolveActorUserId();
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     if (!title || !body) {
-      return NextResponse.json(
-        { error: "Title and body content are required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Title and body content are required" }, { status: 400 });
     }
 
     const note = await prisma.note.create({
-      data: {
-        userId,
-        title,
-        body,
-        trailId: trailId || null,
-      },
+      data: { userId, title, body, trailId: trailId || null },
       include: { trail: true },
     });
 
-    // Award notes badge if first note created
     const notesCount = await prisma.note.count({ where: { userId } });
     if (notesCount === 1) {
       const existingBadge = await prisma.badge.findFirst({
@@ -107,9 +76,18 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "Note ID is required" }, { status: 400 });
     }
 
-    await prisma.note.delete({
-      where: { id },
+    const userId = await resolveActorUserId();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const deleted = await prisma.note.deleteMany({
+      where: { id, userId },
     });
+
+    if (deleted.count === 0) {
+      return NextResponse.json({ error: "Note not found" }, { status: 404 });
+    }
 
     return NextResponse.json({ message: "Note deleted" });
   } catch (error) {
