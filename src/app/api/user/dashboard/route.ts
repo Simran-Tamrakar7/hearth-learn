@@ -2,90 +2,53 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { resolveActorUserId } from "@/lib/apiSession";
+import { nextIncompleteChapter, trailProgressStats } from "@/lib/trailProgress";
+
+const userInclude = {
+  streak: true,
+  badges: true,
+  progress: {
+    include: {
+      chapter: {
+        include: { trail: true },
+      },
+    },
+  },
+} as const;
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-
-    let user = null;
-    if (session?.user) {
-      user = await prisma.user.findUnique({
-        where: { id: (session.user as any).id },
-        include: {
-          streak: true,
-          badges: true,
-          progress: {
-            include: {
-              chapter: {
-                include: { trail: true },
-              },
-            },
-          },
-        },
-      });
+    const userId = await resolveActorUserId();
+    if (!userId) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Fallback to demo user if no active session
-    if (!user) {
-      user = await prisma.user.findUnique({
-        where: { email: "demo@hearth.study" },
-        include: {
-          streak: true,
-          badges: true,
-          progress: {
-            include: {
-              chapter: {
-                include: { trail: true },
-              },
-            },
-          },
-        },
-      });
-    }
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: userInclude,
+    });
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Get all trails with progress for user
     const trails = await prisma.trail.findMany({
       include: {
-        chapters: {
-          orderBy: { order: "asc" },
-        },
+        chapters: { orderBy: { order: "asc" } },
       },
     });
 
-    const userCompletedChapterIds = user.progress.map((p) => p.chapterId);
+    const completedIds = user.progress.map((p) => p.chapterId);
 
     const activeTrails = trails.map((trail) => {
-      const completedCount = trail.chapters.filter((c) =>
-        userCompletedChapterIds.includes(c.id)
-      ).length;
-      const progressPercent =
-        trail.chapters.length > 0
-          ? Math.round((completedCount / trail.chapters.length) * 100)
-          : 0;
-
-      // Find next uncompleted chapter
-      const nextChapter = trail.chapters.find(
-        (c) => !userCompletedChapterIds.includes(c.id)
-      );
-
-      return {
-        ...trail,
-        completedCount,
-        progressPercent,
-        nextChapter,
-      };
+      const { completedCount, progressPercent } = trailProgressStats(trail.chapters, completedIds);
+      const nextChapter = nextIncompleteChapter(trail.chapters, completedIds);
+      return { ...trail, completedCount, progressPercent, nextChapter };
     });
 
-    // Continue where left off: pick trail with highest progress < 100% or first active
     const continueTrail =
-      activeTrails.find((t) => t.progressPercent > 0 && t.progressPercent < 100) ||
-      activeTrails[0];
+      activeTrails.find((t) => t.progressPercent > 0 && t.progressPercent < 100) || activeTrails[0];
 
     return NextResponse.json({
       user: {

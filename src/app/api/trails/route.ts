@@ -2,12 +2,12 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { resolveActorUserId } from "@/lib/apiSession";
+import { trailProgressStats } from "@/lib/trailProgress";
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
+    const userId = await resolveActorUserId();
 
     const trails = await prisma.trail.findMany({
       include: {
@@ -20,37 +20,17 @@ export async function GET() {
     });
 
     let completedChapterIds: string[] = [];
-
-    if (session?.user) {
+    if (userId) {
       const userProgress = await prisma.progress.findMany({
-        where: { userId: (session.user as any).id },
+        where: { userId },
         select: { chapterId: true },
       });
       completedChapterIds = userProgress.map((p) => p.chapterId);
-    } else {
-      // For demo session fallback, get demo user progress
-      const demoUser = await prisma.user.findUnique({
-        where: { email: "demo@hearth.study" },
-        include: { progress: true },
-      });
-      if (demoUser) {
-        completedChapterIds = demoUser.progress.map((p) => p.chapterId);
-      }
     }
 
     const trailsWithProgress = trails.map((trail) => {
-      const totalChapters = trail.chapters.length;
-      const completedCount = trail.chapters.filter((c) =>
-        completedChapterIds.includes(c.id)
-      ).length;
-      const progressPercent = totalChapters > 0 ? Math.round((completedCount / totalChapters) * 100) : 0;
-
-      return {
-        ...trail,
-        totalChapters,
-        completedCount,
-        progressPercent,
-      };
+      const stats = trailProgressStats(trail.chapters, completedChapterIds);
+      return { ...trail, ...stats };
     });
 
     return NextResponse.json({ trails: trailsWithProgress });

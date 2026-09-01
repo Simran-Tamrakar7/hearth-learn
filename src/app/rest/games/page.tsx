@@ -13,6 +13,7 @@ import {
   ARCADIA_CATEGORIES,
   ARCADIA_GENRES,
   ArcadiaGame,
+  filterArcadiaGames,
 } from "@/app/rest/games/_content";
 import { PinButton, getPinnedItems, PinnedItemMetadata } from "@/components/ui/PinButton";
 import {
@@ -59,23 +60,16 @@ export default function ArcadiaGamesShelfPage() {
       ? categories.filter((c) => c.id !== "all")
       : categories.filter((c) => c.id === activeCat);
 
-  // Calculate total games currently matching category, genre, and search query
-  let totalShownCount = 0;
-  filteredCategories.forEach((cat) => {
-    let catGames = games.filter((g) => g.cat === cat.id);
-
-    if (selectedGenre !== "all") {
-      catGames = catGames.filter((g) => g.genre === selectedGenre);
-    }
-
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      catGames = catGames.filter(
-        (g) => g.t.toLowerCase().includes(q) || g.d.toLowerCase().includes(q)
-      );
-    }
-    totalShownCount += catGames.length;
-  });
+  const totalShownCount = filteredCategories.reduce(
+    (n, cat) =>
+      n +
+      filterArcadiaGames(games, {
+        catId: cat.id,
+        genre: selectedGenre,
+        query: searchQuery,
+      }).length,
+    0
+  );
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1C2A26] relative">
@@ -244,18 +238,11 @@ export default function ArcadiaGamesShelfPage() {
         {/* SECTIONS FOR CATEGORIES */}
         <div className="space-y-12">
           {filteredCategories.map((cat) => {
-            let catGames = games.filter((g) => g.cat === cat.id);
-
-            if (selectedGenre !== "all") {
-              catGames = catGames.filter((g) => g.genre === selectedGenre);
-            }
-
-            if (searchQuery.trim()) {
-              const q = searchQuery.toLowerCase();
-              catGames = catGames.filter(
-                (g) => g.t.toLowerCase().includes(q) || g.d.toLowerCase().includes(q)
-              );
-            }
+            const catGames = filterArcadiaGames(games, {
+              catId: cat.id,
+              genre: selectedGenre,
+              query: searchQuery,
+            });
 
             if (catGames.length === 0) return null;
 

@@ -8,7 +8,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import { MANUALS_DATA, findHearthManual, type ManualItem } from "@/app/manuals/types";
-import { activeManualSlugs, genres } from "@/app/manuals/registry";
+import { activeManualSlugs, genres, genreCategoryLabel } from "@/app/manuals/registry";
 import { Compass, Search, BookOpen, ArrowRight, Pin, ExternalLink, Code2 } from "lucide-react";
 import {
   PinButton,
@@ -22,19 +22,6 @@ import { applyManualOverlay, getUserManual, hiddenManualSlugs, purgeRemovedManua
 import { subscribeCategories } from "@/app/manuals/features/categorization";
 import { AddManualControl, ManualCard, RecentlyViewed } from "@/app/manuals/features/catalog";
 import { usePermissions } from "@/lib/useAuthz";
-
-const GENRE_CATEGORY: Record<string, string> = {
-  all: "All",
-  automation: "Automation & Testing",
-  quality: "Quality Craft",
-  delivery: "Delivery & Process",
-  design: "Design",
-  ai: "AI & Prompting",
-  foundations: "Foundations",
-  ops: "Ops & Systems",
-  career: "Career",
-  "soft-skills": "Soft Skills",
-};
 
 type GenreRow = {
   id: string;
@@ -50,7 +37,7 @@ const CATALOG_GENRES: GenreRow[] = (genres as { id: string; label: string; blurb
     label: g.label,
     blurb: g.blurb,
     color: g.color,
-    category: GENRE_CATEGORY[g.id] || "Foundations",
+    category: genreCategoryLabel(g.id),
   })
 );
 

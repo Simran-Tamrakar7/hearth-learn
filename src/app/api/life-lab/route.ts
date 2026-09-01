@@ -2,16 +2,9 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { chatCompletion, requireSessionUser } from "@/lib/openai";
-
-const ARENA_PROMPT: Record<string, string> = {
-  interview: "Generate ONE behavioral interview question for the given role, difficulty, and focus. Return JSON {\"prompt\":\"...\"} only.",
-  bughunt: "Generate a realistic UI bug-hunting scenario (one screen, 3 hidden bugs). Return JSON {\"prompt\":\"...\"} only.",
-  founder: "Generate a startup strategy dilemma with 3 options. Return JSON {\"prompt\":\"...\"} only.",
-  crisis: "Generate a P0 production outage scenario with 3 response options and which index is best. Return JSON {\"prompt\":\"...\",\"bestIndex\":0} only.",
-  negotiation: "Generate an offer-negotiation scenario (role, current offer, constraint). Return JSON {\"prompt\":\"...\"} only.",
-  refactor: "Generate a short messy code snippet plus the architecture smell to fix. Return JSON {\"prompt\":\"...\"} only.",
-};
+import { chatCompletion } from "@/lib/openai";
+import { requireSessionUser } from "@/lib/apiSession";
+import { arenaGeneratePrompt } from "@/app/life-simulator/_content/arenaPrompts";
 
 function parseJson(text: string) {
   const start = text.indexOf("{");
@@ -45,7 +38,7 @@ export async function POST(req: Request) {
   const arenaId = String(body.arenaId || "interview");
 
   if (action === "generate") {
-    const system = ARENA_PROMPT[arenaId] || ARENA_PROMPT.interview;
+    const system = arenaGeneratePrompt(arenaId);
     const user = `Role: ${body.role || "generalist"}\nDifficulty: ${body.difficulty || "mid"}\nFocus: ${body.focus || "core skills"}`;
     const result = await chatCompletion(system, user, 0.7);
     if (!result.usedAI) return NextResponse.json({ error: result.error || "AI is not configured." }, { status: 503 });

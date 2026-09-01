@@ -1,0 +1,14 @@
+{
+  "id": "hearth-manual",
+  "title": "Hearth — Repository Manual",
+  "tagline": "Single source of truth for users, developers, and contributors.",
+  "category": "foundations",
+  "who": "Anyone using, building, or contributing to Hearth (hearth-learn.vercel.app).",
+  "outcomes": [
+    "Find where any feature lives in the codebase",
+    "Set up local dev and understand env vars from real code",
+    "Add manuals, trails, or content without breaking conventions"
+  ],
+  "duration": "Reference — read as needed",
+  "levelSpan": "User → Contributor"
+}

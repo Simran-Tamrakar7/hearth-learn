@@ -1,6 +1,3 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-
 export async function chatCompletion(system: string, user: string, temperature = 0.4): Promise<{ text: string; usedAI: boolean; error?: string }> {
   const key = process.env.OPENAI_API_KEY;
   if (!key) {
@@ -35,11 +32,4 @@ export async function chatCompletion(system: string, user: string, temperature =
   }
 }
 
-export async function requireSessionUser() {
-  const session = await getServerSession(authOptions);
-  const id = session?.user?.id;
-  if (!id || session.user.status === "PENDING" || session.user.status === "REJECTED") {
-    return { ok: false as const, session, userId: null as string | null };
-  }
-  return { ok: true as const, session, userId: id };
-}
+export { requireSessionUser } from "@/lib/apiSession";

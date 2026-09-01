@@ -2,33 +2,18 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { resolveActorUserId } from "@/lib/apiSession";
+import { chaptersWithCompletion, trailProgressStats } from "@/lib/trailProgress";
 
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ slug: string }> }
-) {
+export async function GET(_req: Request, { params }: { params: Promise<{ slug: string }> }) {
   try {
     const { slug } = await params;
-    const session = await getServerSession(authOptions);
-
-    let userId: string | null = null;
-    if (session?.user) {
-      userId = (session.user as any).id;
-    } else {
-      const demoUser = await prisma.user.findUnique({
-        where: { email: "demo@hearth.study" },
-      });
-      if (demoUser) userId = demoUser.id;
-    }
+    const userId = await resolveActorUserId();
 
     const trail = await prisma.trail.findUnique({
       where: { slug },
       include: {
-        chapters: {
-          orderBy: { order: "asc" },
-        },
+        chapters: { orderBy: { order: "asc" } },
       },
     });
 
@@ -45,16 +30,8 @@ export async function GET(
       completedChapterIds = userProgress.map((p) => p.chapterId);
     }
 
-    const chaptersWithStatus = trail.chapters.map((chapter) => ({
-      ...chapter,
-      isCompleted: completedChapterIds.includes(chapter.id),
-    }));
-
-    const completedCount = chaptersWithStatus.filter((c) => c.isCompleted).length;
-    const progressPercent =
-      chaptersWithStatus.length > 0
-        ? Math.round((completedCount / chaptersWithStatus.length) * 100)
-        : 0;
+    const chaptersWithStatus = chaptersWithCompletion(trail.chapters, completedChapterIds);
+    const { completedCount, progressPercent } = trailProgressStats(trail.chapters, completedChapterIds);
 
     return NextResponse.json({
       trail: {

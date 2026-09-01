@@ -14,7 +14,7 @@ Set **only in that type’s `_registry.ts`** (library: optional `status` on the 
 
 ## Manuals
 
-Structured lessons with chapters. **Only two builtin manuals remain:** `playwright` and `testing-types`.
+Structured lessons with chapters. **Builtin manuals:** `playwright`, `testing-types`, and `hearth-manual` (repository docs).
 
 - **Listing:** `src/app/manuals/registry.ts`
 - **Chapter source of truth:** `src/app/manuals/types/<slug>/part-N/chapter-M.ts` (each file owns all content inline)
