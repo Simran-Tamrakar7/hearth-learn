@@ -1,4 +1,4 @@
-import type { ChapterRecord } from "../../types";
+import type { ChapterRecord } from "../../../types";
 
 /** Uptime / Availability Testing */
 export const chapter = {

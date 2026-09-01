@@ -1,4 +1,4 @@
-import type { ChapterRecord } from "../../types";
+import type { ChapterRecord } from "../../../types";
 
 /** Retesting (Confirmation Testing) */
 export const chapter = {

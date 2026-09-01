@@ -1,4 +1,4 @@
-import type { ChapterRecord } from "../../types";
+import type { ChapterRecord } from "../../../types";
 
 /** Diff / Golden Master Testing */
 export const chapter = {

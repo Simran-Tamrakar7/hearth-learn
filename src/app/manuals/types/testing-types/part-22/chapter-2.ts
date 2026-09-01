@@ -1,4 +1,4 @@
-import type { ChapterRecord } from "../../types";
+import type { ChapterRecord } from "../../../types";
 
 /** Cookie / Session Testing */
 export const chapter = {

@@ -1,4 +1,4 @@
-import type { ChapterRecord } from "../../types";
+import type { ChapterRecord } from "../../../types";
 
 /** Risk-Based Testing */
 export const chapter = {
@@ -17,8 +17,7 @@ export const chapter = {
     "scenario": "Ahead of a release, the team rates payroll calculation as High risk (complex logic, financial/legal impact, recent changes) and the internal company-news announcement feature as Low risk (simple, cosmetic, no financial impact).",
     "pass": "Payroll calculation receives the full range of testing — functional, boundary value analysis, negative testing, security review, and parallel testing (Chapter 63) against the legacy system — while the news announcement feature receives a single basic functional smoke test, a deliberate and explicit trade-off rather than an accidental oversight.",
     "passLabel": "Result",
-    "fail": "",
-    "value": "Limited testing time before the release deadline is spent almost entirely on payroll, and a real payroll edge-case bug is caught and fixed, while the news feature ships with only light testing — a trade-off the team can clearly justify and stand behind if questioned."
+    "fail": "Equal-depth testing on payroll and the news banner burns the release window — payroll gets the same shallow smoke pass as cosmetic UI, and a slab-tax boundary bug ships because nobody prioritized financial logic.",
   },
   "advantages": [
     "Directs limited testing time and resources toward the areas where a defect would actually matter most, rather than spreading effort evenly and inefficiently",

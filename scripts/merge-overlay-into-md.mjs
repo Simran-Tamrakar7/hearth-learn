@@ -5,7 +5,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
-const manualDir = path.join(root, "src/app/manuals/testing-types");
+const manualDir = path.join(root, "src/app/manuals/types/testing-types");
 
 function stripTs(src) {
   return src

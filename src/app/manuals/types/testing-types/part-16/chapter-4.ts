@@ -1,4 +1,4 @@
-import type { ChapterRecord } from "../../types";
+import type { ChapterRecord } from "../../../types";
 
 /** Big Bang vs. Incremental Integration Testing */
 export const chapter = {

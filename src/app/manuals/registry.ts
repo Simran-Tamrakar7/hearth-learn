@@ -1,10 +1,8 @@
 import type { CatalogStatus } from "../_catalog";
-import testingMeta from "./testing-types/meta.json";
-import playwrightMeta from "./playwright/meta.json";
-import { CHAPTER_RECORDS as testingTypeChapters } from "./testing-types/chapters-index";
-import { CHAPTER_RECORDS as playwrightChapters } from "./playwright/chapters-index";
-import { CHAPTER_PATHS as testingTypePaths } from "./testing-types/chapter-paths";
-import { CHAPTER_PATHS as playwrightPaths } from "./playwright/chapter-paths";
+import testingMeta from "./types/testing-types/meta.json";
+import playwrightMeta from "./types/playwright/meta.json";
+import { chapters as testingTypeChapters, chapterPaths as testingTypePaths } from "./types/testing-types/chapters-manifest";
+import { chapters as playwrightChapters, chapterPaths as playwrightPaths } from "./types/playwright/chapters-manifest";
 import type { ChapterRecord } from "./types";
 
 /** Builtin manuals kept in the catalog (all others removed). */

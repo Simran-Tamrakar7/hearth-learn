@@ -79,7 +79,7 @@ function relTypesImport(manualDir, partDir, file) {
 }
 
 for (const slug of SLUGS) {
-  const manualDir = path.join(manualsRoot, slug);
+  const manualDir = path.join(manualsRoot, "types", slug);
   let count = 0;
   for (const partDir of fs.readdirSync(manualDir).filter((d) => /^part-\d+$/.test(d))) {
     const fullPart = path.join(manualDir, partDir);

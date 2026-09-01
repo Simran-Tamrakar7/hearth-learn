@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { ChevronDown, FileDown, FileText, Printer } from "lucide-react";
 import type { ManualChapter, ManualItem } from "@/app/manuals/types";
 import { groupChaptersIntoParts } from "@/app/manuals/features/reader";
-import { isTestingTypesSlug } from "@/app/manuals/testing-types/TestingTypesGuide";
+import { isTestingTypesSlug } from "@/app/manuals/types/testing-types/TestingTypesManual";
 import { useToast } from "@/components/ui/Toast";
 
 function groupTitle(index: number, name: string) {

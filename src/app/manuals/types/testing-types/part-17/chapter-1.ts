@@ -1,4 +1,4 @@
-import type { ChapterRecord } from "../../types";
+import type { ChapterRecord } from "../../../types";
 
 /** Data-Driven Testing */
 export const chapter = {
@@ -16,8 +16,7 @@ export const chapter = {
     "app": "HRMS Leave Request Validation",
     "scenario": "A single Selenium script tests leave request date validation, driven by a CSV with 15 rows covering valid dates, invalid dates, boundary dates, and various leave-type/duration combinations.",
     "pass": "All 15 rows execute against the same script logic, with results correctly matching the expected outcome column for each — including catching that row 11 (a leave request spanning exactly the maximum allowed 30 consecutive days) is correctly accepted, verified without writing any dedicated script just for that one case.",
-    "fail": "",
-    "value": "Adding row 16 for a newly identified edge case (a leave request starting on a public holiday) requires only adding one new spreadsheet row, not writing any new automation code."
+    "fail": "The team maintains fifteen separate Selenium scripts that differ only in hardcoded leave dates — when validation rules change, engineers update fifteen files and still miss row 11's 30-day boundary because it lived in a copy-pasted script nobody remembered to run.",
   },
   "advantages": [
     "Dramatically reduces script duplication and maintenance burden compared to writing a separate script per input variation",

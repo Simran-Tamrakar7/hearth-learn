@@ -23,7 +23,7 @@ function parseFrontmatter(raw) {
   return meta;
 }
 
-const pwDir = path.join(manualsRoot, "playwright");
+const pwDir = path.join(manualsRoot, "types", "playwright");
 const partDirs = fs
   .readdirSync(pwDir)
   .filter((d) => /^part-\d+$/.test(d))

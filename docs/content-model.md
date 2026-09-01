@@ -16,13 +16,31 @@ Set **only in that type’s `_registry.ts`** (library: optional `status` on the 
 
 Structured lessons with chapters. **Only two builtin manuals remain:** `playwright` and `testing-types`.
 
-- **Listing:** `src/app/manuals/_content/_registry.ts`
-- **Chapter source of truth:** `src/app/manuals/<slug>/part-N/chapter-M.md` (frontmatter holds why/when/tools/practical + markdown body)
-- **TOC ordering:** `src/app/manuals/<slug>/toc.ts` (no content — ordering only)
-- **Build:** `node scripts/compile-manuals-from-md.mjs` → `compiled.body.ts` (runs on `dev` / `build`)
-- **Other catalog manuals:** `_content/<slug>/data.js` (legacy single-file bodies)
+- **Listing:** `src/app/manuals/registry.ts`
+- **Chapter source of truth:** `src/app/manuals/types/<slug>/part-N/chapter-M.ts` (each file owns all content inline)
+- **Chapter index (auto-generated):** `src/app/manuals/types/<slug>/chapters-manifest.ts` — run `node scripts/generate-chapter-index.mjs`
+- **TOC ordering:** `src/app/manuals/types/<slug>/toc.ts` (structure only — no chapter content)
+- **Types:** `src/app/manuals/types.ts` (`ChapterRecord` shape)
+- **Route:** `src/app/manuals/[slug]/page.tsx` consumes via registry — never imported by chapter files
+
+### Chapter independence (all manuals under `types/`)
+
+Data flows one way only:
+
+```
+part-N/chapter-M.ts  →  chapters-manifest.ts  →  registry.ts  →  [slug]/page.tsx
+```
+
+Each `part-N/chapter-M.ts` must:
+
+- Import **only** `import type { ChapterRecord } from "../../../types";`
+- Contain **all** content inline (`overviewText`, `why`, `when`, `practical`, `advantages`, `limitations`, `tools`, `contentMarkdown`, …)
+- Never import from other chapters, shared content modules, `.md`/`.json` sources, `toc.ts`, `registry.ts`, or the page
+
+Enforced by: `npx tsx scripts/check-chapter-independence.ts` (also `scripts/check-registry.ts`).
+
 - **Export:** manual-wide PDF / .docx / Print from reader header (`ManualExportMenu`)
-- **User-created manuals:** `localStorage`; new disk manuals use `<slug>/toc.ts` + `part-0/chapter-1.md`
+- **User-created manuals:** `localStorage`; new disk manuals use `<slug>/toc.ts` + `part-0/chapter-1.ts`
 
 Do not change manual / chapter ids for the two kept manuals.
 
