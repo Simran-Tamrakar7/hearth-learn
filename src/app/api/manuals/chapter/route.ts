@@ -8,7 +8,7 @@ const manualsRoot = path.join(process.cwd(), "src/app/manuals");
 
 function chapterToTsSource(chapter: ChapterRecord): string {
   const json = JSON.stringify(chapter, null, 2);
-  return `import type { ChapterRecord } from "../../types";\n\n/** ${chapter.title} */\nexport const chapter = ${json} as ChapterRecord;\n`;
+  return `import type { ChapterRecord } from "../../../types";\n\n/** ${chapter.title} */\nexport const chapter = ${json} as ChapterRecord;\n`;
 }
 
 /** Write a single part-N/chapter-M.ts — never touches siblings or toc.ts */
@@ -31,8 +31,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid sourceFile path" }, { status: 400 });
   }
 
-  const abs = path.join(manualsRoot, slug, sourceFile);
-  if (!abs.startsWith(path.join(manualsRoot, slug) + path.sep)) {
+  const abs = path.join(manualsRoot, "types", slug, sourceFile);
+  if (!abs.startsWith(path.join(manualsRoot, "types", slug) + path.sep)) {
     return NextResponse.json({ error: "Path escape blocked" }, { status: 400 });
   }
 

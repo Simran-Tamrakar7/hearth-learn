@@ -4,7 +4,7 @@
  * HEADING: SHARED — pathwise JS → Hearth manuals
  * Not a page. Used by:
  *   /manuals  /manuals/[slug]  /dashboard   (via manualsData.ts)
- * Chapter bodies: src/app/manuals/testing-types|playwright/part-N/chapter-M.md (compiled via registry.ts)
+ * Chapter bodies: src/app/manuals/types/testing-types|playwright/part-N/chapter-M.ts (via registry.ts)
  * User manuals: localStorage — disk shape is <slug>/toc.ts + part-0/chapter-1.md when scaffolded to repo
  * ========================================================================== */
 
@@ -16,7 +16,7 @@ import {
   TESTING_TYPES_TOC,
   type TestingTypesTocPart,
   type TestingTypesTocNode,
-} from "@/app/manuals/testing-types/toc";
+} from "@/app/manuals/types/testing-types/toc";
 
 export {
   TESTING_TYPES_TOC,
@@ -25,7 +25,7 @@ export {
   flattenTestingTypesToc as flattenTestingTypesOutline,
   type TestingTypesTocPart,
   type TestingTypesTocNode,
-} from "@/app/manuals/testing-types/toc";
+} from "@/app/manuals/types/testing-types/toc";
 
 export {
   type PartishChapter,
@@ -49,7 +49,7 @@ export {
   createSubchapter,
   deleteChaptersWithSubs,
   moveChapterBlock,
-} from "../testing-types/toc";
+} from "../types/testing-types/toc";
 
 const CATEGORY: Record<string, ManualItem["category"]> = {
   automation: "Automation & Testing",

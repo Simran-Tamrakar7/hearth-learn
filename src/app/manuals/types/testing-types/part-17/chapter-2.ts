@@ -1,4 +1,4 @@
-import type { ChapterRecord } from "../../types";
+import type { ChapterRecord } from "../../../types";
 
 /** Keyword-Driven Testing */
 export const chapter = {
@@ -16,8 +16,7 @@ export const chapter = {
     "app": "HRMS Leave Approval Flow",
     "scenario": "A QA analyst with no programming background writes a Robot Framework test case for the leave approval flow using existing keywords: Login As Manager, Navigate To Pending Requests, Approve Request, Verify Leave Balance Updated.",
     "pass": "The test case runs successfully, verifying the full approval flow end-to-end — written and reviewed entirely by the QA analyst without any engineering involvement, since every needed keyword already existed in the shared library.",
-    "fail": "",
-    "value": "When a new Reject Request flow needs testing, the analyst writes the new test case immediately using existing keywords plus one new Reject Request keyword built once by an engineer and then reused across future test cases involving rejection."
+    "fail": "Without a keyword library, the analyst files a ticket for every approval-flow test change — engineers write bespoke Selenium for each case, and the analyst never authors or reviews automation directly.",
   },
   "advantages": [
     "Makes automated test case authorship and review accessible to non-programmers, broadening who can meaningfully contribute",

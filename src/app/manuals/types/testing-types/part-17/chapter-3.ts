@@ -1,4 +1,4 @@
-import type { ChapterRecord } from "../../types";
+import type { ChapterRecord } from "../../../types";
 
 /** Model-Based Testing */
 export const chapter = {
@@ -15,7 +15,7 @@ export const chapter = {
   "practical": {
     "app": "HRMS Leave Request State Machine",
     "scenario": "The leave request lifecycle (Draft → Submitted → Approved/Rejected → Cancelled) is modeled in GraphWalker, which then generates test paths covering every valid transition at least once.",
-    "pass": "",
+    "pass": "GraphWalker generates paths that exercise every valid transition at least once — Draft→Submitted→Approved and Draft→Submitted→Rejected both run without manual case design.",
     "fail": "One of the generated paths attempts to transition directly from Approved to Draft (an edge that shouldn't exist in a correct model) — attempting it against the real application reveals the backend actually allows this invalid transition via a leftover API endpoint, letting an approved request be silently reset to draft status.",
     "failLabel": "Found",
     "value": "The invalid transition is blocked at the API level, and the corrected model (with the invalid edge properly removed) is used to regenerate a clean, accurate test suite going forward."

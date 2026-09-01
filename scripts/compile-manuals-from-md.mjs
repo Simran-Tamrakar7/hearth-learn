@@ -41,7 +41,7 @@ function parseFrontmatter(raw) {
 }
 
 function loadManualFromMd(slug) {
-  const manualDir = path.join(manualsRoot, slug);
+  const manualDir = path.join(manualsRoot, "types", slug);
   const metaPath = path.join(manualDir, "meta.json");
   if (!fs.existsSync(metaPath)) throw new Error(`missing meta.json for ${slug}`);
   const meta = JSON.parse(fs.readFileSync(metaPath, "utf8"));
