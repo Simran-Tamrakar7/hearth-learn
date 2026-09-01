@@ -1,12 +1,15 @@
 import type { CatalogStatus } from "../_catalog";
 import testingMeta from "./types/testing-types/meta.json";
 import playwrightMeta from "./types/playwright/meta.json";
+import cypressMeta from "./types/cypress/meta.json";
+
 import { chapters as testingTypeChapters, chapterPaths as testingTypePaths } from "./types/testing-types/chapters-manifest";
 import { chapters as playwrightChapters, chapterPaths as playwrightPaths } from "./types/playwright/chapters-manifest";
+import { chapters as cypressChapters, chapterPaths as cypressPaths } from "./types/cypress/chapters-manifest";
 import type { ChapterRecord } from "./types";
 
 /** Builtin manuals kept in the catalog (all others removed). */
-export const KEPT_BUILTIN_SLUGS = ["playwright", "testing-types"] as const;
+export const KEPT_BUILTIN_SLUGS = ["playwright", "testing-types", "cypress"] as const;
 export const KEPT_MANUAL_SLUGS = KEPT_BUILTIN_SLUGS;
 
 export function isKeptBuiltinSlug(slug: string) {
@@ -222,6 +225,7 @@ function manualBody(
 
 const testingTypesBody = manualBody(testingMeta as Record<string, unknown>, testingTypeChapters, testingTypePaths);
 const playwrightBody = manualBody(playwrightMeta as Record<string, unknown>, playwrightChapters, playwrightPaths);
+const cypressBody = manualBody(cypressMeta as Record<string, unknown>, cypressChapters, cypressPaths);
 
 /** Builtin manuals. Listing + bodies. A folder is invisible until this file imports its chapters. */
 export type ManualRegistryEntry = {
@@ -261,6 +265,18 @@ export const MANUALS: ManualRegistryEntry[] = [
     pinnable: true,
     pinIcon: "🎭",
     body: playwrightBody,
+  },
+  {
+  id: "cypress",
+  title: "Cypress E2E Testing",
+  tool: "cypress",
+  status: "active",
+  order: 3,
+  tags: ["automation"],
+  featured: false,
+  pinnable: true,
+  pinIcon: "🌲",
+  body: cypressBody,
   },
 ];
 
