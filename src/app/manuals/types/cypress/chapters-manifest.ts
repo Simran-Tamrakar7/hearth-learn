@@ -2,11 +2,73 @@
 import type { ChapterRecord } from "../../types";
 
 import { chapter as part_0_chapter_1 } from "./part-0/chapter-1";
+import { chapter as part_0_chapter_2 } from "./part-0/chapter-2";
+import { chapter as part_0_chapter_3 } from "./part-0/chapter-3";
+import { chapter as part_0_chapter_4 } from "./part-0/chapter-4";
+import { chapter as part_0_chapter_5 } from "./part-0/chapter-5";
+import { chapter as part_1_chapter_1 } from "./part-1/chapter-1";
+import { chapter as part_1_chapter_2 } from "./part-1/chapter-2";
+import { chapter as part_1_chapter_3 } from "./part-1/chapter-3";
+import { chapter as part_1_chapter_4 } from "./part-1/chapter-4";
+import { chapter as part_1_chapter_5 } from "./part-1/chapter-5";
+import { chapter as part_2_chapter_1 } from "./part-2/chapter-1";
+import { chapter as part_2_chapter_2 } from "./part-2/chapter-2";
+import { chapter as part_2_chapter_3 } from "./part-2/chapter-3";
+import { chapter as part_2_chapter_4 } from "./part-2/chapter-4";
+import { chapter as part_2_chapter_5 } from "./part-2/chapter-5";
+import { chapter as part_3_chapter_1 } from "./part-3/chapter-1";
+import { chapter as part_3_chapter_2 } from "./part-3/chapter-2";
+import { chapter as part_3_chapter_3 } from "./part-3/chapter-3";
+import { chapter as part_3_chapter_4 } from "./part-3/chapter-4";
+import { chapter as part_3_chapter_5 } from "./part-3/chapter-5";
+import { chapter as part_3_chapter_6 } from "./part-3/chapter-6";
+import { chapter as part_3_chapter_7 } from "./part-3/chapter-7";
+import { chapter as part_3_chapter_8 } from "./part-3/chapter-8";
+import { chapter as part_4_chapter_1 } from "./part-4/chapter-1";
+import { chapter as part_4_chapter_2 } from "./part-4/chapter-2";
+import { chapter as part_4_chapter_3 } from "./part-4/chapter-3";
+import { chapter as part_4_chapter_4 } from "./part-4/chapter-4";
+import { chapter as part_4_chapter_5 } from "./part-4/chapter-5";
+import { chapter as part_4_chapter_6 } from "./part-4/chapter-6";
+import { chapter as part_4_chapter_7 } from "./part-4/chapter-7";
+import { chapter as part_4_chapter_8 } from "./part-4/chapter-8";
+import { chapter as part_4_chapter_9 } from "./part-4/chapter-9";
 
 export const chapterPaths: Record<string, string> = {
 
 };
 
 export const chapters: ChapterRecord[] = [
-  part_0_chapter_1
+  part_0_chapter_1,
+  part_0_chapter_2,
+  part_0_chapter_3,
+  part_0_chapter_4,
+  part_0_chapter_5,
+  part_1_chapter_1,
+  part_1_chapter_2,
+  part_1_chapter_3,
+  part_1_chapter_4,
+  part_1_chapter_5,
+  part_2_chapter_1,
+  part_2_chapter_2,
+  part_2_chapter_3,
+  part_2_chapter_4,
+  part_2_chapter_5,
+  part_3_chapter_1,
+  part_3_chapter_2,
+  part_3_chapter_3,
+  part_3_chapter_4,
+  part_3_chapter_5,
+  part_3_chapter_6,
+  part_3_chapter_7,
+  part_3_chapter_8,
+  part_4_chapter_1,
+  part_4_chapter_2,
+  part_4_chapter_3,
+  part_4_chapter_4,
+  part_4_chapter_5,
+  part_4_chapter_6,
+  part_4_chapter_7,
+  part_4_chapter_8,
+  part_4_chapter_9
 ];

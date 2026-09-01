@@ -1,14 +1,14 @@
-
 {
   "id": "cypress",
   "title": "Cypress E2E Testing",
-  "tagline": "Browser automation from first spec to CI-ready suites.",
+  "tagline": "In-browser automation from architecture to CI — paired with the Playwright manual.",
   "category": "automation",
-  "who": "QA engineers and developers new to Cypress.",
+  "who": "QA engineers and frontend developers learning Cypress alongside Playwright.",
   "outcomes": [
-    "Write and run your first Cypress spec",
-    "Understand Cypress architecture vs Selenium"
+    "Explain Cypress in-browser architecture vs Selenium and Playwright",
+    "Write specs with cy.visit, cy.get, intercepts, and cy.session",
+    "Know when Cypress fits — and when to reach for Playwright instead"
   ],
-  "duration": "2–4 weeks",
-  "levelSpan": "Beginner → Intermediate"
+  "duration": "6–10 weeks",
+  "levelSpan": "Beginner → Advanced"
 }
