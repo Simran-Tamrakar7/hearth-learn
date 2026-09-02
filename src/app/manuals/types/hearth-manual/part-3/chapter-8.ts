@@ -15,7 +15,7 @@ export const chapter = {
   advantages: ["Dedicated chapter for Break Room with cited file paths","Five-part template matches other features"],
   limitations: ["Some Break Room edge cases may need product confirmation"],
   tools: [],
-  contentMarkdown: "## 4.8.1 What It Does (User View)\n\nRest timer, games shelf, cookbook, retro vibes at /rest/*.\n\n## 4.8.2 How It's Implemented (Dev View)\n\nsrc/app/rest/, games/_content.ts, cookbook/_content.ts.\n\n## 4.8.3 Data Touched\n\nSiteConfig feature flags breakRoom, cookbook.\n\n## 4.8.4 Edge Cases & Known Limitations\n\nGames/recipes are procedurally generated datasets, not individually curated files.\n\n## 4.8.5 Related Chapters\n\nhm-4-2",
+  contentMarkdown: "## 4.8.1 What It Does (User View)\n\nRest timer, games shelf, cookbook, retro radio. Users can add/edit/delete custom games and recipes. Retro volume slider controls playback gain.\n\n## 4.8.2 How It's Implemented (Dev View)\n\nsrc/app/rest/games/page.tsx + user-games.ts, cookbook/page.tsx + user-recipes.ts, retro/page.tsx. Shared storage: src/lib/userCatalog.ts.\n\n## 4.8.3 Data Touched\n\nlocalStorage user lists; SiteConfig feature flags breakRoom, cookbook.\n\n## 4.8.4 Edge Cases & Known Limitations\n\nBuilt-in games/recipes remain in _content registries; user items merge at runtime.\n\n## 4.8.5 Related Chapters\n\nhm-4-2",
   exercises: [],
   resourceLinks: [],
   steps: [],

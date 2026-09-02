@@ -15,7 +15,7 @@ export const chapter = {
   advantages: ["Dedicated chapter for Showcase Wall with cited file paths","Five-part template matches other features"],
   limitations: ["Some Showcase Wall edge cases may need product confirmation"],
   tools: [],
-  contentMarkdown: "## 4.11.1 What It Does (User View)\n\nPortfolio gallery: 17 featured GitHub repos + user-submitted items.\n\n## 4.11.2 How It's Implemented (Dev View)\n\nsrc/app/showcase-wall/page.tsx, showcase-wall/_content/_registry.ts, /api/showcase.\n\n## 4.11.3 Data Touched\n\nShowcaseItem model.\n\n## 4.11.4 Edge Cases & Known Limitations\n\nNo /showcase route — only /showcase-wall.\n\n## 4.11.5 Related Chapters\n\nhm-3-3",
+  contentMarkdown: "## 4.11.1 What It Does (User View)\n\nPersonal portfolio on **My wall** (private/public entries). **Public gallery** for featured repos. Admins see gallery items on My wall too and can edit/delete owned entries. Save requires sign-in.\n\n## 4.11.2 How It's Implemented (Dev View)\n\nsrc/app/showcase-wall/page.tsx, /api/showcase (GET/POST/PATCH/DELETE).\n\n## 4.11.3 Data Touched\n\nShowcaseItem model (Prisma).\n\n## 4.11.4 Edge Cases & Known Limitations\n\nRoute is /showcase-wall only (no /showcase page). Registry featured items are read-only badges unless user-owned.\n\n## 4.11.5 Related Chapters\n\nhm-3-3",
   exercises: [],
   resourceLinks: [],
   steps: [],

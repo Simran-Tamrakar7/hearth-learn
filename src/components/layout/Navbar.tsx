@@ -135,7 +135,7 @@ export function Navbar() {
           {status === "loading" ? (
             <div className="hidden sm:block h-9 w-9 rounded-full bg-[#E7E0D3] animate-pulse" aria-hidden />
           ) : session?.user ? (
-            <div className="hidden sm:flex items-center gap-2">
+            <div className="flex items-center gap-2">
               <div className="relative" ref={menuRef}>
                 <button
                   type="button"
@@ -262,42 +262,14 @@ export function Navbar() {
                 <Coffee className="w-4 h-4" /> Rest · Break Room
               </Link>
             ) : null}
-            {session?.user ? (
-              <>
-                <Link
-                  href="/settings"
-                  onClick={() => setMobileOpen(false)}
-                  className="w-full px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-3 text-[#52635E]"
-                >
-                  <SettingsIcon className="w-4 h-4" /> Settings
-                </Link>
-                <Link
-                  href="/profile"
-                  onClick={() => setMobileOpen(false)}
-                  className="w-full px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-3 text-[#52635E]"
-                >
-                  <User className="w-4 h-4" /> Profile
-                </Link>
-                {isAdmin ? (
-                  <Link
-                    href="/admin"
-                    onClick={() => setMobileOpen(false)}
-                    className="w-full px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-3 text-[#52635E]"
-                  >
-                    <Shield className="w-4 h-4" /> Admin
-                  </Link>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMobileOpen(false);
-                    void signOut();
-                  }}
-                  className="w-full px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-3 text-[#52635E]"
-                >
-                  <LogOut className="w-4 h-4" /> Sign out
-                </button>
-              </>
+            {!session?.user ? (
+              <Link
+                href="/login"
+                onClick={() => setMobileOpen(false)}
+                className="w-full px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-3 text-[#52635E] border border-[#E7E0D3]"
+              >
+                Sign In
+              </Link>
             ) : null}
           </motion.div>
         )}

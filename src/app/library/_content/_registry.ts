@@ -12,6 +12,8 @@ export type LibraryBook = {
   url: string
   source: string
   year?: string
+  /** Optional cover image URL (user books or overrides). */
+  coverUrl?: string
   /** Omit = active. Set `archived` here to hide a title; do not add 67 copies of `status: "active"`. */
   status?: CatalogStatus
 }

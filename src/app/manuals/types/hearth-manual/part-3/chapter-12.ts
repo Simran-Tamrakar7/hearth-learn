@@ -15,7 +15,7 @@ export const chapter = {
   advantages: ["Dedicated chapter for Auth & Profile with cited file paths","Five-part template matches other features"],
   limitations: ["Some Auth & Profile edge cases may need product confirmation"],
   tools: [],
-  contentMarkdown: "## 4.12.1 What It Does (User View)\n\nEmail/password login, optional Google, signup approval, password reset, profile editing.\n\n## 4.12.2 How It's Implemented (Dev View)\n\nsrc/lib/auth.ts, src/proxy.ts, login/*, /api/auth/*, profile/page.tsx.\n\n## 4.12.3 Data Touched\n\nUser, PasswordResetToken.\n\n## 4.12.4 Edge Cases & Known Limitations\n\nNew signups PENDING until admin approves.\n\n## 4.12.5 Related Chapters\n\nhm-7-1",
+  contentMarkdown: "## 4.12.1 What It Does (User View)\n\nEmail/password login, optional Google, signup approval, password reset, profile editing. Profile waits for session before showing signed-out state (no flash).\n\n## 4.12.2 How It's Implemented (Dev View)\n\nsrc/lib/auth.ts, login/*, profile/page.tsx (session loading skeleton).\n\n## 4.12.3 Data Touched\n\nUser, PasswordResetToken.\n\n## 4.12.4 Edge Cases & Known Limitations\n\nNew signups PENDING until admin approves.\n\n## 4.12.5 Related Chapters\n\nhm-4-13, hm-7-1",
   exercises: [],
   resourceLinks: [],
   steps: [],

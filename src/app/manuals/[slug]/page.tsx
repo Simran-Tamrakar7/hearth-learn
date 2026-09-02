@@ -1065,7 +1065,6 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
               compact
               label={nested ? "Sub-chapter actions" : "Chapter actions"}
               items={kebabItems([
-                perms.canEdit && { label: "Edit", onClick: () => enterChapterEdit(idx) },
                 perms.canReorder && {
                   label: "Move Up",
                   disabled: !canUp,
@@ -1387,30 +1386,6 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
             </Link>
 
             <div className="flex items-center gap-2">
-              <KebabMenu
-                label="Manual actions"
-                items={kebabItems([
-                  perms.canEdit && { label: "Edit", onClick: () => enterChapterEdit(activeChapterIndex) },
-                  perms.canDelete && {
-                    label: "Delete",
-                    danger: true,
-                    onClick: () => {
-                      if (!window.confirm(`Delete “${manualTitle}”? This cannot be undone.`)) return;
-                      const kind = removeCatalogManual(slug);
-                      if (!kind) {
-                        toast({ type: "error", title: "Could not delete", description: "That manual could not be removed." });
-                        return;
-                      }
-                      toast({
-                        type: "info",
-                        title: kind === "deleted" ? "Manual deleted" : "Removed from catalog",
-                        description: `Removed “${manualTitle}”.`,
-                      });
-                      router.push("/manuals");
-                    },
-                  },
-                ])}
-              />
               <ManualExportMenu
                 slug={slug}
                 manual={{
@@ -1643,6 +1618,28 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                       >
                         Done
                       </button>
+                      {perms.canDelete ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!window.confirm(`Delete “${manualTitle}”? This cannot be undone.`)) return;
+                            const kind = removeCatalogManual(slug);
+                            if (!kind) {
+                              toast({ type: "error", title: "Could not delete", description: "That manual could not be removed." });
+                              return;
+                            }
+                            toast({
+                              type: "info",
+                              title: kind === "deleted" ? "Manual deleted" : "Removed from catalog",
+                              description: `Removed “${manualTitle}”.`,
+                            });
+                            router.push("/manuals");
+                          }}
+                          className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-lg text-rose-700 bg-white border border-rose-200 hover:border-rose-400"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Delete manual
+                        </button>
+                      ) : null}
                     </>
                   ) : (
                     <button
@@ -2148,7 +2145,11 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                     });
                     const data = await res.json().catch(() => ({}));
                     setQuizBusy(false);
-                    setQuizText(data.text || data.error || "Could not generate quiz.");
+                    if (data.text) {
+                      setQuizText(data.text);
+                    } else {
+                      setQuizText(data.error || "Could not generate quiz.");
+                    }
                   }}
                 />
               ) : (

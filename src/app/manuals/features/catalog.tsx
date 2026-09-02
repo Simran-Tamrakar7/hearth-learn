@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { MoreVertical, Plus, ArrowRight, BookOpen, Clock, Pin } from "lucide-react";
+import { SquarePen, MoreVertical, Plus, ArrowRight, BookOpen, Clock, Pin } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { PinButton, manualPinId, togglePinnedItem } from "@/components/ui/PinButton";
 import { useToast } from "@/components/ui/Toast";
@@ -102,50 +102,22 @@ export function ManualCard({
   canEdit?: boolean;
   canDelete?: boolean;
 }) {
-  const { toast } = useToast();
   const pinId = manualPinId(manual.slug);
 
   return (
     <motion.div whileHover={{ y: -6, scale: 1.02 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
       <div className="relative h-full">
         <div className="absolute top-4 right-4 z-20 flex items-center gap-1">
-          <KebabMenu
-            label={`Actions for ${manual.title}`}
-            items={kebabItems([
-              canEdit && {
-                label: "Edit",
-                onClick: () => {
-                  window.location.href = `/manuals/${manual.slug}?edit=1`;
-                },
-              },
-              {
-                label: pinned ? "Unpin" : "Pin",
-                onClick: () => {
-                  const now = togglePinnedItem({
-                    id: pinId,
-                    title: manual.title,
-                    category: manual.category,
-                    type: "manual",
-                    url: `/manuals/${manual.slug}`,
-                  });
-                  toast({
-                    type: now ? "achievement" : "info",
-                    title: now ? "Pinned to Dashboard! 📌" : "Unpinned Item",
-                    description: now
-                      ? `"${manual.title}" is pinned on Manuals and Dashboard.`
-                      : `"${manual.title}" removed from pins.`,
-                  });
-                },
-              },
-              canDelete && {
-                label: "Delete",
-                danger: true,
-                onClick: () => {
-                  if (window.confirm(`Delete “${manual.title}”? This cannot be undone.`)) onDelete?.();
-                },
-              },
-            ])}
-          />
+          {canEdit ? (
+            <Link
+              href={`/manuals/${manual.slug}?edit=1`}
+              title={`Edit ${manual.title}`}
+              aria-label={`Edit ${manual.title}`}
+              className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-[#E7E0D3] bg-white text-[#52635E] hover:text-[#1C2A26] hover:border-[#D97706]"
+            >
+              <SquarePen className="w-3.5 h-3.5" />
+            </Link>
+          ) : null}
           <PinButton
             itemId={pinId}
             itemTitle={manual.title}
