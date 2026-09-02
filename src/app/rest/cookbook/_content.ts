@@ -96,6 +96,7 @@ export interface CuisineCategory {
 }
 
 export function getDishMatchedImage(dish: DetailedDish): string {
+  if (dish.id.startsWith("user-") && dish.imageUrl) return dish.imageUrl;
   const t = dish.title.toLowerCase();
 
   // 1. Food Hero / Breakfasts

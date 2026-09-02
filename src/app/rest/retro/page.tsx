@@ -52,7 +52,8 @@ export default function RetroCornerPage() {
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [volume, setVolume] = useState(0.5);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const activeNodesRef = useRef<any[]>([]);
+  const activeNodesRef = useRef<AudioNode[]>([]);
+  const masterGainRef = useRef<GainNode | null>(null);
 
   const vibes: VibeOption[] = [
     {
@@ -146,12 +147,21 @@ export default function RetroCornerPage() {
   const stopAudio = () => {
     activeNodesRef.current.forEach((node) => {
       try {
-        node.stop ? node.stop() : node.disconnect();
-      } catch (e) {}
+        if ("stop" in node && typeof node.stop === "function") node.stop();
+        else node.disconnect();
+      } catch {
+        /* ignore */
+      }
     });
     activeNodesRef.current = [];
+    masterGainRef.current = null;
     setIsPlayingAudio(false);
   };
+
+  useEffect(() => {
+    if (!masterGainRef.current || !audioContextRef.current) return;
+    masterGainRef.current.gain.setValueAtTime(volume * 0.35, audioContextRef.current.currentTime);
+  }, [volume]);
 
   // Web Audio API Procedural Audio Synthesizer for Vibe
   const startAudioForVibe = (vibeId: string) => {
@@ -167,8 +177,9 @@ export default function RetroCornerPage() {
       }
 
       const masterGain = ctx.createGain();
-      masterGain.gain.setValueAtTime(volume * 0.15, ctx.currentTime);
+      masterGain.gain.setValueAtTime(volume * 0.35, ctx.currentTime);
       masterGain.connect(ctx.destination);
+      masterGainRef.current = masterGain;
       activeNodesRef.current.push(masterGain);
 
       if (vibeId === "rain" || vibeId === "forest") {
@@ -326,7 +337,7 @@ export default function RetroCornerPage() {
                 {isPlayingAudio ? "Mute Audio" : "Play Vibe Audio"}
               </Button>
 
-              <div className="hidden sm:flex items-center gap-2 px-2 border-l border-[#E7E0D3]">
+              <div className="flex items-center gap-2 px-2 border-l border-[#E7E0D3]">
                 <Sliders className="w-3.5 h-3.5 text-[#8A9B95]" />
                 <input
                   type="range"
@@ -335,7 +346,8 @@ export default function RetroCornerPage() {
                   step="0.05"
                   value={volume}
                   onChange={(e) => setVolume(Number(e.target.value))}
-                  className="w-20 accent-[#D97706]"
+                  className="w-20 sm:w-24 accent-[#D97706]"
+                  aria-label="Volume"
                 />
               </div>
             </div>

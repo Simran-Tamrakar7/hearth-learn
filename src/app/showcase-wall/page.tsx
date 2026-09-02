@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Navbar } from "@/components/layout/Navbar";
 
@@ -25,7 +26,9 @@ function initials(name: string | null | undefined, email: string) {
 }
 
 export default function ShowcaseWallPage() {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
+  const isAdmin = session?.user?.role === "ADMIN";
+  const signedIn = status === "authenticated";
   const [tab, setTab] = useState<"mine" | "public">("mine");
   const [items, setItems] = useState<Item[]>([]);
   const [publicItems, setPublicItems] = useState<Item[]>([]);
@@ -68,12 +71,19 @@ export default function ShowcaseWallPage() {
     void load();
   }, [load]);
 
-  const mineCats = useMemo(() => {
-    const set = new Set(items.map((i) => i.category || "General"));
-    return ["All", ...Array.from(set).sort()];
-  }, [items]);
+  const mineDisplay = useMemo(() => {
+    if (!isAdmin) return items;
+    const ids = new Set(items.map((i) => i.id));
+    const extras = publicItems.filter((p) => !ids.has(p.id));
+    return [...items, ...extras];
+  }, [items, publicItems, isAdmin]);
 
-  const shown = (tab === "mine" ? items : publicItems).filter(
+  const mineCats = useMemo(() => {
+    const set = new Set(mineDisplay.map((i) => i.category || "General"));
+    return ["All", ...Array.from(set).sort()];
+  }, [mineDisplay]);
+
+  const shown = (tab === "mine" ? mineDisplay : publicItems).filter(
     (i) => filter === "All" || i.category === filter,
   );
   const grouped = useMemo(() => {
@@ -87,6 +97,8 @@ export default function ShowcaseWallPage() {
   }, [shown]);
 
   async function saveItem(payload: Record<string, unknown>, id?: string) {
+    if (!signedIn) throw new Error("Sign in to save showcase entries.");
+    if (id?.startsWith("featured-")) throw new Error("Featured projects are managed in the site registry.");
     const res = await fetch("/api/showcase", {
       method: id ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
@@ -124,6 +136,10 @@ export default function ShowcaseWallPage() {
   }
 
   async function remove(id: string) {
+    if (id.startsWith("featured-")) {
+      setError("Featured projects are managed in the site registry.");
+      return;
+    }
     await fetch(`/api/showcase?id=${encodeURIComponent(id)}`, { method: "DELETE" });
     await load();
   }
@@ -148,9 +164,6 @@ export default function ShowcaseWallPage() {
     await saveItem({ sortOrder: item.sortOrder }, swap.id);
   }
 
-  if (status === "unauthenticated" && tab === "mine") {
-    /* still show public */
-  }
 
   return (
     <div className="min-h-screen bg-[#FBF8F3] text-[#1C2A26]">
@@ -166,6 +179,12 @@ export default function ShowcaseWallPage() {
 
       {error ? <p className="text-sm text-red-700">{error}</p> : null}
 
+      {tab === "mine" && !signedIn && status !== "loading" ? (
+        <p className="text-sm text-[#52635E]">
+          <Link href="/login" className="font-semibold text-[#D97706] hover:underline">Sign in</Link> to add and manage entries on your wall.
+        </p>
+      ) : null}
+
       <div className="flex flex-wrap gap-2">
         <button type="button" className={`hearth-chip ${tab === "mine" ? "hearth-chip-active" : ""}`} onClick={() => { setTab("mine"); setFilter("All"); }}>
           My wall
@@ -175,7 +194,7 @@ export default function ShowcaseWallPage() {
         </button>
       </div>
 
-      {tab === "mine" && status === "authenticated" ? (
+      {tab === "mine" && signedIn ? (
         <section className="hearth-panel space-y-3 p-4">
           <h2 className="font-display text-lg font-semibold">Add entry</h2>
           <input className="w-full rounded-lg border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-sm" placeholder="Title" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
@@ -210,7 +229,7 @@ export default function ShowcaseWallPage() {
         </section>
       ) : null}
 
-      {tab === "mine" && status === "authenticated" ? (
+      {tab === "mine" && signedIn ? (
         <section className="flex flex-wrap items-end gap-2">
           <input className="rounded-lg border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-sm" placeholder="New category" value={newCat} onChange={(e) => setNewCat(e.target.value)} />
           <button type="button" className="hearth-chip" onClick={() => { if (newCat.trim()) setDraft({ ...draft, category: newCat.trim() }); setNewCat(""); }}>Use category</button>
@@ -279,10 +298,16 @@ export default function ShowcaseWallPage() {
                       </div>
                       {tab === "mine" ? (
                         <div className="flex flex-wrap gap-2 pt-2">
-                          <button type="button" className="hearth-chip" onClick={() => setEditingId(item.id)}>Edit</button>
-                          <button type="button" className="hearth-chip" onClick={() => void move(item, -1)}>Up</button>
-                          <button type="button" className="hearth-chip" onClick={() => void move(item, 1)}>Down</button>
-                          <button type="button" className="hearth-chip" onClick={() => void remove(item.id)}>Delete</button>
+                          {!item.id.startsWith("featured-") ? (
+                            <>
+                              <button type="button" className="hearth-chip" onClick={() => setEditingId(item.id)}>Edit</button>
+                              <button type="button" className="hearth-chip" onClick={() => void move(item, -1)}>Up</button>
+                              <button type="button" className="hearth-chip" onClick={() => void move(item, 1)}>Down</button>
+                              <button type="button" className="hearth-chip" onClick={() => void remove(item.id)}>Delete</button>
+                            </>
+                          ) : (
+                            <span className="text-[10px] uppercase tracking-widest text-[var(--muted)]">Featured · registry</span>
+                          )}
                         </div>
                       ) : null}
                     </>

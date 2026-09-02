@@ -61,6 +61,7 @@ export default function AICoachPage() {
 
   const handleModeSwitch = (mode: CoachMode) => {
     setCoachMode(mode);
+    setAiResult("");
   };
 
   const handleRunCoach = async () => {
@@ -259,7 +260,10 @@ export default function AICoachPage() {
                 <textarea
                   rows={6}
                   value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
+                  onChange={(e) => {
+                    setInputText(e.target.value);
+                    setAiResult("");
+                  }}
                   placeholder="Enter a topic, dry notes, or code to run through AI Coach..."
                   className="w-full p-4 text-xs sm:text-sm font-sans text-[#1C2A26] bg-white border border-[#E7E0D3] rounded-2xl focus:outline-none focus:border-[#D97706] leading-relaxed"
                 />

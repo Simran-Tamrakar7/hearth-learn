@@ -10,11 +10,17 @@ import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import {
   listedLibraryBooks,
-  searchBooks,
   shelves,
   gutenbergCoverUrl,
   type LibraryBook,
 } from "@/app/library/_content/_registry";
+import {
+  emptyLibraryBook,
+  isBuiltinBook,
+  mergeLibraryBooks,
+  removeLibraryBook,
+  saveUserLibraryBook,
+} from "@/app/library/user-books";
 import {
   BookOpen,
   Search,
@@ -23,24 +29,17 @@ import {
   Library as LibraryIcon,
   ExternalLink,
   Play,
+  Plus,
+  Pencil,
+  Trash2,
 } from "lucide-react";
-import { MANUALS_DATA, type ManualItem } from "@/app/manuals/types";
-import { activeManualSlugs } from "@/app/manuals/registry";
-import {
-  applyManualOverlay,
-  hiddenManualSlugs,
-  removeCatalogManual,
-  subscribeUserManuals,
-} from "@/app/manuals/features/local-storage";
-import { AddManualControl, ManualCard, RecentlyViewed } from "@/app/manuals/features/catalog";
-import { isManualsCatalogPin, manualPinId, subscribePinnedItems } from "@/components/ui/PinButton";
-import { usePermissions } from "@/lib/useAuthz";
 import {
   librarySavedStoreKey,
   readScopedRaw,
   subscribeUserScope,
   writeScopedRaw,
 } from "@/lib/userScope";
+import { subscribeUserCatalog } from "@/lib/userCatalog";
 
 function loadSaved(): Set<string> {
   try {
@@ -123,54 +122,57 @@ function BookCover({ book, compact = false }: { book: LibraryBook; compact?: boo
   );
 }
 
+function filterBooks(all: LibraryBook[], query: string, shelfId: string) {
+  const q = query.trim().toLowerCase();
+  let list =
+    !shelfId || shelfId === "all"
+      ? all
+      : all.filter((b) => (b.shelves || [b.shelf]).includes(shelfId));
+  if (!q) return list;
+  return list.filter(
+    (b) =>
+      b.title.toLowerCase().includes(q) ||
+      b.author.toLowerCase().includes(q) ||
+      b.blurb.toLowerCase().includes(q) ||
+      b.source.toLowerCase().includes(q),
+  );
+}
+
 export default function LibraryPage() {
   const { toast } = useToast();
-  const perms = usePermissions();
   const [shelf, setShelf] = useState("all");
   const [q, setQ] = useState("");
   const [savedOnly, setSavedOnly] = useState(false);
   const [saved, setSaved] = useState<Set<string>>(new Set());
   const [detail, setDetail] = useState<LibraryBook | null>(null);
-  const [userManuals, setUserManuals] = useState<ManualItem[]>([]);
-  const [hiddenSlugs, setHiddenSlugs] = useState<Set<string>>(new Set());
-  const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
-  const [selectedTag, setSelectedTag] = useState("");
+  const [catalog, setCatalog] = useState<LibraryBook[]>([]);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<LibraryBook | null>(null);
+  const [draft, setDraft] = useState<LibraryBook>(() => emptyLibraryBook(""));
 
   useEffect(() => {
-    const refresh = () => setSaved(loadSaved());
+    const refresh = () => {
+      setSaved(loadSaved());
+      setCatalog(mergeLibraryBooks());
+    };
     refresh();
-    return subscribeUserScope(refresh);
+    const unsub = subscribeUserScope(refresh);
+    const unsubCat = subscribeUserCatalog(refresh);
+    return () => {
+      unsub();
+      unsubCat();
+    };
   }, []);
-
-  useEffect(() => {
-    return subscribeUserManuals((items) => {
-      setUserManuals(items);
-      setHiddenSlugs(hiddenManualSlugs());
-    });
-  }, []);
-
-  useEffect(() => {
-    return subscribePinnedItems((all) => {
-      setPinnedIds(new Set(all.filter(isManualsCatalogPin).map((p) => p.id)));
-    });
-  }, []);
-
-  const libraryManuals = useMemo(() => {
-    const builtin = MANUALS_DATA.filter((m) => activeManualSlugs().has(m.slug) && !hiddenSlugs.has(m.slug));
-    const all = [...userManuals, ...builtin].map(applyManualOverlay);
-    if (!selectedTag) return all;
-    return all.filter((m) => (m.tags || []).includes(selectedTag));
-  }, [userManuals, hiddenSlugs, selectedTag]);
 
   const books = useMemo(() => {
-    let list = searchBooks(q, shelf);
+    let list = filterBooks(catalog, q, shelf);
     if (savedOnly) list = list.filter((b) => saved.has(b.id));
     return list;
-  }, [q, shelf, savedOnly, saved]);
+  }, [catalog, q, shelf, savedOnly, saved]);
 
   const savedBooks = useMemo(
-    () => listedLibraryBooks().filter((b) => saved.has(b.id)),
-    [saved]
+    () => catalog.filter((b) => saved.has(b.id)),
+    [catalog, saved]
   );
 
   const activeShelf = shelves.find((s) => s.id === shelf) || shelves[0];
@@ -187,12 +189,49 @@ export default function LibraryPage() {
     });
   }
 
+  function openAddForm() {
+    setEditing(null);
+    setDraft(emptyLibraryBook(""));
+    setFormOpen(true);
+  }
+
+  function openEditForm(book: LibraryBook) {
+    if (isBuiltinBook(book.id)) {
+      const copy = { ...book, id: `user-${book.id}-${Date.now().toString(36)}`, source: book.source || "My shelf" };
+      setEditing(null);
+      setDraft(copy);
+    } else {
+      setEditing(book);
+      setDraft({ ...book });
+    }
+    setFormOpen(true);
+    setDetail(null);
+  }
+
+  function saveBook() {
+    if (!draft.title.trim()) {
+      toast({ type: "error", title: "Title required" });
+      return;
+    }
+    const id = editing?.id || draft.id || emptyLibraryBook(draft.title).id;
+    saveUserLibraryBook({ ...draft, id, title: draft.title.trim() });
+    setCatalog(mergeLibraryBooks());
+    setFormOpen(false);
+    toast({ type: "achievement", title: editing ? "Book updated" : "Book added" });
+  }
+
+  function deleteBook(id: string) {
+    removeLibraryBook(id);
+    setCatalog(mergeLibraryBooks());
+    setDetail(null);
+    toast({ type: "info", title: isBuiltinBook(id) ? "Book hidden from your library" : "Book deleted" });
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-[#FBF8F3] text-[#1C2A26]">
       <Navbar />
 
       <main className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-12 py-8 w-full space-y-8 flex-1">
-        <RecentlyViewed />
         <div className="bg-gradient-to-br from-white via-[#FAF7F2] to-[#F5EFE6] border border-[#E7E0D3] rounded-3xl p-6 sm:p-10 space-y-4 shadow-sm">
           <div className="flex items-center gap-2">
             <Badge variant="amber" icon={<LibraryIcon className="w-3.5 h-3.5" />}>
@@ -212,11 +251,11 @@ export default function LibraryPage() {
           </p>
 
           <p className="text-xs font-semibold text-[#8A9B95]">
-            {listedLibraryBooks().length} titles · {shelves.length - 1} shelves · {saved.size} saved here
+            {catalog.length} titles · {shelves.length - 1} shelves · {saved.size} saved here
           </p>
 
-          <div className="pt-2 sm:max-w-md flex items-center gap-3">
-            <div className="relative flex-1">
+          <div className="pt-2 flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 sm:max-w-md">
               <Search className="w-4 h-4 text-[#8A9B95] absolute left-4 top-3.5" />
               <input
                 type="search"
@@ -235,48 +274,11 @@ export default function LibraryPage() {
               />
               Saved only
             </label>
+            <Button variant="primary" size="sm" onClick={openAddForm} leftIcon={<Plus className="w-4 h-4" />}>
+              Add book
+            </Button>
           </div>
         </div>
-
-        <section className="space-y-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="font-serif-display text-xl sm:text-2xl font-bold text-[#1C2A26]">Manuals</h2>
-              <p className="text-xs text-[#8A9B95] mt-0.5">Create, pin, and edit the same catalog as /manuals.</p>
-            </div>
-            {perms.canCreate ? <AddManualControl /> : null}
-          </div>
-          {selectedTag ? (
-            <button
-              type="button"
-              onClick={() => setSelectedTag("")}
-              className="px-2 py-0.5 rounded-full bg-[#1C2A26] text-[#FAF7F2] text-[10px] font-bold"
-            >
-              {selectedTag} ×
-            </button>
-          ) : null}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-            {libraryManuals.map((manual) => (
-              <ManualCard
-                key={manual.id}
-                manual={manual}
-                pinned={pinnedIds.has(manualPinId(manual.slug))}
-                canEdit={perms.canEdit}
-                canDelete={perms.canDelete}
-                onTagClick={setSelectedTag}
-                onDelete={() => {
-                  const kind = removeCatalogManual(manual.slug);
-                  if (!kind) return;
-                  toast({
-                    type: "info",
-                    title: kind === "deleted" ? "Manual deleted" : "Removed from catalog",
-                    description: `Removed “${manual.title}”.`,
-                  });
-                }}
-              />
-            ))}
-          </div>
-        </section>
 
         {savedBooks.length > 0 && !savedOnly && (
           <div className="space-y-3">
@@ -394,7 +396,13 @@ export default function LibraryPage() {
               <p className="text-xs text-[#52635E] leading-relaxed">{detail.blurb}</p>
             </div>
 
-            <div className="flex justify-end gap-3 pt-2">
+            <div className="flex justify-end gap-3 pt-2 flex-wrap">
+              <Button variant="outline" size="md" onClick={() => openEditForm(detail)} leftIcon={<Pencil className="w-4 h-4" />}>
+                Edit
+              </Button>
+              <Button variant="outline" size="md" onClick={() => deleteBook(detail.id)} leftIcon={<Trash2 className="w-4 h-4" />}>
+                {isBuiltinBook(detail.id) ? "Hide" : "Delete"}
+              </Button>
               <Button
                 variant="outline"
                 size="md"
@@ -403,6 +411,7 @@ export default function LibraryPage() {
               >
                 {saved.has(detail.id) ? "Saved" : "Save"}
               </Button>
+              {detail.url ? (
               <Button
                 variant="primary"
                 size="md"
@@ -412,6 +421,34 @@ export default function LibraryPage() {
               >
                 Read
               </Button>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {formOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1C2A26]/40 backdrop-blur-xs">
+          <div className="bg-white border border-[#E7E0D3] rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-4 shadow-2xl relative">
+            <button type="button" onClick={() => setFormOpen(false)} className="absolute top-6 right-6 text-[#8A9B95] hover:text-[#1C2A26]">
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="font-serif-display font-bold text-xl">{editing ? "Edit book" : "Add book"}</h3>
+            {(["title", "author", "url", "blurb", "source", "year"] as const).map((field) => (
+              field === "blurb" ? (
+                <textarea key={field} rows={3} value={draft[field] || ""} onChange={(e) => setDraft({ ...draft, blurb: e.target.value })} placeholder="Description" className="w-full p-3 text-sm border border-[#E7E0D3] rounded-xl" />
+              ) : (
+                <input key={field} value={String((draft as unknown as Record<string, string | undefined>)[field] || "")} onChange={(e) => setDraft({ ...draft, [field]: e.target.value })} placeholder={field.charAt(0).toUpperCase() + field.slice(1)} className="w-full h-11 px-3 text-sm border border-[#E7E0D3] rounded-xl" />
+              )
+            ))}
+            <select value={draft.shelf} onChange={(e) => setDraft({ ...draft, shelf: e.target.value })} className="w-full h-11 px-3 text-sm border border-[#E7E0D3] rounded-xl">
+              {shelves.filter((s) => s.id !== "all").map((s) => (
+                <option key={s.id} value={s.id}>{s.label}</option>
+              ))}
+            </select>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setFormOpen(false)}>Cancel</Button>
+              <Button variant="primary" size="sm" onClick={saveBook}>{editing ? "Save" : "Add"}</Button>
             </div>
           </div>
         </div>

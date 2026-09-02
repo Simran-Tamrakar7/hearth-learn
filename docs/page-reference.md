@@ -8,13 +8,13 @@ Key UI: `src/app/manuals/page.tsx` (labeled **PAGE: /manuals**). Other manuals-o
 
 ## `/manuals/[slug]`
 
-Reader + TOC editor + inline chapter edit (no dialog). Builtin: `findHearthManual`. User: `getUserManual`. Testing Types: overlay + outline. Writes `hearth_manual_custom_data_*` (debounced while editing) and progress keys. **Undo** during edit: stack of snapshots before merge/delete/reorder/content changes; Undo button + ⌘Z/Ctrl+Z; Cancel still reverts the whole session. Highlights: localStorage plus `POST /api/highlights` (userId, chapterId, tabType, text, start). Click an existing mark to remove it. Three tabs (Full Content / Summary / AI Summary) keep highlights separate. TOC shows minutes per chapter and scrolls the active row into view. Resume + recently viewed dual-write to account prefs. Related manuals by category/tags at the end.
+Reader + TOC editor + inline chapter edit (no dialog). Builtin: `findHearthManual`. User: `getUserManual`. Testing Types: overlay + outline. Writes `hearth_manual_custom_data_*` (debounced while editing) and progress keys. **Undo** during edit: stack of snapshots before merge/delete/reorder/content changes; Undo button + ⌘Z/Ctrl+Z; Cancel still reverts the whole session. Highlights: localStorage plus `POST /api/highlights` (userId, chapterId, tabType, text, start). Click an existing mark to remove it. Three tabs: **Full Content**, **Summary** (markdown toolbar in edit), **Quiz & Activities** (chapter exercises + AI quiz generator). Export menu: PDF, DOCX, Print. TOC shows minutes per chapter and scrolls the active row into view. Resume + recently viewed dual-write to account prefs. Related manuals by category/tags at the end.
 
 Key UI: `src/app/manuals/[slug]/page.tsx` (labeled **PAGE: /manuals/[slug]**), `_ui/LessonContentEditor`, `_ui/ToolSwitcher`, `_ui/Highlightable`, `_lib/manualParts.ts`.
 
 ## `/library`
 
-Reads `listedLibraryBooks()` from `src/app/library/_content/_registry.ts`. Writes `hearth_library_saved`. Opens `book.url` in a new tab. Also lists the manuals catalog with the same `+` / pin / kebab Edit as `/manuals`. Recently viewed + Continue card shared with `/manuals`.
+Reads `listedLibraryBooks()` from `src/app/library/_content/_registry.ts` plus user books in `localStorage` (`user-books.ts`). Writes `hearth_library_saved`. Opens `book.url` in a new tab. Shelf tags only (manuals live on `/manuals`). Recently viewed + Continue card shared with `/manuals`.
 
 ## `/trails`, `/trails/[slug]`
 
@@ -34,7 +34,7 @@ Coach `POST /api/ai/coach` and CV Maker `POST /api/ai/cv`. Needs `OPENAI_API_KEY
 
 ## `/rest`
 
-Timer. Subpages: games (`src/app/rest/games/_content.ts`), cookbook (`src/app/rest/cookbook/_content.ts`), retro (inline vibes).
+Timer. Subpages: games and cookbook support builtin registry + user CRUD via `src/lib/userCatalog.ts` (`user-games.ts`, `user-recipes.ts`); retro (inline vibes + volume slider).
 
 ## `/toolkits`
 

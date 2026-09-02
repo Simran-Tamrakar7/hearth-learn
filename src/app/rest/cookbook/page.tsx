@@ -10,19 +10,26 @@ import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
 import {
   COOKBOOK_CUISINES,
-  COOKBOOK_DISHES,
-  DetailedDish,
-  Nutrition,
   getDishPrepWays,
   getDishPrepWayDetails,
   getDishFDANutrition,
   getDishMatchedImage,
   getDishVideos,
-  PrepWay,
-  FDANutrition,
-  RecipeVideo,
-  TransformedRecipeDetails,
+  type DetailedDish,
+  type PrepWay,
+  type FDANutrition,
+  type RecipeVideo,
+  type TransformedRecipeDetails,
 } from "@/app/rest/cookbook/_content";
+import {
+  emptyUserRecipe,
+  mergeRecipes,
+  readSavedDishIds,
+  removeRecipe,
+  saveUserRecipe,
+  writeSavedDishIds,
+} from "@/app/rest/cookbook/user-recipes";
+import { subscribeUserCatalog } from "@/lib/userCatalog";
 import {
   Utensils,
   BookOpen,
@@ -48,6 +55,9 @@ import {
   Flame as BurnIcon,
   Film,
   Pin,
+  Plus,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { PinButton, getPinnedItems, PinnedItemMetadata } from "@/components/ui/PinButton";
 import Link from "next/link";
@@ -59,11 +69,26 @@ export default function LuminaCookbookPage() {
   const [selectedMeal, setSelectedMeal] = useState<string>("Any meal");
   const [selectedLevel, setSelectedLevel] = useState<string>("Any level");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [savedDishIds, setSavedDishIds] = useState<string[]>(["fh-1", "it-1", "in-1"]);
+  const [savedDishIds, setSavedDishIds] = useState<string[]>([]);
+  const [allDishes, setAllDishes] = useState<DetailedDish[]>([]);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<DetailedDish | null>(null);
+  const [draft, setDraft] = useState<DetailedDish>(() => emptyUserRecipe(""));
+  const [draftIngredients, setDraftIngredients] = useState("");
+  const [draftSteps, setDraftSteps] = useState("");
   const [activeDishModal, setActiveDishModal] = useState<DetailedDish | null>(null);
   const [selectedWayId, setSelectedWayId] = useState<string>("w1");
   const [activeVideo, setActiveVideo] = useState<RecipeVideo | null>(null);
   const [pinnedRecipes, setPinnedRecipes] = useState<PinnedItemMetadata[]>([]);
+
+  useEffect(() => {
+    const refresh = () => {
+      setAllDishes(mergeRecipes());
+      setSavedDishIds(readSavedDishIds());
+    };
+    refresh();
+    return subscribeUserCatalog(refresh);
+  }, []);
 
   useEffect(() => {
     const updatePins = () => {
@@ -76,7 +101,48 @@ export default function LuminaCookbookPage() {
   }, []);
 
   const cuisines = COOKBOOK_CUISINES;
-  const allDishes = COOKBOOK_DISHES;
+
+  function openAddForm() {
+    setEditing(null);
+    const blank = emptyUserRecipe("");
+    setDraft(blank);
+    setDraftIngredients("");
+    setDraftSteps("");
+    setFormOpen(true);
+  }
+
+  function openEditForm(dish: DetailedDish) {
+    setEditing(dish);
+    setDraft({ ...dish });
+    setDraftIngredients(dish.ingredients.join("\n"));
+    setDraftSteps(dish.steps.join("\n"));
+    setFormOpen(true);
+  }
+
+  function saveRecipeForm() {
+    if (!draft.title.trim()) {
+      toast({ type: "error", title: "Title required" });
+      return;
+    }
+    const recipe: DetailedDish = {
+      ...draft,
+      id: editing?.id || draft.id,
+      title: draft.title.trim(),
+      ingredients: draftIngredients.split("\n").map((s) => s.trim()).filter(Boolean),
+      steps: draftSteps.split("\n").map((s) => s.trim()).filter(Boolean),
+    };
+    saveUserRecipe(recipe);
+    setAllDishes(mergeRecipes());
+    setFormOpen(false);
+    toast({ type: "achievement", title: editing ? "Recipe updated" : "Recipe added" });
+  }
+
+  function deleteRecipe(id: string) {
+    removeRecipe(id);
+    setAllDishes(mergeRecipes());
+    setActiveDishModal(null);
+    toast({ type: "info", title: id.startsWith("user-") ? "Recipe deleted" : "Recipe hidden" });
+  }
 
   // Filter Dishes by Search, Cuisine, Meal, Level
   const filteredDishes = allDishes.filter((dish) => {
@@ -94,13 +160,15 @@ export default function LuminaCookbookPage() {
 
   const toggleBookmark = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (savedDishIds.includes(id)) {
-      setSavedDishIds(savedDishIds.filter((d) => d !== id));
-      toast({ type: "info", title: "Recipe Removed", description: "Removed from saved recipe collection." });
-    } else {
-      setSavedDishIds([...savedDishIds, id]);
-      toast({ type: "achievement", title: "Recipe Saved! 🔖", description: "Added to your personal cookbook collection." });
-    }
+    const next = savedDishIds.includes(id)
+      ? savedDishIds.filter((d) => d !== id)
+      : [...savedDishIds, id];
+    setSavedDishIds(next);
+    writeSavedDishIds(next);
+    toast({
+      type: next.includes(id) ? "achievement" : "info",
+      title: next.includes(id) ? "Recipe Saved! 🔖" : "Recipe Removed",
+    });
   };
 
   const handleRandomSurprise = () => {
@@ -155,14 +223,19 @@ export default function LuminaCookbookPage() {
             </Link>
           </div>
 
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleRandomSurprise}
-            leftIcon={<Shuffle className="w-4 h-4 text-[#D97706]" />}
-          >
-            Chef&apos;s Surprise Dish 🎲
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="primary" size="sm" onClick={openAddForm} leftIcon={<Plus className="w-4 h-4" />}>
+              Add recipe
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleRandomSurprise}
+              leftIcon={<Shuffle className="w-4 h-4 text-[#D97706]" />}
+            >
+              Chef&apos;s Surprise Dish 🎲
+            </Button>
+          </div>
         </div>
 
         {/* Hero Section */}
@@ -361,6 +434,14 @@ export default function LuminaCookbookPage() {
                     />
 
                     <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
+                      {dish.id.startsWith("user-") ? (
+                        <>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); openEditForm(dish); }} className="p-2 rounded-xl bg-black/30 text-white hover:bg-black/50"><Pencil className="w-4 h-4" /></button>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); deleteRecipe(dish.id); }} className="p-2 rounded-xl bg-black/30 text-white hover:bg-red-700/80"><Trash2 className="w-4 h-4" /></button>
+                        </>
+                      ) : (
+                        <button type="button" onClick={(e) => { e.stopPropagation(); deleteRecipe(dish.id); }} className="p-2 rounded-xl bg-black/30 text-white hover:bg-red-700/80" title="Hide"><Trash2 className="w-4 h-4" /></button>
+                      )}
                       <PinButton
                         itemId={`dish-${dish.id}`}
                         itemTitle={dish.title}
@@ -746,6 +827,32 @@ export default function LuminaCookbookPage() {
           </div>
         )}
       </main>
+
+      {formOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1C2A26]/40">
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full space-y-3 border border-[#E7E0D3] max-h-[90vh] overflow-y-auto">
+            <h3 className="font-serif-display font-bold text-lg">{editing ? "Edit recipe" : "Add recipe"}</h3>
+            <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="Title" className="w-full h-11 px-3 border border-[#E7E0D3] rounded-xl text-sm" />
+            <input value={draft.cuisine} onChange={(e) => setDraft({ ...draft, cuisine: e.target.value })} placeholder="Cuisine" className="w-full h-11 px-3 border border-[#E7E0D3] rounded-xl text-sm" />
+            <input value={draft.imageUrl} onChange={(e) => setDraft({ ...draft, imageUrl: e.target.value })} placeholder="Image URL" className="w-full h-11 px-3 border border-[#E7E0D3] rounded-xl text-sm" />
+            <div className="grid grid-cols-2 gap-2">
+              <select value={draft.meal} onChange={(e) => setDraft({ ...draft, meal: e.target.value as DetailedDish["meal"] })} className="h-11 px-3 border border-[#E7E0D3] rounded-xl text-sm">
+                {(["breakfast", "lunch", "dinner", "snack", "side"] as const).map((m) => <option key={m} value={m}>{m}</option>)}
+              </select>
+              <select value={draft.level} onChange={(e) => setDraft({ ...draft, level: e.target.value as DetailedDish["level"] })} className="h-11 px-3 border border-[#E7E0D3] rounded-xl text-sm">
+                {(["easy", "medium", "hard"] as const).map((l) => <option key={l} value={l}>{l}</option>)}
+              </select>
+            </div>
+            <textarea value={draftIngredients} onChange={(e) => setDraftIngredients(e.target.value)} placeholder="Ingredients (one per line)" rows={4} className="w-full p-3 border border-[#E7E0D3] rounded-xl text-sm" />
+            <textarea value={draftSteps} onChange={(e) => setDraftSteps(e.target.value)} placeholder="Steps (one per line)" rows={4} className="w-full p-3 border border-[#E7E0D3] rounded-xl text-sm" />
+            <textarea value={draft.chefTip} onChange={(e) => setDraft({ ...draft, chefTip: e.target.value })} placeholder="Chef tip" rows={2} className="w-full p-3 border border-[#E7E0D3] rounded-xl text-sm" />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setFormOpen(false)}>Cancel</Button>
+              <Button variant="primary" size="sm" onClick={saveRecipeForm}>Save</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

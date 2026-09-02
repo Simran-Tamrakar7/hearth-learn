@@ -43,7 +43,7 @@ function initials(name?: string | null, email?: string | null) {
 
 export function Navbar() {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { features } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -65,7 +65,6 @@ export function Navbar() {
     { href: "/notes", label: "Notes", icon: BookOpen, featureKey: "notes" as const },
     { href: "/ai", label: "AI", icon: Sparkles, featureKey: "aiCoach" as const },
     { href: "/showcase-wall", label: "Showcase Wall", icon: Globe, featureKey: null },
-    { href: "/settings", label: "Settings", icon: SettingsIcon, featureKey: null },
   ];
 
   const navLinks = allNavLinks.filter(
@@ -133,7 +132,9 @@ export function Navbar() {
             </Link>
           ) : null}
 
-          {session?.user ? (
+          {status === "loading" ? (
+            <div className="hidden sm:block h-9 w-9 rounded-full bg-[#E7E0D3] animate-pulse" aria-hidden />
+          ) : session?.user ? (
             <div className="hidden sm:flex items-center gap-2">
               <div className="relative" ref={menuRef}>
                 <button
@@ -263,6 +264,13 @@ export function Navbar() {
             ) : null}
             {session?.user ? (
               <>
+                <Link
+                  href="/settings"
+                  onClick={() => setMobileOpen(false)}
+                  className="w-full px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-3 text-[#52635E]"
+                >
+                  <SettingsIcon className="w-4 h-4" /> Settings
+                </Link>
                 <Link
                   href="/profile"
                   onClick={() => setMobileOpen(false)}

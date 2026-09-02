@@ -212,7 +212,7 @@ export function getUserManual(slug: string): ManualItem | undefined {
   return getUserManuals().find((m) => m.slug === slug || m.id === slug || m.id === `manual-${slug}`);
 }
 
-export function emptyManual(title: string, opts?: { category?: string; tags?: string[] }): ManualItem {
+export function emptyManual(title: string, opts?: { category?: string; tags?: string[]; coverImage?: string }): ManualItem {
   const t = title.trim() || "Untitled manual";
   const slug = `user-${slugifyTitle(t)}`;
   const chapter: ManualChapter = {
@@ -242,7 +242,7 @@ export function emptyManual(title: string, opts?: { category?: string; tags?: st
     chapterCount: 1,
     estimatedTime: "15 min",
     icon: "BookOpen",
-    coverImage: COVERS[Math.abs(t.length) % COVERS.length],
+    coverImage: opts?.coverImage?.trim() || COVERS[Math.abs(t.length) % COVERS.length],
     chapters: [chapter],
   };
 }
@@ -265,6 +265,10 @@ export function applyManualOverlay(manual: ManualItem): ManualItem {
       tags: Array.isArray(parsed.tags)
         ? parsed.tags.filter((t: unknown) => typeof t === "string" && t.trim()).map((t: string) => t.trim())
         : manual.tags || [],
+      coverImage:
+        typeof parsed.coverImage === "string" && parsed.coverImage.trim()
+          ? parsed.coverImage.trim()
+          : manual.coverImage,
     };
   } catch {
     return { ...manual, tags: manual.tags || [] };
