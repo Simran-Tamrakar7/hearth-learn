@@ -2145,7 +2145,11 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                     });
                     const data = await res.json().catch(() => ({}));
                     setQuizBusy(false);
-                    setQuizText(data.text || data.error || "Could not generate quiz.");
+                    if (data.text) {
+                      setQuizText(data.text);
+                    } else {
+                      setQuizText(data.error || "Could not generate quiz.");
+                    }
                   }}
                 />
               ) : (
