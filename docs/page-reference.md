@@ -14,7 +14,7 @@ Key UI: `src/app/manuals/[slug]/page.tsx` plus shared panels in `features/Chapte
 
 ## `/library`
 
-Reads `listedLibraryBooks()` from `src/app/library/_content/_registry.ts` plus user books in `localStorage` (`user-books.ts`). Writes `hearth_library_saved`. Opens `book.url` in a new tab. Shelf tags only (manuals live on `/manuals`). Recently viewed + Continue card shared with `/manuals`.
+Reads `listedLibraryBooks()` from `src/app/library/_content/_registry.ts` plus user books in localStorage (`user-books.ts`, `src/lib/userCatalog.ts`). Shelf tags only — manuals live on `/manuals`. User add/edit: title, author, URL, **cover URL**, blurb, shelf. Edit via pencil on book detail.
 
 ## `/trails`, `/trails/[slug]`
 

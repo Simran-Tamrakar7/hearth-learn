@@ -2,7 +2,7 @@
 
 Table of contents for the repository manual. **In-app reader:** [/manuals/hearth-manual](https://hearth-learn.vercel.app/manuals/hearth-manual).
 
-Also see: [architecture.md](./architecture.md), [content-model.md](./content-model.md), [local-dev.md](./local-dev.md), [where-to-edit.md](./where-to-edit.md).
+Also see: [architecture.md](./architecture.md), [content-model.md](./content-model.md), [local-dev.md](./local-dev.md), [where-to-edit.md](./where-to-edit.md), [feature-status.md](./feature-status.md) (user-facing feature checklist).
 
 ---
 

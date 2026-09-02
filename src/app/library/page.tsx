@@ -51,7 +51,7 @@ function loadSaved(): Set<string> {
 }
 
 function BookCover({ book, compact = false }: { book: LibraryBook; compact?: boolean }) {
-  const src = gutenbergCoverUrl(book);
+  const src = book.coverUrl?.trim() || gutenbergCoverUrl(book);
   const [broken, setBroken] = useState(!src);
 
   if (broken || !src) {
@@ -434,13 +434,13 @@ export default function LibraryPage() {
               <X className="w-5 h-5" />
             </button>
             <h3 className="font-serif-display font-bold text-xl">{editing ? "Edit book" : "Add book"}</h3>
-            {(["title", "author", "url", "blurb", "source", "year"] as const).map((field) => (
+            {(["title", "author", "url", "coverUrl", "blurb", "source", "year"] as const).map((field) =>
               field === "blurb" ? (
                 <textarea key={field} rows={3} value={draft[field] || ""} onChange={(e) => setDraft({ ...draft, blurb: e.target.value })} placeholder="Description" className="w-full p-3 text-sm border border-[#E7E0D3] rounded-xl" />
               ) : (
-                <input key={field} value={String((draft as unknown as Record<string, string | undefined>)[field] || "")} onChange={(e) => setDraft({ ...draft, [field]: e.target.value })} placeholder={field.charAt(0).toUpperCase() + field.slice(1)} className="w-full h-11 px-3 text-sm border border-[#E7E0D3] rounded-xl" />
+                <input key={field} value={String((draft as unknown as Record<string, string | undefined>)[field] || "")} onChange={(e) => setDraft({ ...draft, [field]: e.target.value })} placeholder={field === "coverUrl" ? "Cover image URL (optional)" : field.charAt(0).toUpperCase() + field.slice(1)} className="w-full h-11 px-3 text-sm border border-[#E7E0D3] rounded-xl" />
               )
-            ))}
+            )}
             <select value={draft.shelf} onChange={(e) => setDraft({ ...draft, shelf: e.target.value })} className="w-full h-11 px-3 text-sm border border-[#E7E0D3] rounded-xl">
               {shelves.filter((s) => s.id !== "all").map((s) => (
                 <option key={s.id} value={s.id}>{s.label}</option>

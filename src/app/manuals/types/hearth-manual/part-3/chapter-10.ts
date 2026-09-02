@@ -15,7 +15,7 @@ export const chapter = {
   advantages: ["Dedicated chapter for AI Coach & CV with cited file paths","Five-part template matches other features"],
   limitations: ["Some AI Coach & CV edge cases may need product confirmation"],
   tools: [],
-  contentMarkdown: "## 4.10.1 What It Does (User View)\n\nAI study coach and CV maker at /ai.\n\n## 4.10.2 How It's Implemented (Dev View)\n\nsrc/app/ai/page.tsx, /api/ai/coach, /api/ai/cv, src/lib/openai.ts.\n\n## 4.10.3 Data Touched\n\nNo persistent model — session requests only.\n\n## 4.10.4 Edge Cases & Known Limitations\n\nGated by permissions.canUseAI.\n\n## 4.10.5 Related Chapters\n\nhm-2-2",
+  contentMarkdown: "## 4.10.1 What It Does (User View)\n\nAI study coach and CV maker at /ai. Changing mode or editing input clears the previous result so stale answers are not shown.\n\n## 4.10.2 How It's Implemented (Dev View)\n\nsrc/app/ai/page.tsx, /api/ai/coach, /api/ai/cv, src/lib/openai.ts.\n\n## 4.10.3 Data Touched\n\nNo persistent model — session requests only.\n\n## 4.10.4 Edge Cases & Known Limitations\n\nGated by permissions.canUseAI.\n\n## 4.10.5 Related Chapters\n\nhm-4-7, hm-2-2",
   exercises: [],
   resourceLinks: [],
   steps: [],
