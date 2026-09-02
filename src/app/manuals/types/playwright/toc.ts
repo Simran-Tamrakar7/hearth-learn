@@ -1,7 +1,7 @@
 /* Playwright manual TOC — ordering only. Content lives in part-N/chapter-M.ts */
 
 /** Bump when chapter catalog changes so stale browser localStorage is not restored. */
-export const PLAYWRIGHT_TOC_VERSION = 3;
+export const PLAYWRIGHT_TOC_VERSION = 4;
 
 export type PlaywrightTocPart = {
   partNo: number;
