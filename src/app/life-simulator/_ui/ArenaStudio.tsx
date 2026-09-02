@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 
@@ -29,6 +31,8 @@ export function ArenaStudio({
   focus?: string;
   onXp: (xp: number) => void;
 }) {
+  const { status } = useSession();
+  const signedIn = status === "authenticated";
   const [tab, setTab] = useState<"practice" | "history">("practice");
   const [prompt, setPrompt] = useState("");
   const [answer, setAnswer] = useState("");
@@ -50,6 +54,10 @@ export function ArenaStudio({
   }, [arenaId]);
 
   async function newQuestion() {
+    if (!signedIn) {
+      setError("Sign in to generate AI scenarios.");
+      return;
+    }
     setBusy("generate");
     setError("");
     const res = await fetch("/api/life-lab", {
@@ -70,6 +78,10 @@ export function ArenaStudio({
   }
 
   async function evaluate() {
+    if (!signedIn) {
+      setError("Sign in to evaluate your answer.");
+      return;
+    }
     setBusy("evaluate");
     setError("");
     const res = await fetch("/api/life-lab", {
@@ -100,6 +112,11 @@ export function ArenaStudio({
         </button>
       </div>
       {error ? <p className="text-sm text-red-700">{error}</p> : null}
+      {!signedIn && status !== "loading" ? (
+        <p className="text-sm text-[#52635E]">
+          <Link href="/login" className="font-semibold text-[#D97706] hover:underline">Sign in</Link> to generate scenarios and save your attempt history.
+        </p>
+      ) : null}
 
       {tab === "practice" ? (
         <>

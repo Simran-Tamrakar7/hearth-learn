@@ -31,7 +31,7 @@ export function prepareManualForExport(
 
 async function loadHtml2Pdf() {
   const mod = await import("html2pdf.js");
-  const fn = mod.default ?? mod;
+  const fn = (mod as { default?: unknown }).default ?? mod;
   if (typeof fn !== "function") {
     throw new Error("PDF library failed to load");
   }
@@ -81,6 +81,10 @@ export function chapterBodyForExport(ch: ManualChapter): string {
   if (ch.advantages?.length) parts.push(`**Advantages**\n\n${ch.advantages.map((a) => `- ${a}`).join("\n")}`);
   if (ch.limitations?.length) parts.push(`**Limitations**\n\n${ch.limitations.map((l) => `- ${l}`).join("\n")}`);
   if (ch.contentMarkdown?.trim()) parts.push(ch.contentMarkdown.trim());
+  if (ch.customSummary?.trim()) parts.push(ch.customSummary.trim());
+  if (ch.aiSummary?.trim() || ch.summaryMarkdown?.trim()) {
+    parts.push((ch.aiSummary || ch.summaryMarkdown || "").trim());
+  }
   if (ch.tools?.length) parts.push(`**Tools**\n\n${toolsBlock(ch.tools)}`);
   if (ch.codeSnippet?.trim()) parts.push("```\n" + ch.codeSnippet.trim() + "\n```");
   if (ch.sections?.length) {
@@ -223,43 +227,36 @@ export async function downloadManualPdf(
   slug = ""
 ) {
   const ready = prepareManualForExport(manual, slug);
-  const html2pdf = await loadHtml2Pdf();
-  const html = buildManualExportHtml(ready);
-
-  const iframe = document.createElement("iframe");
-  iframe.setAttribute("aria-hidden", "true");
-  iframe.style.cssText =
-    "position:fixed;left:-10000px;top:0;width:720px;height:100vh;border:0;opacity:1;background:#fff;";
-  document.body.appendChild(iframe);
-
-  const doc = iframe.contentDocument;
-  if (!doc) {
-    document.body.removeChild(iframe);
-    throw new Error("Could not create print frame");
-  }
-  doc.open();
-  doc.write(html);
-  doc.close();
-
-  await new Promise<void>((resolve) => {
-    iframe.onload = () => resolve();
-    setTimeout(resolve, 300);
-  });
 
   try {
-    await html2pdf()
-      .set({
-        margin: 12,
-        filename,
-        pagebreak: { mode: ["avoid-all", "css", "legacy"] },
-        html2canvas: { scale: 1.25, useCORS: true, logging: false, scrollY: 0 },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-      })
-      .from(doc.body)
-      .save();
-  } finally {
-    document.body.removeChild(iframe);
+    const html2pdf = await loadHtml2Pdf();
+    const host = document.createElement("div");
+    host.setAttribute("aria-hidden", "true");
+    host.style.cssText = "position:fixed;left:-10000px;top:0;width:720px;background:#fff;";
+    host.innerHTML = buildManualExportInnerHtml(ready);
+    document.body.appendChild(host);
+
+    try {
+      await html2pdf()
+        .set({
+          margin: 12,
+          filename,
+          pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+          html2canvas: { scale: 1.25, useCORS: true, logging: false, scrollY: 0 },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        })
+        .from(host)
+        .save();
+    } finally {
+      document.body.removeChild(host);
+    }
+    return;
+  } catch {
+    /* ponytail: html2pdf flaky in some browsers — fall back to print view */
   }
+
+  const opened = openManualPrintView(ready, slug);
+  if (!opened) throw new Error("Pop-up blocked — allow pop-ups to export.");
 }
 
 export function openManualPrintView(
@@ -268,18 +265,24 @@ export function openManualPrintView(
 ) {
   const ready = prepareManualForExport(manual, slug);
   const html = buildManualExportHtml(ready);
-  const w = window.open("", "_blank");
-  if (!w) return false;
-  w.document.write(html);
-  w.document.close();
-  w.focus();
-  window.setTimeout(() => {
-    try {
-      w.print();
-    } catch {
-      /* print may be blocked until user focuses tab */
-    }
-  }, 400);
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const w = window.open(url, "_blank");
+  if (!w) {
+    URL.revokeObjectURL(url);
+    return false;
+  }
+  w.addEventListener("load", () => {
+    window.setTimeout(() => {
+      try {
+        w.focus();
+        w.print();
+      } catch {
+        /* user can print manually */
+      }
+    }, 300);
+  });
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
   return true;
 }
 
@@ -307,9 +310,13 @@ export function ManualExportMenu({ manual, slug }: { manual: ManualItem; slug: s
     setBusy(kind);
     try {
       const base = slug.replace(/[^a-z0-9-]+/gi, "-");
-      if (kind === "pdf") await downloadManualPdf(manual, `${base}.pdf`, slug);
-      else if (kind === "docx") await downloadManualDocx(manual, `${base}.docx`, slug);
-      else {
+      if (kind === "pdf") {
+        await downloadManualPdf(manual, `${base}.pdf`, slug);
+        toast({ type: "success", title: "Export ready", description: "PDF downloaded or print dialog opened." });
+      } else if (kind === "docx") {
+        await downloadManualDocx(manual, `${base}.docx`, slug);
+        toast({ type: "success", title: "Downloaded", description: `${base}.docx saved.` });
+      } else {
         const opened = openManualPrintView(manual, slug);
         if (!opened) {
           toast({

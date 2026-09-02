@@ -26,6 +26,13 @@
     --accent-amber-light: #FFFBEB;
     --accent-pine: #223832;
     --accent-pine-light: #EBF3F0;
+    --hearth-primary: #1C2A26;
+    --hearth-accent: #D97706;
+    --paper: var(--bg-surface);
+    --line: var(--border-hairline);
+    --muted: var(--text-muted);
+    --ink: var(--text-primary);
+    --accent-soft: #FAF7F2;
     
     /* Rest mode palette */
     --rest-bg: #ECE8E1;

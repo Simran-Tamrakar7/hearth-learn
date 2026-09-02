@@ -65,6 +65,11 @@ export default function ProfilePage() {
   const [pwOk, setPwOk] = useState("");
 
   useEffect(() => {
+    if (status === "loading") return;
+    if (status === "unauthenticated") {
+      setIsLoading(false);
+      return;
+    }
     fetch("/api/user/profile")
       .then((r) => r.json())
       .then((data) => {
@@ -75,7 +80,7 @@ export default function ProfilePage() {
         }
       })
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [status]);
 
   async function saveProfile() {
     const res = await fetch("/api/user/profile", {
@@ -124,7 +129,7 @@ export default function ProfilePage() {
     }
   }
 
-  if (isLoading) {
+  if (isLoading || status === "loading") {
     return (
       <div className="min-h-screen bg-[#FBF8F3]">
         <Navbar />

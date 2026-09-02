@@ -9,13 +9,21 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import {
-  ARCADIA_GAMES,
   ARCADIA_CATEGORIES,
   ARCADIA_GENRES,
-  ArcadiaGame,
   filterArcadiaGames,
+  type ArcadiaGame,
 } from "@/app/rest/games/_content";
+import {
+  emptyUserGame,
+  mergeGames,
+  removeGame,
+  saveUserGame,
+  type UserArcadiaGame,
+} from "@/app/rest/games/user-games";
 import { PinButton, getPinnedItems, PinnedItemMetadata } from "@/components/ui/PinButton";
+import { useToast } from "@/components/ui/Toast";
+import { subscribeUserCatalog } from "@/lib/userCatalog";
 import {
   Gamepad2,
   Search,
@@ -32,14 +40,27 @@ import {
   Flame,
   Globe,
   Pin,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 
 export default function ArcadiaGamesShelfPage() {
+  const { toast } = useToast();
   const [activeCat, setActiveCat] = useState<string>("all");
   const [selectedGenre, setSelectedGenre] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [fabDrawerOpen, setFabDrawerOpen] = useState<boolean>(false);
   const [pinnedGames, setPinnedGames] = useState<PinnedItemMetadata[]>([]);
+  const [games, setGames] = useState<(UserArcadiaGame | ArcadiaGame)[]>([]);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<UserArcadiaGame | null>(null);
+  const [draft, setDraft] = useState<UserArcadiaGame>(() => emptyUserGame(""));
+
+  useEffect(() => {
+    const refresh = () => setGames(mergeGames());
+    refresh();
+    return subscribeUserCatalog(refresh);
+  }, []);
 
   useEffect(() => {
     const updatePins = () => {
@@ -53,7 +74,35 @@ export default function ArcadiaGamesShelfPage() {
 
   const categories = ARCADIA_CATEGORIES;
   const genres = ARCADIA_GENRES;
-  const games = ARCADIA_GAMES;
+
+  function openAddForm() {
+    setEditing(null);
+    setDraft(emptyUserGame(""));
+    setFormOpen(true);
+  }
+
+  function openEditForm(game: UserArcadiaGame) {
+    setEditing(game);
+    setDraft({ ...game });
+    setFormOpen(true);
+  }
+
+  function saveGameForm() {
+    if (!draft.t.trim() || !draft.u.trim()) {
+      toast({ type: "error", title: "Title and URL required" });
+      return;
+    }
+    saveUserGame({ ...draft, id: editing?.id || draft.id, t: draft.t.trim(), u: draft.u.trim() });
+    setGames(mergeGames());
+    setFormOpen(false);
+    toast({ type: "achievement", title: editing ? "Game updated" : "Game added" });
+  }
+
+  function deleteGameForm(game: UserArcadiaGame | ArcadiaGame) {
+    removeGame(game);
+    setGames(mergeGames());
+    toast({ type: "info", title: "id" in game && game.id.startsWith("user-") ? "Game deleted" : "Game hidden" });
+  }
 
   const filteredCategories =
     activeCat === "all"
@@ -136,6 +185,9 @@ export default function ArcadiaGamesShelfPage() {
               />
             </div>
 
+            <Button variant="primary" size="md" onClick={openAddForm} leftIcon={<Plus className="w-4 h-4" />}>
+              Add game
+            </Button>
             <Button
               variant="outline"
               size="md"
@@ -257,12 +309,12 @@ export default function ArcadiaGamesShelfPage() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {catGames.map((game, idx) => (
-                    <motion.a
-                      key={idx}
-                      href={game.u}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                  {catGames.map((game, idx) => {
+                    const userGame = game as UserArcadiaGame;
+                    const isUser = "id" in game && typeof userGame.id === "string" && userGame.id.startsWith("user-");
+                    return (
+                    <motion.div
+                      key={isUser ? userGame.id : `${game.t}-${idx}`}
                       whileHover={{ y: -4, scale: 1.02 }}
                       transition={{ type: "spring", stiffness: 300, damping: 20 }}
                       className="group bg-white border border-[#E7E0D3] rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-2xs hover:shadow-lg transition-all"
@@ -283,7 +335,14 @@ export default function ArcadiaGamesShelfPage() {
                               itemIcon={game.e}
                               variant="icon"
                             />
-                            <ExternalLink className="w-3.5 h-3.5 text-[#8A9B95] group-hover:text-[#D97706] transition-colors ml-1" />
+                            {isUser ? (
+                              <>
+                                <button type="button" onClick={() => openEditForm(game as UserArcadiaGame)} className="text-[#8A9B95] hover:text-[#D97706]"><Pencil className="w-3.5 h-3.5" /></button>
+                                <button type="button" onClick={() => deleteGameForm(game)} className="text-[#8A9B95] hover:text-red-700"><Trash2 className="w-3.5 h-3.5" /></button>
+                              </>
+                            ) : (
+                              <button type="button" onClick={() => deleteGameForm(game)} className="text-[#8A9B95] hover:text-red-700" title="Hide"><Trash2 className="w-3.5 h-3.5" /></button>
+                            )}
                           </div>
                         </div>
 
@@ -296,12 +355,16 @@ export default function ArcadiaGamesShelfPage() {
                         </p>
                       </div>
 
-                      <div className="pt-2 border-t border-[#FAF7F2] flex items-center justify-between text-[11px] font-bold text-[#1C2A26] group-hover:text-[#D97706]">
+                      <button
+                        type="button"
+                        onClick={() => game.u && window.open(game.u, "_blank", "noopener,noreferrer")}
+                        className="pt-2 border-t border-[#FAF7F2] flex items-center justify-between text-[11px] font-bold text-[#1C2A26] group-hover:text-[#D97706] w-full text-left"
+                      >
                         <span>Play Now</span>
-                        <span>→</span>
-                      </div>
-                    </motion.a>
-                  ))}
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </button>
+                    </motion.div>
+                  );})}
                 </div>
               </section>
             );
@@ -393,6 +456,27 @@ export default function ArcadiaGamesShelfPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {formOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full space-y-3 border border-[#E7E0D3]">
+            <h3 className="font-serif-display font-bold text-lg">{editing ? "Edit game" : "Add game"}</h3>
+            <input value={draft.t} onChange={(e) => setDraft({ ...draft, t: e.target.value })} placeholder="Title" className="w-full h-11 px-3 border border-[#E7E0D3] rounded-xl text-sm" />
+            <input value={draft.u} onChange={(e) => setDraft({ ...draft, u: e.target.value })} placeholder="URL" className="w-full h-11 px-3 border border-[#E7E0D3] rounded-xl text-sm" />
+            <textarea value={draft.d} onChange={(e) => setDraft({ ...draft, d: e.target.value })} placeholder="Description" rows={2} className="w-full p-3 border border-[#E7E0D3] rounded-xl text-sm" />
+            <select value={draft.cat} onChange={(e) => setDraft({ ...draft, cat: e.target.value as UserArcadiaGame["cat"] })} className="w-full h-11 px-3 border border-[#E7E0D3] rounded-xl text-sm">
+              {ARCADIA_CATEGORIES.filter((c) => c.id !== "all").map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+            </select>
+            <select value={draft.genre} onChange={(e) => setDraft({ ...draft, genre: e.target.value })} className="w-full h-11 px-3 border border-[#E7E0D3] rounded-xl text-sm">
+              {ARCADIA_GENRES.filter((g) => g.id !== "all").map((g) => <option key={g.id} value={g.id}>{g.label}</option>)}
+            </select>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setFormOpen(false)}>Cancel</Button>
+              <Button variant="primary" size="sm" onClick={saveGameForm}>Save</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -11,8 +11,8 @@ export const HL_COLORS = {
 } as const;
 
 export type HighlightColor = keyof typeof HL_COLORS;
-export type HighlightField = "full" | "summary" | "aiSummary";
-export type HighlightTabType = "fullContent" | "summary" | "aiSummary";
+export type HighlightField = "full" | "summary" | "activities" | "aiSummary";
+export type HighlightTabType = "fullContent" | "summary" | "activities" | "aiSummary";
 
 export type ChapterHighlight = {
   id: string;
@@ -32,11 +32,15 @@ export function isHighlightColor(value: string): value is HighlightColor {
 }
 
 export function fieldToTabType(field: HighlightField): HighlightTabType {
-  return field === "summary" ? "summary" : field === "aiSummary" ? "aiSummary" : "fullContent";
+  if (field === "summary") return "summary";
+  if (field === "activities" || field === "aiSummary") return "activities";
+  return "fullContent";
 }
 
 export function tabTypeToField(tab: string): HighlightField {
-  return tab === "summary" ? "summary" : tab === "aiSummary" ? "aiSummary" : "full";
+  if (tab === "summary") return "summary";
+  if (tab === "activities" || tab === "aiSummary") return "activities";
+  return "full";
 }
 
 export function wrapHighlightHtml(text: string, highlights: ChapterHighlight[]): string {
@@ -60,7 +64,7 @@ function asRow(row: ChapterHighlight, chapterId: string): ChapterHighlight {
     id: row.id,
     text: String(row.text || "").slice(0, 500),
     color: isHighlightColor(row.color) ? row.color : "yellow",
-    field: row.field === "summary" || row.field === "aiSummary" ? row.field : "full",
+    field: row.field === "summary" || row.field === "activities" || row.field === "aiSummary" ? (row.field === "aiSummary" ? "activities" : row.field) : "full",
     chapterId,
     start: typeof row.start === "number" && row.start >= 0 ? row.start : 0,
     reviewLater: Boolean(row.reviewLater),
@@ -120,7 +124,10 @@ export function removeHighlight(store: HighlightStore, chapterId: string, id: st
 }
 
 export function highlightsForField(rows: ChapterHighlight[] | undefined, field: HighlightField) {
-  return (rows || []).filter((h) => h.field === field);
+  return (rows || []).filter((h) => {
+    if (field === "activities") return h.field === "activities" || h.field === "aiSummary";
+    return h.field === field;
+  });
 }
 
 export function allHighlights(store: HighlightStore): ChapterHighlight[] {
@@ -395,6 +402,6 @@ export function HighlightsList({
   );
 }
 
-export function fieldFromView(view: "full" | "summary" | "aiSummary"): HighlightField {
+export function fieldFromView(view: "full" | "summary" | "activities"): HighlightField {
   return view;
 }

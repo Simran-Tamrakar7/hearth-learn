@@ -8,6 +8,7 @@ import { MoreVertical, Plus, ArrowRight, BookOpen, Clock, Pin } from "lucide-rea
 import { Card } from "@/components/ui/Card";
 import { PinButton, manualPinId, togglePinnedItem } from "@/components/ui/PinButton";
 import { useToast } from "@/components/ui/Toast";
+import { useTheme } from "@/context/ThemeContext";
 import type { ManualItem } from "@/app/manuals/types";
 import { emptyManual, saveUserManual } from "@/app/manuals/features/local-storage";
 import { listedCategories, subscribeCategories, TagInput } from "@/app/manuals/features/categorization";
@@ -228,10 +229,12 @@ export function ManualCard({
 
 export function AddManualControl() {
   const router = useRouter();
+  const { primaryColor } = useTheme();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("Foundations");
   const [tags, setTags] = useState<string[]>([]);
+  const [coverImage, setCoverImage] = useState("");
   const [cats, setCats] = useState<string[]>(() => listedCategories());
   const nameRef = useRef<HTMLInputElement>(null);
 
@@ -247,10 +250,11 @@ export function AddManualControl() {
       nameRef.current?.focus();
       return;
     }
-    const saved = saveUserManual(emptyManual(name, { category, tags }));
+    const saved = saveUserManual(emptyManual(name, { category, tags, coverImage: coverImage.trim() || undefined }));
     setOpen(false);
     setTitle("");
     setTags([]);
+    setCoverImage("");
     router.push(`/manuals/${saved.slug}?edit=1`);
   }
 
@@ -260,7 +264,8 @@ export function AddManualControl() {
         type="button"
         aria-label="Add manual"
         onClick={() => setOpen(true)}
-        className="shrink-0 inline-flex items-center justify-center h-11 w-11 rounded-2xl bg-[#1C2A26] text-[#FAF7F2] hover:bg-[#243530] shadow-xs"
+        className="shrink-0 inline-flex items-center justify-center h-11 w-11 rounded-2xl text-[#FAF7F2] hover:opacity-90 shadow-xs"
+        style={{ backgroundColor: primaryColor }}
       >
         <Plus className="w-5 h-5" />
       </button>
@@ -287,11 +292,19 @@ export function AddManualControl() {
         />
         <button
           type="submit"
-          className="h-11 px-4 rounded-2xl bg-[#1C2A26] text-[#FAF7F2] text-xs font-semibold hover:bg-[#243530] shadow-xs"
+          className="h-11 px-4 rounded-2xl text-[#FAF7F2] text-xs font-semibold hover:opacity-90 shadow-xs"
+          style={{ backgroundColor: primaryColor }}
         >
           Open
         </button>
       </div>
+      <input
+        value={coverImage}
+        onChange={(e) => setCoverImage(e.target.value)}
+        placeholder="Cover image URL (optional)"
+        aria-label="Cover image URL"
+        className="h-10 px-3 text-xs bg-white border border-[#E7E0D3] rounded-2xl focus:outline-none focus:border-[#D97706] w-full"
+      />
       <select
         value={cats.includes(category) ? category : cats[0] || category}
         onChange={(e) => setCategory(e.target.value)}

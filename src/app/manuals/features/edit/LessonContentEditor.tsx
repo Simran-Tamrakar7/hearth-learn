@@ -33,12 +33,14 @@ export function LessonContentEditor({
   onChange,
   onAdd,
   preview,
+  label = "Lesson content",
 }: {
   value: string;
   onChange: (next: string) => void;
   /** Toolbar insertions (headings, lists, code blocks) — distinct from typing edits. */
   onAdd?: (next: string) => void;
   preview: (text: string) => ReactNode;
+  label?: string;
 }) {
   const [view, setView] = useState<"write" | "preview">("write");
   const ref = useRef<HTMLTextAreaElement>(null);
@@ -60,7 +62,7 @@ export function LessonContentEditor({
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-[#52635E]">Lesson content</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-[#52635E]">{label}</span>
         <div className="flex items-center bg-[#FAF7F2] border border-[#E7E0D3] rounded-lg p-0.5 text-[11px]">
           <button
             type="button"

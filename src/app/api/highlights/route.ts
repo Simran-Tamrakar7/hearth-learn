@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireSessionUser } from "@/lib/apiSession";
 import { isHighlightColor, tabTypeToField } from "@/app/manuals/features/highlights";
 
-const TABS = new Set(["fullContent", "summary", "aiSummary"]);
+const TABS = new Set(["fullContent", "summary", "activities", "aiSummary"]);
 
 export async function GET(req: Request) {
   try {

@@ -64,6 +64,8 @@ export type LineHeight = "tight" | "normal" | "loose";
 interface ThemeContextType {
   theme: ThemeId;
   accent: AccentId;
+  primaryColor: string;
+  accentColor: string;
   fontSize: FontSize;
   lineHeight: LineHeight;
   highlightColor: string;
@@ -79,6 +81,29 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+
+export const ACCENT_COLORS: Record<AccentId, string> = {
+  forest: "#1C2A26",
+  mint: "#34D399",
+  clay: "#EA580C",
+  gold: "#D97706",
+  sky: "#0EA5E9",
+  ocean: "#0284C7",
+  rose: "#F43F5E",
+  copper: "#F97316",
+  matcha: "#84CC16",
+  berry: "#E11D48",
+  ink: "#020617",
+  violet: "#9333EA",
+};
+
+function applyThemeVars(theme: ThemeId, accent: AccentId) {
+  const config = THEME_CONFIGS[theme];
+  if (config) {
+    document.documentElement.style.setProperty("--hearth-primary", config.primary);
+  }
+  document.documentElement.style.setProperty("--hearth-accent", ACCENT_COLORS[accent] || ACCENT_COLORS.gold);
+}
 
 export const THEME_CONFIGS: Record<
   ThemeId,
@@ -112,12 +137,13 @@ export const THEME_CONFIGS: Record<
 
 const LINE_HEIGHT: Record<LineHeight, string> = { tight: "1.45", normal: "1.7", loose: "1.95" };
 
-function applySkin(theme: ThemeId, fontSize: FontSize, lineHeight: LineHeight) {
+function applySkin(theme: ThemeId, fontSize: FontSize, lineHeight: LineHeight, accent: AccentId) {
   const config = THEME_CONFIGS[theme];
   if (config) {
     document.body.style.backgroundColor = config.bg;
     document.body.style.color = config.text;
   }
+  applyThemeVars(theme, accent);
   document.documentElement.style.setProperty("--hearth-lh", LINE_HEIGHT[lineHeight]);
   document.documentElement.style.fontSize = fontSize === "small" ? "15px" : fontSize === "large" ? "18px" : "16px";
 }
@@ -160,7 +186,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         /* keep default */
       }
     }
-    applySkin(savedTheme && THEME_CONFIGS[savedTheme] ? savedTheme : "pathwise", savedFontSize || "medium", savedLh || "normal");
+    applySkin(savedTheme && THEME_CONFIGS[savedTheme] ? savedTheme : "pathwise", savedFontSize || "medium", savedLh || "normal", savedAccent || "gold");
     ready.current = true;
 
     void fetch("/api/me/prefs", { cache: "no-store" })
@@ -196,7 +222,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         applySkin(
           (prefs.theme && THEME_CONFIGS[prefs.theme as ThemeId] ? prefs.theme : savedTheme) || "pathwise",
           prefs.fontSize || savedFontSize || "medium",
-          prefs.lineHeight || savedLh || "normal"
+          prefs.lineHeight || savedLh || "normal",
+          (prefs.accent as AccentId) || savedAccent || "gold"
         );
       })
       .catch(() => {});
@@ -205,27 +232,28 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const setTheme = (t: ThemeId) => {
     setThemeState(t);
     localStorage.setItem("hearth_theme", t);
-    applySkin(t, fontSize, lineHeight);
+    applySkin(t, fontSize, lineHeight, accent);
     persistAccount({ theme: t });
   };
 
   const setAccent = (a: AccentId) => {
     setAccentState(a);
     localStorage.setItem("hearth_accent", a);
+    applyThemeVars(theme, a);
     persistAccount({ accent: a });
   };
 
   const setFontSize = (s: FontSize) => {
     setFontSizeState(s);
     localStorage.setItem("hearth_fontSize", s);
-    applySkin(theme, s, lineHeight);
+    applySkin(theme, s, lineHeight, accent);
     persistAccount({ fontSize: s });
   };
 
   const setLineHeight = (s: LineHeight) => {
     setLineHeightState(s);
     localStorage.setItem("hearth_lineHeight", s);
-    applySkin(theme, fontSize, s);
+    applySkin(theme, fontSize, s, accent);
     persistAccount({ lineHeight: s });
   };
 
@@ -245,11 +273,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     /* ponytail: room flags are Admin global via /api/admin/features, not per-device */
   };
 
+  const primaryColor = THEME_CONFIGS[theme]?.primary || "#1C2A26";
+  const accentColor = ACCENT_COLORS[accent] || ACCENT_COLORS.gold;
+
   return (
     <ThemeContext.Provider
       value={{
         theme,
         accent,
+        primaryColor,
+        accentColor,
         fontSize,
         lineHeight,
         highlightColor,

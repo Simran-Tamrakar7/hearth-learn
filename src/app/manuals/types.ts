@@ -119,11 +119,39 @@ export interface ManualItem {
   chapters: ManualChapter[];
 }
 
-export function chapterCustomSummary(ch: Pick<ManualChapter, "customSummary">) {
+function stripInlineMarkdown(text: string): string {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/__(.*?)__/g, "$1")
+    .replace(/\*(.*?)\*/g, "$1")
+    .replace(/_(.*?)_/g, "$1")
+    .replace(/`(.*?)`/g, "$1")
+    .trim();
+}
+
+/** Summary tab: plain bullet lines — no headings, bold, or mixed block types. */
+export function chapterCustomSummaryBullets(ch: Pick<ManualChapter, "customSummary">): string[] {
   const raw = ch.customSummary || "";
-  if (!raw) return "";
-  // ponytail: chapter title is already in the page header — drop leading ## heading only
-  return raw.replace(/^#{1,3}\s+[^\n]+\n+/, "").trimStart();
+  if (!raw) return [];
+
+  const body = raw.replace(/^#{1,3}\s+[^\n]+\n+/, "").trimStart();
+  const bullets: string[] = [];
+
+  for (const line of body.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    let text = trimmed.replace(/^#{1,6}\s+/, "");
+    text = text.replace(/^[-*•]\s+/, "");
+    text = text.replace(/^\d+[.)]\s+/, "");
+    text = stripInlineMarkdown(text);
+    if (text) bullets.push(text);
+  }
+
+  return bullets;
+}
+
+export function chapterCustomSummary(ch: Pick<ManualChapter, "customSummary">) {
+  return chapterCustomSummaryBullets(ch).map((b) => `- ${b}`).join("\n");
 }
 
 export function chapterAiSummary(ch: Pick<ManualChapter, "aiSummary" | "summaryMarkdown">) {
