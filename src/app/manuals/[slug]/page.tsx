@@ -33,8 +33,9 @@ import {
   mergeCustomTestingTypesChapters,
   mergeTestingTypesSavedEdits,
   testingTypesMdSections,
-  restoreTestingTypesToc,
-  TESTING_TYPES_TOC_VERSION,
+  getBuiltinTocVersion,
+  restoreTocCatalog,
+  tocCatalogSaveFields,
   chapterIndexAfter,
   createPart,
   createSubchapter,
@@ -256,7 +257,50 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     return () => window.removeEventListener("hearth_pins_updated", updatePins);
   }, []);
 
-  // Load saved progress, highlights & custom manual edits from localStorage on mount
+  // Builtin manuals: disk catalog is source of truth — purge stale localStorage even when logged out
+  useEffect(() => {
+    const tocVersion = getBuiltinTocVersion(slug);
+    if (tocVersion == null) return;
+
+    const storageKey = `hearth_manual_custom_data_${initialManual.id}`;
+    let parsed: Record<string, unknown> | null = null;
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (raw) parsed = JSON.parse(raw);
+    } catch {
+      parsed = null;
+    }
+
+    const versionOk = parsed ? restoreTocCatalog(parsed, tocVersion) : false;
+    if (parsed && !versionOk) {
+      // ponytail: full wipe — old snapshots stored title, tagline, hours, and all 57 chapters
+      localStorage.removeItem(storageKey);
+      parsed = null;
+      setManualTitle(initialManual.title);
+      setManualDescription(initialManual.description);
+      setManualCategory(initialManual.category);
+      setManualTags(initialManual.tags || []);
+      setManualEstimatedTime(initialManual.estimatedTime);
+    } else if (parsed) {
+      if (parsed.title) setManualTitle(String(parsed.title));
+      if (parsed.description) setManualDescription(String(parsed.description));
+      if (parsed.category) setManualCategory(String(parsed.category));
+      if (Array.isArray(parsed.tags)) setManualTags(parsed.tags.filter((t) => typeof t === "string"));
+      if (parsed.estimatedTime) setManualEstimatedTime(String(parsed.estimatedTime));
+    }
+
+    let next = isTestingTypesManual
+      ? readerChaptersFromToc(initialManual.chapters)
+      : catalogChapters;
+    const saved = parsed && Array.isArray(parsed.chapters) ? (parsed.chapters as ManualChapter[]) : [];
+    if (saved.length && versionOk) {
+      next = mergeTestingTypesSavedEdits(next, saved);
+      if (isTestingTypesManual) next = mergeCustomTestingTypesChapters(next, saved);
+    }
+    setChapters(next);
+  }, [slug, initialManual.id, initialManual.title, initialManual.description, initialManual.category, initialManual.tags, initialManual.estimatedTime, initialManual.chapters, catalogChapters, isTestingTypesManual]);
+
+  // Progress & highlights (scoped per signed-in user)
   useEffect(() => {
     if (!isScopeReady() || !userId) return;
     const savedProgress = readScopedRaw(progressStoreKey(initialManual.id));
@@ -276,35 +320,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
         return merged;
       });
     });
-
-    const savedCustomData = localStorage.getItem(`hearth_manual_custom_data_${initialManual.id}`);
-    let parsed: Record<string, unknown> | null = null;
-    if (savedCustomData) {
-      try {
-        parsed = JSON.parse(savedCustomData);
-      } catch (e) {}
-    }
-    if (parsed) {
-      if (parsed.title) setManualTitle(String(parsed.title));
-      if (parsed.description) setManualDescription(String(parsed.description));
-      if (parsed.category) setManualCategory(String(parsed.category));
-      if (Array.isArray(parsed.tags)) setManualTags(parsed.tags.filter((t) => typeof t === "string"));
-      if (parsed.estimatedTime) setManualEstimatedTime(String(parsed.estimatedTime));
-    }
-    if (isTestingTypesManual) {
-      const chaptersSaved = parsed?.chapters;
-      const saved = Array.isArray(chaptersSaved) ? (chaptersSaved as ManualChapter[]) : [];
-      // ponytail: MD on disk (compiled.body) is source of truth — never use stale localStorage as pathwise
-      let next = readerChaptersFromToc(initialManual.chapters);
-      if (saved.length) {
-        next = mergeTestingTypesSavedEdits(next, saved);
-        next = mergeCustomTestingTypesChapters(next, saved);
-      }
-      setChapters(next);
-    } else if (parsed && Array.isArray(parsed.chapters) && parsed.chapters.length > 0) {
-      setChapters(parsed.chapters as ManualChapter[]);
-    }
-  }, [initialManual.id, userId]);
+  }, [initialManual.id, userId, catalogChapters, chapters]);
 
   useEffect(() => {
     if (!slug) return;
@@ -418,8 +434,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       estimatedTime: snap.meta.estimatedTime,
       tags: snap.meta.tags,
       chapters: snap.chapters,
-      tocManaged: true,
-      ...(isTestingTypesManual ? { tocCatalogVersion: TESTING_TYPES_TOC_VERSION } : {}),
+      ...tocCatalogSaveFields(slug),
     });
     persistUserManual({
       title: snap.meta.title,
@@ -457,8 +472,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       estimatedTime,
       tags,
       chapters: updated,
-      tocManaged: true,
-      ...(isTestingTypesManual ? { tocCatalogVersion: TESTING_TYPES_TOC_VERSION } : {}),
+      ...tocCatalogSaveFields(slug),
     });
     persistUserManual({
       title,
@@ -494,8 +508,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     saveCustomDataToStorage({
       ...m,
       chapters: ch,
-      tocManaged: true,
-      ...(isTestingTypesManual ? { tocCatalogVersion: TESTING_TYPES_TOC_VERSION } : {}),
+      ...tocCatalogSaveFields(slug),
     });
     persistUserManual({
       title: m.title,
@@ -615,7 +628,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     }));
   }, [partGroups, chapters]);
   const phasesForRoadmap = isPlaywright ? PLAYWRIGHT_ROADMAP_PHASES : roadmapParts;
-  const partCount = isPlaywright ? phasesForRoadmap.length : partGroups.length;
+  const partCount = partGroups.length;
   const tocQueryNorm = tocQuery.trim().toLowerCase();
   const filteredPartGroups = React.useMemo(() => {
     if (!tocQueryNorm) return partGroups;

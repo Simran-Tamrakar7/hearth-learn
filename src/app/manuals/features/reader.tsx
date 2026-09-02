@@ -14,9 +14,14 @@ import { MANUALS, stripLeadingNumber } from "@/app/manuals/registry";
 import type { ManualChapter, ManualItem, ToolItem } from "@/app/manuals/types";
 import {
   TESTING_TYPES_TOC,
+  TESTING_TYPES_TOC_VERSION,
   type TestingTypesTocPart,
   type TestingTypesTocNode,
 } from "@/app/manuals/types/testing-types/toc";
+import { PLAYWRIGHT_TOC_VERSION } from "@/app/manuals/types/playwright/toc";
+import { CYPRESS_TOC_VERSION } from "@/app/manuals/types/cypress/toc";
+import { HEARTH_MANUAL_TOC_VERSION } from "@/app/manuals/types/hearth-manual/toc";
+import { isTestingTypesSlug } from "@/app/manuals/types/testing-types/TestingTypesManual";
 
 export {
   TESTING_TYPES_TOC,
@@ -26,6 +31,28 @@ export {
   type TestingTypesTocPart,
   type TestingTypesTocNode,
 } from "@/app/manuals/types/testing-types/toc";
+
+/** TOC version for builtin manuals — bump in each manual's toc.ts when catalog content changes. */
+export function getBuiltinTocVersion(slug: string): number | null {
+  if (slug === "testing-types" || slug === "testing-types-manual" || isTestingTypesSlug(slug)) {
+    return TESTING_TYPES_TOC_VERSION;
+  }
+  if (slug === "playwright" || slug === "playwright-test-automation") return PLAYWRIGHT_TOC_VERSION;
+  if (slug === "cypress") return CYPRESS_TOC_VERSION;
+  if (slug === "hearth-manual") return HEARTH_MANUAL_TOC_VERSION;
+  return null;
+}
+
+export function restoreTocCatalog(saved: unknown, version: number): boolean {
+  if (!saved || typeof saved !== "object") return false;
+  const s = saved as { tocManaged?: unknown; tocCatalogVersion?: unknown };
+  return Boolean(s.tocManaged) && s.tocCatalogVersion === version;
+}
+
+export function tocCatalogSaveFields(slug: string): { tocManaged: true; tocCatalogVersion: number } | Record<string, never> {
+  const v = getBuiltinTocVersion(slug);
+  return v != null ? { tocManaged: true, tocCatalogVersion: v } : {};
+}
 
 export {
   type PartishChapter,
