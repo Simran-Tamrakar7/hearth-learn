@@ -120,7 +120,10 @@ export interface ManualItem {
 }
 
 export function chapterCustomSummary(ch: Pick<ManualChapter, "customSummary">) {
-  return ch.customSummary || "";
+  const raw = ch.customSummary || "";
+  if (!raw) return "";
+  // ponytail: chapter title is already in the page header — drop leading ## heading only
+  return raw.replace(/^#{1,3}\s+[^\n]+\n+/, "").trimStart();
 }
 
 export function chapterAiSummary(ch: Pick<ManualChapter, "aiSummary" | "summaryMarkdown">) {
