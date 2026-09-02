@@ -33,8 +33,9 @@ import {
   mergeCustomTestingTypesChapters,
   mergeTestingTypesSavedEdits,
   testingTypesMdSections,
-  restoreTestingTypesToc,
-  TESTING_TYPES_TOC_VERSION,
+  getBuiltinTocVersion,
+  restoreTocCatalog,
+  tocCatalogSaveFields,
   chapterIndexAfter,
   createPart,
   createSubchapter,
@@ -291,20 +292,28 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       if (Array.isArray(parsed.tags)) setManualTags(parsed.tags.filter((t) => typeof t === "string"));
       if (parsed.estimatedTime) setManualEstimatedTime(String(parsed.estimatedTime));
     }
-    if (isTestingTypesManual) {
-      const chaptersSaved = parsed?.chapters;
-      const saved = Array.isArray(chaptersSaved) ? (chaptersSaved as ManualChapter[]) : [];
-      // ponytail: MD on disk (compiled.body) is source of truth — never use stale localStorage as pathwise
-      let next = readerChaptersFromToc(initialManual.chapters);
-      if (saved.length) {
+    const tocVersion = getBuiltinTocVersion(slug);
+    if (tocVersion != null) {
+      const saved = Array.isArray(parsed?.chapters) ? (parsed.chapters as ManualChapter[]) : [];
+      // ponytail: chapter TS on disk is source of truth — never restore a full stale localStorage snapshot
+      let next = isTestingTypesManual
+        ? readerChaptersFromToc(initialManual.chapters)
+        : catalogChapters;
+      if (saved.length && restoreTocCatalog(parsed, tocVersion)) {
         next = mergeTestingTypesSavedEdits(next, saved);
-        next = mergeCustomTestingTypesChapters(next, saved);
+        if (isTestingTypesManual) next = mergeCustomTestingTypesChapters(next, saved);
+      } else if (saved.length && parsed) {
+        const { chapters: _stale, ...rest } = parsed;
+        localStorage.setItem(
+          `hearth_manual_custom_data_${initialManual.id}`,
+          JSON.stringify({ ...rest, ...tocCatalogSaveFields(slug) })
+        );
       }
       setChapters(next);
     } else if (parsed && Array.isArray(parsed.chapters) && parsed.chapters.length > 0) {
       setChapters(parsed.chapters as ManualChapter[]);
     }
-  }, [initialManual.id, userId]);
+  }, [initialManual.id, userId, slug, catalogChapters, isTestingTypesManual]);
 
   useEffect(() => {
     if (!slug) return;
@@ -418,8 +427,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       estimatedTime: snap.meta.estimatedTime,
       tags: snap.meta.tags,
       chapters: snap.chapters,
-      tocManaged: true,
-      ...(isTestingTypesManual ? { tocCatalogVersion: TESTING_TYPES_TOC_VERSION } : {}),
+      ...tocCatalogSaveFields(slug),
     });
     persistUserManual({
       title: snap.meta.title,
@@ -457,8 +465,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       estimatedTime,
       tags,
       chapters: updated,
-      tocManaged: true,
-      ...(isTestingTypesManual ? { tocCatalogVersion: TESTING_TYPES_TOC_VERSION } : {}),
+      ...tocCatalogSaveFields(slug),
     });
     persistUserManual({
       title,
@@ -494,8 +501,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     saveCustomDataToStorage({
       ...m,
       chapters: ch,
-      tocManaged: true,
-      ...(isTestingTypesManual ? { tocCatalogVersion: TESTING_TYPES_TOC_VERSION } : {}),
+      ...tocCatalogSaveFields(slug),
     });
     persistUserManual({
       title: m.title,
