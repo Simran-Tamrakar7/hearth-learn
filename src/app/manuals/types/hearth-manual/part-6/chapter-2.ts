@@ -15,7 +15,7 @@ export const chapter = {
   advantages: ["Honest about localStorage vs server","Highlights can sync via ManualHighlight API"],
   limitations: ["Dual systems are confusing — product may unify later"],
   tools: [],
-  contentMarkdown: "## Q: Where are the learning trails?\n**A:** /manuals lists builtin manuals. /trails redirects to /manuals.\n\n## Q: How is manual progress saved?\n**A:** Mostly localStorage (keys via src/lib/userScope.ts). Highlights also POST to /api/highlights when signed in.\n\n## Q: What are dashboard checkboxes?\n**A:** Prisma seed trails (8 courses) — different from manual chapters.\n\n## Q: Can I export a manual?\n**A:** Yes — PDF, DOCX, Print from reader header (ManualExportMenu in features/export.tsx).\n\n⚠️ Needs confirmation: exact localStorage key names if documenting for users.",
+  contentMarkdown: "## Q: Where are the learning trails?\n**A:** /manuals lists builtin manuals. /trails redirects to /manuals.\n\n## Q: How is manual progress saved?\n**A:** Mostly localStorage (keys via src/lib/userScope.ts). Highlights also POST to /api/highlights when signed in.\n\n## Q: What are dashboard checkboxes?\n**A:** Prisma seed trails (8 courses) — different from manual chapters.\n\n## Q: Can I export a manual?\n**A:** Yes — Export in the reader header: Download as PDF (text PDF of every chapter), Download as Docs (.docx), or Print. Implementation: src/app/manuals/features/export.tsx.",
   exercises: [],
   resourceLinks: [],
   steps: [],

@@ -14,7 +14,7 @@ Set **only in that type’s `_registry.ts`** (library: optional `status` on the 
 
 ## Manuals
 
-Structured lessons with chapters. **Builtin manuals:** `playwright`, `testing-types`, and `hearth-manual` (repository docs).
+Structured lessons with chapters. **Builtin manuals:** `playwright`, `testing-types`, `cypress`, and `hearth-manual` (repository docs).
 
 - **Listing:** `src/app/manuals/registry.ts`
 - **Chapter source of truth:** `src/app/manuals/types/<slug>/part-N/chapter-M.ts` (each file owns all content inline)
@@ -42,7 +42,7 @@ Enforced by: `npx tsx scripts/check-chapter-independence.ts` (also `scripts/chec
 - **Export:** manual-wide PDF / .docx / Print from reader header (`ManualExportMenu`)
 - **User-created manuals:** `localStorage`; new disk manuals use `<slug>/toc.ts` + `part-0/chapter-1.ts`
 
-Do not change manual / chapter ids for the two kept manuals.
+Do not change manual / chapter ids for the kept builtins (`playwright`, `testing-types`, `cypress`, `hearth-manual`).
 
 Trails in the URL sense **are manuals**. Prisma `Trail` rows are a separate catalog (dashboard/API only).
 

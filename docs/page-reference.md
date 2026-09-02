@@ -2,7 +2,7 @@
 
 ## `/manuals`
 
-Catalog of 65 builtin manuals + user manuals. Reads `MANUALS_DATA` filtered by `src/app/manuals/_content/_registry.ts` (`status: "active"`). Featured cards and dashboard pins also come from that registry. Writes nothing to the server. Pins, user manuals, categories, and tags use `localStorage`. `+` add is `AddManualControl` (name + category + tags).
+Catalog of 4 builtin manuals (`playwright`, `testing-types`, `cypress`, `hearth-manual`) plus user manuals. Reads `MANUALS_DATA` from `src/app/manuals/registry.ts` (`status: "active"`). Featured cards and dashboard pins also come from that registry. Writes nothing to the server. Pins, user manuals, categories, and tags use `localStorage`. `+` add is `AddManualControl` (name + category + tags).
 
 Key UI: `src/app/manuals/page.tsx` (labeled **PAGE: /manuals**). Other manuals-only files sit in `src/app/manuals/_ui/`. Map: `src/app/manuals/page_details-code_routes.md`. Site-wide index: [where-to-edit.md](./where-to-edit.md).
 

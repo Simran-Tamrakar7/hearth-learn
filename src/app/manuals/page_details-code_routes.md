@@ -42,8 +42,13 @@ manuals/
 │   │   ├── roadmapData.ts
 │   │   ├── chapters-manifest.ts
 │   │   └── part-N/chapter-M.ts
-│   └── cypress/                      ← same pattern (32 chapters)
+│   ├── cypress/                      ← same pattern (32 chapters)
+│   │   ├── toc.ts
+│   │   ├── chapters-manifest.ts
+│   │   └── part-N/chapter-M.ts
+│   └── hearth-manual/                ← repository manual (users / devs / contributors)
 │       ├── toc.ts
+│       ├── meta.json
 │       ├── chapters-manifest.ts
 │       └── part-N/chapter-M.ts
 ```
@@ -70,7 +75,7 @@ manuals/
 | AI notes → manual formatting | `/api/manuals/generate` |
 | Playwright roadmap download | `playwright/roadmapData.ts` |
 | TOC part helpers | `testing-types/toc.ts` and `playwright/toc.ts` (re-exported via `features/reader.tsx`) |
-| Export PDF/DOCX | `features/export.tsx` |
+| Export PDF/DOCX/Print | `features/export.tsx` (text PDF + docx + iframe print — not html2pdf) |
 | Highlights | `features/highlights.tsx` + `/api/highlights` |
 | Top nav (every page) | `src/components/layout/Navbar.tsx` |
 

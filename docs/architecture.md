@@ -57,4 +57,4 @@ Navbar: Manuals, Library, Life Lab, Notes, AI, Showcase Wall, Settings. Rest ope
 
 ## Manual bodies
 
-65 manuals live in `src/app/manuals/_content/<slug>/data.js` (635 chapters). Listing + those imports are `_content/_registry.ts`. Playwright is one file; Testing Types keeps overlay + outline in that same folder. Ids/slugs are unchanged. One reader at `/manuals/[slug]` serves every book.
+Four builtin manuals live in `src/app/manuals/types/<slug>/part-N/chapter-M.ts` (`playwright`, `testing-types`, `cypress`, `hearth-manual`). Listing is `src/app/manuals/registry.ts`. One reader at `/manuals/[slug]` serves every book.

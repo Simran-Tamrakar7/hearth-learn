@@ -13,7 +13,7 @@ export const chapter = {
   when: "Keep open while navigating the repo. Update this chapter when adding top-level folders.",
   practical: {"app":"Where do I add an API route?","scenario":"You need POST /api/widgets.","pass":"Create src/app/api/widgets/route.ts following existing route.ts patterns.","fail":"You add pages/api/widgets.js (Pages Router — not used here)."},
   advantages: ["One folder per URL under src/app/","Colocated page_details-code_routes.md in many folders"],
-  limitations: ["docs/ still mentions 65 manuals in places — stale"],
+  limitations: ["docs/architecture.md was historically stale on manual count — catalog is registry.ts (4 builtins)"],
   tools: [],
   contentMarkdown: "## Top-level folders\n\n| Folder | Purpose |\n|--------|---------|\n| docs/ | Architecture, content model, local dev, where-to-edit |\n| prisma/ | schema.prisma, seed.ts |\n| scripts/ | Registry checks, chapter-index generator |\n| src/app/ | Next.js App Router pages + api/ |\n| src/components/ | Navbar, Button, Card, etc. |\n| src/context/ | ThemeContext |\n| src/lib/ | auth, prisma, mail, openai, prefs, permissions |\n| src/types/ | next-auth.d.ts |\n| public/ | Static assets |\n\n## src/app/ feature folders\n\n| Folder | Route |\n|--------|-------|\n| dashboard/ | /dashboard |\n| manuals/ | /manuals, /manuals/[slug] |\n| library/ | /library |\n| life-simulator/ | /life-simulator |\n| toolkits/ | /toolkits |\n| notes/, tags/ | /notes, /tags |\n| ai/ | /ai |\n| showcase-wall/ | /showcase-wall |\n| rest/ | /rest, /rest/games, /rest/cookbook, /rest/retro |\n| login/ | /login/* |\n| admin/ | /admin |\n| profile/, settings/ | /profile, /settings |\n| certificates/ | /certificates/[id] |\n| trails/ | redirects → /manuals |",
   exercises: [],

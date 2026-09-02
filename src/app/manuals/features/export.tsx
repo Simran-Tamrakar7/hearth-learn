@@ -15,30 +15,12 @@ export type ExportSection = {
   chapters: { title: string; body: string; isSubchapter?: boolean }[];
 };
 
-/** Testing Types chapters already carry full fields from MD frontmatter — pass through. */
+/** Catalog chapters already carry full fields — pass through. */
 export function prepareManualForExport(
   manual: Pick<ManualItem, "title" | "description" | "chapters">,
   _slug = ""
 ): Pick<ManualItem, "title" | "description" | "chapters"> {
   return manual;
-}
-
-async function loadHtml2Pdf() {
-  const mod = await import("html2pdf.js");
-  const fn = (mod as { default?: unknown }).default ?? mod;
-  if (typeof fn !== "function") {
-    throw new Error("PDF library failed to load");
-  }
-  return fn as () => {
-    set: (o: object) => { from: (el: HTMLElement) => { save: () => Promise<void> } };
-  };
-}
-
-async function loadSaveAs() {
-  const mod = await import("file-saver");
-  const saveAs = mod.saveAs ?? (mod as { default?: { saveAs?: (b: Blob, n: string) => void } }).default?.saveAs;
-  if (!saveAs) throw new Error("Download helper failed to load");
-  return saveAs;
 }
 
 function practicalBlock(p: NonNullable<ManualChapter["practical"]>) {
@@ -174,7 +156,7 @@ const EXPORT_CSS = `
   .export-sub h2 { font-size: 1rem; margin-left: 1rem; color: #444; }
   p { margin: 0.4rem 0; }
   pre { background: #f4f4f4; padding: 0.75rem; overflow-x: auto; font-size: 0.8rem; border-radius: 4px; white-space: pre-wrap; }
-  .export-chapter { margin-bottom: 1.5rem; page-break-inside: avoid; }
+  .export-chapter { margin-bottom: 1.5rem; }
 `;
 
 export function buildManualExportHtml(manual: Pick<ManualItem, "title" | "description" | "chapters">) {
@@ -184,21 +166,187 @@ ${buildManualExportInnerHtml(manual)}
 </body></html>`;
 }
 
+function saveBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.rel = "noopener";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+function pdfEscape(s: string) {
+  return s.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+}
+
+function toWinAnsi(s: string) {
+  return s
+    .replace(/\u2018|\u2019|\u201A/g, "'")
+    .replace(/\u201C|\u201D|\u201E/g, '"')
+    .replace(/\u2013|\u2014|\u2212/g, "-")
+    .replace(/\u2026/g, "...")
+    .replace(/\u00A0/g, " ")
+    .replace(/\u2192/g, "->")
+    .replace(/[^\t\n\r\x20-\x7E]/g, "?");
+}
+
+function wrapWords(text: string, maxChars: number): string[] {
+  const words = text.split(/\s+/).filter(Boolean);
+  if (!words.length) return [""];
+  const lines: string[] = [];
+  let cur = "";
+  for (const w of words) {
+    if (w.length > maxChars) {
+      if (cur) {
+        lines.push(cur);
+        cur = "";
+      }
+      for (let i = 0; i < w.length; i += maxChars) lines.push(w.slice(i, i + maxChars));
+      continue;
+    }
+    const next = cur ? `${cur} ${w}` : w;
+    if (next.length > maxChars) {
+      lines.push(cur);
+      cur = w;
+    } else {
+      cur = next;
+    }
+  }
+  if (cur) lines.push(cur);
+  return lines;
+}
+
+type PdfLine = { text: string; size: number };
+
+function maxCharsFor(size: number) {
+  return Math.max(24, Math.floor(487 / (size * 0.5)));
+}
+
+function pushWrapped(out: PdfLine[], text: string, size: number) {
+  const clean = toWinAnsi(text);
+  for (const chunk of clean.split("\n")) {
+    for (const w of wrapWords(chunk, maxCharsFor(size))) out.push({ text: w, size });
+  }
+}
+
+function collectPdfLines(manual: Pick<ManualItem, "title" | "description" | "chapters">): PdfLine[] {
+  const lines: PdfLine[] = [];
+  pushWrapped(lines, manual.title, 18);
+  lines.push({ text: "", size: 11 });
+  if (manual.description?.trim()) {
+    pushWrapped(lines, manual.description.trim(), 11);
+    lines.push({ text: "", size: 11 });
+  }
+  for (const part of buildManualExportSections(manual)) {
+    lines.push({ text: "", size: 11 });
+    pushWrapped(lines, part.partTitle, 14);
+    for (const ch of part.chapters) {
+      lines.push({ text: "", size: 11 });
+      pushWrapped(lines, ch.title, 12);
+      pushWrapped(lines, ch.body, 11);
+    }
+  }
+  return lines;
+}
+
+/** Text PDF (Helvetica). html2pdf/html2canvas dies on long manuals — canvas height cap. */
+export function buildManualPdfBytes(manual: Pick<ManualItem, "title" | "description" | "chapters">): Uint8Array {
+  const PAGE_W = 595.28;
+  const PAGE_H = 841.89;
+  const MARGIN = 54;
+  const usable = PAGE_H - MARGIN * 2;
+  const all = collectPdfLines(manual);
+  const pages: PdfLine[][] = [];
+  let page: PdfLine[] = [];
+  let used = 0;
+  const gap = (size: number) => size + 4;
+  for (const line of all) {
+    const h = gap(line.size);
+    if (page.length && used + h > usable) {
+      pages.push(page);
+      page = [];
+      used = 0;
+    }
+    page.push(line);
+    used += h;
+  }
+  if (page.length) pages.push(page);
+  if (!pages.length) pages.push([{ text: manual.title || "Manual", size: 12 }]);
+
+  const encoder = new TextEncoder();
+  const chunks: Uint8Array[] = [];
+  let pos = 0;
+  const write = (s: string) => {
+    const b = encoder.encode(s);
+    chunks.push(b);
+    pos += b.length;
+  };
+  const offsets = [0];
+  const addObj = (body: string) => {
+    offsets.push(pos);
+    write(`${offsets.length - 1} 0 obj\n${body}\nendobj\n`);
+  };
+
+  write("%PDF-1.4\n");
+  addObj("<< /Type /Catalog /Pages 2 0 R >>");
+  const pageCount = pages.length;
+  const pageObjNums = pages.map((_, i) => 4 + i * 2);
+  addObj(`<< /Type /Pages /Kids [${pageObjNums.map((n) => `${n} 0 R`).join(" ")}] /Count ${pageCount} >>`);
+  addObj("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+
+  for (const lines of pages) {
+    let stream = "BT\n/F1 11 Tf\n";
+    let y = PAGE_H - MARGIN;
+    let curSize = 11;
+    for (const line of lines) {
+      if (line.size !== curSize) {
+        stream += `/F1 ${line.size} Tf\n`;
+        curSize = line.size;
+      }
+      y -= gap(line.size);
+      stream += `1 0 0 1 ${MARGIN.toFixed(2)} ${y.toFixed(2)} Tm\n(${pdfEscape(line.text)}) Tj\n`;
+    }
+    stream += "ET\n";
+    const streamBytes = encoder.encode(stream);
+    addObj(
+      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PAGE_W} ${PAGE_H}] /Contents ${offsets.length + 1} 0 R /Resources << /Font << /F1 3 0 R >> >> >>`
+    );
+    offsets.push(pos);
+    write(`${offsets.length - 1} 0 obj\n<< /Length ${streamBytes.length} >>\nstream\n`);
+    chunks.push(streamBytes);
+    pos += streamBytes.length;
+    write("\nendstream\nendobj\n");
+  }
+
+  const xrefAt = pos;
+  write(`xref\n0 ${offsets.length}\n`);
+  write("0000000000 65535 f \n");
+  for (let i = 1; i < offsets.length; i++) {
+    write(`${String(offsets[i]).padStart(10, "0")} 00000 n \n`);
+  }
+  write(`trailer\n<< /Size ${offsets.length} /Root 1 0 R >>\nstartxref\n${xrefAt}\n%%EOF\n`);
+
+  const out = new Uint8Array(pos);
+  let o = 0;
+  for (const c of chunks) {
+    out.set(c, o);
+    o += c.length;
+  }
+  return out;
+}
+
 export async function downloadManualDocx(
   manual: Pick<ManualItem, "title" | "chapters"> & { description?: string },
   filename: string,
   slug = ""
 ) {
-  const ready = prepareManualForExport(
-    { description: manual.description ?? "", ...manual },
-    slug
-  );
+  const ready = prepareManualForExport({ description: manual.description ?? "", ...manual }, slug);
   const { Document, Packer, Paragraph, HeadingLevel, TextRun } = await import("docx");
-  const saveAs = await loadSaveAs();
   const sections = buildManualExportSections(ready);
-  const children: InstanceType<typeof Paragraph>[] = [
-    new Paragraph({ text: ready.title, heading: HeadingLevel.TITLE }),
-  ];
+  const children: InstanceType<typeof Paragraph>[] = [new Paragraph({ text: ready.title, heading: HeadingLevel.TITLE })];
   for (const part of sections) {
     children.push(new Paragraph({ text: part.partTitle, heading: HeadingLevel.HEADING_1 }));
     for (const ch of part.chapters) {
@@ -216,7 +364,7 @@ export async function downloadManualDocx(
   }
   const doc = new Document({ sections: [{ children }] });
   const blob = await Packer.toBlob(doc);
-  saveAs(blob, filename);
+  saveBlob(blob, filename);
 }
 
 export async function downloadManualPdf(
@@ -225,36 +373,8 @@ export async function downloadManualPdf(
   slug = ""
 ) {
   const ready = prepareManualForExport(manual, slug);
-
-  try {
-    const html2pdf = await loadHtml2Pdf();
-    const host = document.createElement("div");
-    host.setAttribute("aria-hidden", "true");
-    host.style.cssText = "position:fixed;left:-10000px;top:0;width:720px;background:#fff;";
-    host.innerHTML = buildManualExportInnerHtml(ready);
-    document.body.appendChild(host);
-
-    try {
-      await html2pdf()
-        .set({
-          margin: 12,
-          filename,
-          pagebreak: { mode: ["avoid-all", "css", "legacy"] },
-          html2canvas: { scale: 1.25, useCORS: true, logging: false, scrollY: 0 },
-          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-        })
-        .from(host)
-        .save();
-    } finally {
-      document.body.removeChild(host);
-    }
-    return;
-  } catch {
-    /* ponytail: html2pdf flaky in some browsers — fall back to print view */
-  }
-
-  const opened = openManualPrintView(ready, slug);
-  if (!opened) throw new Error("Pop-up blocked — allow pop-ups to export.");
+  const bytes = buildManualPdfBytes(ready);
+  saveBlob(new Blob([bytes], { type: "application/pdf" }), filename);
 }
 
 export function openManualPrintView(
@@ -263,24 +383,27 @@ export function openManualPrintView(
 ) {
   const ready = prepareManualForExport(manual, slug);
   const html = buildManualExportHtml(ready);
-  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const w = window.open(url, "_blank");
-  if (!w) {
-    URL.revokeObjectURL(url);
+  const iframe = document.createElement("iframe");
+  iframe.setAttribute("aria-hidden", "true");
+  iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
+  document.body.appendChild(iframe);
+  const doc = iframe.contentDocument;
+  if (!doc) {
+    iframe.remove();
     return false;
   }
-  w.addEventListener("load", () => {
-    window.setTimeout(() => {
-      try {
-        w.focus();
-        w.print();
-      } catch {
-        /* user can print manually */
-      }
-    }, 300);
-  });
-  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  doc.open();
+  doc.write(html);
+  doc.close();
+  window.setTimeout(() => {
+    try {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+    } catch {
+      /* user can print from the dialog if it opened */
+    }
+    window.setTimeout(() => iframe.remove(), 60_000);
+  }, 400);
   return true;
 }
 
@@ -307,10 +430,10 @@ export function ManualExportMenu({ manual, slug }: { manual: ManualItem; slug: s
     }
     setBusy(kind);
     try {
-      const base = slug.replace(/[^a-z0-9-]+/gi, "-");
+      const base = slug.replace(/[^a-z0-9-]+/gi, "-") || "manual";
       if (kind === "pdf") {
         await downloadManualPdf(manual, `${base}.pdf`, slug);
-        toast({ type: "success", title: "Export ready", description: "PDF downloaded or print dialog opened." });
+        toast({ type: "success", title: "Downloaded", description: `${base}.pdf saved.` });
       } else if (kind === "docx") {
         await downloadManualDocx(manual, `${base}.docx`, slug);
         toast({ type: "success", title: "Downloaded", description: `${base}.docx saved.` });
@@ -319,8 +442,8 @@ export function ManualExportMenu({ manual, slug }: { manual: ManualItem; slug: s
         if (!opened) {
           toast({
             type: "error",
-            title: "Pop-up blocked",
-            description: "Allow pop-ups for this site to open the print view.",
+            title: "Print failed",
+            description: "Could not open the print view. Try Download as PDF instead.",
           });
           return;
         }

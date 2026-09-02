@@ -8,7 +8,7 @@ Last verified against `main` — March 2026.
 - **Reader (all slugs):** Full Content / Summary / Quiz & Activities tabs; no AI Summary tab.
 - **Edit:** pencil icon on chapter header and catalog cards; markdown toolbar (H1–H3, bold, lists, code) on Summary and Full Content.
 - **TOC edit:** move up/down, merge, delete chapters; delete whole manual while TOC edit is open.
-- **Export:** PDF, DOCX, Print from header on every manual.
+- **Export:** PDF (text file download), DOCX, and Print from the reader header on every manual.
 - **Highlights:** select text per tab; no highlights footer block.
 
 ## Library (`/library`)

@@ -29,7 +29,7 @@ Also see: [architecture.md](./architecture.md), [content-model.md](./content-mod
 |---------|---------|
 | **3.1 Folder-Level Map** | docs/, prisma/, scripts/, src/app/, src/lib/, per-feature routes. |
 | **3.2 File-Level Reference** | proxy.ts, auth.ts, registry.ts, reader.tsx, schema.prisma, page_details maps. |
-| **3.3 Dead Code & TODOs** | Stale docs (65 manuals), unused Book models, /api/settings, trail/manual slug mismatch. |
+| **3.3 Dead Code & TODOs** | Unused Book models, /api/settings, trail/manual slug mismatch; catalog is 4 builtins. |
 | **3.4 Start Here Lookup Table** | I want to… → first file to open (streaks, manuals, auth, AI, …). |
 
 ## Part 4 — Features
