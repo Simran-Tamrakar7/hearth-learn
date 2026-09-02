@@ -1,73 +1,24 @@
 import type { ChapterRecord } from "../../../types";
 
-/** 33. Real-World Capstone Project */
+/** 47. Real-World Capstone Project */
 export const chapter = {
-  "id": "pw-7-capstone",
-  "title": "33. Real-World Capstone Project",
-  "minutes": 90,
-  "level": "pro",
-  "phase": "Part 7 · Real-World Project & Job Readiness",
-  "partName": "Part 7 · Real-World Project & Job Readiness",
-  "overviewText": "The capstone project ties together nearly every prior chapter into one cohesive, portfolio-worthy Playwright framework rather than isolated exercises. A solid scope covers login using Page Object Model with session-reuse fixtures (Chapter 20), a full CRUD flow through the UI (Create, Read, Update, Delete), and API validation confirming data was correctly persisted server-side — not just that the UI looked right. The full picture wires conftest.py with session-scoped auth fixtures, the request fixture for API calls (Chapter 18), and a GitHub Actions workflow (Chapter 25) that runs automatically on every push, publishing an HTML or Allure report as an artifact (Chapter 26). Getting this pipeline green end-to-end — not just passing locally — is the real milestone. The API-validation steps are what elevate this from 'a UI clicker' to a genuine full-stack test.",
-  "why": "Interviewers and hiring managers do not evaluate automation candidates on whether they can write a single test — they evaluate whether they can build and maintain a framework. A capstone project demonstrates end-to-end competence: POM architecture, fixture design, API validation, CI integration, and the ability to debug CI-only failures. The friction of getting something to run correctly in CI that worked fine locally (missing --with-deps, environment variable differences, headless quirks) is where a huge amount of practical learning happens. Skipping the CI push means skipping that learning.",
-  "when": "Build the capstone after completing Parts 1–6 — you need POM (Chapter 14), fixtures (Chapter 15), API testing (Chapter 18), session reuse (Chapter 20), CI/CD (Chapter 25), and reporting (Chapter 26) before starting. Allocate 2–3 focused sessions: one for the framework structure and CRUD tests, one for CI integration and getting the pipeline green, one for the refactor pass against Chapter 31's anti-patterns checklist. Push to GitHub and watch Actions run it before considering the capstone complete.",
-  "practical": {
-    "app": "Task Manager App — Portfolio capstone",
-    "scenario": "You build a Playwright framework covering login, task CRUD (Create, Read, Update, Delete), and API validation for a task management app. After each UI action, an API call confirms the data layer state matches what the UI showed.",
-    "pass": "test_create_read_update_delete_task passes locally and in GitHub Actions. After creating a task via UI, request.get('/api/tasks?title=Finish QA report') confirms the task exists with the correct due_date. After deletion, the API confirms the task is gone. The GitHub Actions workflow publishes an Allure report artifact.",
-    "fail": "Tests pass locally but fail in CI because playwright install --with-deps was omitted. The developer debugs locally (passes), gives up on CI, and the capstone repo shows a red X on every push — undermining the portfolio value of the project."
-  },
-  "advantages": [
-    "Demonstrates end-to-end framework competence in a single reviewable project",
-    "API validation steps show full-stack testing understanding — a detail interviewers specifically listen for",
-    "CI-green pipeline proves ability to debug environment-specific failures",
-    "Refactor pass against anti-patterns checklist produces a concrete before/after improvement story for interviews",
-    "Combines POM, fixtures, API testing, session reuse, CI, and reporting in one cohesive suite",
-    "Portfolio repo URL is directly shareable with recruiters and interviewers"
-  ],
-  "limitations": [
-    "Capstone scope must be bounded — a full app test suite is months of work, not a portfolio project",
-    "CI-green requirement adds significant time beyond local development",
-    "API validation requires a backend with accessible API endpoints — not all practice apps provide this",
-    "Refactor pass is easy to skip under time pressure — but it is where the best interview stories come from"
-  ],
-  "tools": [
-    {
-      "name": "GitHub Actions",
-      "sub": "Capstone CI Pipeline",
-      "url": "https://github.com/features/actions",
-      "desc": "The capstone CI pipeline runs the full test suite on every push via a GitHub Actions workflow. It must include playwright install --with-deps, pytest execution, and artifact upload for the Allure or HTML report. Getting this pipeline green is a required capstone milestone — not optional.",
-      "adv": [
-        "Green CI badge on the repo is immediate portfolio credibility",
-        "Artifact upload makes failure reports downloadable for debugging",
-        "PR status checks demonstrate CI integration competence to interviewers"
-      ],
-      "lim": [
-        "Requires pushing to GitHub — local-only capstone is incomplete",
-        "First CI green run often requires multiple iterations to resolve environment issues"
-      ],
-      "steps": [
-        {
-          "t": "Step 1 — Build the CRUD test with API validation",
-          "p": "Combine UI actions with API assertions:",
-          "c": "def test_create_read_update_delete_task(authenticated_page, request):\n    tasks_page = TasksPage(authenticated_page)\n\n    # Create\n    tasks_page.create_task(\"Finish QA report\", due_date=\"2026-08-10\")\n    response = request.get(\"/api/tasks?title=Finish QA report\")\n    assert response.json()[\"tasks\"][0][\"due_date\"] == \"2026-08-10\"\n\n    # Delete\n    tasks_page.delete_task(\"Finish QA report\")\n    response = request.get(\"/api/tasks?title=Finish QA report\")\n    assert response.json()[\"tasks\"] == []"
-        },
-        {
-          "t": "Step 2 — Push and verify CI pipeline",
-          "p": "Push to GitHub and confirm the workflow runs green:",
-          "c": "git push origin main\n# GitHub Actions → verify green checkmark\n# Artifacts → download and review report"
-        },
-        {
-          "t": "Step 3 — Refactor pass against anti-patterns checklist",
-          "p": "Review the capstone against Chapter 31's checklist before calling it done:",
-          "c": "# Checklist:\n# ✓ Descriptive test names\n# ✓ No hardcoded sleeps\n# ✓ Role-based locators\n# ✓ API validation on every CRUD step\n# ✓ Session reuse fixture\n# ✓ CI pipeline green"
-        }
-      ]
-    }
-  ],
-  "contentMarkdown": "End-to-end framework build (login, CRUD flow, API validation) The capstone ties together nearly every prior chapter into one cohesive project rather than isolated exercises. A solid scope for a portfolio-worthy capstone: ● Login — using POM (Chapter 14), with a session-reuse fixture (Chapter 20) so login only happens once per run, not once per test.\n\n## End-to-end framework build (login, CRUD flow, API validation)\n\nThe capstone ties together nearly every prior chapter into one cohesive project rather than isolated exercises. A solid scope for a portfolio-worthy capstone:\n\nlogin only happens once per run, not once per test.\n\ncover Create, Read, Update, Delete end-to-end through the UI.\n\ncorrectly server-side, not just that the UI looked right.\n\ntasks_page = TasksPage(authenticated_page)\n\nresponse = request.get(\"/api/tasks?title=Finish QA report\")\n\ntask_id = response.json()[\"tasks\"][0][\"id\"]\n\nfollow_up = request.get(f\"/api/tasks/{task_id}\")\n\nPointers: The API-validation steps are what elevate this from \"a UI clicker\" to a genuine full-stack test — it's a detail interviewers specifically listen for, since it demonstrates you understand that UI success and data-layer success are two different things worth verifying independently.\n\n```\nassert response.json()[\"tasks\"][0][\"due_date\"] == \"2026-08-10\"\n\n# Update\n\ntasks_page.edit_task(\"Finish QA report\", new_title=\"Finish QA report v2\")\n\nexpect(authenticated_page.get_by_text(\"Finish QA report v2\")).to_be_visible()\n\n# Delete\n\ntasks_page.delete_task(\"Finish QA report v2\")\n\nexpect(authenticated_page.get_by_text(\"Finish QA report v2\")).not_to_be_visible()\n\n# API validation of deletion\n\n# Create\n\ntasks_page.create_task(\"Finish QA report\", due_date=\"2026-08-10\")\n\nexpect(authenticated_page.get_by_text(\"Finish QA report\")).to_be_visible()\n\n# API validation of creation\n\n# tests/test_task_crud.py\n\nfrom pages.tasks_page import TasksPage\n\ndef test_create_read_update_delete_task(authenticated_page, request):\n```\n\n## Combining UI + API + auth + CI/CD in one suite\n\nThe full picture: conftest.py wires together the session-scoped auth fixture (Chapter\n\n20), the request fixture for API calls (Chapter 18), and the whole thing runs automatically via a GitHub Actions workflow (Chapter 25) on every push, publishing an HTML or Allure report as an artifact (Chapter 26).\n\nPointers: Getting this pipeline green end-to-end — not just passing locally — is the real milestone. A huge amount of practical learning happens specifically in the friction of getting something to run correctly in CI that worked fine locally (missing --with-deps, environment variable differences, headless-only quirks) — don't skip actually pushing this to GitHub and watching Actions run it.\n\n## Code review and refactor pass\n\nOnce the capstone works, deliberately revisit it against Chapter 31's anti-patterns checklist:\n\nPointers: This refactor pass is itself a valuable, showable skill — if you're asked in an interview \"tell me about a time you improved code quality,\" a concrete before/after from this exact refactor pass is a strong, specific answer.",
-  "exercises": [],
-  "resourceLinks": [],
-  "steps": [],
-  "learn": []
+  id: "pw-47-capstone",
+  title: "47. Real-World Capstone Project",
+  minutes: 45,
+  level: "advanced",
+  phase: "Part 7 · Real-World Project & Job Readiness",
+  partName: "Part 7 · Real-World Project & Job Readiness",
+  overviewText: "End-to-end capstone scope: POM framework, auth fixture with storage_state, CRUD flow, API validation, CI pipeline, and README documenting architecture decisions.",
+  why: "Employers hire integrators, not tutorial completers. A capstone proves you can combine Parts 1–6 into one coherent, portfolio-worthy project.",
+  when: "Read when building your primary GitHub portfolio repo before job applications.",
+  practical: { app: "Portfolio HRMS test framework", scenario: "Interviewer asks 'walk me through a project you built end to end.'", pass: "Demo repo with pages/, CI badge, README explaining POM + auth + API hybrid.", fail: "Ten disconnected tutorial scripts with no shared structure or CI." },
+  advantages: ["Integrates POM, fixtures, API setup, and CI in one artifact","README architecture section answers 'why did you choose X?'","storage_state auth demonstrates Part 4 technique in practice","CRUD flow covers create-verify-update-delete completely","GitHub Actions badge proves CI integration works","Demonstrates ROI thinking — smoke vs full regression split"],
+  limitations: ["Capstone scope creep delays job search by months","Demo app dependency may break when practice site changes","Over-engineering impresses engineers but not all hiring managers","Without README, reviewers cannot navigate architecture quickly","Copy-paste from manual without understanding fails live coding","Single-project portfolio weak if role needs multi-stack breadth"],
+  tools: [],
+  contentMarkdown: "## Real-World Capstone Project\n\nA capstone project's purpose is proving integration, not demonstrating any single technique in isolation. Every prior part covered one topic at a time in isolation (locators, fixtures, CI, reporting) — a capstone is where those pieces have to work together as a coherent whole, which surfaces integration problems (a fixture scope conflict, a flaky interaction between parallelization and test data) that never show up when techniques are practiced one at a time in small examples.\n\nScope a capstone around a small number of genuinely critical, end-to-end flows — not exhaustive coverage. Tying back to the Testing Pyramid guidance from Part 0 (Chapter 5) and the automation ROI framework from Chapter 6: a strong capstone picks 3–5 real critical-path journeys (for an HRM-style app: employee login → submit a leave request → manager approval; new employee onboarding through to first successful login; a payroll run producing correct output for a given attendance record) rather than attempting to automate every field validation on every screen, which would be both unrealistic in scope and would demonstrate poor judgment about what's actually worth automating.\n\nA realistic capstone project structure exercises the full framework from Chapter 43.\n\ncapstone-project/\n\n├── tests/\n\n│   ├── smoke/\n\n│   ├── regression/\n\n│   └── modules/\n\n│       ├── test_leave_lifecycle.py\n\n│       ├── test_onboarding_flow.py\n\n│       └── test_attendance_to_payroll.py\n\n├── pages/\n\n├── api/\n\n├── fixtures/\n\n├── config/\n\n├── .github/workflows/playwright.yml\n\n├── conftest.py\n\n├── pytest.ini\n\n└── README.md\n\nDeliberately including CI integration (Chapter 39), a reporting setup (Chapter 40), and at least one Dockerized run (Chapter 41) in the capstone — not just local test files — is what makes it demonstrate job-relevant, production-realistic skill rather than just \"I can write Playwright scripts.\"\n\nWriting the project's README as a design-decisions document, not just a run-instructions file. A README that explains why the project is structured the way it is (why this fixture scope, why this locator strategy, why these specific flows were chosen for automation and others weren't) is far more valuable — both as a learning artifact and later as a portfolio piece (Chapter 48) — than one that only lists pip install steps. This is also good practice for a documentation-oriented role specifically, since it's effectively the same skill as writing a test plan or QA strategy document for a real team.\n\nA capstone benefits from deliberately including at least one instance of several \"advanced\" patterns, even in a small project. Concretely: one test using API-seeded setup with UI verification (Chapter 27's hybrid pattern), one test using role-based storage state to check a permission boundary (Chapter 46's RBAC pattern), one test with intentional network mocking to simulate an error state (Chapter 26), and CI configured to fail the build on a real regression, not just report it (Chapter 39). Including at least one of each demonstrates breadth without needing the project to be enormous — depth in a few well-chosen flows plus breadth across techniques, deliberately, beats size for its own sake.",
+  customSummary: "## Real-World Capstone Project\n\nPurpose is proving integration of everything learned, not demonstrating isolated techniques — this is where fixture/parallelization/data conflicts actually surface.\nScope to 3–5 genuinely critical end-to-end flows (per the Ch. 6 automation-ROI framework), not exhaustive field-level coverage.\nStructure should exercise the full Ch. 43 framework: tests/pages/api/fixtures/config, plus real CI integration, reporting, and at least one Dockerized run — not just local test files.\nREADME should explain design decisions (why this fixture scope, this locator strategy, these flows) — doubles as a QA-strategy-document skill, not just run instructions.\nDeliberately include one each of: API-seeded setup + UI verification, role-based permission check, network-mocked error state, and a CI run that actually fails the build on a real regression — breadth across techniques beats sheer project size.",
+  exercises: [],
+  resourceLinks: [],
+  steps: [],
+  learn: [],
 } as ChapterRecord;

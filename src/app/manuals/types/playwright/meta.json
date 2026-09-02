@@ -1,15 +1,14 @@
 {
   "id": "playwright",
-  "title": "Playwright with Python",
-  "tagline": "Complete Beginner-to-Pro Manual — background through job-ready capstone, plus a full resources library.",
+  "title": "Playwright Test Automation (Python)",
+  "tagline": "Python + pytest-playwright from architecture to CI — expanded manual with Full Content and Summary per chapter.",
   "category": "automation",
-  "who": "Beginners and manual QAs aiming to become Playwright Automation Engineers with Python.",
+  "who": "QA engineers learning Playwright with Python/pytest for web E2E automation.",
   "outcomes": [
-    "Automate Chromium/Firefox/WebKit with sync Playwright + pytest",
-    "Build POM frameworks with data, mocking, auth reuse, and CI reporting",
-    "Ship a capstone portfolio and interview-ready stories",
-    "Know where to keep learning — books, communities, and ecosystem signals"
+    "Explain Playwright architecture vs Selenium and Cypress",
+    "Write stable locators, actions, and expect() assertions in Python",
+    "Structure suites with pytest fixtures, POM, CI, and reporting"
   ],
-  "duration": "4–6 months (1–2 hrs/day)",
-  "levelSpan": "Zero → Job-ready"
+  "duration": "8–12 weeks",
+  "levelSpan": "Beginner → Advanced"
 }

@@ -2,41 +2,23 @@ import type { ChapterRecord } from "../../../types";
 
 /** 4. What This Manual Will NOT Cover */
 export const chapter = {
-  "id": "pw-0-not",
-  "title": "4. What This Manual Will NOT Cover",
-  "minutes": 20,
-  "level": "beginner",
-  "phase": "Part 0 · Background",
-  "partName": "Part 0 · Background",
-  "overviewText": "This manual teaches Playwright through Python and pytest-playwright — not JavaScript/TypeScript or the @playwright/test runner. It also excludes native mobile app testing (Appium's domain) and load/performance testing (k6, JMeter, Locust). Mobile web emulation via device descriptors is in scope; testing a compiled iOS/Android app is not. Setting these boundaries early prevents wasted learning time and stops you from proposing Playwright for problems it was never designed to solve.",
-  "why": "Scope clarity saves weeks. Beginners often copy JS examples from Playwright docs and struggle with async patterns, config files, and fixture syntax that don't apply to Python. Others propose Playwright for 10,000-user load tests or native app flows — setting wrong expectations with stakeholders. Knowing what's out of scope lets you recommend the right tool (Appium, k6) without dismissing Playwright's strengths.",
-  "when": "Read this before Part 1 setup so you know you'll install pytest-playwright, not npm init @playwright/test. Revisit when evaluating adjacent skills — if a job posting asks for Appium or k6, that's a separate learning path, not a gap in this manual.",
-  "practical": {
-    "app": "QA team — test strategy workshop",
-    "scenario": "A product manager asks the QA lead to 'use Playwright for load testing the checkout API under Black Friday traffic.' Because you read this chapter, you explain that Playwright simulates one browser user at a time — load testing needs k6 or Locust — while Playwright covers the functional checkout E2E path. The team splits scope correctly instead of forcing Playwright into the wrong role.",
-    "pass": "Strategy doc lists Playwright for E2E UI regression and k6 for load — each tool owns its lane.",
-    "fail": "Team runs 50 parallel Playwright checkout tests and calls it 'load testing' — results show browser overhead, not server capacity, and miss real concurrency bugs."
-  },
-  "advantages": [
-    "Python + pytest-playwright focus means one language for tests, fixtures, and CI scripts — no context-switching to Node",
-    "Clear boundaries prevent tool misuse that produces misleading results (Playwright-as-load-tester)",
-    "Knowing Appium vs mobile-web emulation avoids scoping native app work into a browser automation project",
-    "JS/TS awareness lets you translate official docs without expecting this manual to teach Node patterns",
-    "Honest scope builds credibility with engineers who know the difference between E2E and performance testing",
-    "Leaves room in your learning path for k6/Locust and Appium as complementary skills"
-  ],
-  "limitations": [
-    "You won't learn @playwright/test, playwright.config.ts, or JS fixture patterns from this manual",
-    "Official Playwright docs and most blog posts are JS-first — translation overhead is real",
-    "No coverage of native mobile automation — HRMS mobile apps need a separate Appium investment",
-    "No load/performance methodology — you must learn k6 or JMeter separately for capacity planning",
-    "Mobile web emulation doesn't catch OS-level bugs (push notifications, deep links) visible only on real devices",
-    "Teams standardized on JS/TS may find Python-only training misaligned with their repo conventions"
-  ],
-  "tools": [],
-  "contentMarkdown": "Out of scope: JS/TS Playwright as the teaching language, native mobile (Appium), and load/performance testing (k6/JMeter/Locust).\n\n## JavaScript/TypeScript Playwright\n\nWorth flagging early: a huge amount of Playwright’s own official documentation and community content is written JS/TS-first (since that’s Playwright’s native language and where the built-in test runner lives). You’ll frequently find yourself reading JS examples online and needing to mentally translate syntax to Python (e.g., page.click() stays similar, but async/await patterns, config files, and the test runner itself differ). This manual won’t teach you that translation — it sticks to Python + pytest-playwright throughout.\n\n## Native mobile and load testing\n\nMobile native app testing is Appium territory. Mobile web emulation (Chapter 2) is in scope — testing a website as it renders in a mobile browser. Testing an actual native iOS/Android app (a compiled app installed from an app store) is a fundamentally different problem requiring Appium, which automates the OS-level app itself rather than a browser. Don’t confuse the two when scoping future learning.\n\nLoad/performance testing is k6 / JMeter / Locust. Playwright automates one browser session behaving like one real user — it’s not built to simulate thousands of concurrent users hitting a server to measure throughput/latency under load. That’s a separate discipline with its own dedicated tools: k6 (modern, scriptable, popular in CI), JMeter (older, GUI-heavy, still widely used), and Locust (Python-based, code-first).",
-  "exercises": [],
-  "resourceLinks": [],
-  "steps": [],
-  "learn": []
+  id: "pw-4-not-covered",
+  title: "4. What This Manual Will NOT Cover",
+  minutes: 20,
+  level: "beginner",
+  phase: "Part 0 · Background & Context",
+  partName: "Part 0 · Background & Context",
+  overviewText: "This manual excludes @playwright/test JS runner, native mobile (Appium), and load testing (k6/JMeter). Python + pytest-playwright only; mobile web emulation is in scope.",
+  why: "Scope honesty prevents mis-selling Playwright for Appium or k6 workloads.",
+  when: "Read at start. Revisit when asked for mobile app or load tests.",
+  practical: { app: "Native mobile HRM app", scenario: "Product wants iOS App Store automation in Playwright.", pass: "Explain viewport emulation vs native — recommend Appium.", fail: "Attempt native mobile automation in Playwright." },
+  advantages: ["Clear boundaries save sprint time and interview credibility","Python focus avoids split-brain JS/Python test infrastructure","Mobile web vs native distinction named explicitly","k6/JMeter named as correct load-testing complements","JS doc translation skill is teachable mechanical work","Walking away from wrong tool is senior-engineer signal"],
+  limitations: ["No @playwright/test or playwright.config.ts coverage","Appium remains separate skill to learn for native mobile","Load testing requires additional tool investment","Official docs are JS-first — constant translation overhead","Stakeholders may want one tool for all testing needs","Scope limits may disappoint teams seeking universal automation"],
+  tools: [],
+  contentMarkdown: "## 4. What This Manual Will NOT Cover\n\nJavaScript/TypeScript Playwright. This manual is Python-focused. A huge amount of Playwright's own official docs and community content is written JS/TS-first, since that's Playwright's native language and where the built-in test runner lives. You'll often find JS examples online and need to mentally translate syntax to Python — this manual sticks to Python + pytest-playwright throughout, with no translation guide included. Mobile native app testing. Mobile web emulation is in scope — testing a website as it renders in a mobile browser. Testing an actual native iOS/Android app is a fundamentally different problem requiring Appium, which automates the OS-level app itself rather than a browser. Relevant since you've already completed a full Appium roadmap separately. Load/performance testing. Playwright automates one browser session behaving like one real user — it's not built to simulate thousands of concurrent users hitting a server to measure throughput/latency under load. That's a separate discipline with its own dedicated tools: k6 (modern, scriptable, popular in CI pipelines), JMeter (older, GUI-heavy, still widely used in enterprises), and Locust (Python-based, code-first). If load testing comes up in your Bizlevate work, treat it as a separate learning track. Deep security/penetration testing. Playwright can be used in support of some security-adjacent checks (e.g., verifying an auth bypass doesn't work, checking headers), but it's not a security scanning tool — dedicated tools like OWASP ZAP or Burp Suite cover that discipline properly. Unit testing / component-level testing frameworks. Playwright operates at the browser/E2E layer. Testing an individual function or a UI component in isolation is typically the job of tools like pytest (for backend units), Jest, or React Testing Library — Playwright complements these rather than replacing them. Non-Playwright MCP/AI-agent browser automation tools. The manual's addendum on Playwright MCP is scoped narrowly to Playwright's own MCP server — general AI-agent browser tooling outside that isn't covered.",
+  customSummary: "## 4. What This Manual Will NOT Cover\n\n### Python + pytest-playwright only — no JS/TS Playwright coverage\n### No native mobile app testing — that's Appium's domain (already covered separately)\n### No load/performance testing — that's k6/JMeter/Locust's domain, treat as separate track\n- Also out of scope: deep security/pen testing (ZAP/Burp), unit/component testing (pytest/Jest/RTL), general AI-agent browser tooling beyond Playwright's own MCP server.",
+  exercises: [],
+  resourceLinks: [],
+  steps: [],
+  learn: [],
 } as ChapterRecord;

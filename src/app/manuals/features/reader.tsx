@@ -216,6 +216,7 @@ function chapterToHearth(ch: Record<string, unknown>, order: number): ManualChap
     subtitle: ch.phase ? String(ch.phase) : undefined,
     estimatedMinutes: Number(ch.minutes) || 20,
     contentMarkdown: parts.join("\n\n"),
+    customSummary: ch.customSummary ? String(ch.customSummary) : undefined,
     summaryMarkdown: learn.length
       ? `Key takeaways:\n${learn.map((l) => `- ${l}`).join("\n")}`
       : overview.slice(0, 400),

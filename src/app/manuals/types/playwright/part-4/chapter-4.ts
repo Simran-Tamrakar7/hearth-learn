@@ -1,81 +1,24 @@
 import type { ChapterRecord } from "../../../types";
 
-/** 20. Authentication & Session Reuse */
+/** 29. Visual & Accessibility Testing */
 export const chapter = {
-  "id": "pw-4-auth",
-  "title": "20. Authentication & Session Reuse",
-  "minutes": 45,
-  "level": "advanced",
-  "phase": "Part 4 · Advanced Techniques",
-  "partName": "Part 4 · Advanced Techniques",
-  "overviewText": "storage_state saves a BrowserContext's cookies and localStorage to a JSON file (context.storage_state(path='auth_state.json')) and reloads them into a new context (browser.new_context(storage_state='auth_state.json')), skipping the UI login flow entirely. This is the primary speed optimization for authenticated test suites — log in once, reuse the session across hundreds of tests. A session-scoped auth_state fixture performs login once per test run; a function-scoped authenticated_page fixture creates a fresh context pre-loaded with saved state per test, combining speed with isolation. storage_state captures cookies and localStorage only — not sessionStorage or IndexedDB, so apps relying on those need alternative approaches.",
-  "why": "A 15-second UI login repeated before every test in a 200-test suite adds 50 minutes of pure login time. storage_state reduces that to one login per run plus milliseconds per test to load saved cookies. Without session reuse, teams either accept slow suites or dangerously share a single logged-in context across tests (causing cross-test interference). The session-scoped auth_state + function-scoped authenticated_page pattern delivers both speed and per-test isolation simultaneously.",
-  "when": "Implement storage_state as soon as more than five tests require authentication. Use session-scoped fixture for the login-and-save step; function-scoped fixture for the context that loads saved state. Regenerate auth_state.json when credentials or auth flow changes. Do not commit auth_state.json with production credentials — generate it in CI setup or local fixture.",
-  "practical": {
-    "app": "HRMS — Authenticated dashboard tests",
-    "scenario": "120 dashboard and module tests each repeat a 12-second login. With storage_state, a session-scoped auth_state fixture logs in once (12 seconds total), and each test gets a fresh authenticated_page context in 200ms. Suite time drops from 24 minutes of login overhead to 12 seconds.",
-    "pass": "authenticated_page fixture loads storage_state='auth_state.json'; test navigates directly to /dashboard without login steps — already authenticated.",
-    "fail": "Every test inlines page.goto('/login') and credential fill; 120 tests × 12 seconds = 24 minutes of redundant login."
-  },
-  "advantages": [
-    "Eliminates repeated UI login — one login per test run instead of per test",
-    "Function-scoped context with saved state gives per-test isolation with session speed",
-    "Works with any auth mechanism stored in cookies or localStorage",
-    "auth_state.json is portable — generate once, reuse across local and CI runs",
-    "Combines naturally with pytest fixture scopes from Chapter 12"
-  ],
-  "limitations": [
-    "Only captures cookies and localStorage — not sessionStorage or IndexedDB",
-    "Saved state expires when server-side sessions time out — must regenerate periodically",
-    "Token refresh flows may invalidate saved state mid-run",
-    "Does not help tests that need different user roles — each role needs its own state file",
-    "Auth flow changes (new MFA step) require regenerating the saved state"
-  ],
-  "tools": [
-    {
-      "name": "storage_state",
-      "sub": "Session persistence",
-      "url": "https://playwright.dev/python/docs/auth",
-      "desc": "storage_state is a Playwright BrowserContext method that serializes cookies and localStorage to a JSON file or returns them as a dict. Loading saved state into a new context via browser.new_context(storage_state=path) pre-authenticates that context without any UI interaction. The standard pytest pattern pairs a session-scoped fixture (login once, save state) with a function-scoped fixture (fresh context per test loaded from saved state).",
-      "adv": [
-        "Dramatic suite speed improvement for authenticated test suites",
-        "Per-test isolation maintained via fresh context with shared auth cookies",
-        "JSON format is human-readable and debuggable",
-        "Official Playwright auth pattern — well-documented and supported"
-      ],
-      "lim": [
-        "Cookies and localStorage only — sessionStorage-based auth not captured",
-        "Server-side session expiry can invalidate saved state during long runs",
-        "Each user role needs a separate saved state file",
-        "Must regenerate when login flow or credentials change"
-      ],
-      "steps": [
-        {
-          "t": "Step 1 — Log in once and save state",
-          "p": "Perform UI login and persist the session:",
-          "c": "context = browser.new_context()\npage = context.new_page()\npage.goto(\"https://app.example.com/login\")\npage.get_by_label(\"Username\").fill(\"testuser\")\npage.get_by_label(\"Password\").fill(\"testpass\")\npage.get_by_role(\"button\", name=\"Log in\").click()\ncontext.storage_state(path=\"auth_state.json\")\ncontext.close()"
-        },
-        {
-          "t": "Step 2 — Reuse saved state in a new context",
-          "p": "Skip login — context starts authenticated:",
-          "c": "context = browser.new_context(storage_state=\"auth_state.json\")\npage = context.new_page()\npage.goto(\"https://app.example.com/dashboard\")\n# Already logged in — no login steps needed"
-        },
-        {
-          "t": "Step 3 — Session + function scoped pytest fixtures",
-          "p": "In conftest.py — login once, fresh context per test:",
-          "c": "import pytest\n\n@pytest.fixture(scope=\"session\")\ndef auth_state(browser):\n    context = browser.new_context()\n    page = context.new_page()\n    page.goto(\"https://app.example.com/login\")\n    page.get_by_label(\"Username\").fill(\"testuser\")\n    page.get_by_label(\"Password\").fill(\"testpass\")\n    page.get_by_role(\"button\", name=\"Log in\").click()\n    state_path = \"auth_state.json\"\n    context.storage_state(path=state_path)\n    context.close()\n    return state_path\n\n@pytest.fixture\ndef authenticated_page(browser, auth_state):\n    context = browser.new_context(storage_state=auth_state)\n    page = context.new_page()\n    yield page\n    context.close()"
-        },
-        {
-          "t": "Step 4 — Write tests with authenticated_page",
-          "p": "Tests skip login entirely:",
-          "c": "def test_dashboard_loads(authenticated_page):\n    authenticated_page.goto(\"https://app.example.com/dashboard\")\n    expect(authenticated_page.get_by_role(\"heading\", name=\"Dashboard\")).to_be_visible()"
-        }
-      ]
-    }
-  ],
-  "contentMarkdown": "storage_state — saving/reusing login sessions # Log in once, save the resulting session context = browser.new_context() page = context.new_page() page.goto(\"https://app.example.com/login\") page.get_by_label(\"Username\").fill(\"testuser\") page.get_by_label(\"Password\").fill(\"testpass\") page.get_by_role(\"button\", name=\"Log in\").click() context.storage_state(path=\"auth_state.json\") # Reuse the saved ses\n\n## Overview\n\nstorage_state — saving/reusing login sessions\n\ncontext = browser.new_context() page = context.new_page()\n\n# Reuse the saved session — no login steps needed context = browser.new_context(storage_state=\"auth_state.json\") page = context.new_page()\n\nWhat it does: Saves the current context's cookies and localStorage to a JSON file (or returns it as a dict if no path given).\n\nTypes/params:\n\nPointers: Only captures cookies/localStorage — not sessionStorage or IndexedDB, so if an app's auth relies on those, this approach needs adjustment.\n\nWhat it does: Creates a new context pre-loaded with previously saved cookies/localStorage, skipping the need to log in via UI again.\n\nTypes/params:\n\nstate from a prior context.storage_state() call\n\nPointers: This is a major speed win across a large suite — logging in via UI once and reusing the state across hundreds of tests versus repeating a slow UI login flow every single test.\n\n```\npage.goto(\"https://app.example.com/login\")\npage.get_by_label(\"Username\").fill(\"testuser\")\npage.get_by_label(\"Password\").fill(\"testpass\")\npage.get_by_role(\"button\", name=\"Log in\").click()\n\ncontext.storage_state(path=\"auth_state.json\")\n\npage.goto(\"https://app.example.com/dashboard\")   # already logged in\n\ncontext.storage_state(path=...)\n\n# Log in once, save the resulting session\n```\n\n## Global setup for auth (login once, reuse everywhere)\n\nA common pattern with pytest is a session-scoped fixture that performs the login exactly once per test run and hands out the saved state file path to every test that needs it:\n\nPointers: Note the two different scopes working together — auth_state is\n\nsession-scoped (login happens once for the whole run), while authenticated_page\n\nis function-scoped (a fresh context per test, for isolation) — reusing the saved state, not the context itself, across tests. This combination gets you both speed and isolation simultaneously.\n\n```\n# conftest.py\n@pytest.fixture(scope=\"session\")\ndef auth_state(browser):\n    context = browser.new_context()\n    page = context.new_page()\n    page.goto(\"https://app.example.com/login\")\n    page.get_by_label(\"Username\").fill(\"testuser\")\n    page.get_by_label(\"Password\").fill(\"testpass\")\n    page.get_by_role(\"button\", name=\"Log in\").click()\n    state_path = \"auth_state.json\"\n    context.storage_state(path=state_path)\n    context.close()\n    return state_path\n\n@pytest.fixture\ndef authenticated_page(browser, auth_state):\n    context = browser.new_context(storage_state=auth_state)\n    page = context.new_page()\n    yield page\n    context.close()\n```",
-  "exercises": [],
-  "resourceLinks": [],
-  "steps": [],
-  "learn": []
+  id: "pw-29-visual",
+  title: "29. Visual & Accessibility Testing",
+  minutes: 45,
+  level: "advanced",
+  phase: "Part 4 · Advanced Techniques",
+  partName: "Part 4 · Advanced Techniques",
+  overviewText: "expect(page).to_have_screenshot() compares against committed baselines. axe-core via axe-playwright-python scans WCAG violations. to_match_aria_snapshot() snapshot-tests accessibility tree structure. Review diffs before updating baselines.",
+  why: "Functional tests miss layout breaks, color shifts, and accessibility violations. Visual and a11y testing catch regressions assertions cannot see.",
+  when: "Add screenshots after CSS or component-library upgrades. Run axe on every user-facing form. Mask dynamic content before first baseline. Regenerate baselines in dedicated PRs only.",
+  practical: { app: "HRMS — Dashboard and login page", scenario: "CSS refactor shifts card spacing; axe finds date-picker missing aria-label.", pass: "to_have_screenshot with mask on timestamps; axe returns zero critical violations.", fail: "No visual tests — spacing ships broken; no axe — keyboard users blocked." },
+  advantages: ["Catches visual regressions functional tests miss","Baselines provide pixel evidence in PR reviews","axe-core covers dozens of WCAG rules in seconds","to_match_aria_snapshot catches structural a11y regressions","mask parameter excludes dynamic content","Violations triaged by impact level"],
+  limitations: ["Visual tests brittle across OS rendering differences","Blind baseline updates hide real regressions","axe catches automated rules only — manual review still needed","Screenshot storage grows with suite size","Dynamic SPAs need masking or API mocking first","to_match_aria_snapshot sensitive to intentional copy changes"],
+  tools: [],
+  contentMarkdown: "## 29. Visual & Accessibility Testing\n\nScreenshot comparison catches unintended visual changes that functional tests miss.\nexpect(page).to_have_screenshot(\"dashboard.png\")\n\n```python\nexpect(page.locator(\".header\")).to_have_screenshot(\"header.png\")\n```\n\n\nto_have_screenshot(name) compares the current rendered page (or a specific locator's region) against a previously saved baseline image with the given name, failing if the pixel difference exceeds a threshold. The first time this runs, there's no baseline yet, so Playwright saves the current screenshot as the new baseline — subsequent runs compare against it. max_diff_pixels and threshold (both optional) tune how much difference is tolerated before failing, since minor anti-aliasing or font-rendering differences between machines can otherwise cause false failures.\nVisual baselines need deliberate maintenance, not blind trust.\nWhen a screenshot test fails, that doesn't automatically mean a bug — it might just mean the UI intentionally changed (a redesign, a new feature added to a shared header). The workflow in that case is reviewing the diff, confirming the new appearance is correct, and explicitly updating the baseline (typically via a --update-snapshots flag) — never updating baselines reflexively without actually looking at what changed, since that defeats the entire purpose of the check.\nAccessibility testing verifies the app is usable via assistive technology, not just visually correct.\n```python\n# Using axe-core integration (via the axe-playwright-python package)\nfrom axe_playwright_python.sync_playwright import Axe\n\naxe = Axe()\nresults = axe.run(page)\nassert results.violations_count == 0, results.generate_report()\n```\n\n\naxe-core is the industry-standard accessibility testing engine (also used by Chrome DevTools' own Lighthouse audits), and axe-playwright-python wires it into a Playwright page — running it scans the current page's DOM for accessibility violations (missing alt text, poor color contrast, missing ARIA labels, keyboard-trap issues) against WCAG standards. axe.run(page) returns a results object; .violations_count and .generate_report() let you assert on and inspect findings. This directly ties back to Part 0's note that healthcare and other regulated industries often have legally mandated accessibility requirements — automated axe-core scans are a standard way to catch the most common violations early and cheaply, though they don't replace manual accessibility review entirely (axe-core catches roughly a third to half of WCAG issues automatically; some things, like whether alt text is meaningfully descriptive rather than merely present, still need a human).\nto_match_aria_snapshot() provides native, built-in accessibility-tree snapshot testing.\nexpect(page.locator(\"nav\")).to_match_aria_snapshot(\"\"\"\n### - navigation\n\n  - link \"Home\"\n  - link \"Dashboard\"\n  - link \"Settings\"\n\"\"\")\n\nUnlike axe-core (which checks for accessibility violations), this is a snapshot-testing approach for the accessibility tree itself — it captures the ARIA roles/names/structure of an element (as a screen reader would perceive it) and compares it against a saved expected structure, similar in spirit to visual screenshot testing but for the accessibility tree instead of pixels. This is useful for catching structural accessibility regressions — a heading accidentally losing its role, a button's accessible name silently changing — that a plain functional test wouldn't catch since the element might still be clickable and visually correct, just less meaningful to assistive technology.",
+  customSummary: "## 29. Visual & Accessibility Testing\n\nexpect(page).to_have_screenshot(name) compares against a saved baseline; first run creates the baseline.\nFailed visual tests need human review before updating the baseline — never update reflexively.\naxe-core (via axe-playwright-python) scans for WCAG violations (alt text, contrast, ARIA) — catches roughly a third to half of accessibility issues automatically; doesn't replace manual review.\nto_match_aria_snapshot() snapshot-tests the accessibility tree's structure — catches structural regressions (lost role/name) that functional tests miss.",
+  exercises: [],
+  resourceLinks: [],
+  steps: [],
+  learn: [],
 } as ChapterRecord;

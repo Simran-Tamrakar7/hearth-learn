@@ -1,38 +1,24 @@
 import type { ChapterRecord } from "../../../types";
 
-/** Checkpoint — Advanced */
+/** 34. Localization / i18n Testing */
 export const chapter = {
-  "id": "pw-cp-advanced",
-  "title": "Checkpoint — Advanced",
-  "minutes": 45,
-  "level": "checkpoint",
-  "phase": "Part 4 · Advanced Techniques",
-  "partName": "Part 4 · Advanced Techniques",
-  "overviewText": "This checkpoint validates that you can apply Part 4's advanced Playwright techniques to real test scenarios — not just understand them individually. You should be able to mock network responses with page.route() and route.fulfill(), set up test data via APIRequestContext and combine API setup with UI assertions, capture and compare visual baselines with to_have_screenshot(), scan pages for accessibility violations with axe-core, reuse authentication via storage_state fixtures, interact with shadow DOM components, run tests in parallel with pytest-xdist, execute cross-browser matrix runs, and debug failures using Trace Viewer. These techniques transform a basic Playwright suite into one that handles error states, runs fast, catches visual and accessibility regressions, and provides actionable CI failure artifacts.",
-  "why": "Parts 1–3 built interaction skills and framework structure; Part 4 adds the techniques that separate a demo suite from a production-grade one. Network mocking, API hybrid tests, auth reuse, and parallel execution directly impact suite speed and reliability. Visual and accessibility testing catch regressions functional tests miss. Debugging tools determine whether CI failures are fixed in minutes or hours. This checkpoint confirms you can integrate these techniques before Part 5+ covers CI pipelines and reporting.",
-  "when": "Complete this checkpoint after finishing Chapters 17–24 and before starting Part 5. Revisit if your suite lacks network mocking for error states, still creates all test data via UI, runs sequentially despite exceeding 15 minutes, or provides no trace artifacts on CI failure.",
-  "practical": {
-    "app": "HRMS — Advanced suite review",
-    "scenario": "Given the HRMS test project from the Part 3 checkpoint, add: a route.fulfill mock for the 500-error employee list scenario, an API-hybrid test that POSTs a user and verifies admin list visibility, storage_state auth fixture, one visual baseline with masked timestamp, an axe scan on the login page, pytest -n 4 parallel run, and a trace-on-failure fixture.",
-    "pass": "Mocked error test is deterministic; API hybrid test completes in under 5 seconds; parallel run with 4 workers finishes without shared-state failures; CI failure produces a viewable trace.zip.",
-    "fail": "Error-state tests depend on staging being broken; all data created via UI forms; sequential run exceeds 45 minutes; CI failures show only 'Timeout 30000ms exceeded' with no trace artifact."
-  },
-  "advantages": [
-    "Confirms integration of all Part 4 techniques as a cohesive advanced suite",
-    "Identifies gaps before CI pipeline work in later parts",
-    "Validates speed optimizations (auth reuse, API setup, parallelism) with measurable targets",
-    "Ensures debugging tooling is in place before relying on CI for test feedback"
-  ],
-  "limitations": [
-    "Self-assessment — no automated grader verifies technique implementation",
-    "Checkpoint is minimum bar — production suites need CI integration from later parts",
-    "Individual technique mastery does not guarantee they work together without conflicts",
-    "Performance targets (5-minute smoke, 45-minute full suite) vary by application complexity"
-  ],
-  "tools": [],
-  "contentMarkdown": "You can mock network, hit APIs, reuse auth, run parallel/cross-browser, and debug with traces.\n\n## Pass criteria\n\nYou can mock network, hit APIs, reuse auth, run parallel/cross-browser, and debug with traces.",
-  "exercises": [],
-  "resourceLinks": [],
-  "steps": [],
-  "learn": []
+  id: "pw-34-i18n",
+  title: "34. Localization / i18n Testing",
+  minutes: 35,
+  level: "advanced",
+  phase: "Part 4 · Advanced Techniques",
+  partName: "Part 4 · Advanced Techniques",
+  overviewText: "locale and timezone_id context options serve translated content and locale-specific date formats. Use data-testid for stable locators across languages. RTL layouts (Arabic/Hebrew) need visual regression since no dedicated RTL assertion API exists.",
+  why: "HRMS apps serve multilingual users. Text-based locators break when copy changes language. Date formats and RTL layouts need explicit testing.",
+  when: "Set locale in browser.new_context for translated UI tests. Test representative timezones for date formatting. Combine locale emulation with to_have_screenshot for RTL layout checks.",
+  practical: { app: "HRMS — Nepali and Arabic locales", scenario: "Leave balance shows wrong date order in ja-JP; RTL header overlaps sidebar in ar locale.", pass: "context with locale='ja-JP' + get_by_test_id locators; ar locale visual baseline.", fail: "get_by_text('Submit') only — breaks in every non-English locale." },
+  advantages: ["locale option switches UI language without code changes","timezone_id tests date/time formatting edge cases","data-testid stable across translated copy","Same test logic runs in multiple locales","RTL issues caught with visual regression","No separate i18n test framework needed"],
+  limitations: ["get_by_text breaks when copy translates","Cannot test all locale combinations — sample strategically","RTL layout bugs need visual not functional assertions","Translation files must exist in test environment","Date format bugs subtle — easy to miss without locale context","No built-in RTL-specific assertion API"],
+  tools: [],
+  contentMarkdown: "## 34. Localization / i18n Testing\n\nLocale-specific text testing verifies the app actually displays translated content correctly, not just that the English version works.\n```python\ncontext = browser.new_context(locale=\"ne-NP\")\npage = context.new_page()\npage.goto(\"https://app.example.com\")\nexpect(page.get_by_role(\"button\", name=\"पेश गर्नुहोस्\")).to_be_visible()  # \"Submit\" in Nepali\n```\n\n\nlocale (string, e.g. \"ne-NP\", \"fr-FR\", \"ja-JP\", optional) sets the simulated browser locale, which many apps use to determine which translation file to serve. This directly explains why get_by_test_id (Chapter 13) becomes especially valuable for i18n-heavy apps: a locator built on get_by_text(\"Submit\") breaks completely once the locale switches to Nepali or French, while a data-testid=\"submit-button\" locator works identically across every locale, since it never depended on the translated text in the first place.\nDate, time, and number formats vary by locale and are a common source of subtle bugs.\n```python\ncontext = browser.new_context(locale=\"en-US\", timezone_id=\"America/New_York\")\n# vs\ncontext = browser.new_context(locale=\"en-GB\", timezone_id=\"Europe/London\")\n```\n\n\ntimezone_id (string, IANA timezone name, optional) affects how the app formats and displays dates/times if it relies on the browser's local timezone. Testing across a few representative locales (e.g., US month/day/year ordering vs. UK day/month/year ordering, 12-hour vs. 24-hour time, comma vs. period as decimal separator) catches formatting bugs that are invisible if you only ever test in one locale — relevant directly to Bizlevate's HRM system if it's ever used by teams across different regions, since attendance timestamps, leave date ranges, and payroll figures all depend on correct locale-aware formatting.\nRTL (right-to-left) layout testing verifies the UI doesn't visually break for RTL languages.\nLanguages like Arabic and Hebrew render right-to-left, and a UI built assuming left-to-right layout (icons on the wrong side, text alignment, a progress bar filling the \"wrong\" direction) can look broken or confusing without any functional error being thrown — meaning a purely functional test suite would pass while the actual RTL experience is unusable. Playwright itself doesn't have a dedicated \"RTL mode\" assertion API, but combining locale emulation for an RTL language with visual regression testing (Chapter 29's screenshot comparison) is the practical way to catch RTL layout regressions automatically, since the breakage here is fundamentally visual rather than something a text-based assertion would catch.",
+  customSummary: "## 34. Localization / i18n Testing\n\nlocale context option serves translated content — data-testid locators stay stable across locales where get_by_text breaks.\ntimezone_id affects date/time formatting — test a few representative locales to catch format bugs (ordering, 12/24-hour, separators).\nRTL layout bugs (Arabic/Hebrew) are visual, not functional — combine locale emulation with visual regression testing (Ch. 29) since there's no dedicated RTL assertion API.",
+  exercises: [],
+  resourceLinks: [],
+  steps: [],
+  learn: [],
 } as ChapterRecord;

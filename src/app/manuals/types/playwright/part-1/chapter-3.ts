@@ -1,61 +1,24 @@
 import type { ChapterRecord } from "../../../types";
 
-/** 3. Playwright Architecture */
+/** 11. Playwright Architecture */
 export const chapter = {
-  "id": "pw-1-arch",
-  "title": "3. Playwright Architecture",
-  "minutes": 40,
-  "level": "beginner",
-  "phase": "Part 1 · Foundations",
-  "partName": "Part 1 · Foundations",
-  "overviewText": "Playwright's architecture rests on a three-level hierarchy: Browser (one expensive browser process per session), BrowserContext (cheap isolated session — own cookies, storage, cache — like an incognito window), and Page (one tab within a context). The recommended pattern is one browser launch per test session, one fresh context per test for isolation, and one or more pages per context for multi-tab scenarios. Python offers sync (default for pytest-playwright) and async APIs; Playwright connects to browsers over CDP via WebSocket, giving it deep access to network events, DOM state, and console logs that Selenium's HTTP WebDriver layer cannot match.",
-  "why": "Misunderstanding Browser vs Context vs Page causes the two most common beginner bugs: launching a new browser per test (slow, memory-heavy) and sharing cookies between tests (state leakage). Knowing CDP/WebSocket explains both Playwright's speed and its superpowers (network interception, traces) — answers that go beyond 'it's newer than Selenium.'",
-  "when": "Internalize this before writing multi-tab tests (Part 2, Chapter 9), multi-user scenarios (Part 0, Chapter 3), or customizing conftest.py fixtures (Part 3). Revisit when debugging cookie bleed between tests or when deciding sync vs async for a non-test automation script.",
-  "practical": {
-    "app": "HRMS leave portal — test isolation bug",
-    "scenario": "Two tests run sequentially: test_login_as_admin sets cookies; test_employee_cannot_approve_leave reuses the same BrowserContext without cleanup. The second test passes incorrectly because the admin session leaked — the employee 'cannot approve' assertion never runs against an unauthenticated user.",
-    "pass": "Each test gets a fresh context via pytest-playwright's default function-scoped context fixture — employee test genuinely lacks admin cookies.",
-    "fail": "Shared context across tests — CI shows intermittent passes depending on execution order, classic test pollution."
-  },
-  "advantages": [
-    "BrowserContext isolation is cheap — fresh session per test without launching a new browser process",
-    "Multi-tab testing uses multiple Pages in one Context — no Selenium-style window handle switching",
-    "Sync API (no await) keeps test code readable for Python developers new to async",
-    "CDP/WebSocket connection enables real-time network interception impossible over HTTP WebDriver",
-    "Playwright ships patched Firefox/WebKit with equivalent protocol support — not dependent on system browsers",
-    "One browser, many contexts pattern simulates multiple users efficiently in a single test"
-  ],
-  "limitations": [
-    "Launching one Browser per test instead of per session wastes 2–5 seconds and hundreds of MB per test",
-    "Async API required for integration into existing asyncio apps — sync tests can't mix freely inside async loops",
-    "CDP is Chromium-native — Firefox/WebKit use Playwright's patched builds, not stock system installs",
-    "Deep hierarchy concepts don't help until you hit multi-tab or multi-user scenarios — abstract until then",
-    "Context-per-test increases total session count on parallel CI — still cheaper than browser-per-test",
-    "Understanding CDP internals is optional for writing tests — necessary for advanced debugging only"
-  ],
-  "tools": [
-    {
-      "name": "Playwright Sync API",
-      "sub": "Python synchronous binding",
-      "url": "https://playwright.dev/python/docs/library",
-      "desc": "The sync_api module wraps Playwright's async core in a synchronous interface using greenlets. Code reads top-to-bottom: with sync_playwright() as p: browser = p.chromium.launch(). pytest-playwright uses this by default. Every sync method blocks until the browser responds — no async/await keywords. For pure test automation, this is the recommended path; the async API exists for scrapers and services already running on asyncio.",
-      "adv": [
-        "Reads like normal Python — no async learning curve for test authors",
-        "Identical capabilities to async API — same locators, actions, and assertions",
-        "Works seamlessly with synchronous pytest test functions",
-        "sync_playwright() context manager guarantees clean browser shutdown"
-      ],
-      "lim": [
-        "Cannot be called from inside an running asyncio event loop without conflicts",
-        "Blocking calls in async services will freeze the event loop — use async API there",
-        "Slightly higher overhead than native async due to greenlet bridging",
-        "Some online examples use async def — must translate, not copy-paste"
-      ]
-    }
-  ],
-  "contentMarkdown": "Browser → BrowserContext → Page is the backbone. Sync vs async APIs, and how CDP/WebSocket gives Playwright its depth.\n\n## Browser, BrowserContext, Page hierarchy\n\nThis is the conceptual backbone of the entire tool — internalize it precisely.\n\nBrowser — one actual browser process (e.g., one Chromium instance). Launching a browser is relatively expensive (time and memory), so you typically launch one per test session, not one per test.\n\nBrowserContext — an isolated session within that browser, roughly equivalent to an incognito window. Each context has its own cookies, local storage, cache, and permissions — completely separate from other contexts in the same browser. Creating a new context is cheap and fast, which is why the recommended pattern is: one browser launch per session, one new context per test (for isolation), and reuse the browser itself.\n\nPage — one tab within a context. A context can have multiple pages open simultaneously (this is how multi-tab testing in Chapter 9 works).\n\nWhy this hierarchy matters: Playwright can cheaply simulate multiple independent users without launching multiple full browser processes — you open multiple contexts within one browser. It’s also why test isolation is easy by default: if every test gets a fresh context, cookies/login state from one test can’t leak into another.\n\n## Sync API vs Async API\n\nPython Playwright offers two flavors.\n\nSync API — code reads top-to-bottom, no await keywords. This is what pytest-playwright uses by default and what most tutorials (including this one) use, since it’s simpler to read and write, especially if you’re newer to Python.\n\nAsync API — uses async/await, needed if you’re integrating Playwright into an existing asyncio-based application (e.g., an async web scraper or an async FastAPI service). For pure test-automation work, you’ll rarely need this — but it’s worth knowing it exists so you’re not confused when you see async def in some code examples online.\n\n## How Playwright talks to browsers (CDP, WebSocket)\n\nPlaywright launches a browser process and connects to it over the Chrome DevTools Protocol (CDP) via a WebSocket connection. CDP is the same protocol Chrome’s own DevTools panel uses internally — meaning Playwright has access to genuinely deep browser internals (network events, DOM state, console messages, performance data), not just “click here, type there” surface-level commands. This direct, persistent WebSocket connection (versus Selenium’s request-response HTTP calls to a separate WebDriver server) is the concrete technical reason Playwright is both faster and capable of things Selenium structurally can’t do, like real-time network interception.\n\nFor Firefox and WebKit, Playwright uses patched versions of those browsers with equivalent protocol support built in, since neither natively speaks CDP — another reason Playwright ships its own browser binaries rather than using your system browsers.",
-  "exercises": [],
-  "resourceLinks": [],
-  "steps": [],
-  "learn": []
+  id: "pw-11-architecture",
+  title: "11. Playwright Architecture",
+  minutes: 32,
+  level: "beginner",
+  phase: "Part 1 · Foundations",
+  partName: "Part 1 · Foundations",
+  overviewText: "Playwright's Browser → BrowserContext → Page hierarchy enables multi-user simulation, cookie isolation, and multi-tab workflows — the mental model behind every subsequent chapter.",
+  why: "Confusing Browser with Context causes cookie leaks between tests and broken parallel execution.",
+  when: "Read before writing multi-user tests or debugging session bleed between parallel workers.",
+  practical: { app: "HRM admin + employee test", scenario: "Admin and employee sessions interfere in parallel pytest run.", pass: "Create separate browser.new_context() per role with isolated storage.", fail: "Reuse single context and clear cookies manually between tests." },
+  advantages: ["Browser is process — expensive, one per worker typically","BrowserContext isolates cookies, storage, and permissions","Page maps to tab — multiple pages per context for multi-tab","storage_state saves and restores auth without re-login","CDP WebSocket enables real-time event streams","Hierarchy maps cleanly to pytest fixture scoping"],
+  limitations: ["Browser launch is slow — reuse via session-scoped fixtures","Context-per-test adds memory overhead at high parallelism","storage_state files need secure handling for auth tokens","Mental model differs from Selenium window-handle switching","Headless context may behave differently from headed on some sites","Over-isolation creates redundant login steps slowing suites"],
+  tools: [],
+  contentMarkdown: "## 11. Playwright Architecture\n\nBrowser, BrowserContext, Page hierarchy. This is the conceptual backbone of the entire tool, so it's worth internalizing precisely. Browser is one actual browser process (e.g., one Chromium instance) — launching a browser is relatively expensive (time and memory), so you typically launch one per test session, not one per test. BrowserContext is an isolated session within that browser, roughly equivalent to an incognito window — each context has its own cookies, local storage, cache, and permissions, completely separate from other contexts in the same browser; creating a new context is cheap and fast, which is why the recommended pattern is one browser launch per session, one new context per test (for isolation between tests), reusing the browser itself. Page is one tab within a context — a context can have multiple pages open simultaneously, which is how multi-tab testing works. Why this hierarchy matters practically: it's the reason Playwright can cheaply simulate multiple independent users without needing to launch multiple full browser processes — you just open multiple contexts within one browser. It's also why test isolation is easy to get right by default: if every test gets a fresh context, cookies/login state from one test can't accidentally leak into another. Browser Contexts as an isolation concept. Worth calling out on its own, since it's the mechanism that makes reliable test isolation nearly automatic. Assigning a fresh BrowserContext per test means each test starts with a completely clean slate — no leftover cookies, no stale local storage, no session carried over from whatever ran before it. This is the built-in equivalent of what Selenium suites often had to engineer manually (clearing cookies between tests, or spinning up a fresh WebDriver session each time) — with Playwright it's essentially free, since contexts are cheap to create and destroy compared to full browser launches. Sync API vs Async API. Python Playwright offers two flavors. The Sync API has code that reads top-to-bottom, with no await keywords — this is what pytest-playwright uses by default and what most tutorials (including this one) will use, since it's simpler to read and write, especially if you're newer to Python. The Async API uses async/await, needed if you're integrating Playwright into an existing asyncio-based application (e.g., an async web scraper or an async FastAPI service). For pure test-automation work, you'll rarely need this — but it's worth knowing it exists so you're not confused when you see async def in some code examples online.\n\n### How Playwright talks to browsers — CDP and WebSocket\n\nPlaywright launches a browser process and connects to it over the Chrome DevTools Protocol (CDP) via a WebSocket connection. CDP is the same protocol Chrome's own DevTools panel uses internally — meaning Playwright has access to genuinely deep browser internals (network events, DOM state, console messages, performance data), not just \"click here, type there\" surface-level commands. This direct, persistent WebSocket connection (versus Selenium's request-response HTTP calls to a separate WebDriver server) is the concrete technical reason Playwright is both faster and capable of things Selenium structurally can't do, like real-time network interception. For Firefox and WebKit, Playwright uses patched versions of those browsers with equivalent protocol support built in, since neither natively speaks CDP — another reason Playwright ships its own browser binaries rather than using your system browsers.",
+  customSummary: "## 11. Playwright Architecture\n\n- Hierarchy: Browser (one process, launch once per session) → BrowserContext (isolated session, like incognito, cheap to create — one per test) → Page (one tab, a context can hold multiple).\n- This hierarchy enables cheap multi-user simulation and near-automatic test isolation.\n- Fresh context per test = no cookie/session leakage between tests, without manual cleanup work.\n- Sync API (no await, used by pytest-playwright by default) vs Async API (async/await, needed only for asyncio-integrated apps).\n- Playwright connects to browsers via CDP over WebSocket — deep browser access, faster and more capable than Selenium's HTTP-based WebDriver calls; Firefox/WebKit use patched builds since they don't natively speak CDP.",
+  exercises: [],
+  resourceLinks: [],
+  steps: [],
+  learn: [],
 } as ChapterRecord;

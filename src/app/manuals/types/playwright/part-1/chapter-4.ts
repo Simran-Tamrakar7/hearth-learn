@@ -1,88 +1,24 @@
 import type { ChapterRecord } from "../../../types";
 
-/** 4. First Script */
+/** 12. First Script */
 export const chapter = {
-  "id": "pw-1-first",
-  "title": "4. First Script",
-  "minutes": 45,
-  "level": "beginner",
-  "phase": "Part 1 · Foundations",
-  "partName": "Part 1 · Foundations",
-  "overviewText": "Your first Playwright script completes the smallest useful automation loop: launch a browser (headed to watch, headless for CI), open a page, navigate with page.goto, locate an element with user-facing locators (get_by_role, get_by_label), perform an action (click, fill), and assert something meaningful (title, URL, visible text). Without an assertion, a script only demonstrates navigation — it doesn't fail when the app breaks. This chapter uses sync_playwright directly; Part 3 switches to pytest-playwright fixtures once the raw loop is understood.",
-  "why": "The first script proves your environment works and cements the navigate → locate → act → assert rhythm every subsequent chapter builds on. Running headed (headless=False) while learning lets you see exactly what Playwright is doing — mismatched locators and timing issues become obvious instead of cryptic CI log lines.",
-  "when": "Complete this immediately after environment setup (Chapter 2) and before Part 2 locators deep dive. Revisit headed vs headless when debugging a failing CI test locally — reproduce headless first, then flip to headed to watch the failure.",
-  "practical": {
-    "app": "Example.com — hello-world smoke test",
-    "scenario": "You write a script that launches Chromium headed, navigates to https://example.com, clicks the 'More information' link via get_by_role, and asserts the title still contains 'Example'. Running headed, you watch the click happen; flipping headless=True, the same code passes in CI without a display server.",
-    "pass": "Script prints title, click succeeds, assert passes in both headed and headless modes.",
-    "fail": "Script navigates and clicks but has no assert — a broken redirect to a 404 page goes unnoticed because nothing checks the outcome."
-  },
-  "advantages": [
-    "Smallest complete loop — launch, goto, locate, act, assert — maps to every future test",
-    "get_by_role locators match accessibility tree — survive markup refactors better than CSS",
-    "Headed mode makes debugging visual — see exactly which element Playwright targets",
-    "sync_playwright context manager ensures browser.close() even on exceptions",
-    "Same code runs headless in CI with one argument change — no rewrite needed",
-    "Foundation for expect() assertions introduced in Part 2, Chapter 7"
-  ],
-  "limitations": [
-    "Raw sync_playwright script doesn't scale — Part 3 fixtures replace manual launch/teardown",
-    "assert \"Example\" in page.title() fails instantly on slow loads — Part 2 expect() auto-retries",
-    "example.com is static — real apps need waits, login, and network mocking covered later",
-    "No pytest discovery, reporting, or parallelization — standalone script only",
-    "Single-page script doesn't demonstrate context isolation or multi-tab patterns",
-    "Headed mode unavailable on typical Linux CI agents — must verify headless separately"
-  ],
-  "tools": [
-    {
-      "name": "Playwright",
-      "sub": "First script — sync_api",
-      "url": "https://playwright.dev/python/docs/intro",
-      "desc": "The playwright.sync_api module provides sync_playwright(), browser launch, page navigation, locators, and actions. This is the lowest-level entry point before pytest-playwright abstracts launch/teardown into fixtures. Understanding the raw loop helps when fixtures misbehave or when writing one-off automation scripts outside the test suite.",
-      "adv": [
-        "Immediate feedback — run a .py file directly without pytest overhead",
-        "headless=False shows the browser window for visual debugging",
-        "Auto-waiting applies even in standalone scripts — click waits for actionability",
-        "Direct path to understanding what pytest-playwright fixtures do under the hood"
-      ],
-      "lim": [
-        "Manual browser.close() required — easy to leak processes if context manager skipped",
-        "No built-in retry on assert — bare Python assert fails immediately",
-        "Doesn't integrate with CI test runners without wrapping in pytest",
-        "One script per browser launch — no parallelization or shared fixtures"
-      ],
-      "steps": [
-        {
-          "t": "Step 1 — Launch a headed browser",
-          "p": "Create first_script.py:",
-          "c": "from playwright.sync_api import sync_playwright\n\nwith sync_playwright() as p:\n    browser = p.chromium.launch(headless=False)\n    page = browser.new_page()\n    page.goto(\"https://example.com\")\n    print(page.title())\n    browser.close()"
-        },
-        {
-          "t": "Step 2 — Locate and click a link",
-          "p": "Use get_by_role for user-facing selection:",
-          "c": "page.get_by_role(\"link\", name=\"More information\").click()"
-        },
-        {
-          "t": "Step 3 — Assert something meaningful",
-          "p": "Without assert, failures go silent:",
-          "c": "assert \"Example\" in page.title()\n# Part 2 upgrades this to:\n# from playwright.sync_api import expect\n# expect(page).to_have_title(re.compile(\"Example\"))"
-        },
-        {
-          "t": "Step 4 — Switch to headless for CI",
-          "p": "Same script, no visible window:",
-          "c": "browser = p.chromium.launch(headless=True)  # or omit — True is default"
-        },
-        {
-          "t": "Step 5 — Run and verify",
-          "p": "Execute directly:",
-          "c": "python first_script.py\n# Expected: prints title, assert passes, browser closes cleanly"
-        }
-      ]
-    }
-  ],
-  "contentMarkdown": "Launch headed/headless, open a page, navigate, locate, click/fill, assert — the smallest complete Playwright loop in Python.\n\n## Launching a browser (headless vs headed)\n\nheadless=True (the default) runs with no visible window — faster and what CI environments require. headless=False opens an actual visible browser window — invaluable while you’re first writing a test and want to watch what’s happening. A common workflow: write and debug with headless=False, then flip to True (or just remove the argument) once the test is stable and you’re ready to commit it.\n\n```\nfrom playwright.sync_api import sync_playwright\n\nwith sync_playwright() as p:\n    browser = p.chromium.launch(headless=False)  # headed — visible window\n    page = browser.new_page()\n    page.goto(\"https://example.com\")\n    print(page.title())\n    browser.close()\n```\n\n## Navigate, locate, act\n\npage.goto opens a URL and waits for a load state. Locators find elements the way users perceive them — prefer get_by_role and get_by_text over brittle CSS when you can. Actions like click and fill auto-wait for actionability.\n\n```\npage.get_by_role(\"link\", name=\"More information\").click()\n# or on a form-like page:\n# page.get_by_label(\"Email\").fill(\"you@example.com\")\n# page.get_by_role(\"button\", name=\"Submit\").click()\n```\n\n## Assert something true\n\nA script that only clicks isn’t a test. Assert on URL, title, or visible text so failures mean something. In pytest you’ll use expect() from playwright.sync_api — Part 2 covers that in depth.\n\n```\nassert \"Example\" in page.title()\n```",
-  "exercises": [],
-  "resourceLinks": [],
-  "steps": [],
-  "learn": []
+  id: "pw-12-first-script",
+  title: "12. First Script",
+  minutes: 35,
+  level: "beginner",
+  phase: "Part 1 · Foundations",
+  partName: "Part 1 · Foundations",
+  overviewText: "Write your first Playwright Python script: launch browser, open page, navigate, locate elements with get_by_role, interact, assert with expect(), and close cleanly.",
+  why: "First script internalizes the async-free sync API, locator priority, and expect() assertion pattern used throughout the manual.",
+  when: "Read immediately after environment setup. Run every code block locally.",
+  practical: { app: "Bizlevate login page", scenario: "Script clicks Submit before login form renders.", pass: "Rely on auto-waiting — get_by_role waits for actionable state.", fail: "Add time.sleep(5) before every interaction." },
+  advantages: ["sync_playwright() avoids async complexity for beginners","get_by_role demonstrates accessibility-first locator priority","expect() web-first assertions auto-retry until timeout","Headed first run builds visual confidence in targeting","Codegen can bootstrap first script from recorded actions","Clean browser.close() pattern prevents zombie processes"],
+  limitations: ["Sync API blocks — not ideal for high-concurrency scraping","First script on example.com doesn't test your real app DOM","get_by_role fails on apps with broken accessibility markup","Codegen output needs manual cleanup before commit","Hardcoded URLs break across dev/staging environments","Single-script pattern doesn't scale without pytest fixtures"],
+  tools: [],
+  contentMarkdown: "## 12. First Script\n\n### Launching a browser — headless vs headed\n\n```python\nfrom playwright.sync_api import sync_playwright\n```\n\n```python\nwith sync_playwright() as p:\n```\n\n### browser = p.chromium.launch(headless=False)  # headed — visible window\n\nheadless=True (the default) runs with no visible window — faster and what CI environments require. headless=False opens an actual visible browser window — invaluable while you're first writing a test and want to watch what's happening. A common workflow: write and debug with headless=False, then flip to True (or just remove the argument) once the test is stable and you're ready to commit it. Navigating to a URL. page = browser.new_page()\n\n```python\npage.goto(\"https://example.com\")\n```\n\nNote this is browser.new_page() — a shortcut that implicitly creates a default context and a page within it. In real test suites, you'll more often explicitly create a context first (browser.new_context()) so you have control over context-level settings (viewport size, storage state for auth reuse, permissions) — this becomes relevant starting around the Test Structure & Framework part of the manual. Closing the browser/context properly. browser.close()\n\nUsing the with sync_playwright() as p: context manager handles Playwright's own startup/shutdown automatically, but you're still responsible for closing the browser/context you opened within it. Forgetting this in a small script is harmless (the process exits anyway), but in a real test suite with fixtures, improperly closed browsers/contexts across hundreds of tests will leak memory and eventually crash CI runners — worth building the \"always clean up what you open\" habit starting now, even in this trivial first script.\n\n### Putting it together — a complete first script\n\n```python\nfrom playwright.sync_api import sync_playwright\n```\n\n```python\nwith sync_playwright() as p:\nbrowser = p.chromium.launch(headless=False)\npage = browser.new_page()\npage.goto(\"https://example.com\")\nprint(page.title())\nbrowser.close()\n```\n\nThis ties every prior point in the chapter into one runnable example: launch headed for visibility, navigate, read the page title back, then clean up. Recording your first script with Codegen. Rather than hand-writing every line from scratch, Playwright's codegen tool can generate this same kind of script for you by watching your actions in a real browser: playwright codegen https://example.com\n\nThis opens a browser window plus an Inspector panel — every click, fill, and navigation you perform manually gets translated into Playwright code in real time, which you can copy directly into your test file. It's especially useful early on for two things: seeing what a \"good\" locator looks like in practice, and getting unstuck when you're not sure how Playwright would express a particular interaction in code. The caveat, worth internalizing now since it resurfaces later (Chapter 13's locator strategy): codegen-generated locators are a starting point, not a finished product — they can be verbose or brittle, and experienced test authors routinely clean them up rather than committing them as-is.",
+  customSummary: "## 12. First Script\n\n- headless=True (default, fast, CI-friendly) vs headless=False (visible window, useful while debugging).\n- browser.new_page() is a shortcut creating a default context+page; real suites usually call browser.new_context() explicitly for control over viewport/auth/permissions.\n- Always close the browser/context you open — harmless to skip in a one-off script, but leaks memory and crashes CI at scale.\n- Full example: launch → new page → goto() → page.title() → close().\n- playwright codegen <url> records manual browser actions and generates starter code — great for learning locator patterns and getting unstuck, but output is a rough draft, not production-ready code (locators often need cleanup).",
+  exercises: [],
+  resourceLinks: [],
+  steps: [],
+  learn: [],
 } as ChapterRecord;

@@ -1,0 +1,23 @@
+import type { ChapterRecord } from "../../../types";
+
+/** 12. Command Chaining & Retry-ability */
+export const chapter = {
+  id: "cy-12-chaining",
+  title: "12. Command Chaining & Retry-ability",
+  minutes: 30,
+  level: "intermediate",
+  phase: "Part 2 · Core Commands",
+  partName: "Part 2 · Core Commands",
+  overviewText: "Comprehensive coverage of Command Chaining & Retry-ability in Cypress with code examples, Playwright comparisons, and interview-ready depth paired with the Playwright manual.",
+  why: "Mastering Command Chaining & Retry-ability in Cypress's command-queue model prevents flaky specs and wrong Playwright ports.",
+  when: "Read when implementing or debugging command chaining & retry-ability in your suite.",
+  practical: { app: "Web application under test", scenario: "Spec fails around command chaining & retry-ability — need Cypress-native pattern.", pass: "Apply chapter patterns with retry semantics not bare cy.wait(ms).", fail: "Port Playwright await code or fixed delays." },
+  advantages: ["pipeline yielding subjects","retry on should re-queries","strictness on multi-match","Unix-pipe mental model","vs separate Playwright expects","non-retry then boundaries"],
+  limitations: ["long chains hard to debug","then callbacks not retried","strict mode ambiguity errors","async inside then races","differs from Playwright checks","readability needs line breaks"],
+  tools: [],
+  contentMarkdown: "## Command chaining — go deeper on what actually gets passed between chained commands\n\n```javascript\ncy.get('.user-list')\n  .find('.user-row')\n  .first()\n  .find('.email')\n  .invoke('text')\n  .should('eq', 'john@example.com');\nEach command in a Cypress chain yields a subject to the next command — cy.get('.user-list') yields the matched element(s), .find('.user-row') searches within that yielded subject and yields its own result, and so on down the chain. This \"yielding\" concept is worth naming explicitly because it's the mechanism underneath everything — Cypress commands aren't independent statements, they're a pipeline where each step's output becomes the next step's input, similar in spirit to how a Unix pipe passes output between commands, or how Playwright's locator chaining (.filter(), nested .locator()) progressively narrows scope — just expressed as a flatter chain rather than nested method calls.\n```\n\n## Retry-ability — go deeper on exactly what gets retried and what doesn't\n\nThis is worth being precise about, since it's a common point of confusion: not every command in a chain retries independently — Cypress retries the entire chain from the last \"query\" command up through an assertion, re-running it as a whole unit until the assertion passes or times out.\n```javascript\ncy.get('.item-list')       // query command\n  .find('.item')            // query command\n```\n\n## .should('have.length', 3); // assertion — triggers retry of the whole chain above it\n\nIf .item elements are still loading in via an async API call, Cypress doesn't just check once and fail — it re-runs cy.get('.item-list').find('.item') repeatedly, checking the length each time, until either 3 items appear or the timeout elapses. This is meaningfully different from action commands like .click(), which have their own separate actionability check (is the element visible, not covered, not disabled) but aren't themselves re-running a query — they're waiting for the already-found element to become actionable.\n## Query commands vs action commands vs assertion commands — a distinction worth naming explicitly\n\nCypress commands fall into three rough categories, worth categorizing mentally as you write chains:\n## Query commands (cy.get, .find, .contains, .first, .eq) — these search the DOM and yield a subject; they're the ones that actually get re-run during a retry.\n\n## Action commands (.click, .type, .check, .select) — these perform an interaction on an already-yielded subject; they wait for actionability but don't re-query the DOM themselves.\n\n## Assertion commands (.should, .and) — these check a condition against the current subject and are what triggers the retry-until-pass loop on the query commands feeding into them.\n\nUnderstanding this distinction directly explains a real gotcha: chaining an assertion after an action command (cy.get(...).click().should(...)) asserts on the state after the click, using whatever the click yielded — usually still fine, but worth being deliberate about, versus chaining the assertion earlier in the chain to gate the action itself (asserting an element is enabled before clicking it, rather than only checking something afterward).",
+  exercises: [],
+  resourceLinks: [],
+  steps: [],
+  learn: [],
+} as ChapterRecord;

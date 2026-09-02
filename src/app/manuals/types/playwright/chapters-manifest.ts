@@ -6,11 +6,14 @@ import { chapter as part_0_chapter_2 } from "./part-0/chapter-2";
 import { chapter as part_0_chapter_3 } from "./part-0/chapter-3";
 import { chapter as part_0_chapter_4 } from "./part-0/chapter-4";
 import { chapter as part_0_chapter_5 } from "./part-0/chapter-5";
+import { chapter as part_0_chapter_6 } from "./part-0/chapter-6";
+import { chapter as part_0_chapter_7 } from "./part-0/chapter-7";
+import { chapter as part_0_chapter_8 } from "./part-0/chapter-8";
+import { chapter as part_0_chapter_9 } from "./part-0/chapter-9";
 import { chapter as part_1_chapter_1 } from "./part-1/chapter-1";
 import { chapter as part_1_chapter_2 } from "./part-1/chapter-2";
 import { chapter as part_1_chapter_3 } from "./part-1/chapter-3";
 import { chapter as part_1_chapter_4 } from "./part-1/chapter-4";
-import { chapter as part_1_chapter_5 } from "./part-1/chapter-5";
 import { chapter as part_2_chapter_1 } from "./part-2/chapter-1";
 import { chapter as part_2_chapter_2 } from "./part-2/chapter-2";
 import { chapter as part_2_chapter_3 } from "./part-2/chapter-3";
@@ -18,7 +21,6 @@ import { chapter as part_2_chapter_4 } from "./part-2/chapter-4";
 import { chapter as part_2_chapter_5 } from "./part-2/chapter-5";
 import { chapter as part_2_chapter_6 } from "./part-2/chapter-6";
 import { chapter as part_2_chapter_7 } from "./part-2/chapter-7";
-import { chapter as part_2_chapter_8 } from "./part-2/chapter-8";
 import { chapter as part_3_chapter_1 } from "./part-3/chapter-1";
 import { chapter as part_3_chapter_2 } from "./part-3/chapter-2";
 import { chapter as part_3_chapter_3 } from "./part-3/chapter-3";
@@ -34,21 +36,22 @@ import { chapter as part_4_chapter_6 } from "./part-4/chapter-6";
 import { chapter as part_4_chapter_7 } from "./part-4/chapter-7";
 import { chapter as part_4_chapter_8 } from "./part-4/chapter-8";
 import { chapter as part_4_chapter_9 } from "./part-4/chapter-9";
+import { chapter as part_4_chapter_10 } from "./part-4/chapter-10";
+import { chapter as part_4_chapter_11 } from "./part-4/chapter-11";
+import { chapter as part_4_chapter_12 } from "./part-4/chapter-12";
+import { chapter as part_4_chapter_13 } from "./part-4/chapter-13";
 import { chapter as part_5_chapter_1 } from "./part-5/chapter-1";
 import { chapter as part_5_chapter_2 } from "./part-5/chapter-2";
 import { chapter as part_5_chapter_3 } from "./part-5/chapter-3";
 import { chapter as part_5_chapter_4 } from "./part-5/chapter-4";
-import { chapter as part_5_chapter_5 } from "./part-5/chapter-5";
 import { chapter as part_6_chapter_1 } from "./part-6/chapter-1";
 import { chapter as part_6_chapter_2 } from "./part-6/chapter-2";
 import { chapter as part_6_chapter_3 } from "./part-6/chapter-3";
 import { chapter as part_6_chapter_4 } from "./part-6/chapter-4";
-import { chapter as part_6_chapter_5 } from "./part-6/chapter-5";
 import { chapter as part_7_chapter_1 } from "./part-7/chapter-1";
 import { chapter as part_7_chapter_2 } from "./part-7/chapter-2";
 import { chapter as part_7_chapter_3 } from "./part-7/chapter-3";
 import { chapter as part_7_chapter_4 } from "./part-7/chapter-4";
-import { chapter as part_7_chapter_5 } from "./part-7/chapter-5";
 import { chapter as part_8_chapter_1 } from "./part-8/chapter-1";
 import { chapter as part_8_chapter_2 } from "./part-8/chapter-2";
 import { chapter as part_8_chapter_3 } from "./part-8/chapter-3";
@@ -64,67 +67,7 @@ import { chapter as part_8_chapter_12 } from "./part-8/chapter-12";
 import { chapter as part_8_chapter_13 } from "./part-8/chapter-13";
 
 export const chapterPaths: Record<string, string> = {
-  "pw-0-what": "part-0/chapter-1.ts",
-  "pw-0-where": "part-0/chapter-2.ts",
-  "pw-0-cando": "part-0/chapter-3.ts",
-  "pw-0-why": "part-0/chapter-4.ts",
-  "pw-0-not": "part-0/chapter-5.ts",
-  "pw-1-intro": "part-1/chapter-1.ts",
-  "pw-1-setup": "part-1/chapter-2.ts",
-  "pw-1-arch": "part-1/chapter-3.ts",
-  "pw-1-first": "part-1/chapter-4.ts",
-  "pw-cp-foundations": "part-1/chapter-5.ts",
-  "pw-2-locators": "part-2/chapter-1.ts",
-  "pw-2-actions": "part-2/chapter-2.ts",
-  "pw-2-expect": "part-2/chapter-3.ts",
-  "pw-2-waits": "part-2/chapter-4.ts",
-  "pw-2-tabs": "part-2/chapter-5.ts",
-  "pw-2-files": "part-2/chapter-6.ts",
-  "pw-2-dialogs": "part-2/chapter-7.ts",
-  "pw-cp-core": "part-2/chapter-8.ts",
-  "pw-3-pytest": "part-3/chapter-1.ts",
-  "pw-3-org": "part-3/chapter-2.ts",
-  "pw-3-pom": "part-3/chapter-3.ts",
-  "pw-3-config": "part-3/chapter-4.ts",
-  "pw-3-data": "part-3/chapter-5.ts",
-  "pw-cp-framework": "part-3/chapter-6.ts",
-  "pw-4-network": "part-4/chapter-1.ts",
-  "pw-4-api": "part-4/chapter-2.ts",
-  "pw-4-visual": "part-4/chapter-3.ts",
-  "pw-4-auth": "part-4/chapter-4.ts",
-  "pw-4-shadow": "part-4/chapter-5.ts",
-  "pw-4-parallel": "part-4/chapter-6.ts",
-  "pw-4-cross": "part-4/chapter-7.ts",
-  "pw-4-debug": "part-4/chapter-8.ts",
-  "pw-cp-advanced": "part-4/chapter-9.ts",
-  "pw-5-ci": "part-5/chapter-1.ts",
-  "pw-5-report": "part-5/chapter-2.ts",
-  "pw-5-docker": "part-5/chapter-3.ts",
-  "pw-5-logging": "part-5/chapter-4.ts",
-  "pw-cp-cicd": "part-5/chapter-5.ts",
-  "pw-6-framework": "part-6/chapter-1.ts",
-  "pw-6-scale": "part-6/chapter-2.ts",
-  "pw-6-review": "part-6/chapter-3.ts",
-  "pw-6-perf": "part-6/chapter-4.ts",
-  "pw-cp-pro": "part-6/chapter-5.ts",
-  "pw-7-capstone": "part-7/chapter-1.ts",
-  "pw-7-portfolio": "part-7/chapter-2.ts",
-  "pw-7-interview": "part-7/chapter-3.ts",
-  "pw-7-career": "part-7/chapter-4.ts",
-  "pw-cp-career": "part-7/chapter-5.ts",
-  "pw-8-books": "part-8/chapter-1.ts",
-  "pw-8-blogs": "part-8/chapter-2.ts",
-  "pw-8-newsletters": "part-8/chapter-3.ts",
-  "pw-8-podcasts": "part-8/chapter-4.ts",
-  "pw-8-courses": "part-8/chapter-5.ts",
-  "pw-8-certs": "part-8/chapter-6.ts",
-  "pw-8-conferences": "part-8/chapter-7.ts",
-  "pw-8-social": "part-8/chapter-8.ts",
-  "pw-8-extensions": "part-8/chapter-9.ts",
-  "pw-8-comparisons": "part-8/chapter-10.ts",
-  "pw-8-glossary": "part-8/chapter-11.ts",
-  "pw-8-practice": "part-8/chapter-12.ts",
-  "pw-8-ecosystem": "part-8/chapter-13.ts",
+
 };
 
 export const chapters: ChapterRecord[] = [
@@ -133,11 +76,14 @@ export const chapters: ChapterRecord[] = [
   part_0_chapter_3,
   part_0_chapter_4,
   part_0_chapter_5,
+  part_0_chapter_6,
+  part_0_chapter_7,
+  part_0_chapter_8,
+  part_0_chapter_9,
   part_1_chapter_1,
   part_1_chapter_2,
   part_1_chapter_3,
   part_1_chapter_4,
-  part_1_chapter_5,
   part_2_chapter_1,
   part_2_chapter_2,
   part_2_chapter_3,
@@ -145,7 +91,6 @@ export const chapters: ChapterRecord[] = [
   part_2_chapter_5,
   part_2_chapter_6,
   part_2_chapter_7,
-  part_2_chapter_8,
   part_3_chapter_1,
   part_3_chapter_2,
   part_3_chapter_3,
@@ -161,21 +106,22 @@ export const chapters: ChapterRecord[] = [
   part_4_chapter_7,
   part_4_chapter_8,
   part_4_chapter_9,
+  part_4_chapter_10,
+  part_4_chapter_11,
+  part_4_chapter_12,
+  part_4_chapter_13,
   part_5_chapter_1,
   part_5_chapter_2,
   part_5_chapter_3,
   part_5_chapter_4,
-  part_5_chapter_5,
   part_6_chapter_1,
   part_6_chapter_2,
   part_6_chapter_3,
   part_6_chapter_4,
-  part_6_chapter_5,
   part_7_chapter_1,
   part_7_chapter_2,
   part_7_chapter_3,
   part_7_chapter_4,
-  part_7_chapter_5,
   part_8_chapter_1,
   part_8_chapter_2,
   part_8_chapter_3,

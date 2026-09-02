@@ -1,81 +1,24 @@
 import type { ChapterRecord } from "../../../types";
 
-/** 22. Parallel Execution & Sharding */
+/** 31. Shadow DOM & Complex Components */
 export const chapter = {
-  "id": "pw-4-parallel",
-  "title": "22. Parallel Execution & Sharding",
-  "minutes": 40,
-  "level": "advanced",
-  "phase": "Part 4 · Advanced Techniques",
-  "partName": "Part 4 · Advanced Techniques",
-  "overviewText": "pytest-xdist distributes tests across multiple worker processes running in parallel instead of sequentially — pytest -n 4 uses four workers, pytest -n auto picks based on CPU cores. Speed gains are significant but not linear: too many workers on too few cores causes contention. Tests must be properly isolated (no shared mutable state, no fixed ports or files) or parallel execution surfaces race conditions invisible in sequential runs. Sharding splits the suite across entirely separate machines — four CI jobs each running a quarter of the suite — for suites too large for single-machine parallelism. Most CI platforms (GitHub Actions matrix jobs) configure sharding idiomatically rather than via a single universal flag.",
-  "why": "A 400-test suite running sequentially at 30 seconds each takes 3.3 hours. Four parallel workers cut that to ~50 minutes. Without parallelism, teams skip running the full suite on every commit, letting regressions slip through. But parallel execution also exposes hidden coupling — tests that depend on execution order or shared files pass sequentially and fail randomly in parallel, which is actually valuable: it reveals tests that were never truly isolated.",
-  "when": "Install pytest-xdist when sequential suite time exceeds 15 minutes or when smoke runs need to finish under 5 minutes. Start with pytest -n auto and tune down if workers contend for CPU. Ensure every test creates its own data (Faker, Chapter 16) and cleans up after itself before enabling parallelism. Shard across CI machines when single-machine parallelism still exceeds your time budget.",
-  "practical": {
-    "app": "HRMS — Full regression suite",
-    "scenario": "The HRMS regression suite has 380 tests averaging 25 seconds each — 2.6 hours sequential. pytest -n 4 on a 4-core CI runner finishes in 42 minutes. Two tests that shared a hardcoded username start failing randomly in parallel; fixing them to use Faker-generated unique emails stabilizes the parallel run.",
-    "pass": "pytest -n auto completes 380 tests in under 45 minutes; each test uses unique Faker data and cleans up via API teardown.",
-    "fail": "pytest -n 8 on a 2-core machine causes CPU thrashing and slower results than sequential; tests sharing /tmp/test-output.txt corrupt each other's files."
-  },
-  "advantages": [
-    "Near-linear speedup for properly isolated test suites",
-    "pytest -n auto requires zero configuration tuning on most machines",
-    "Exposes hidden test coupling that sequential runs mask",
-    "Combines with markers — pytest -n 4 -m smoke for fast parallel smoke runs",
-    "Sharding scales beyond single-machine limits for very large suites"
-  ],
-  "limitations": [
-    "Not linear speedup — worker overhead and resource contention cap gains",
-    "Tests sharing state, files, or fixed ports fail randomly in parallel",
-    "Browser instances per worker consume significant RAM — 4 workers × 200MB each",
-    "Debugging parallel failures is harder — failures may not reproduce sequentially",
-    "Sharding requires CI platform configuration — not a single pytest flag"
-  ],
-  "tools": [
-    {
-      "name": "pytest-xdist",
-      "sub": "Parallel test execution",
-      "url": "https://github.com/pytest-dev/pytest-xdist",
-      "desc": "pytest-xdist is a pytest plugin that runs tests across multiple CPU cores using worker processes. Each worker is an independent pytest process that receives a subset of tests via load balancing. Install with pip install pytest-xdist and invoke with pytest -n <count> or pytest -n auto. Workers are isolated processes — they do not share memory, but they do share the filesystem and network, which is where isolation bugs surface.",
-      "adv": [
-        "Drop-in parallelism — add -n flag to existing pytest command",
-        "auto mode detects CPU cores without manual tuning",
-        "Load balancing distributes tests dynamically across workers",
-        "Works with all pytest features — markers, fixtures, parametrize"
-      ],
-      "lim": [
-        "Workers share filesystem — file-based test state causes race conditions",
-        "Each worker launches its own browser — RAM usage scales with worker count",
-        "Failure reproduction may require running with -n 0 (sequential)",
-        "Does not help with a single slow test — only parallelizes across tests"
-      ],
-      "steps": [
-        {
-          "t": "Step 1 — Install pytest-xdist",
-          "p": "Add to project dependencies:",
-          "c": "pip install pytest-xdist"
-        },
-        {
-          "t": "Step 2 — Run with parallel workers",
-          "p": "Use -n flag to specify worker count:",
-          "c": "pytest -n 4                    # 4 parallel workers\npytest -n auto                 # auto-detect CPU cores\npytest -n 4 -m smoke           # parallel smoke subset"
-        },
-        {
-          "t": "Step 3 — Verify test isolation before parallelizing",
-          "p": "Ensure unique data and cleanup in every test:",
-          "c": "# Each test must create its own data\n@pytest.fixture\ndef unique_user():\n    fake = Faker()\n    user = {\"email\": fake.email(), \"name\": fake.name()}\n    yield user\n    api_delete_user(user[\"email\"])  # cleanup even on failure"
-        },
-        {
-          "t": "Step 4 — Shard across CI machines",
-          "p": "Split suite across matrix jobs (GitHub Actions example):",
-          "c": "# .github/workflows/test.yml\nstrategy:\n  matrix:\n    shard: [1, 2, 3, 4]\nsteps:\n  - run: pytest --shard-id=${{ matrix.shard }} --num-shards=4"
-        }
-      ]
-    }
-  ],
-  "contentMarkdown": "pytest-xdist for parallel runs pip install pytest-xdist pytest -n 4 # run using 4 parallel workers pytest -n auto # auto-detect CPU core count pytest -n <count> What it does: Distributes tests across multiple worker processes running in parallel instead of sequentially. Types/params: ● <count> (integer or \"auto\") — number of parallel workers; \"auto\" picks based on available CPU cores Pointers: Spe\n\n## Overview\n\nWhat it does: Distributes tests across multiple worker processes running in parallel instead of sequentially.\n\nTypes/params:\n\nPointers: Speed gains are significant but not linear — too many workers on too few CPU cores causes contention that can actually slow things down (ties into Chapter 32's performance tuning). Tests must be properly isolated (no shared mutable state, no fixed ports/files) or parallel execution surfaces race conditions that don't show up running sequentially.\n\n```\npytest-xdist for parallel runs\n\npip install pytest-xdist\npytest -n 4        # run using 4 parallel workers\npytest -n auto     # auto-detect CPU core count\n\npytest -n <count>\n```\n\n## Sharding tests across machines/CI runners\n\nPointers: Sharding splits the suite across entirely separate machines (e.g., 4 parallel CI jobs each running a quarter of the suite), which matters once a suite is large enough that even pytest-xdist on one machine isn't fast enough. Most CI platforms (GitHub Actions matrix jobs, for instance) have their own idiomatic way to configure this rather than a single universal flag.\n\n```\npytest --shard-id=1 --num-shards=4    # syntax varies by plugin/CI setup\n```",
-  "exercises": [],
-  "resourceLinks": [],
-  "steps": [],
-  "learn": []
+  id: "pw-31-shadow",
+  title: "31. Shadow DOM & Complex Components",
+  minutes: 40,
+  level: "advanced",
+  phase: "Part 4 · Advanced Techniques",
+  partName: "Part 4 · Advanced Techniques",
+  overviewText: "Playwright pierces open shadow DOM automatically — standard get_by_role/get_by_text locators work without special syntax. Closed shadow roots are inaccessible by design. Complex components (date pickers, rich text) may need keyboard.type() instead of fill().",
+  why: "Design systems increasingly use web components. Playwright's automatic piercing means the same locator strategy works inside shadow roots.",
+  when: "Use role/text locators first inside custom components. Chain page.locator('tag').get_by_role() when needed. Escalate closed shadow roots to dev team for ARIA hooks.",
+  practical: { app: "HRMS — Design system date picker", scenario: "Custom hrms-date-picker uses open shadow DOM; get_by_label still works via accessibility tree.", pass: "page.get_by_role('button', name='Save').click() inside component.", fail: "page.locator('#shadow-internal-btn') — cannot cross shadow boundary." },
+  advantages: ["Automatic open shadow DOM piercing","Role locators work via accessibility tree","Chained locators cross shadow boundaries explicitly","Same strategy as non-shadow pages","No JavaScript shadowRoot injection needed","Built for modern component-based UIs"],
+  limitations: ["Closed shadow roots impenetrable — no workaround","Deeply nested shadow slows locator resolution","CSS selectors do not cross shadow boundaries","Components without ARIA lack accessible names","contenteditable needs keyboard.type() not fill()","Custom date pickers rarely behave like native inputs"],
+  tools: [],
+  contentMarkdown: "## 31. Shadow DOM & Complex Components\n\nPlaywright pierces shadow DOM automatically — no special syntax required for open shadow roots.\n```python\npage.locator(\"my-custom-element\").get_by_role(\"button\", name=\"Submit\").click()\n```\n\n\nShadow DOM is a browser feature letting web components encapsulate their internal markup/styling, common in design systems (many component libraries render their internals inside a shadow root to prevent CSS leakage). Unlike older tools, which often needed special handling to \"pierce\" into shadow roots, Playwright's standard locators transparently search inside open shadow roots as if they were regular DOM — you generally don't need to do anything different at all, which is a deliberate design choice tied back to Part 0's note about Playwright being built with modern component-based UI in mind from day one.\nClosed shadow roots are a genuine limitation, not a Playwright gap.\nA small but important caveat: this transparent piercing only works for open shadow roots (mode: 'open'), which is the overwhelming majority of real-world usage. Closed shadow roots (mode: 'closed') are deliberately inaccessible from outside JavaScript by browser design — this isn't a Playwright limitation to work around, it's the same restriction any browser automation tool faces, since closed shadow roots are specifically designed to prevent exactly this kind of external access. If you hit this, the practical options are asking the dev team to switch the component to open mode (if there's no strong reason for it to be closed) or falling back to visual/screenshot-based assertions for that specific component.\nComplex custom components (date pickers, rich text editors, custom dropdowns) often need interaction patterns beyond simple locators.\n```python\n# Example: a custom date picker requiring multiple clicks\npage.get_by_role(\"button\", name=\"Select date\").click()\npage.get_by_role(\"gridcell\", name=\"15\").click()\n\n# Example: a rich text editor (contenteditable div)\npage.locator(\"[contenteditable='true']\").click()\n```\n\npage.keyboard.type(\"This is my message\")\n\nMany modern \"complex\" components aren't native HTML elements at all — a date picker is usually a styled popup with clickable day cells, and a rich text editor is often a contenteditable div rather than a <textarea>. This means the locator/action strategies from Chapter 13/14 still apply directly (role-based locators for calendar cells, page.keyboard.type() for typing into a contenteditable region), but you often need to think in terms of \"what does this actually render as in the DOM\" rather than assuming a form-input-style interaction like .fill() will work. Worth deliberately inspecting a component's real markup (dev tools, or Playwright's own Inspector from Chapter 35) before assuming which interaction pattern applies.",
+  customSummary: "## 31. Shadow DOM & Complex Components\n\nPlaywright automatically pierces open shadow roots — standard locators work with no special syntax.\nClosed shadow roots are inaccessible by browser design, not a Playwright gap — options are asking devs to open the mode, or falling back to visual assertions.\nComplex custom components (date pickers, contenteditable rich text editors) often aren't native inputs — inspect actual markup and use role-based locators / page.keyboard.type() rather than assuming .fill() works.",
+  exercises: [],
+  resourceLinks: [],
+  steps: [],
+  learn: [],
 } as ChapterRecord;

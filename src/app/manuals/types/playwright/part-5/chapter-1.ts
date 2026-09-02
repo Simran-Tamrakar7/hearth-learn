@@ -1,115 +1,24 @@
 import type { ChapterRecord } from "../../../types";
 
-/** 25. CI/CD Integration */
+/** 39. CI/CD Integration */
 export const chapter = {
-  "id": "pw-5-ci",
-  "title": "25. CI/CD Integration",
-  "minutes": 50,
-  "level": "advanced",
-  "phase": "Part 5 · CI/CD & Reporting",
-  "partName": "Part 5 · CI/CD & Reporting",
-  "overviewText": "CI/CD integration is the practice of running your Playwright test suite automatically on every code change — typically on every pull request and push to main — inside a continuous integration pipeline rather than relying on developers to remember to run tests locally. A CI pipeline is defined as a YAML workflow file (GitHub Actions) or a Jenkinsfile (Jenkins) that specifies exactly when tests run, which machine they run on, and what steps execute: checking out code, installing Python dependencies, installing Playwright browsers with OS-level system dependencies, running pytest, and publishing results. The critical difference between local and CI execution is that CI runners have no display server — tests must run headless — and fresh machines lack the browser libraries your laptop already has installed, which is why playwright install --with-deps is non-negotiable in CI. Getting tests green in CI is often where the real learning happens: environment variables, missing dependencies, and headless-only quirks that never appear locally.",
-  "why": "Tests that only run on a developer's laptop are not a safety net — they are a suggestion. A bug merged to main because nobody ran the suite before pushing costs the whole team time in hotfixes, rollbacks, and lost trust in the release process. CI integration means every pull request is automatically validated before merge, regressions are caught within minutes of being introduced, and the team has a single authoritative pass/fail signal rather than conflicting local results. For Playwright specifically, CI is where headless execution, browser dependency installation, and artifact publishing become real operational concerns rather than theoretical topics.",
-  "when": "Set up CI integration as soon as you have a stable smoke or regression suite worth blocking merges on — typically after Page Object Model structure and conftest.py fixtures are in place (Chapters 14–20). Run on every pull_request to main for fast feedback, and optionally add a scheduled nightly run for the full regression suite. Revisit the workflow whenever you add new dependencies, change browser versions, or introduce parallel execution — each change can break CI in ways that local runs won't reveal.",
-  "practical": {
-    "app": "Bizlevate HRMS — Leave module regression suite",
-    "scenario": "A developer pushes a CSS change to the leave-approval page. The GitHub Actions workflow triggers on the pull request, installs dependencies, runs playwright install --with-deps, and executes pytest --browser chromium against the staging environment.",
-    "pass": "All 47 Playwright tests pass in CI within 8 minutes. The PR shows a green checkmark, the merge is unblocked, and the team merges confidently knowing the leave-approval flow still works end-to-end.",
-    "fail": "Three tests fail in CI with 'Browser closed unexpectedly' because the workflow skipped playwright install --with-deps. Locally the developer's machine already had the libraries installed, so tests passed there. The CI failure blocks the merge until --with-deps is added to the workflow YAML."
-  },
-  "advantages": [
-    "Every pull request is automatically validated — no reliance on developers remembering to run tests",
-    "Catches environment-specific bugs (missing OS libraries, headless quirks) that local runs miss",
-    "Provides a single authoritative pass/fail signal the whole team trusts",
-    "GitHub Actions and Jenkins both integrate natively with pull request status checks",
-    "JUnit XML output enables pass/fail trend tracking over time in Jenkins dashboards",
-    "Scheduled nightly runs catch regressions from upstream dependency changes without blocking day-to-day merges"
-  ],
-  "limitations": [
-    "CI runners have no display — headed mode fails unless xvfb is configured, which adds complexity",
-    "Fresh CI machines lack browser OS dependencies — skipping --with-deps is the most common CI failure cause",
-    "CI minutes cost money on hosted runners — long suites need parallelization or selective marker runs",
-    "Environment differences (staging URLs, API keys, test data) require careful secrets management via GitHub Secrets or Jenkins credentials",
-    "Flaky tests that pass locally intermittently become CI blockers — they must be fixed or quarantined, not ignored"
-  ],
-  "tools": [
-    {
-      "name": "GitHub Actions",
-      "sub": "CI/CD",
-      "url": "https://github.com/features/actions",
-      "desc": "GitHub Actions is a built-in CI/CD platform that runs workflows defined as YAML files in .github/workflows/. For Playwright, the standard workflow checks out code, sets up Python, installs dependencies, runs playwright install --with-deps to install browser binaries plus all OS-level libraries, executes pytest, and optionally uploads HTML reports or trace files as downloadable artifacts. Workflows trigger on push, pull_request, or schedule events. GitHub Actions is free for public repos and includes a generous minutes allowance for private repos.",
-      "adv": [
-        "Native integration with GitHub pull requests — pass/fail shows directly on the PR",
-        "actions/upload-artifact makes test reports and traces downloadable after every run",
-        "Matrix strategy runs the same suite across multiple browsers in parallel",
-        "Zero infrastructure to manage — GitHub hosts the runners"
-      ],
-      "lim": [
-        "Tied to GitHub — teams on GitLab or Bitbucket need a different CI platform",
-        "Hosted runner minutes are limited on free private repo tiers",
-        "Debugging CI-only failures requires reading logs or downloading artifacts — no local-like debugging without re-running"
-      ],
-      "steps": [
-        {
-          "t": "Step 1 — Create the workflow file",
-          "p": "Create .github/workflows/playwright.yml:",
-          "c": "name: Playwright Tests\non:\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-python@v5\n        with:\n          python-version: '3.11'\n      - name: Install dependencies\n        run: |\n          pip install -r requirements.txt\n          playwright install --with-deps\n      - name: Run tests\n        run: pytest --browser chromium"
-        },
-        {
-          "t": "Step 2 — Add environment secrets",
-          "p": "Store staging URL and credentials in GitHub Secrets (Settings → Secrets → Actions):",
-          "c": "# In workflow YAML:\nenv:\n  BASE_URL: ${{ secrets.STAGING_URL }}\n  TEST_USER: ${{ secrets.TEST_USER }}\n  TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}"
-        },
-        {
-          "t": "Step 3 — Upload test report as artifact",
-          "p": "Add an upload step that runs even when tests fail:",
-          "c": "- name: Upload test report\n  if: always()\n  uses: actions/upload-artifact@v4\n  with:\n    name: playwright-report\n    path: report.html"
-        },
-        {
-          "t": "Step 4 — Verify on a pull request",
-          "p": "Push a branch and open a PR — the Actions tab shows the workflow run and pass/fail status on the PR itself.",
-          "c": "# PR checks panel shows:\n# ✓ Playwright Tests — 47 passed in 8m 12s"
-        }
-      ]
-    },
-    {
-      "name": "Jenkins",
-      "sub": "CI/CD",
-      "url": "https://www.jenkins.io",
-      "desc": "Jenkins is an open-source automation server widely used in enterprise environments. Playwright tests integrate via a Jenkinsfile — a Groovy-based pipeline definition — that defines install and test stages. Jenkins natively understands JUnit XML output via the junit post-step, rendering pass/fail trends over time in its dashboard. Jenkins is self-hosted, giving teams full control over runner hardware, browser versions, and network access to internal staging environments.",
-      "adv": [
-        "Self-hosted — full control over runner hardware, network, and browser versions",
-        "JUnit XML integration renders pass/fail trends natively in the Jenkins dashboard",
-        "Mature plugin ecosystem for Slack notifications, TestRail integration, and credential management",
-        "Common in enterprise environments where GitHub Actions is not the standard"
-      ],
-      "lim": [
-        "Requires infrastructure to host and maintain the Jenkins server",
-        "Jenkinsfile Groovy syntax has a steeper learning curve than GitHub Actions YAML",
-        "Pipeline debugging is slower than cloud-native CI — failed stages require log diving"
-      ],
-      "steps": [
-        {
-          "t": "Step 1 — Create a Jenkinsfile",
-          "p": "Add Jenkinsfile to the repo root:",
-          "c": "pipeline {\n    agent any\n    stages {\n        stage('Install') {\n            steps {\n                sh 'pip install -r requirements.txt'\n                sh 'playwright install --with-deps'\n            }\n        }\n        stage('Test') {\n            steps {\n                sh 'pytest --browser chromium --junitxml=results.xml'\n            }\n        }\n    }\n    post {\n        always {\n            junit 'results.xml'\n        }\n    }\n}"
-        },
-        {
-          "t": "Step 2 — Create a Jenkins pipeline job",
-          "p": "In Jenkins UI: New Item → Pipeline → point to the Jenkinsfile in the repo.",
-          "c": "# Pipeline script from SCM:\n# Repository URL: https://github.com/your-org/your-repo\n# Script Path: Jenkinsfile"
-        },
-        {
-          "t": "Step 3 — Run and review JUnit trends",
-          "p": "After the first run, Jenkins renders pass/fail history from results.xml in the Test Result tab.",
-          "c": "# Jenkins Test Result tab shows:\n# 47 tests, 0 failures, 0 skipped\n# Trend graph over last 30 builds"
-        }
-      ]
-    }
-  ],
-  "contentMarkdown": "GitHub Actions workflow setup A GitHub Actions workflow is a YAML file living in .github/workflows/ that defines when tests run (e.g., on every pull request) and what steps to execute. # .github/workflows/playwright.yml name: Playwright Tests on: push: branches: [main] pull_request: branches: [main] jobs: test: runs-on: ubuntu-latest steps: - uses: actions/checkout@v4 - uses: actions/setup-python@\n\n## GitHub Actions workflow setup\n\nA GitHub Actions workflow is a YAML file living in .github/workflows/ that defines when tests run (e.g., on every pull request) and what steps to execute.\n\npush:\n\nbranches: [main]\n\npull_request:\n\nbranches: [main]\n\ntest:\n\nruns-on: ubuntu-latest\n\nwith:\n\npython-version: '3.11'\n\n- name: Install dependencies\n\n- name: Run tests\n\nWhat it does: Defines which events cause the workflow to run.\n\nTypes/params:\n\nPointers: Running on pull_request is the most common setup for catching\n\nregressions before merge; schedule is useful for a nightly full-regression run separate from a fast pull_request smoke-test run.\n\nWhat it does: Installs browser binaries plus the OS-level system dependencies (fonts, libraries) those browsers need to actually run on a fresh CI machine.\n\nTypes/params: No required params; --with-deps is the key flag for CI environments specifically.\n\nPointers: On a fresh CI runner (unlike your local dev machine), the OS-level dependencies genuinely aren't present — skipping --with-deps is a very common cause of \"works locally, fails in CI\" browser launch errors.\n\n```\nrun: |\n\npip install -r requirements.txt\n\nplaywright install --with-deps\n\nsteps:\n\n- uses: actions/checkout@v4\n\n- uses: actions/setup-python@v5\n\n# .github/workflows/playwright.yml\n\nname: Playwright Tests\n\non:\n```\n\n## Jenkins pipeline basics\n\nJenkins uses a Jenkinsfile (Groovy-based) to define pipeline stages, more common in traditional enterprise environments than GitHub Actions.\n\n// Jenkinsfile\n\npipeline {\n\nagent any\n\nstages {\n\nsteps {\n\nsh 'pip install -r requirements.txt'\n\nsh 'playwright install --with-deps'\n\n}\n\n}\n\nsteps {\n\nsh 'pytest --browser chromium --junitxml=results.xml'\n\n}\n\n}\n\n}\n\npost {\n\nalways {\n\njunit 'results.xml'\n\n}\n\n}\n\n}\n\npipeline { agent ... stages { ... } post { ... } } (Jenkinsfile structure)\n\nWhat it does: Defines the overall pipeline: where it runs (agent), what steps execute\n\nin order (stages), and cleanup/reporting actions that always run afterward (post).\n\nTypes/params:\n\nplugin calls)\n\nPointers: --junitxml=results.xml produces a report format Jenkins natively\n\nunderstands and can render as pass/fail trends over time via the junit post-step — this is Jenkins' equivalent of GitHub Actions' built-in test summary UI.\n\n```\nstage('Install') {\n\nstage('Test') {\n```\n\n## Running headless in CI\n\nPointers: CI runners have no display server, so headless isn't optional — attempting to run headed (--headed) on a typical CI machine will fail outright unless a virtual display (like xvfb) is specifically configured, which is rarely worth the added complexity when headless works and is faster anyway.\n\n```\n# pytest-playwright defaults to headless=True already, but explicit is safer:\n\npytest --browser chromium  # headless by default\n```",
-  "exercises": [],
-  "resourceLinks": [],
-  "steps": [],
-  "learn": []
+  id: "pw-39-cicd",
+  title: "39. CI/CD Integration",
+  minutes: 35,
+  level: "intermediate",
+  phase: "Part 5 · CI/CD & Reporting",
+  partName: "Part 5 · CI/CD & Reporting",
+  overviewText: "Wire Playwright pytest suites into GitHub Actions and Jenkins: install browsers with --with-deps, run headless smoke on PRs, cache binaries, upload failure artifacts.",
+  why: "A suite that only runs manually on laptops is not a safety net. CI integration is what turns tests into enforced merge gates.",
+  when: "Read when setting up your first pipeline or debugging 'works locally, fails in CI' browser launch errors.",
+  practical: { app: "HRMS staging environment", scenario: "PR merge blocked because Playwright fails on ubuntu-latest with missing shared libraries.", pass: "playwright install --with-deps in workflow; BASE_URL from secrets; -m smoke on PR.", fail: "Skip --with-deps; hardcode localhost URL; run full regression on every push." },
+  advantages: ["GitHub Actions YAML pattern is copy-paste ready for pytest-playwright","playwright install --with-deps fixes most Linux CI launch failures","Marker-based smoke vs regression keeps PR feedback under minutes","actions/cache speeds repeated runs on browser binaries","if: always() uploads reports even when tests fail","Jenkins junit + archiveArtifacts integrates with enterprise dashboards"],
+  limitations: ["Headed mode fails on CI without xvfb virtual display","Secrets misconfiguration runs tests against wrong environment silently","Caching stale browser versions after playwright package upgrade","Full regression on every push slows team velocity","Self-hosted runners need same --with-deps discipline as cloud","Parallel sharding requires extra orchestration beyond basic workflow"],
+  tools: [],
+  contentMarkdown: "## CI/CD Integration\n\nRunning Playwright tests automatically on every push or pull request is what turns a test suite into an actual safety net.\n\nA suite that only ever runs manually on someone's laptop provides much weaker protection than one wired into CI — manual runs get forgotten, skipped under deadline pressure, or run against a stale local branch. CI integration means every code change gets checked automatically, consistently, before it merges, closing the gap between \"we have tests\" and \"the tests are actually protecting us.\"\n\nA basic GitHub Actions workflow shows the shape of the whole problem.\n\n```yaml\n# .github/workflows/playwright.yml\nname: Playwright Tests\non:\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-python@v5\n        with:\n          python-version: '3.11'\n      - name: Install dependencies\n        run: |\n```\n\npip install -r requirements.txt\n\n```yaml\nplaywright install --with-deps\n      - name: Run tests\n        run: pytest --browser chromium -m smoke\n      - uses: actions/upload-artifact@v4\n        if: always()\n        with:\n          name: playwright-report\n          path: playwright-report/\n\non: defines which events trigger the workflow — here, every push to main and every pull request targeting main. runs-on: ubuntu-latest picks the CI runner's operating system. playwright install --with-deps is worth calling out specifically: the --with-deps flag additionally installs OS-level system libraries the browser binaries need to actually launch on a bare Linux CI image (font libraries, codec libraries, etc.) — skipping this on a fresh CI runner is one of the most common first-time CI setup failures, since local dev machines usually already have these libraries installed from general use, masking the dependency until you hit a genuinely clean environment. if: always() on the artifact upload step ensures the report gets uploaded even when the test step fails — without this, a failing run wouldn't produce the very report you need to diagnose why it failed.\n```\n\nCI runs should default to headless, and typically restrict to a fast subset on every push.\n\nHeadless is the default for pytest-playwright already, but it's worth being explicit that CI should never accidentally run headed (there's no display server on most CI runners to render a headed browser against anyway, and this would simply fail to launch). Tying back to Chapter 22's marker discipline: a common pattern runs -m smoke on every push for fast feedback (a few minutes), reserving the full -m regression suite for a nightly scheduled run or a pre-release gate, since running everything on every single commit would slow down the development feedback loop unnecessarily.\n\nCaching browser binaries and dependencies speeds up repeated CI runs significantly.\n\n```python\n- name: Cache Playwright browsers\n  uses: actions/cache@v4\n  with:\n    path: ~/.cache/ms-playwright\n    key: ${{ runner.os }}-playwright-${{ hashFiles('requirements.txt') }}\n```\n\nDownloading and installing browser binaries fresh on every single CI run adds real time (browser binaries are sizable) and unnecessary network load. Caching the Playwright browser cache directory, keyed by a hash of requirements.txt (so the cache automatically invalidates if the Playwright version changes), means most CI runs reuse an already-downloaded set of binaries instead of re-fetching them every time.\n\nPlaywright version upgrades need a deliberate strategy, not a blind pip install --upgrade.\n\nBecause Playwright ships its own pinned browser binaries (Part 1, Chapter 2), upgrading the playwright/pytest-playwright package version and running playwright install afterward effectively swaps out the underlying browser engines your entire suite runs against — not just a library version bump in the usual sense. A new Playwright version can occasionally introduce breaking API changes (a method renamed, a default behavior changed) documented in its release notes/changelog, and separately, updated browser binaries can occasionally surface real bugs in your application that the previous browser version happened not to trigger (since you're now testing against a genuinely different, newer browser build). The practical discipline: upgrade deliberately on a schedule (not reflexively on every release) in a dedicated branch/PR, run the full suite (not just smoke tests) against the new version before merging, and read the changelog for breaking changes rather than assuming the upgrade is a no-op. This connects directly to Part 0's point about Playwright's fast release cadence (every 2–4 weeks) — that pace is a strength for getting new features/fixes quickly, but it does mean upgrade discipline matters more than it would for a slower-moving tool.\n\nBreaking changes typically fall into a few recognizable categories worth watching for specifically.\n\nAPI surface changes (a method signature changing, a parameter being renamed or removed) are usually the most visible, since they cause immediate, loud failures at import/call time rather than a passing-but-wrong result — genuinely convenient for catching early. Default behavior changes (e.g., a default timeout value changing, or an assertion becoming stricter by default) are more insidious, since existing tests might start failing without any code change on your side, purely because the framework's own defaults shifted underneath you. Browser binary behavior changes (a newer Chromium version rendering something subtly differently, or enforcing a security policy more strictly) are the hardest category to anticipate from release notes alone, since they're really changes in the browser itself rather than in Playwright's API — this is exactly why running the full suite against a new version before merging matters more than just skimming a changelog.",
+  customSummary: "## CI/CD Integration\n\nCI integration turns a test suite into an actual enforced safety net rather than an optional manual step.\nA GitHub Actions workflow needs: checkout, Python setup, pip install + playwright install --with-deps (the --with-deps flag installs OS-level libraries often missing on bare CI images), the test run, and an artifact upload step marked if: always() so reports upload even on failure.\nCI should run headless by default; use -m smoke on every push for fast feedback, reserve -m regression for nightly/pre-release runs.\nCache the Playwright browser binary directory (keyed by a hash of requirements.txt) to avoid re-downloading browsers on every run.\nPlaywright upgrades swap out actual browser engines, not just a library version — upgrade deliberately on a schedule, run the full suite against the new version before merging, and read the changelog rather than assuming a no-op.\nWatch for three breaking-change categories: API surface changes (loud, easy to catch), default behavior changes (silent, insidious), and browser-binary behavior changes (hardest to predict from changelogs alone).",
+  exercises: [],
+  resourceLinks: [],
+  steps: [],
+  learn: [],
 } as ChapterRecord;
