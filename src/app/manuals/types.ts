@@ -62,6 +62,8 @@ export interface ChapterRecord {
   limitations?: string[];
   tools?: ToolItem[];
   contentMarkdown: string;
+  /** User-authored summary — shown in Summary view (testing-types / Playwright pattern). */
+  customSummary?: string;
   exercises: ManualExercise[];
   resourceLinks: GoDeeperResource[];
   steps?: unknown[];

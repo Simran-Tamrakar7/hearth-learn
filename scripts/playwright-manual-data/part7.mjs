@@ -1,289 +1,71 @@
-/** Playwright manual Part 7 — Real-World & Job Readiness */
+/** Playwright manual Part 7 — Real-World Project & Job Readiness */
 export const chapters = [
   {
-    contentMarkdown: `## 33. Real-World Capstone Project
-
-The capstone ties together nearly every prior chapter into one portfolio-worthy Playwright framework — not isolated exercises.
-
-### Scope
-
-A solid capstone covers:
-
-- **Login** — Page Object Model (Chapter 14) with a session-reuse fixture (Chapter 20) so login runs once per session, not once per test.
-- **CRUD flow** — Create, Read, Update, Delete through the UI.
-- **API validation** — After each UI action, confirm data persisted server-side — not just that the UI looked right.
-
-### CRUD + API validation example
-
-\`\`\`python
-# tests/test_task_crud.py
-from pages.tasks_page import TasksPage
-
-def test_create_read_update_delete_task(authenticated_page, request):
-    tasks_page = TasksPage(authenticated_page)
-
-    # Create
-    tasks_page.create_task("Finish QA report", due_date="2026-08-10")
-    expect(authenticated_page.get_by_text("Finish QA report")).to_be_visible()
-    response = request.get("/api/tasks?title=Finish QA report")
-    assert response.json()["tasks"][0]["due_date"] == "2026-08-10"
-
-    # Update
-    tasks_page.edit_task("Finish QA report", new_title="Finish QA report v2")
-    expect(authenticated_page.get_by_text("Finish QA report v2")).to_be_visible()
-
-    # Delete
-    tasks_page.delete_task("Finish QA report v2")
-    expect(authenticated_page.get_by_text("Finish QA report v2")).not_to_be_visible()
-    response = request.get("/api/tasks?title=Finish QA report v2")
-    assert response.json()["tasks"] == []
-\`\`\`
-
-The API-validation steps elevate this from "a UI clicker" to a genuine full-stack test — interviewers specifically listen for this.
-
-### CI integration
-
-Wire \`conftest.py\` with session-scoped auth fixtures, the \`request\` fixture for API calls (Chapter 18), and a GitHub Actions workflow (Chapter 25) that runs on every push and publishes an HTML or Allure report (Chapter 26).
-
-\`\`\`yaml
-# .github/workflows/playwright.yml
-name: Playwright Tests
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install -r requirements.txt
-      - run: playwright install --with-deps
-      - run: pytest --headed=false --tracing=retain-on-failure
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: playwright-report
-          path: playwright-report/
-\`\`\`
-
-Getting the pipeline **green end-to-end** — not just passing locally — is the real milestone. Missing \`playwright install --with-deps\`, environment variable differences, and headless-only quirks are where practical learning happens.
-
-### Refactor pass
-
-Once the capstone works, revisit it against Chapter 31's anti-patterns checklist:
-
-- Descriptive test names
-- No hardcoded sleeps
-- Role-based locators
-- API validation on every CRUD step
-- Session reuse fixture
-- CI pipeline green
-
-This refactor pass is itself a showable skill — a concrete before/after is a strong interview answer.`,
+    id: "pw-47-capstone",
+    title: "47. Real-World Capstone Project",
+    minutes: 45,
+    level: "advanced",
+    phase: "Part 7 · Real-World Project & Job Readiness",
+    partName: "Part 7 · Real-World Project & Job Readiness",
+    overviewText: "End-to-end capstone scope: POM framework, auth fixture with storage_state, CRUD flow, API validation, CI pipeline, and README documenting architecture decisions.",
+    why: "Employers hire integrators, not tutorial completers. A capstone proves you can combine Parts 1–6 into one coherent, portfolio-worthy project.",
+    when: "Read when building your primary GitHub portfolio repo before job applications.",
+    practical: { app: "Portfolio HRMS test framework", scenario: "Interviewer asks 'walk me through a project you built end to end.'", pass: "Demo repo with pages/, CI badge, README explaining POM + auth + API hybrid.", fail: "Ten disconnected tutorial scripts with no shared structure or CI." },
+    advantages: ["Integrates POM, fixtures, API setup, and CI in one artifact", "README architecture section answers 'why did you choose X?'", "storage_state auth demonstrates Part 4 technique in practice", "CRUD flow covers create-verify-update-delete completely", "GitHub Actions badge proves CI integration works", "Demonstrates ROI thinking — smoke vs full regression split"],
+    limitations: ["Capstone scope creep delays job search by months", "Demo app dependency may break when practice site changes", "Over-engineering impresses engineers but not all hiring managers", "Without README, reviewers cannot navigate architecture quickly", "Copy-paste from manual without understanding fails live coding", "Single-project portfolio weak if role needs multi-stack breadth"],
+    contentMarkdown: "## Real-World Capstone Project\n\nA capstone project's purpose is proving integration, not demonstrating any single technique in isolation. Every prior part covered one topic at a time in isolation (locators, fixtures, CI, reporting) — a capstone is where those pieces have to work together as a coherent whole, which surfaces integration problems (a fixture scope conflict, a flaky interaction between parallelization and test data) that never show up when techniques are practiced one at a time in small examples.\n\nScope a capstone around a small number of genuinely critical, end-to-end flows — not exhaustive coverage. Tying back to the Testing Pyramid guidance from Part 0 (Chapter 5) and the automation ROI framework from Chapter 6: a strong capstone picks 3–5 real critical-path journeys (for an HRM-style app: employee login → submit a leave request → manager approval; new employee onboarding through to first successful login; a payroll run producing correct output for a given attendance record) rather than attempting to automate every field validation on every screen, which would be both unrealistic in scope and would demonstrate poor judgment about what's actually worth automating.\n\nA realistic capstone project structure exercises the full framework from Chapter 43.\n\ncapstone-project/\n\n├── tests/\n\n│   ├── smoke/\n\n│   ├── regression/\n\n│   └── modules/\n\n│       ├── test_leave_lifecycle.py\n\n│       ├── test_onboarding_flow.py\n\n│       └── test_attendance_to_payroll.py\n\n├── pages/\n\n├── api/\n\n├── fixtures/\n\n├── config/\n\n├── .github/workflows/playwright.yml\n\n├── conftest.py\n\n├── pytest.ini\n\n└── README.md\n\nDeliberately including CI integration (Chapter 39), a reporting setup (Chapter 40), and at least one Dockerized run (Chapter 41) in the capstone — not just local test files — is what makes it demonstrate job-relevant, production-realistic skill rather than just \"I can write Playwright scripts.\"\n\nWriting the project's README as a design-decisions document, not just a run-instructions file. A README that explains why the project is structured the way it is (why this fixture scope, why this locator strategy, why these specific flows were chosen for automation and others weren't) is far more valuable — both as a learning artifact and later as a portfolio piece (Chapter 48) — than one that only lists pip install steps. This is also good practice for a documentation-oriented role specifically, since it's effectively the same skill as writing a test plan or QA strategy document for a real team.\n\nA capstone benefits from deliberately including at least one instance of several \"advanced\" patterns, even in a small project. Concretely: one test using API-seeded setup with UI verification (Chapter 27's hybrid pattern), one test using role-based storage state to check a permission boundary (Chapter 46's RBAC pattern), one test with intentional network mocking to simulate an error state (Chapter 26), and CI configured to fail the build on a real regression, not just report it (Chapter 39). Including at least one of each demonstrates breadth without needing the project to be enormous — depth in a few well-chosen flows plus breadth across techniques, deliberately, beats size for its own sake.",
+    customSummary: "## Real-World Capstone Project\n\nPurpose is proving integration of everything learned, not demonstrating isolated techniques — this is where fixture/parallelization/data conflicts actually surface.\nScope to 3–5 genuinely critical end-to-end flows (per the Ch. 6 automation-ROI framework), not exhaustive field-level coverage.\nStructure should exercise the full Ch. 43 framework: tests/pages/api/fixtures/config, plus real CI integration, reporting, and at least one Dockerized run — not just local test files.\nREADME should explain design decisions (why this fixture scope, this locator strategy, these flows) — doubles as a QA-strategy-document skill, not just run instructions.\nDeliberately include one each of: API-seeded setup + UI verification, role-based permission check, network-mocked error state, and a CI run that actually fails the build on a real regression — breadth across techniques beats sheer project size.",
+    chapterNum: 47,
   },
   {
-    contentMarkdown: `## 34. Portfolio Building
-
-Your GitHub repo is often the first thing a hiring manager opens. Structure it like a professional framework, not a homework dump.
-
-### Recommended repo structure
-
-\`\`\`
-playwright-capstone/
-├── .github/workflows/playwright.yml   # CI runs on every push
-├── pages/                             # Page Object Model classes
-│   ├── login_page.py
-│   └── tasks_page.py
-├── tests/
-│   ├── conftest.py                    # Fixtures (auth, API context)
-│   └── test_task_crud.py
-├── fixtures/                          # Test data (JSON, factories)
-├── playwright.config.py               # Or pytest.ini + conftest
-├── requirements.txt
-├── README.md                          # First impression — make it count
-└── .gitignore                         # Exclude .env, traces, __pycache__
-\`\`\`
-
-### README template
-
-Your README should answer four questions in under two minutes of reading:
-
-1. **What does this test?** — One sentence on the app and scope (login + CRUD + API validation).
-2. **How do I run it?** — Copy-paste commands that actually work:
-   \`\`\`bash
-   pip install -r requirements.txt
-   playwright install
-   pytest
-   \`\`\`
-3. **What's the architecture?** — Brief note on POM, fixtures, and CI.
-4. **Proof it works** — Screenshot of a green CI run or link to Actions badge.
-
-\`\`\`markdown
-# Task Manager — Playwright Capstone
-
-End-to-end Playwright + pytest suite covering login, task CRUD, and API validation.
-
-## Quick start
-pip install -r requirements.txt && playwright install && pytest
-
-## Architecture
-- Page Object Model in \`pages/\`
-- Session-scoped auth fixture in \`conftest.py\`
-- GitHub Actions CI on every push
-
-## CI status
-![Playwright Tests](https://github.com/yourname/playwright-capstone/actions/workflows/playwright.yml/badge.svg)
-\`\`\`
-
-### Demo video (2–3 minutes)
-
-Record a short walkthrough showing:
-
-1. Repo structure (30 seconds)
-2. One test running locally with trace on failure (60 seconds)
-3. Green GitHub Actions run + report artifact (30 seconds)
-
-Upload to YouTube (unlisted) or Loom and link from the README. Recruiters rarely clone repos — a video proves you built it and can explain it.
-
-### What to highlight
-
-- API validation alongside UI assertions
-- Session reuse (not logging in every test)
-- CI that actually runs (green badge, not red X)
-- Clean locator strategy (roles/labels, not XPath soup)`,
+    id: "pw-48-portfolio",
+    title: "48. Portfolio Building",
+    minutes: 35,
+    level: "intermediate",
+    phase: "Part 7 · Real-World Project & Job Readiness",
+    partName: "Part 7 · Real-World Project & Job Readiness",
+    overviewText: "GitHub portfolio presentation: README structure, CI badges, architecture diagrams, test reports as screenshots, and what recruiters actually scan in 60 seconds.",
+    why: "Recruiters spend under two minutes on a GitHub profile. Presentation quality signals professionalism as much as code quality.",
+    when: "Read before submitting job applications or updating LinkedIn with project links.",
+    practical: { app: "GitHub profile", scenario: "Recruiter opens your repo — sees empty README and no CI badge.", pass: "README with setup steps, architecture diagram, passing CI badge, sample Allure screenshot.", fail: "Raw test files with no context; secrets in committed .env file." },
+    advantages: ["CI badge immediately signals tests run automatically", "Architecture diagram communicates senior thinking fast", "Sample report screenshot shows reporting maturity", "Clear setup instructions reduce reviewer friction", "Pinned repos highlight best work above random forks", "Contribution graph supplemented by substantive README"],
+    limitations: ["Polished README cannot compensate for shallow test coverage", "Screenshots of reports go stale — date them", "Public repos expose techniques competitors copy", "Portfolio projects without real app look academic", "Over-designed READMEs distract from code quality review", "Some employers use private take-home instead of public repos"],
+    contentMarkdown: "## Portfolio Building\n\nA portfolio's job is to make your actual capability legible to someone skimming quickly, not to impress on close reading alone. Most people reviewing a portfolio (a recruiter, a hiring manager, an interviewer prepping questions) spend a few minutes, not a few hours — the structure needs to communicate competence fast: a clear README, a sensible folder structure recognizable at a glance (tying back to Chapter 43's layered architecture), and visible CI (a passing-build badge) before anyone reads a single line of test code.\n\nA GitHub repository is the practical baseline; presentation quality matters as much as code quality. Concrete elements worth including deliberately: a README with a project overview, the tech stack, how to run it locally, and a short \"design decisions\" section (from Chapter 47); a CI badge showing the suite actually runs and passes; a linked HTML/Allure report (Chapter 40) either committed as a static artifact or generated fresh via a GitHub Pages deploy, so a reviewer can see actual output without cloning and running anything themselves.\n\nCase-study writeups turn a repository into a legible story, not just a code dump. A short writeup (README section, or a separate blog-style post) walking through one specific interesting decision — \"why I chose to mock the payment API instead of hitting a sandbox environment,\" \"how I structured RBAC testing across three roles\" — demonstrates judgment and reasoning in a way that a directory of test files alone doesn't. This is also where the Bizlevate context becomes a genuine portfolio asset: a project framed around a real domain (HR/payroll workflows) with real business logic (leave balance validation, approval chains) reads as more substantive than a generic to-do-app or e-commerce-demo clone, which interviewers have typically seen dozens of times already.\n\nContributing to open-source Playwright-adjacent projects is a credible, visible way to demonstrate skill beyond a solo project. Even a small, well-scoped contribution (fixing a documentation gap, adding a test to an open-source project that lacks coverage, contributing a plugin or utility) is verifiable, public evidence of real-world collaboration — reviewable by a PR history, not just a claim on a resume. This is a slower-burn portfolio strategy compared to a capstone project, but it compounds credibly over time and demonstrates comfort working within someone else's codebase and review process, which a solo project can't fully demonstrate on its own.",
+    customSummary: "## Portfolio Building\n\nA portfolio must communicate competence in minutes, not hours — clear README, recognizable structure, visible passing CI badge before anyone reads test code.\nInclude: overview + tech stack + run instructions + a design-decisions section, a CI badge, and a linked/committed HTML or Allure report so output is visible without cloning.\nA short case-study writeup on one specific decision demonstrates judgment beyond what a code dump shows; framing the project around a real domain (HR/payroll) reads as more substantive than a generic demo-app clone.\nOpen-source contributions (even small, well-scoped ones) provide public, verifiable, review-history evidence of real-world collaboration — a slower but credible complement to a solo capstone.",
+    chapterNum: 48,
   },
   {
-    contentMarkdown: `## 35. Interview Prep
-
-Automation interviews test whether you can **build and maintain a framework**, not whether you can write a single \`page.click()\`.
-
-### Common questions
-
-**"Walk me through your test framework architecture."**
-- Tests → workflow helpers → page objects → locators
-- Fixtures in \`conftest.py\` for auth, test data, and browser setup
-- CI runs on every PR; traces uploaded on failure
-
-**"How do you handle flaky tests?"**
-- Auto-waiting locators first (Playwright's default)
-- Trace viewer + screenshot on failure to diagnose timing vs. real bugs
-- Never \`time.sleep()\` — use \`expect(...).to_be_visible()\`
-- Quarantine pattern: mark flaky tests, fix root cause, un-quarantine
-
-**"How do you test APIs alongside UI?"**
-- \`request\` fixture (APIRequestContext) for setup, teardown, and validation
-- UI creates data → API confirms persistence → UI deletes → API confirms gone
-
-**"Why Playwright over Selenium/Cypress?"**
-- Auto-waiting, trace viewer, multi-browser (Chromium/Firefox/WebKit)
-- Native API testing context
-- Python bindings via pytest-playwright
-
-### Scenario debugging (live coding)
-
-Expect: "This test fails in CI but passes locally — how do you debug?"
-
-Structured answer:
-
-1. Download CI artifact (trace, screenshot, video)
-2. Open trace in \`trace.playwright.dev\` — see exact DOM state at failure
-3. Check CI-specific issues: missing \`--with-deps\`, headless font rendering, env vars
-4. Reproduce locally with \`pytest --headed=false\` to match CI
-
-### Explaining POM, fixtures, and CI
-
-**Page Object Model** — "Each page is a class. Tests call \`login_page.login(user, pass)\` instead of scattering locators. When the login form changes, I fix one file, not fifty tests."
-
-**Fixtures** — "Fixtures are pytest's dependency injection. My \`authenticated_page\` fixture logs in once per session and yields a ready page. Tests declare what they need; conftest provides it."
-
-**CI integration** — "Every push runs the full suite in GitHub Actions. On failure, traces and reports upload as artifacts. The team reviews traces before merging — not just 'it passed on my machine.'"
-
-### Practice format
-
-Pick one capstone test and practice explaining it aloud in under 90 seconds: what it tests, why API validation matters, and what happens when it fails in CI.`,
+    id: "pw-49-interview",
+    title: "49. Interview Prep",
+    minutes: 40,
+    level: "intermediate",
+    phase: "Part 7 · Real-World Project & Job Readiness",
+    partName: "Part 7 · Real-World Project & Job Readiness",
+    overviewText: "Common Playwright interview topics: auto-waiting vs Selenium, POM rationale, flake diagnosis, CI integration, API+UI hybrid, and scenario-based comparison answers.",
+    why: "Interviewers test judgment with scenarios, not command recitation. Prepared framing turns experience into credible narrative.",
+    when: "Read two weeks before Playwright/SDET interviews; practice answers aloud.",
+    practical: { app: "SDET technical interview", scenario: "'Why Playwright over Selenium?' and 'How do you handle flaky tests?'", pass: "Architecture comparison + concrete flake workflow (trace, quarantine, root-cause fix).", fail: "List API methods without explaining auto-waiting or CI artifact strategy." },
+    advantages: ["Scenario-based answers demonstrate hands-on judgment", "Playwright vs Cypress comparison shows architectural awareness", "Flake diagnosis story uses trace viewer concretely", "POM explanation ties to maintenance cost not pattern worship", "CI integration answer shows production mindset", "API+UI hybrid demonstrates full-stack test thinking"],
+    limitations: ["Memorized answers sound robotic without real project backing", "Interview focus varies — some teams test algorithms not automation", "Tool comparisons outdated if interviewer uses proprietary framework", "Live coding nerves override prepared talking points", "Take-home assignments may test different skills than verbal prep", "Over-preparing comparisons neglects domain-specific app knowledge"],
+    contentMarkdown: "## Interview Prep\n\nInterviews for QA automation roles tend to test three distinct things — technical depth, judgment, and communication — not just \"do you know the API.\" Live-coding a locator or a small test is common, but so is being asked to explain a decision (\"why would you choose get_by_role over a CSS selector here\") or to critique a piece of existing test code — preparation should cover all three, not just memorizing API syntax.\n\nCommon technical questions worth being genuinely fluent in, not just able to look up. Playwright vs. Selenium vs. Cypress (Chapter 1's comparison table, including the \"why\" behind each row, not just the row contents). Auto-waiting mechanics — what actionability checks actually run before an action (Chapter 16). Locator strategy and the specific reasoning for preferring role/test-id over CSS/XPath (Chapter 13). Page Object Model — not just \"what is POM\" but why it helps and what a test file without it looks like in practice (Chapter 23). Flaky test diagnosis — being able to walk through a systematic root-causing process (Chapter 38) rather than a vague \"just rerun it\" answer signals real experience.\n\nBehavioral/scenario questions probe judgment under realistic constraints, not textbook knowledge. Examples worth having a real, specific answer for (not a generic one): \"A test has been flaky for two weeks and no one's fixed it — what do you do?\" (tests the quarantine + root-cause discipline from Chapter 38, and the courage to flag it rather than just re-running it). \"You're asked to automate a feature that's still being actively redesigned — how do you respond?\" (tests the automation-ROI judgment from Part 0, Chapter 6). \"The suite takes 45 minutes and blocks every PR — what levers would you pull?\" (tests Chapter 44/46's suite-scaling and performance material together). Preparing a specific, concrete story for questions like these — ideally drawn from actual capstone-project or Bizlevate experience — is far stronger than a rehearsed general answer.\n\nA locator-strategy or test-design live exercise is one of the most common practical formats — practice it directly. Being handed a snippet of HTML or a live webpage and asked \"how would you locate this element, and why\" is extremely common; practicing this out loud, articulating the reasoning (not just producing a working locator), is worth deliberate rehearsal, since interviews reward visible reasoning as much as a correct final answer.\n\nSystem-design-style questions appear more often at senior levels — \"design a test framework for X.\" Being asked to sketch a framework for a hypothetical app (folder structure, fixture strategy, CI approach, how you'd handle auth/data) is effectively asking you to reproduce the reasoning from Part 6 out loud — this is a strong argument for genuinely internalizing why each Part 6 decision was made, not just being able to describe what a framework looks like.",
+    customSummary: "## Interview Prep\n\nInterviews test technical depth, judgment, and communication together — prep for live-coding, decision explanations, and code critique, not just API recall.\nBe genuinely fluent (not just able to look up) in: Playwright vs. Selenium vs. Cypress reasoning, auto-waiting mechanics, locator strategy reasoning, why POM helps, and systematic flaky-test root-causing.\nPrepare specific, real stories (ideally from capstone/Bizlevate work) for judgment scenarios: a long-standing flaky test, an unstable feature someone wants automated, a suite that's grown too slow.\nPractice live locator/test-design exercises out loud — reasoning is evaluated as much as the final answer.\nAt senior levels, expect \"design a framework for X\" — effectively asking you to reproduce Part 6's reasoning live.",
+    chapterNum: 49,
   },
   {
-    contentMarkdown: `## 36. Career Positioning
-
-Manual QA experience is an asset in automation roles — not a liability. Frame it correctly.
-
-### Manual QA + automation framing
-
-| Manual QA strength | Automation translation |
-|---|---|
-| Exploratory testing instincts | Better test design — you know where apps break |
-| Bug report clarity | Clearer failure messages and trace annotations |
-| Domain knowledge | Stronger assertions — you know what "correct" looks like |
-| Regression checklist mindset | Systematic suite coverage, not random happy-path tests |
-
-**Interview line:** "My manual QA background means I design tests that catch real user-facing bugs, not just green checkmarks on happy paths."
-
-### Resume bullets (copy and adapt)
-
-Use action verbs + measurable outcomes:
-
-- Built Playwright + pytest E2E framework covering login, CRUD, and API validation for [App Name]; reduced regression cycle from 4 hours manual to 12 minutes automated
-- Designed Page Object Model architecture and session-reuse fixtures; onboarded 2 QA engineers to contribute tests within first week
-- Integrated Playwright suite into GitHub Actions CI; published trace artifacts on failure, cutting flaky-test diagnosis time by ~60%
-- Migrated 40 Selenium tests to Playwright; eliminated explicit waits and reduced suite flake rate from 15% to under 2%
-- Authored conftest.py fixtures for multi-role testing (admin, employee, guest) with storage_state session reuse
-
-### LinkedIn headline options
-
-- QA Automation Engineer | Playwright · pytest · Python | Manual QA → Automation
-- Test Automation Engineer | Building reliable Playwright frameworks | Ex-manual QA
-
-### What hiring managers scan for
-
-1. **GitHub link** with a real, runnable project (not a tutorial fork)
-2. **CI badge** — proves you understand the full pipeline
-3. **API + UI testing** — shows full-stack thinking
-4. **Specific tools** — Playwright, pytest, GitHub Actions (not just "Selenium experience")
-
-### Avoid
-
-- "Familiar with automation" without a repo link
-- Listing 15 tools with no depth on any
-- Claiming "100% test coverage" — interviewers will probe`,
-  },
-  {
-    contentMarkdown: `## Checkpoint — Job Ready
-
-Brief self-check before applying to automation roles. Be honest — gaps are fixable.
-
-### Framework skills
-
-- [ ] I can explain my repo structure (pages/, tests/, conftest.py, CI workflow) in under 2 minutes
-- [ ] My capstone has at least one CRUD flow with API validation
-- [ ] I use role/label locators, not CSS/XPath soup
-- [ ] My fixtures handle auth via storage_state or equivalent session reuse
-- [ ] I have zero \`time.sleep()\` calls in my suite
-
-### CI & debugging
-
-- [ ] My GitHub Actions workflow runs green on the latest push
-- [ ] I can open a Playwright trace and explain what failed and why
-- [ ] I know the difference between a timing flake and a real bug
-- [ ] CI artifacts (report, trace) upload on failure
-
-### Interview readiness
-
-- [ ] I can explain POM, fixtures, and CI integration without reading notes
-- [ ] I have a 2–3 minute demo video or can walk through the repo live
-- [ ] I can answer "why Playwright?" with specific technical reasons
-- [ ] My resume has 2–3 quantified automation bullets
-
-### Portfolio
-
-- [ ] README has quick-start commands that work on a fresh clone
-- [ ] Repo is public (or accessible to interviewers on request)
-- [ ] No secrets (.env, tokens) committed to git
-
-### Score
-
-- **12–14 checked:** Ready to apply. Start submitting.
-- **8–11 checked:** Close — prioritize CI green + demo video this week.
-- **Below 8:** Finish the capstone (Chapter 33) before applying. One solid project beats ten incomplete ones.`,
+    id: "pw-50-career",
+    title: "50. Career Positioning",
+    minutes: 30,
+    level: "intermediate",
+    phase: "Part 7 · Real-World Project & Job Readiness",
+    partName: "Part 7 · Real-World Project & Job Readiness",
+    overviewText: "Career paths: SDET, QA Automation Engineer, Test Architect. Positioning Playwright + Python as portfolio breadth; when to lead with automation vs manual QA experience.",
+    why: "Career positioning determines which roles you qualify for and how you frame existing skills. Tool expertise is necessary but not sufficient.",
+    when: "Read when updating resume, negotiating title, or choosing between SDET and manual QA tracks.",
+    practical: { app: "Resume and LinkedIn", scenario: "Job posting asks for '5 years Selenium' — you have 2 years Playwright Python.", pass: "Frame as test automation engineering with modern stack; highlight framework and CI ownership.", fail: "List tool names without outcomes (reduced flake rate, cut CI time 60%)." },
+    advantages: ["SDET path values framework and CI skills this manual teaches", "Playwright + Python positions for polyglot automation teams", "Quantified outcomes (CI time, flake reduction) strengthen resume", "Capstone project provides concrete 'built and shipped' narrative", "Test Architect path opens with Part 6 framework reasoning", "Automation skills complement manual QA domain expertise"],
+    limitations: ["Title inflation (calling yourself SDET without depth) fails technical screens", "Some markets still prefer Selenium/Java regardless of Playwright skill", "Career ladder differs by company — SDET not universal title", "Automation-only positioning undersells valuable manual testing judgment", "Contract roles may prioritize speed over framework quality", "Geographic salary bands vary independently of skill level"],
+    contentMarkdown: "## Career Positioning\n\nQA automation career paths branch in a few recognizable directions worth knowing about deliberately. SDET (Software Development Engineer in Test) roles lean more toward engineering — building frameworks, contributing to application code, deeper CI/infrastructure work. Pure QA Automation Engineer roles lean more toward test design, coverage strategy, and domain expertise. Some paths lead toward DevOps/Platform engineering, where the CI/CD and infrastructure skills from Part 5 become the primary focus rather than a supporting skill. Being deliberate about which direction genuinely interests you shapes which skills in this manual are worth going deeper on beyond the baseline.\n\nPlaywright MCP represents a genuinely new frontier worth being aware of, distinct from traditional test automation. Introduced in the tooling ecosystem overview (Part 0, Chapter 7), Playwright's MCP (Model Context Protocol) server lets AI agents/LLMs drive a browser through Playwright — a different use case from writing deterministic, repeatable test scripts. This is worth understanding conceptually (an AI agent using Playwright as its \"hands\" to interact with a live web page, rather than a human writing fixed automation logic) because it's a fast-moving area, and even a working awareness of it is a differentiator in interviews and career conversations right now, precisely because it's new enough that most candidates won't have engaged with it at all.\n\nTest impact analysis, introduced in Chapter 44 as a suite-scaling technique, is also a named, valuable individual skill to be able to speak to. Being able to describe — even at a conceptual level — how you'd approach reducing CI time on a large suite by running only impacted tests demonstrates the kind of scaling-aware thinking that separates a mid-level from a senior automation engineer, since it shows you've thought about test suites as a system with real engineering tradeoffs, not just a growing pile of test files.\n\nShift-left culture and QA-dev collaboration describe where testing sits in the development process, not just what tools are used. \"Shift-left\" means involving testing earlier in the development lifecycle — writing (or at least reviewing) automated tests alongside feature development rather than after a feature is \"done,\" and QA collaborating with developers on testability (encouraging good locator hooks like data-testid, discussing edge cases before code is written) rather than only being handed a finished feature to verify. Being able to speak fluently about this — and ideally point to a real instance of practicing it (raising the data-testid convention with a dev team, as flagged back in Chapter 13) — signals a QA professional who thinks about quality as a shared team responsibility, which is increasingly what senior and lead QA roles are actually evaluated on, beyond raw automation-scripting skill.\n\nPositioning your Bizlevate + Appium + Playwright combination as a coherent, differentiated skill set. Having both web (Playwright) and native mobile (Appium, per your prior roadmap) automation experience, applied to a real domain (HR/payroll systems) rather than only toy projects, is a genuinely uncommon combination worth naming explicitly in a resume/portfolio/interview rather than treating each as a separate, disconnected credential — most candidates have one or the other, rarely both applied to the same real business domain.",
+    customSummary: "## Career Positioning\n\nCareer paths branch toward SDET (engineering-heavy), pure QA Automation (test design/domain-heavy), or DevOps/Platform (CI/infra-heavy) — worth being deliberate about which to grow toward.\nPlaywright MCP (AI agents driving a browser via Playwright) is a genuinely new frontier, distinct from deterministic scripted automation — even conceptual familiarity is a current differentiator.\nTest impact analysis (Ch. 44) is also a standalone, valuable talking point — demonstrates systems-level, senior-track thinking about suite scaling.\nShift-left culture means testing/QA involvement moves earlier in the dev lifecycle (reviewing tests alongside feature work, championing testability like data-testid hooks) — increasingly what senior/lead QA roles are evaluated on.\nThe combination of web (Playwright) + native mobile (Appium) automation applied to a real business domain (HR/payroll, via Bizlevate) is a genuinely differentiated skill set worth naming explicitly, not treating as two disconnected credentials.",
+    chapterNum: 50,
   },
 ];

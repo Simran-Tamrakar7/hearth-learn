@@ -1,81 +1,24 @@
 import type { ChapterRecord } from "../../../types";
 
-/** 17. Network Interception & Mocking */
+/** 26. Network Interception & Mocking */
 export const chapter = {
-  "id": "pw-4-network",
-  "title": "17. Network Interception & Mocking",
-  "minutes": 50,
-  "level": "advanced",
-  "phase": "Part 4 · Advanced Techniques",
-  "partName": "Part 4 · Advanced Techniques",
-  "overviewText": "page.route() intercepts network requests matching a URL pattern before they reach the server, letting you inspect, modify, block, or fully replace the response. This is Playwright's built-in network mocking layer — no external tools like WireMock or MSW required. Three handler actions resolve every intercepted request: route.continue_() passes the request through (optionally modified), route.fulfill() responds with custom status/body without hitting the server, and route.abort() blocks the request entirely simulating network failure. Mocking API responses with route.fulfill() lets you test UI behavior for server errors, empty states, and slow responses without backend cooperation. Blocking images and ad trackers via route.request.resource_type speeds up suites that do not need visual verification — but do not block resources your test depends on rendering.",
-  "why": "Many UI states are nearly impossible to trigger from a real backend on demand: a 500 error on the users endpoint, an empty search result, a 30-second slow response. Without network mocking, testers wait for DevOps to inject faults or manually break staging. page.route() puts these scenarios under test control — deterministic, repeatable, and fast. Blocking non-essential resources (images, fonts, ad scripts) can cut per-test load time significantly in large suites.",
-  "when": "Use route.fulfill() when testing error states, empty lists, or specific API payloads the backend cannot easily produce. Use route.continue_() when you need to inject headers or observe requests without replacing responses. Use route.abort() for network-failure UX testing. Block images/fonts only on tests that do not verify visual rendering (not visual regression tests in Chapter 19). Always register routes before the navigation or action that triggers the request.",
-  "practical": {
-    "app": "HRMS — Employee list error handling",
-    "scenario": "The HRMS employee list page should show a friendly error banner when the /api/employees endpoint returns 500. Triggering a real 500 in staging requires DBA intervention. With page.route(), the test mocks a 500 response, verifies the error banner appears, and completes in 3 seconds.",
-    "pass": "page.route('**/api/employees', lambda r: r.fulfill(status=500, body='{\"error\":\"Server error\"}')) — error banner visible, test deterministic.",
-    "fail": "Test depends on staging backend being manually broken; fails when backend is healthy, passes when it happens to be down — non-deterministic."
-  },
-  "advantages": [
-    "Test error states, empty data, and edge-case responses without backend changes",
-    "Deterministic — same mock payload every run, no staging environment dependency",
-    "Built into Playwright — no external mocking server or proxy setup",
-    "Blocking non-essential resources speeds up large suites measurably",
-    "route.request gives full access to method, headers, and post data for inspection"
-  ],
-  "limitations": [
-    "Mocked responses may drift from real API contract if backend changes",
-    "Every matched request must be resolved (continue/fulfill/abort) or it hangs indefinitely",
-    "Does not mock WebSocket connections — only HTTP/HTTPS requests",
-    "Over-mocking creates tests that pass against fake data but fail against real backend",
-    "Routes must be registered before the triggering action — order matters"
-  ],
-  "tools": [
-    {
-      "name": "page.route()",
-      "sub": "Network interception",
-      "url": "https://playwright.dev/python/docs/network",
-      "desc": "page.route(url_pattern, handler) registers a callback invoked for every network request matching the pattern. The handler receives a Route object with methods to continue, fulfill, or abort the request. URL patterns support glob syntax (** matches any path segment). The handler can inspect route.request for method, headers, post data, and resource_type before deciding how to resolve the request.",
-      "adv": [
-        "Intercept any HTTP request by URL pattern without external tools",
-        "Fulfill with custom status, headers, and body for precise scenario control",
-        "Inspect and modify outgoing requests before they reach the server",
-        "Block resource types (image, font, media) for faster test execution"
-      ],
-      "lim": [
-        "Unmatched requests that never get resolved hang until timeout",
-        "WebSocket traffic is not interceptable via page.route()",
-        "Glob patterns can accidentally match unintended URLs",
-        "Handler runs in the browser context — complex logic should stay in test code"
-      ],
-      "steps": [
-        {
-          "t": "Step 1 — Mock an API response",
-          "p": "Replace a real API call with custom JSON:",
-          "c": "def mock_users_api(route):\n    route.fulfill(\n        status=200,\n        content_type=\"application/json\",\n        body='{\"users\": [{\"id\": 1, \"name\": \"Test User\"}]}'\n    )\n\npage.route(\"**/api/users\", mock_users_api)\npage.goto(\"https://app.example.com/users\")\nexpect(page.get_by_text(\"Test User\")).to_be_visible()"
-        },
-        {
-          "t": "Step 2 — Mock an error response",
-          "p": "Test UI error handling for server failures:",
-          "c": "def mock_server_error(route):\n    route.fulfill(status=500, content_type=\"application/json\",\n                  body='{\"error\": \"Internal server error\"}')\n\npage.route(\"**/api/employees\", mock_server_error)\npage.goto(\"https://app.example.com/employees\")\nexpect(page.get_by_text(\"Something went wrong\")).to_be_visible()"
-        },
-        {
-          "t": "Step 3 — Block images for speed",
-          "p": "Abort image requests on tests that don't need them:",
-          "c": "def block_images(route):\n    if route.request.resource_type == \"image\":\n        route.abort()\n    else:\n        route.continue_()\n\npage.route(\"**/*\", block_images)"
-        },
-        {
-          "t": "Step 4 — Let requests through with modification",
-          "p": "Inject a test header without replacing the response:",
-          "c": "def add_test_header(route):\n    headers = {**route.request.headers, \"X-Test-Mode\": \"true\"}\n    route.continue_(headers=headers)\n\npage.route(\"**/api/**\", add_test_header)"
-        }
-      ]
-    }
-  ],
-  "contentMarkdown": "## Intercepting Network Requests\n\n`page.route()` registers a handler that runs **before** a matching request leaves the browser. You can inspect the request, modify it, replace the response entirely, or block it. This is Playwright's built-in mocking layer — no external proxy or WireMock server required.\n\nRegister routes **before** the action that triggers the request:\n\n```python\ndef test_mocked_api_response(page):\n    def handle(route):\n        route.fulfill(\n            status=200,\n            content_type=\"application/json\",\n            body='{\"users\": [{\"id\": 1, \"name\": \"Alice\"}]}',\n        )\n\n    page.route(\"**/api/users\", handle)\n    page.goto(\"/users\")\n    expect(page.get_by_text(\"Alice\")).to_be_visible()\n```\n\n## Three Handler Actions\n\nEvery intercepted request must be resolved with exactly one action:\n\n| Action | Method | Effect |\n|--------|--------|--------|\n| Mock response | `route.fulfill(...)` | Return custom status/body without hitting the server |\n| Pass through | `route.continue_()` | Forward to the real server (optionally modified) |\n| Block | `route.abort()` | Cancel the request — simulates network failure |\n\n### fulfill — Replace the Response\n\n```python\ndef test_server_error_banner(page):\n    page.route(\n        \"**/api/employees\",\n        lambda route: route.fulfill(status=500, body='{\"error\": \"Internal server error\"}'),\n    )\n    page.goto(\"/employees\")\n    expect(page.get_by_role(\"alert\")).to_contain_text(\"Something went wrong\")\n```\n\nYou control `status`, `headers`, `content_type`, and `body`. Use this for error states, empty lists, and slow-response simulation.\n\n### continue_ — Modify and Forward\n\n```python\ndef test_adds_auth_header(page):\n    def handle(route):\n        headers = {**route.request.headers, \"X-Test-Mode\": \"true\"}\n        route.continue_(headers=headers)\n\n    page.route(\"**/api/**\", handle)\n    page.goto(\"/dashboard\")\n```\n\n`continue_()` sends the request to the real backend. Useful for injecting headers or logging without replacing responses.\n\n### abort — Simulate Network Failure\n\n```python\ndef test_offline_message(page):\n    page.route(\"**/api/**\", lambda route: route.abort(\"failed\"))\n    page.goto(\"/dashboard\")\n    expect(page.get_by_text(\"Unable to connect\")).to_be_visible()\n```\n\n## URL Patterns\n\nPatterns are glob-style strings or compiled regex:\n\n```python\npage.route(\"**/api/users\", handler)       # any host, path ending in /api/users\npage.route(\"https://cdn.example.com/**\", handler)  # specific CDN\npage.route(re.compile(r\"\\.png$\"), handler)        # regex: all PNG files\n```\n\n## Blocking Images and Trackers\n\nSpeed up suites that do not need visual rendering by aborting non-essential resources:\n\n```python\nBLOCKED_TYPES = {\"image\", \"media\", \"font\"}\n\ndef test_fast_load_without_images(page):\n    page.route(\"**/*\", lambda route: (\n        route.abort()\n        if route.request.resource_type in BLOCKED_TYPES\n        else route.continue_()\n    ))\n    page.goto(\"/dashboard\")\n    expect(page.get_by_role(\"heading\", name=\"Dashboard\")).to_be_visible()\n```\n\n**Do not block images** in visual regression tests (Chapter 19) — screenshots will be blank.\n\n## Inspecting Requests\n\n`route.request` exposes the full request object:\n\n```python\ndef test_posts_correct_payload(page):\n    captured = []\n\n    def handle(route):\n        captured.append(route.request.post_data_json)\n        route.continue_()\n\n    page.route(\"**/api/orders\", handle)\n    page.get_by_role(\"button\", name=\"Place order\").click()\n    assert captured[0][\"quantity\"] == 2\n```\n\n## Common Pitfalls\n\n- **Unresolved routes hang forever** — every matched request must call `fulfill`, `continue_`, or `abort`.\n- **Register before navigation** — routes set after `goto` miss the initial page load requests.\n- **Mock drift** — update mock payloads when the API contract changes.\n\n## Key Takeaways\n\n- `page.route()` intercepts requests before they leave the browser.\n- `fulfill` mocks responses; `continue_` forwards; `abort` blocks.\n- Block images/fonts to speed up non-visual tests.\n- Always resolve every intercepted request.",
-  "exercises": [],
-  "resourceLinks": [],
-  "steps": [],
-  "learn": []
+  id: "pw-26-network",
+  title: "26. Network Interception & Mocking",
+  minutes: 50,
+  level: "advanced",
+  phase: "Part 4 · Advanced Techniques",
+  partName: "Part 4 · Advanced Techniques",
+  overviewText: "page.route() intercepts HTTP requests before they leave the browser, letting you fulfill() custom responses, continue_() with modifications, or abort() to simulate failures. Mock edge cases (500 errors, empty lists, slow responses) without backend cooperation. WebSocket traffic can be observed via page.on('websocket') with framesent/framereceived listeners but cannot be mocked like HTTP.",
+  why: "Many UI states are nearly impossible to trigger from a real backend on demand. Network mocking puts error states, empty data, and slow responses under test control — deterministic, repeatable, and fast.",
+  when: "Use route.fulfill() for error states and edge-case payloads. Use route.continue_() to inject headers. Use route.abort() for network-failure UX. Reserve heavy mocking for edge cases; keep core happy-path tests on the real backend.",
+  practical: { app: "HRMS — Employee list error handling", scenario: "Test that a 500 on /api/employees shows an error banner without breaking staging.", pass: "page.route('**/api/employees', lambda r: r.fulfill(status=500, body='{\"error\":\"Server error\"}')) — deterministic error banner test.", fail: "Wait for staging to be manually broken; test passes when backend happens to be down." },
+  advantages: ["Test error states without backend changes","Deterministic mock payloads every run","Built into Playwright — no external proxy","route.continue_() injects headers without replacing responses","Block analytics/ads to speed non-visual tests","WebSocket frame observation for real-time apps"],
+  limitations: ["Mocked responses may drift from real API contracts","Every matched request must be resolved or it hangs","WebSocket messages cannot be fulfilled like HTTP","Over-mocking reduces true E2E confidence","Routes must register before the triggering action","Glob patterns can accidentally match unintended URLs"],
+  tools: [],
+  contentMarkdown: "## 26. Network Interception & Mocking\n\npage.route() intercepts any request the page makes and lets you control the response.\n```python\ndef handle_route(route):\n    route.fulfill(\n        status=200,\n        content_type=\"application/json\",\n        body='{\"items\": []}'\n    )\n\npage.route(\"**/api/products\", handle_route)\npage.goto(\"https://app.example.com/products\")\n```\n\n\npage.route(url_pattern, handler) registers an interception rule. url_pattern (string or glob-style pattern, required) matches against request URLs — ** matches any path segment, useful for matching an API path regardless of host/query string. handler (function, required) receives a Route object representing the intercepted request. Every matching request going forward is paused and handed to your handler, which must call exactly one of route.fulfill(), route.continue_(), or route.abort() to resolve it.\nroute.fulfill() returns a fake response without hitting the real server.\nstatus (integer, optional, default 200) sets the HTTP status code. content_type (string, optional) sets the response's MIME type. body (string, optional) is the raw response body. This is the core tool for simulating states that are hard to trigger reliably against a real backend — an empty product list, a 500 server error, a specific error message — all without needing the real API to cooperate or a test database seeded into a particular state.\nroute.abort() simulates a failed or blocked request.\n```python\npage.route(\"**/analytics/**\", lambda route: route.abort())\n```\n\n\nerror_code (string, optional, default \"failed\") can simulate specific failure types like \"timedout\" or \"connectionrefused\". This is useful both for testing how the app handles network failures gracefully, and for blocking noisy third-party requests (analytics, ads) that aren't relevant to what you're testing and would only slow the page down or add flakiness.\nroute.continue_() lets a request through, optionally modified first.\n```python\ndef modify_headers(route):\n    headers = route.request.headers\n    headers[\"x-test-mode\"] = \"true\"\n    route.continue_(headers=headers)\n\npage.route(\"**/api/**\", modify_headers)\n```\n\n\nheaders, method, post_data, and url (all optional) can each be overridden before the request is actually sent. This is useful for injecting a test-only header the backend recognizes, or redirecting a request to a different environment without changing any application code.\nMocking is a deliberate tradeoff between speed/reliability and true end-to-end confidence.\nMocked network responses make tests fast and immune to backend flakiness or unavailable test data — but a test that mocks everything is no longer verifying real integration between frontend and backend. The healthy pattern (echoing the Testing Pyramid from Part 0) is to reserve heavy mocking for edge cases genuinely hard to trigger for real (server errors, empty states, slow responses), while letting your core happy-path E2E tests hit the real backend wherever practical, so you retain genuine end-to-end confidence somewhere in the suite.\nWebSocket message interception and assertion extend this to real-time connections.\n```python\ndef handle_websocket(ws):\n    def on_framesent(payload):\n        print(\"Sent:\", payload)\n    def on_framereceived(payload):\n        print(\"Received:\", payload)\n    ws.on(\"framesent\", on_framesent)\n    ws.on(\"framereceived\", on_framereceived)\n\npage.on(\"websocket\", handle_websocket)\n```\n\n\npage.on(\"websocket\", handler) fires whenever the page opens a WebSocket connection, giving you a WebSocket object. .on(\"framesent\", ...) and .on(\"framereceived\", ...) let you listen to individual messages flowing in each direction, useful for asserting that a chat message was actually sent over the socket, or that a specific real-time update arrived after triggering some action. Unlike HTTP page.route(), Playwright does not currently let you mock WebSocket messages directly (you can't fulfill() a WebSocket frame the way you can an HTTP response) — this API is observational, for asserting traffic occurred as expected, not for injecting fake real-time events. For apps built around WebSockets (live dashboards, chat features, real-time collaboration — relevant if Bizlevate's HRM system has any live notification features), this is the primary tool for verifying that layer works correctly.",
+  customSummary: "## 26. Network Interception & Mocking\n\npage.route(pattern, handler) intercepts requests; handler must call fulfill() (fake response), continue_() (let through, optionally modified), or abort() (simulate failure).\nUseful for simulating server errors, empty states, slow responses — states hard to trigger reliably against a real backend.\nMocking trades true E2E confidence for speed/reliability — reserve heavy mocking for edge cases, keep core happy-path tests hitting the real backend where practical.\nWebSocket traffic can be observed (page.on(\"websocket\"), .on(\"framesent\"/\"framereceived\")) but not mocked/fulfilled like HTTP — useful for chat/live-notification features.",
+  exercises: [],
+  resourceLinks: [],
+  steps: [],
+  learn: [],
 } as ChapterRecord;

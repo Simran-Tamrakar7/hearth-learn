@@ -1,0 +1,24 @@
+import type { ChapterRecord } from "../../../types";
+
+/** 36. UI Mode */
+export const chapter = {
+  id: "pw-36-ui-mode",
+  title: "36. UI Mode",
+  minutes: 30,
+  level: "advanced",
+  phase: "Part 4 · Advanced Techniques",
+  partName: "Part 4 · Advanced Techniques",
+  overviewText: "UI Mode is Playwright's visual interactive test runner: browse tests, watch mode on save, pick-locator on click, and live time-travel through steps. JavaScript/TypeScript native — Python relies on Inspector and Trace Viewer instead.",
+  why: "Visual test exploration accelerates authoring and debugging for developers who think in timelines and live DOM, not stack traces.",
+  when: "Use in JS/TS projects via npx playwright test --ui. For Python suites, use PWDEBUG=1 Inspector and Trace Viewer as equivalents.",
+  practical: { app: "JS/TS Playwright project alongside Python E2E", scenario: "Developer uses UI Mode pick-locator to draft selectors, ports pattern to Python POM.", pass: "UI Mode watch mode reruns affected spec on save — instant feedback loop.", fail: "Assume UI Mode works with pytest-playwright — it does not." },
+  advantages: ["Visual test tree with pass/fail at a glance","Watch mode reruns on file save","Pick-locator generates code on element click","Time-travel scrubs through step timeline","No PWDEBUG env var needed for exploration","Integrated with @playwright/test runner"],
+  limitations: ["No Python/pytest-playwright UI Mode equivalent","Requires @playwright/test JavaScript project","Not available in CI headless pipelines","Generated locators need POM refactoring","Large suites slow to load in UI Mode","Separate from Python E2E workflow"],
+  tools: [],
+  contentMarkdown: "## 36. UI Mode\n\nUI Mode is an interactive, visual test runner for browsing and running your suite during development.\nnpx playwright test --ui   # JS/TS — native UI Mode\n\nUI Mode presents your entire test suite in a visual sidebar, letting you click into any individual test and run just that one, watch it execute with a live preview panel, and see a timeline of every step it took. This is a genuinely different experience from running pytest from the command line and reading text output — you get an actual visual replay of what the browser did at each step.\nWatch mode re-runs affected tests automatically as you edit code.\nRather than manually re-running pytest after every code change, watch mode monitors your test files and re-executes automatically the moment you save a change — tightening the feedback loop significantly while actively writing or debugging a test.\nPick-locator lets you click an element on the page and get its recommended locator instantly.\nThis is UI Mode's version of Codegen's locator-suggestion feature (Part 1, Chapter 4) but available on-demand at any point while browsing a test's execution, not just during initial recording — genuinely useful mid-debugging when you're trying to figure out \"what's the best way to target this specific element I'm looking at right now.\"\nLive time-travel lets you scrub through a test's execution step by step, inspecting DOM state at each point.\nAs a test runs (or after it finishes), you can click on any individual step in the timeline and see exactly what the DOM/page looked like at that precise moment — this is conceptually similar to Trace Viewer's post-mortem replay (Chapter 37), but live and interactive during active development rather than reviewing a saved trace file after a CI failure.\nScope note: UI Mode is currently a JS/TS-native feature.\nWorth flagging honestly, in the same spirit as the Chapter 28 component-testing scope note: Playwright's UI Mode, as officially documented, is built around the JS/TS test runner (@playwright/test) and its own tooling. Python's pytest-playwright does not have a fully equivalent native UI Mode at the time of this manual — Python users rely more heavily on the Playwright Inspector (live debugging) and Trace Viewer (post-mortem) from Chapter 35/37 to cover similar ground. If UI-Mode-style interactive browsing becomes a priority, it's worth periodically checking Playwright's release notes (tying back to Part 0's point about its fast, frequent release cadence), since Python tooling parity with JS/TS features has been known to arrive in later versions.",
+  customSummary: "## 36. UI Mode\n\nVisual, interactive test runner: browse/run tests, live preview, step timeline.\nWatch mode auto-reruns affected tests on file save.\nPick-locator suggests a locator for any element you click, on demand.\nLive time-travel lets you scrub through a running/finished test's steps and inspect DOM state at each one.\nCurrently JS/TS-native — no full Python equivalent; Python relies on Inspector + Trace Viewer instead.",
+  exercises: [],
+  resourceLinks: [],
+  steps: [],
+  learn: [],
+} as ChapterRecord;

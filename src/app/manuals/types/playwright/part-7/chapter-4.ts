@@ -1,73 +1,24 @@
 import type { ChapterRecord } from "../../../types";
 
-/** 36. Career Positioning */
+/** 50. Career Positioning */
 export const chapter = {
-  "id": "pw-7-career",
-  "title": "36. Career Positioning",
-  "minutes": 40,
-  "level": "pro",
-  "phase": "Part 7 · Real-World Project & Job Readiness",
-  "partName": "Part 7 · Real-World Project & Job Readiness",
-  "overviewText": "Career positioning for QA professionals adding automation skills means framing manual QA experience as the foundation automation sits on top of — not a gap to work around. You already understand test design: edge cases, boundary conditions, negative testing. Automation is a new execution mechanism for that same skill, not a replacement for it. Your documentation and test case writing skills directly inform writing clear test assertions and failure messages. In interviews and on a resume, frame it as addition, not transition: 'manual QA tester who added automation skills' reads as a more complete profile than trying to present as a from-scratch automation engineer. Effective resume bullets focus on concrete outcomes and named techniques — Page Object Model, API validation, GitHub Actions CI — not just tool lists.",
-  "why": "Candidates transitioning from manual QA to automation often undersell their existing skills and oversell their coding skills — the opposite of what hiring managers value. A manual QA background means you already know how to think about edge cases, write clear test cases, and communicate failures to developers. Those skills are exactly what automation-only engineers often lack. Framing your profile correctly means interviewers evaluate you on your complete QA profile rather than comparing you directly against candidates with five years of pure coding experience. The capstone project and portfolio repo are the evidence that backs up the positioning.",
-  "when": "Update your resume and LinkedIn profile after the capstone (Chapter 33) and portfolio repo (Chapter 34) are complete — not before. Write resume bullets using the capstone project as the primary example. Prepare your 'addition not transition' framing before any interview. Apply to roles titled 'QA Automation Engineer' or 'SDET' rather than 'Software Engineer' — the job title signals the evaluation criteria you are prepared for.",
-  "practical": {
-    "app": "QA Automation Engineer — Resume and interview",
-    "scenario": "You apply for a QA Automation Engineer role. Your resume bullet reads: 'Built a Playwright + Python + pytest automation framework using Page Object Model architecture, combining UI and API validation and integrating with GitHub Actions CI, covering login, CRUD, and full-stack validation for a task management application.'",
-    "pass": "The hiring manager sees a specific, credible bullet with named techniques and a portfolio repo link. In the interview, you explain your manual QA background as the foundation for your test design approach, and walk through the capstone project demonstrating POM, API validation, and CI integration.",
-    "fail": "The resume bullet reads 'Used Playwright and Python for testing.' The interviewer asks what you built and you describe running a few recorded tests. The manual QA background is never mentioned, and the candidate is evaluated purely on coding depth against senior automation engineers."
-  },
-  "advantages": [
-    "Manual QA background is a differentiator — test design thinking that automation-only engineers often lack",
-    "Documentation skills translate directly to framework maintainability and README quality",
-    "Capstone project provides concrete, interview-defensible examples of automation competence",
-    "'Addition not transition' framing avoids unfavorable comparison against pure coding candidates",
-    "Named techniques in resume bullets (POM, API validation, GitHub Actions) signal depth beyond tool lists",
-    "QA Automation Engineer / SDET titles match the evaluation criteria you are prepared for"
-  ],
-  "limitations": [
-    "Positioning does not substitute for technical depth — the capstone must be genuinely well-built",
-    "Some companies prefer pure automation engineers — target roles that value QA background explicitly",
-    "Resume bullets with specific metrics require real numbers — do not fabricate time-saved claims",
-    "Career positioning is ongoing — must be updated as skills and projects grow"
-  ],
-  "tools": [
-    {
-      "name": "GitHub Portfolio Repo",
-      "sub": "Career Evidence",
-      "url": "https://github.com",
-      "desc": "The capstone portfolio repo is the primary career evidence for automation skills. Link it directly in resume, LinkedIn, and cover letters. Pin it on your GitHub profile. Ensure the README names specific patterns (POM, session reuse, API validation, GitHub Actions CI) and the CI badge is green before sharing the link.",
-      "adv": [
-        "Directly linkable in resume and LinkedIn — reviewers can evaluate before the interview",
-        "Green CI badge is passive proof the framework works",
-        "README and docs/architecture.md demonstrate communication skills alongside technical skills"
-      ],
-      "lim": [
-        "Only valuable if the repo is genuinely well-built — a poor framework with a good README fails under scrutiny",
-        "Requires the capstone to be complete and CI-green before sharing"
-      ],
-      "steps": [
-        {
-          "t": "Step 1 — Write outcome-focused resume bullets",
-          "p": "Use the capstone as the primary example:",
-          "c": "Built a Playwright + Python + pytest automation framework using\nPage Object Model architecture, combining UI and API validation and\nintegrating with GitHub Actions CI, covering login, CRUD, and\nfull-stack validation for a task management application.\n\nGitHub: github.com/yourusername/playwright-task-manager-framework"
-        },
-        {
-          "t": "Step 2 — Prepare the 'addition not transition' framing",
-          "p": "Practice this answer for 'tell me about your background':",
-          "c": "\"I started in manual QA, which gave me strong test design skills —\nedge cases, boundary conditions, clear test cases. I've added\nautomation skills on top of that foundation: Playwright, Python,\npytest, CI/CD integration. Automation is a new execution mechanism\nfor the same test design thinking I've always done.\""
-        },
-        {
-          "t": "Step 3 — Pin the repo on GitHub profile",
-          "p": "GitHub profile → Customize pins → select the capstone repo.",
-          "c": "# Profile shows pinned repo with README preview and CI badge"
-        }
-      ]
-    }
-  ],
-  "contentMarkdown": "## 36. Career Positioning\n\nManual QA experience is an asset in automation roles — not a liability. Frame it correctly.\n\n### Manual QA + automation framing\n\n| Manual QA strength | Automation translation |\n|---|---|\n| Exploratory testing instincts | Better test design — you know where apps break |\n| Bug report clarity | Clearer failure messages and trace annotations |\n| Domain knowledge | Stronger assertions — you know what \"correct\" looks like |\n| Regression checklist mindset | Systematic suite coverage, not random happy-path tests |\n\n**Interview line:** \"My manual QA background means I design tests that catch real user-facing bugs, not just green checkmarks on happy paths.\"\n\n### Resume bullets (copy and adapt)\n\nUse action verbs + measurable outcomes:\n\n- Built Playwright + pytest E2E framework covering login, CRUD, and API validation for [App Name]; reduced regression cycle from 4 hours manual to 12 minutes automated\n- Designed Page Object Model architecture and session-reuse fixtures; onboarded 2 QA engineers to contribute tests within first week\n- Integrated Playwright suite into GitHub Actions CI; published trace artifacts on failure, cutting flaky-test diagnosis time by ~60%\n- Migrated 40 Selenium tests to Playwright; eliminated explicit waits and reduced suite flake rate from 15% to under 2%\n- Authored conftest.py fixtures for multi-role testing (admin, employee, guest) with storage_state session reuse\n\n### LinkedIn headline options\n\n- QA Automation Engineer | Playwright · pytest · Python | Manual QA → Automation\n- Test Automation Engineer | Building reliable Playwright frameworks | Ex-manual QA\n\n### What hiring managers scan for\n\n1. **GitHub link** with a real, runnable project (not a tutorial fork)\n2. **CI badge** — proves you understand the full pipeline\n3. **API + UI testing** — shows full-stack thinking\n4. **Specific tools** — Playwright, pytest, GitHub Actions (not just \"Selenium experience\")\n\n### Avoid\n\n- \"Familiar with automation\" without a repo link\n- Listing 15 tools with no depth on any\n- Claiming \"100% test coverage\" — interviewers will probe",
-  "exercises": [],
-  "resourceLinks": [],
-  "steps": [],
-  "learn": []
+  id: "pw-50-career",
+  title: "50. Career Positioning",
+  minutes: 30,
+  level: "intermediate",
+  phase: "Part 7 · Real-World Project & Job Readiness",
+  partName: "Part 7 · Real-World Project & Job Readiness",
+  overviewText: "Career paths: SDET, QA Automation Engineer, Test Architect. Positioning Playwright + Python as portfolio breadth; when to lead with automation vs manual QA experience.",
+  why: "Career positioning determines which roles you qualify for and how you frame existing skills. Tool expertise is necessary but not sufficient.",
+  when: "Read when updating resume, negotiating title, or choosing between SDET and manual QA tracks.",
+  practical: { app: "Resume and LinkedIn", scenario: "Job posting asks for '5 years Selenium' — you have 2 years Playwright Python.", pass: "Frame as test automation engineering with modern stack; highlight framework and CI ownership.", fail: "List tool names without outcomes (reduced flake rate, cut CI time 60%)." },
+  advantages: ["SDET path values framework and CI skills this manual teaches","Playwright + Python positions for polyglot automation teams","Quantified outcomes (CI time, flake reduction) strengthen resume","Capstone project provides concrete 'built and shipped' narrative","Test Architect path opens with Part 6 framework reasoning","Automation skills complement manual QA domain expertise"],
+  limitations: ["Title inflation (calling yourself SDET without depth) fails technical screens","Some markets still prefer Selenium/Java regardless of Playwright skill","Career ladder differs by company — SDET not universal title","Automation-only positioning undersells valuable manual testing judgment","Contract roles may prioritize speed over framework quality","Geographic salary bands vary independently of skill level"],
+  tools: [],
+  contentMarkdown: "## Career Positioning\n\nQA automation career paths branch in a few recognizable directions worth knowing about deliberately. SDET (Software Development Engineer in Test) roles lean more toward engineering — building frameworks, contributing to application code, deeper CI/infrastructure work. Pure QA Automation Engineer roles lean more toward test design, coverage strategy, and domain expertise. Some paths lead toward DevOps/Platform engineering, where the CI/CD and infrastructure skills from Part 5 become the primary focus rather than a supporting skill. Being deliberate about which direction genuinely interests you shapes which skills in this manual are worth going deeper on beyond the baseline.\n\nPlaywright MCP represents a genuinely new frontier worth being aware of, distinct from traditional test automation. Introduced in the tooling ecosystem overview (Part 0, Chapter 7), Playwright's MCP (Model Context Protocol) server lets AI agents/LLMs drive a browser through Playwright — a different use case from writing deterministic, repeatable test scripts. This is worth understanding conceptually (an AI agent using Playwright as its \"hands\" to interact with a live web page, rather than a human writing fixed automation logic) because it's a fast-moving area, and even a working awareness of it is a differentiator in interviews and career conversations right now, precisely because it's new enough that most candidates won't have engaged with it at all.\n\nTest impact analysis, introduced in Chapter 44 as a suite-scaling technique, is also a named, valuable individual skill to be able to speak to. Being able to describe — even at a conceptual level — how you'd approach reducing CI time on a large suite by running only impacted tests demonstrates the kind of scaling-aware thinking that separates a mid-level from a senior automation engineer, since it shows you've thought about test suites as a system with real engineering tradeoffs, not just a growing pile of test files.\n\nShift-left culture and QA-dev collaboration describe where testing sits in the development process, not just what tools are used. \"Shift-left\" means involving testing earlier in the development lifecycle — writing (or at least reviewing) automated tests alongside feature development rather than after a feature is \"done,\" and QA collaborating with developers on testability (encouraging good locator hooks like data-testid, discussing edge cases before code is written) rather than only being handed a finished feature to verify. Being able to speak fluently about this — and ideally point to a real instance of practicing it (raising the data-testid convention with a dev team, as flagged back in Chapter 13) — signals a QA professional who thinks about quality as a shared team responsibility, which is increasingly what senior and lead QA roles are actually evaluated on, beyond raw automation-scripting skill.\n\nPositioning your Bizlevate + Appium + Playwright combination as a coherent, differentiated skill set. Having both web (Playwright) and native mobile (Appium, per your prior roadmap) automation experience, applied to a real domain (HR/payroll systems) rather than only toy projects, is a genuinely uncommon combination worth naming explicitly in a resume/portfolio/interview rather than treating each as a separate, disconnected credential — most candidates have one or the other, rarely both applied to the same real business domain.",
+  customSummary: "## Career Positioning\n\nCareer paths branch toward SDET (engineering-heavy), pure QA Automation (test design/domain-heavy), or DevOps/Platform (CI/infra-heavy) — worth being deliberate about which to grow toward.\nPlaywright MCP (AI agents driving a browser via Playwright) is a genuinely new frontier, distinct from deterministic scripted automation — even conceptual familiarity is a current differentiator.\nTest impact analysis (Ch. 44) is also a standalone, valuable talking point — demonstrates systems-level, senior-track thinking about suite scaling.\nShift-left culture means testing/QA involvement moves earlier in the dev lifecycle (reviewing tests alongside feature work, championing testability like data-testid hooks) — increasingly what senior/lead QA roles are evaluated on.\nThe combination of web (Playwright) + native mobile (Appium) automation applied to a real business domain (HR/payroll, via Bizlevate) is a genuinely differentiated skill set worth naming explicitly, not treating as two disconnected credentials.",
+  exercises: [],
+  resourceLinks: [],
+  steps: [],
+  learn: [],
 } as ChapterRecord;

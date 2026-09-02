@@ -1,952 +1,594 @@
 /** Playwright manual Part 2 — Core Interactions */
 export const chapters = [
   {
-    contentMarkdown: `## Ch5 Locators Deep Dive
+    id: "pw-13-locators",
+    title: "13. Locators Deep Dive",
+    minutes: 45,
+    level: "intermediate",
+    phase: "Part 2 · Core Interactions",
+    partName: "Part 2 · Core Interactions",
+    overviewText: "The most important chapter in the manual — user-facing locators (get_by_role, get_by_label, get_by_text, get_by_placeholder), get_by_test_id, CSS/XPath fallbacks, .filter(), .nth/.first/.last, .all()/.count(), strictness, and auto-retry.",
+    why: "Nearly every flake traces back to a brittle locator. Mastering Playwright's locator philosophy — accessibility-first, live retry — separates stable suites from maintenance nightmares.",
+    when: "Read before writing your second spec. Revisit when strict-mode violations fire or when refactoring selectors into a Page Object Model.",
+    practical: { app: "HRMS employee list", scenario: "Delete button matches 12 rows — strict mode violation on .click().", pass: "Scope with .filter(has=page.get_by_text('john@example.com')) then click Delete within that row.", fail: "Add .first blindly or switch to fragile CSS .btn-delete:nth-child(3)." },
+    advantages: ["get_by_role mirrors screen-reader perception — doubles as light a11y check", "Locators auto-retry until timeout — no manual polling loops", "get_by_test_id survives CSS refactors when devs maintain data-testid", ".filter(has=...) scopes table rows without brittle nth-child", "Strict mode catches ambiguous selectors before wrong-element clicks", "Chaining locators narrows scope progressively like nested .locator()"],
+    limitations: ["get_by_label fails on apps with broken label markup", "CSS/XPath tied to DOM structure — breaks on redesigns", ".nth() and .first order-dependent when list order shifts", ".count() is a one-time read — no auto-retry unlike expect().to_have_count()", "get_by_text ambiguous when same string repeats on page", "Shadow DOM piercing requires special locator strategies (Part 4)"],
+    contentMarkdown: `## 13. Locators Deep Dive
 
-Locators are the foundation of every Playwright test. A well-chosen locator survives CSS refactors, reads like user intent, and pairs with auto-retry so you rarely need manual waits. This chapter covers user-facing locators first, then CSS/XPath escapes, chaining, strictness, and the retry model.
+This is the most important chapter in the entire manual — nearly everything else builds on writing good locators.
+### get_by_role, get_by_text, get_by_label, get_by_placeholder are "user-facing" locators.
 
-### Why user-facing locators win
-
-\`get_by_role\`, \`get_by_label\`, \`get_by_text\`, and \`get_by_placeholder\` query the accessibility tree — the same information screen readers use. Class names like \`.btn-primary-v2\` change every sprint; a button's role and visible label rarely do. Default to user-facing locators; reach for \`page.locator()\` only when no accessible hook exists.
-
----
-
-### get_by_role
-
-**What it does:** Finds an element by its ARIA role and optional accessible name. The recommended default for buttons, links, headings, checkboxes, and other interactive controls.
-
-**Types/params:**
-- \`role\` (str): ARIA role — \`"button"\`, \`"link"\`, \`"textbox"\`, \`"checkbox"\`, \`"heading"\`, \`"listitem"\`, \`"row"\`, etc.
-- \`name\` (str | Pattern): Accessible name — visible text or \`aria-label\`. Supports regex via \`re.compile(...)\`.
-- \`exact\` (bool): When \`True\`, name must match exactly, not as substring. Default \`False\`.
-- \`checked\` (bool): For checkboxes/radios — filter by checked state.
-- \`level\` (int): For headings — restrict to \`h1\`–\`h6\` via \`level=1\` etc.
-
-**Pointers:**
-- Prefer over CSS for anything with a meaningful role.
-- Regex names handle dynamic labels: \`name=re.compile(r"Delete item \\d+")\`.
-- If strict mode fires, tighten with a parent scope or \`.filter()\` — don't blindly add \`.first\`.
-
+They find elements the way a real user (or screen reader) would identify them, rather than by internal implementation details like CSS classes. This is deliberate philosophy, not just convenience: implementation details (class names, DOM structure) change often as developers refactor CSS/markup, but the role and visible text of a button rarely change. Locators built on them break far less often.
 \`\`\`python
 page.get_by_role("button", name="Submit").click()
+page.get_by_role("link", name="Home").click()
 page.get_by_role("checkbox", name="Remember me").check()
-page.get_by_role("heading", name="Dashboard", level=1)
-page.get_by_role("link", name=re.compile(r"View order #\\d+"))
-\`\`\`
 
----
+page.get_by_text("Welcome back").is_visible()
 
-### get_by_text
-
-**What it does:** Finds an element containing specific visible text. Good for static content, status messages, and table cells.
-
-**Types/params:**
-- \`text\` (str | Pattern): Text to match. Substring by default.
-- \`exact\` (bool): Require full text match when \`True\`.
-
-**Pointers:**
-- Ambiguous on pages where the same string appears twice — scope with a parent locator or use \`.filter(has_text=...)\`.
-- Pair with \`expect(...).to_contain_text()\` for assertions; use \`get_by_text\` when you need to click or interact.
-
-\`\`\`python
-page.get_by_text("Payment confirmed").is_visible()
-page.get_by_text("Pending", exact=True)
-\`\`\`
-
----
-
-### get_by_label
-
-**What it does:** Finds a form control by its associated \`<label>\` text. The best locator for inputs when markup is correct.
-
-**Types/params:**
-- \`text\` (str | Pattern): Label text (or \`aria-label\` on the input).
-- \`exact\` (bool): Full label match when \`True\`.
-
-**Pointers:**
-- Requires proper \`<label for="...">\` or wrapping label markup. Broken labels mean this won't work — fall back to placeholder or \`data-testid\`.
-- Chain inside a form scope to avoid cross-form collisions.
-
-\`\`\`python
 page.get_by_label("Email address").fill("user@example.com")
-form = page.get_by_role("form", name="Login")
-form.get_by_label("Password").fill("secret")
-\`\`\`
 
----
-
-### get_by_placeholder
-
-**What it does:** Finds an input by its \`placeholder\` attribute.
-
-**Types/params:**
-- \`text\` (str | Pattern): Placeholder string.
-- \`exact\` (bool): Full match when \`True\`.
-
-**Pointers:**
-- Weaker accessibility signal than a real label — use only when labels are missing.
-- Placeholders disappear once the user types; don't rely on them for post-fill assertions.
-
-\`\`\`python
 page.get_by_placeholder("Search products...").fill("laptop")
 \`\`\`
 
----
 
-### page.locator
+### get_by_role(role, name=...) matches ARIA role plus accessible name.
 
-**What it does:** Creates a locator from a CSS selector, XPath string, or existing locator. Escape hatch when role/label/text aren't available.
+role (string, required) covers values like "button" (clickable buttons), "link" (<a> tags), "checkbox", "textbox" (text inputs/textareas), "heading" (<h1>–<h6>), "listitem", and "row" (table rows). name (string or regex, optional) matches the accessible name — a string does substring matching by default, while a regex like re.compile("Delete.*") handles partially dynamic text. exact (boolean, default False) forces a full match instead of substring matching when True. checked (boolean, optional, checkboxes/radios only) filters to only-checked or only-unchecked elements. level (integer 1–6, optional, headings only) narrows to a specific heading level, e.g. level=1 matches only <h1>. This is the best-practice default locator — it mirrors how screen readers perceive the page, so it doubles as a light accessibility check, and should be preferred over CSS/XPath whenever the element has a clear role.
+### get_by_text(text) matches visible text content anywhere on the page.
 
-**Types/params:**
-- \`selector\` (str): CSS (\`"#id"\`, \`"[data-testid='x']"\`) or XPath (\`"xpath=//div[@class='foo']"\`).
-- Chaining: \`parent_locator.locator(".child")\` scopes the search.
+text (string or regex, required) does substring matching by default with a string, or flexible pattern matching with a regex like re.compile("Order #\\\\d+"). exact (boolean, default False) requires the full element text to match exactly when True. This is good for non-interactive content checks (confirmation messages, headings without a clear role), but can be ambiguous on pages that repeat similar text — combine with .filter() or scope to a parent when needed.
+### get_by_label(label_text) matches a form input by its associated <label>.
 
-**Pointers:**
-- Prefer \`data-testid\` over auto-generated CSS classes.
-- XPath is powerful but brittle — last resort.
-- \`page.locator("text=Submit")\` exists but \`get_by_text\` is clearer.
+label_text (string or regex, required) matches label text, substring by default. exact (boolean, default False) requires a full match when True. This requires the app to use proper <label for="..."> markup — if it doesn't, this won't work and you'll need get_by_placeholder or CSS as a fallback. When it does work cleanly, it's also a good accessibility signal for the app itself.
+### get_by_placeholder(text) matches an input by its placeholder attribute.
 
+text (string or regex, required) substring-matches by default, and exact (boolean, default False) forces a full match. This is a fallback for inputs without proper labels — fragile since placeholder text is often decorative/example text likely to change. Prefer get_by_label when both exist.
+### get_by_test_id(test_id) matches a dedicated test-hook attribute.
+
+This locator targets a data-testid (or configured equivalent) attribute added specifically for testing purposes, independent of visible text, role, or CSS structure — e.g. page.get_by_test_id("submit-order-button").click(). test_id (string or regex, required) matches the attribute's value. The key tradeoff versus role/text-based locators: get_by_test_id requires developers to deliberately add these attributes to the markup, which means it needs buy-in from the dev team, but once added it's arguably the most stable locator type available — completely decoupled from both visual text (which might get translated or reworded) and CSS/DOM structure (which changes during refactors). It's especially valuable in apps with heavy internationalization, where get_by_text/get_by_label would break across locales but a data-testid stays constant. Worth raising this as a suggestion during dev collaboration if your app doesn't use test IDs yet, particularly for critical, frequently-automated flows.
+CSS and XPath locators remain available and are sometimes necessary.
 \`\`\`python
-page.locator("[data-testid='legacy-widget']").click()
-row = page.locator("tr", has_text="Jane Doe")
-row.locator("button", has_text="Edit").click()
+page.locator("css=.submit-btn").click()
+page.locator("#login-form input[type='email']").fill("test@example.com")
+page.locator("xpath=//button[contains(text(), 'Submit')]").click()
 \`\`\`
 
----
 
-### filter, nth, first, last
-
-**What it does:** Narrows a locator set to one element or a subset.
-
-**Types/params:**
-- \`.filter(has_text=..., has=...)\`: Keep elements matching extra criteria or containing a child.
-- \`.nth(index)\`: Zero-based index into the match set.
-- \`.first\` / \`.last\`: Shorthand for index 0 and final match.
-
-**Pointers:**
-- \`.first\` silences strict-mode errors but may click the wrong row — prefer \`.filter()\` with unique text.
-- \`.nth(2)\` is fragile when list order changes; filter by stable content instead.
+page.locator(selector) is a general-purpose locator: a plain string is treated as CSS by default (e.g. ".submit-btn", "#login-form input"), a "xpath=..." prefix is treated as XPath, and a "text=..." prefix uses Playwright's own older text-engine syntax as an alternative to get_by_text. This is a fallback for poorly-built markup that lacks proper roles/labels (unfortunately common in older or hastily-built internal tools) — the tradeoff is that CSS/XPath locators are tied to DOM structure and class names, both of which change more often than visible text/roles do, making them more brittle. A Page Object Model (Chapter 23) helps contain this breakage to one place when it happens.
+### .filter() narrows a locator by additional text or a sub-locator.
 
 \`\`\`python
-page.get_by_role("listitem").filter(has_text="Pending").get_by_role("button", name="Approve").click()
-page.get_by_role("row").filter(has=page.get_by_text("john@example.com")).get_by_role("button", name="Delete").click()
+page.get_by_role("listitem").filter(has_text="Product A").click()
+
+row = page.get_by_role("row").filter(has=page.get_by_text("john@example.com"))
+row.get_by_role("button", name="Delete").click()
 \`\`\`
 
----
 
-### Strictness
+has_text (string or regex, optional) keeps only matches containing that text anywhere within the element. has (Locator object, optional) keeps only matches that themselves contain an element matching that sub-locator — commonly used for row-scoping, as in the example above: find the row containing a specific email, then act only within that row. Both parameters can be combined in one call. This pattern is essential for tables and lists, and you'll use it constantly in real test suites.
+### .nth(index) selects one specific match by position.
 
-**What it does:** By default, an action on a locator that matches multiple elements raises a strict mode violation instead of picking one silently.
+index (integer, required, 0-based) — 0 is the first match; unlike Python lists, -1 is not supported, so use .last instead for the final match. This is order-dependent and breaks if list order changes, so prefer .filter() when content-based selection is possible.
+### .first and .last are shortcuts for the first/last match.
 
-**Types/params:**
-- Strict mode is on by default for actions (\`click\`, \`fill\`, etc.).
-- Disable per-call with \`force=True\` (skips actionability too — avoid unless intentional).
-
-**Pointers:**
-- Strict mode is a feature: it catches ambiguous locators at dev time.
-- Fix by scoping, filtering, or using a more specific \`name\` — not by sprinkling \`.first\`.
-
+Both are accessed as properties, not called with (). .first is equivalent to .nth(0); .last is equivalent to the final match regardless of total count. They carry the same brittleness caveat as .nth() — fine for "top of a freshly-sorted list" checks, risky if order can change between runs.
 \`\`\`python
-# Fails if two "Submit" buttons exist — good
-page.get_by_role("button", name="Submit").click()
+page.get_by_role("listitem").nth(2).click()
+page.get_by_role("button", name="Add to cart").first.click()
+page.locator(".comment").last.scroll_into_view_if_needed()
 \`\`\`
 
----
 
-### Auto-retry
+### .all() returns every currently-matched element as a list of locators.
 
-**What it does:** Locators re-query the DOM on every action and assertion until the element is found and actionable, or the timeout expires.
-
-**Types/params:**
-- Default timeout: 30 seconds (configurable via \`page.set_default_timeout()\` or test config).
-- Applies to actions and \`expect()\` assertions — not bare Python \`assert\`.
-
-**Pointers:**
-- No stale-element exceptions — locators are lazy handles, not cached DOM nodes.
-- Flaky tests with good locators usually mean a real timing/overlay bug, not "Playwright needs more wait."
+page.get_by_role("listitem").all() returns a Python list of individual Locator objects, one per match, letting you iterate over them directly — e.g. looping through every row in a table to check each one's text. Unlike a single-element locator, .all() performs a snapshot at the moment it's called rather than staying "live" — if the list changes after you've called .all() (e.g. an item gets deleted), the list you're holding won't reflect that change. Use this when you genuinely need to loop through multiple elements individually; for a simple count, .count() below is cheaper and clearer.
+### .count() returns the number of current matches as an integer.
 
 \`\`\`python
-# Re-queries until visible and enabled, then clicks
-page.get_by_role("button", name="Save").click()
-\`\`\``,
+assert page.get_by_role("listitem").count() == 5
+\`\`\`
+
+
+This is a plain, non-retrying integer read — it checks the count once, right now, rather than polling like expect() does. If you need to assert on a count with retry/auto-wait behavior (e.g., waiting for a list to finish loading to exactly 5 items), prefer expect(locator).to_have_count(5) (covered in the assertions addendum below) instead of a plain assert on .count().
+### .evaluate() and .evaluate_all() run raw JavaScript against matched element(s).
+
+\`\`\`python
+text_content = page.locator(".price").evaluate("el => el.textContent")
+all_prices = page.locator(".price").evaluate_all("els => els.map(el => el.textContent)")
+\`\`\`
+
+
+.evaluate(js_function) runs the given JS function with the single matched DOM element passed in as its argument, returning whatever the function returns. .evaluate_all(js_function) does the same but passes the entire array of matched elements at once, useful for bulk operations (e.g., collecting every price on a page in one call rather than looping with .all()). These are an escape hatch for the rare cases where Playwright's own API doesn't expose something you need (a computed style property, a custom DOM attribute, direct manipulation of an element's internal state) — use them sparingly, since heavy reliance on raw JS evaluation starts to erode the main benefit of using a browser-automation framework with a clean, typed API in the first place.
+### .bounding_box() and .highlight() support visual/positional debugging and assertions.
+
+\`\`\`python
+box = page.get_by_role("button", name="Submit").bounding_box()
+print(box)  # {"x": 100, "y": 200, "width": 80, "height": 32}
+
+page.get_by_role("button", name="Submit").highlight()
+\`\`\`
+
+
+.bounding_box() returns a dictionary with the element's x, y, width, and height in pixels relative to the page's viewport, or None if the element isn't visible. This is useful for layout-sensitive assertions — confirming an element is positioned within an expected region, or that two elements don't overlap. .highlight() draws a visible highlight box around the element directly in the browser (only meaningful in headed mode or when inspecting via UI Mode/Trace Viewer) — a quick way to visually confirm "is this locator actually finding the element I think it is" while debugging, without needing to add a print() and match output manually.
+### Locator strictness prevents accidentally acting on the wrong element.
+
+### # Throws an error if there are multiple matches
+
+\`\`\`python
+page.get_by_role("button", name="Delete").click()
+# strict mode violation: resolved to 3 elements
+\`\`\`
+
+
+If a locator matches more than one element and you call an action on it directly (without .first/.nth()/.filter()), Playwright throws an error instead of silently acting on whichever element happened to be first. This is a deliberate safety feature — it forces you to be precise rather than accidentally clicking the wrong "Submit" button on a page with three of them.
+### Locators auto-retry because they're a live recipe, not a one-time lookup.
+
+A locator defined before an element even exists on the page yet (e.g., before an API response resolves) will still work, because Playwright re-evaluates the lookup every time you call an action or assertion on it, retrying until the element appears or the timeout expires. This is the technical foundation underneath the "no manual waits needed" claim from Part 0.
+### Locator strategy: prefer stable selectors, treat CSS/XPath as a last resort.
+
+A practical priority order, from most to least stable: get_by_role / get_by_label (tied to accessibility semantics, rarely change) → get_by_test_id (stable if the dev team maintains it, immune to text/locale changes) → get_by_text / get_by_placeholder (reasonably stable, but breaks on copy changes or translation) → CSS/XPath (most brittle, tied directly to markup structure). A common anti-pattern worth naming explicitly: writing long, deeply-nested XPath expressions generated by "copy XPath" browser dev-tools features (e.g. //div[3]/div[1]/span[2]/button) — these encode the exact current DOM structure and will silently break the moment a developer adds one wrapper <div> anywhere upstream, even though nothing about the button itself changed. Another anti-pattern is relying on auto-generated or utility CSS class names (common with frameworks like Tailwind or CSS-in-JS solutions that hash class names per build) — these can change on every deploy even without a visual or structural change. When CSS is unavoidable, prefer attribute-based selectors ([type="submit"], [name="email"]) over class-name selectors, since attributes tend to be more intentional and stable than styling classes.`,
+    customSummary: `## 13. Locators Deep Dive
+
+get_by_role, get_by_text, get_by_label, get_by_placeholder are user-facing locators — tied to accessible role/text, not brittle DOM structure. get_by_role is the best-practice default.
+get_by_test_id matches a dedicated data-testid attribute — most stable option if devs maintain it, especially valuable in i18n apps.
+CSS/XPath (page.locator()) are fallbacks — brittle since tied to class names/DOM structure; use attribute selectors over class selectors when CSS is unavoidable.
+.filter(has_text=..., has=...) narrows matches — essential for table/row scoping.
+.nth(index), .first, .last select by position — order-dependent, prefer .filter() when possible.
+.all() returns a snapshot list of locators to loop over; .count() gives a one-time integer count (use expect().to_have_count() instead if you need retrying behavior).
+.evaluate() / .evaluate_all() run raw JS against matched element(s) — escape hatch, use sparingly.
+.bounding_box() returns position/size; .highlight() visually flags an element for debugging.
+Locators are strict (error on multiple unhandled matches) and auto-retry (re-evaluated live until found or timeout).
+Strategy: prefer role/label → test-id → text/placeholder → CSS/XPath last. Avoid copy-pasted deep XPath and auto-generated/hashed CSS classes — both break easily.`,
+    chapterNum: 13,
   },
   {
-    contentMarkdown: `## Ch6 Actions
+    id: "pw-14-actions",
+    title: "14. Actions",
+    minutes: 40,
+    level: "intermediate",
+    phase: "Part 2 · Core Interactions",
+    partName: "Part 2 · Core Interactions",
+    overviewText: "Comprehensive coverage of .click(), .dblclick(), .fill(), .type(), .press(), .check()/.uncheck(), .select_option(), .hover(), and .drag_to() with parameters, actionability checks, and when to use each.",
+    why: "Actions look simple but .fill() vs .type(), .check() vs .click(), and force=True each have distinct semantics that cause real bugs when misused.",
+    when: "Read when implementing form flows, keyboard shortcuts, drag-and-drop, or debounced search inputs.",
+    practical: { app: "E-commerce search with live autocomplete", scenario: "Autocomplete dropdown never appears after .fill() on search box.", pass: "Use .press_sequentially() or .type(delay=100) to fire per-keystroke events.", fail: "Add time.sleep(2) waiting for dropdown that never triggers." },
+    advantages: [".fill() fast and correct for 95% of form fields", ".check()/.uncheck() idempotent — guaranteed end state", ".press() handles Enter/Tab/shortcuts without visible buttons", "Auto-waiting on every action — element must pass actionability checks", ".type(delay=N) fires real keydown events for debounced inputs", ".drag_to() native drag-and-drop without coordinate math"],
+    limitations: [".fill() skips per-keystroke JS events — breaks live validators", "force=True bypasses actionability — masks real UI bugs", ".click() on checkbox toggles state — use .check() for guaranteed on", ".type() slower than .fill() — avoid unless events matter", ".hover() unreliable on touch-only mobile emulation", "Custom drag libraries may need evaluate() workaround"],
+    contentMarkdown: `## 14. Actions
 
-Playwright actions run the full actionability checklist before executing: attached, visible, stable, enabled, and not obscured. You rarely call a separate wait before \`click()\` — trust auto-waiting unless you have a specific state to poll for (Chapter 8).
-
----
-
-### click
-
-**What it does:** Performs a single left-click on the element.
-
-**Types/params:**
-- \`button\` (str): \`"left"\`, \`"right"\`, or \`"middle"\`. Default \`"left"\`.
-- \`click_count\` (int): Number of clicks. Default 1.
-- \`delay\` (float): Milliseconds between mousedown and mouseup.
-- \`force\` (bool): Skip actionability checks. Default \`False\`.
-- \`position\` (dict): \`{"x": 10, "y": 5}\` offset from top-left for canvas/custom widgets.
-- \`modifiers\` (list): \`["Shift"]\`, \`["Control"]\`, etc.
-
-**Pointers:**
-- Timeouts usually mean wrong locator or an overlay — not "needs more sleep."
-- \`force=True\` hides real UX bugs; use only for hidden inputs or known-safe cases.
+### .click() and .dblclick() simulate mouse clicks.
 
 \`\`\`python
 page.get_by_role("button", name="Submit").click()
-page.get_by_role("button", name="Options").click(button="right")
+page.locator(".card").dblclick()
 \`\`\`
 
----
 
-### dblclick
-
-**What it does:** Double-clicks the element.
-
-**Types/params:** Same options as \`click\` (minus \`click_count\`).
-
-**Pointers:** Uncommon in modern web apps — verify the UI actually uses dblclick before writing tests for it.
+button (string, default "left") selects "left", "right", or "middle". click_count (integer, default 1 for click) is rarely changed manually. delay (number, ms, optional) sets the delay between mousedown and mouseup, useful for UI that distinguishes click duration. modifiers (list of strings, optional) — e.g. ["Shift"], ["Control", "Alt"] — are held during the click, for shift-click/ctrl-click behavior. force (boolean, default False) skips actionability checks entirely when True; the normal, recommended default is False, and forcing should be avoided unless you're certain the "not actionable" state is a false positive.
+### .fill() sets a value directly; .type() simulates real keystrokes.
 
 \`\`\`python
-page.get_by_text("Rename").dblclick()
+page.get_by_label("Username").fill("simran")
+page.get_by_label("Search").type("laptop", delay=100)
 \`\`\`
 
----
 
-### fill vs type (press_sequentially)
-
-**What it does:**
-- \`fill(value)\`: Clears the field, then sets the value in one shot. Fast and reliable for standard inputs.
-- \`press_sequentially(text)\` (formerly \`type\`): Sends individual keystrokes with optional delay — triggers \`input\`/\`keydown\` events per character.
-
-**Types/params:**
-- \`fill\`: \`value\` (str), optional \`force\`, \`timeout\`.
-- \`press_sequentially\`: \`text\` (str), optional \`delay\` (ms between keys).
-
-**Pointers:**
-- Default to \`fill\` for forms.
-- Use \`press_sequentially\` when React/Vue controlled components ignore \`fill\`, or for autocomplete/typeahead that listens per keystroke.
-- \`fill\` does not press Enter — call \`press("Enter")\` separately to submit.
+.fill(value) clears the field and sets its value directly — fast and correct for 95% of form-filling, but it doesn't fire per-keystroke JS events. .type(text, delay=...) types character-by-character, firing real keydown/keyup events for each character; delay (ms, default 0) adds a pause between keystrokes, set higher (e.g. 100) for debounced/live-search inputs. The distinction matters because a field with a live autocomplete or character-count validator listening to individual keydown events might not respond correctly to .fill() — reach for .type() specifically in that situation, not by default, since it's slower.
+### .press() sends a single keyboard key or combination.
 
 \`\`\`python
-page.get_by_label("Email").fill("user@example.com")
-page.get_by_label("Search").press_sequentially("play", delay=100)  # autocomplete
+page.get_by_label("Search").press("Enter")
 \`\`\`
 
----
 
-### press
-
-**What it does:** Presses a key or key combination on the element (or focused element).
-
-**Types/params:**
-- \`key\` (str): \`"Enter"\`, \`"Tab"\`, \`"Control+A"\`, \`"Meta+Shift+P"\`, etc.
-
-**Pointers:**
-- Submits forms: \`locator.press("Enter")\` without finding the submit button.
-- Clears fields: \`press("Control+A")\` then \`fill("new value")\`.
+key (string, required) accepts single keys ("Enter", "Tab", "Escape", "ArrowDown") or combinations joined with + ("Control+A", "Shift+Tab"). Useful for submitting forms via Enter or triggering keyboard shortcuts without a visible button to click.
+### .check() and .uncheck() set a checkbox/radio to a guaranteed state.
 
 \`\`\`python
-page.get_by_label("Password").fill("secret")
-page.get_by_label("Password").press("Enter")
+page.get_by_label("Remember me").check()
+page.get_by_label("Subscribe to newsletter").uncheck()
+assert page.get_by_label("Remember me").is_checked()
 \`\`\`
 
----
 
-### check / uncheck
-
-**What it does:** Sets checkbox or radio state. \`check\` ensures checked; \`uncheck\` ensures unchecked.
-
-**Types/params:**
-- \`force\`, \`timeout\`, \`position\` — same as click.
-
-**Pointers:**
-- Prefer \`get_by_role("checkbox", name="...")\` over raw input selectors.
-- Radios: \`check\` selects; you don't \`uncheck\` a radio — click a different one.
+force (boolean, default False) skips actionability checks when True. These are idempotent — calling .check() on an already-checked box does nothing (no error), unlike .click() on a checkbox, which would toggle it. Prefer .check()/.uncheck() over .click() for checkboxes whenever you want a guaranteed end state regardless of current state.
+### .select_option() chooses option(s) in a native <select> dropdown.
 
 \`\`\`python
-page.get_by_role("checkbox", name="Accept terms").check()
-page.get_by_role("checkbox", name="Newsletter").uncheck()
+page.get_by_label("Country").select_option(label="Nepal")
+page.get_by_label("Country").select_option(value="NP")
+page.get_by_label("Skills").select_option(["Python", "Playwright"])
 \`\`\`
 
----
 
-### select_option
-
-**What it does:** Selects option(s) in a native \`<select>\` element.
-
-**Types/params:**
-- \`value\` (str | list): Match \`value\` attribute.
-- \`label\` (str | list): Match visible option text.
-- \`index\` (int | list): Zero-based option index.
-
-**Pointers:**
-- Only works on native \`<select>\` — custom dropdowns need click-based interaction.
-- Multi-select: pass a list: \`select_option(label=["Red", "Blue"])\`.
+value (string, optional) matches the option's value attribute; label (string, optional) matches the option's visible display text; a list form (list of strings, optional) selects multiple options at once for a <select multiple> element. This only works on native <select> elements — many modern UIs use custom-built dropdowns (a styled <div> acting like a select), which need click-to-open-then-click-option handling instead, treated like any other clickable element.
+### .hover() moves the mouse without clicking.
 
 \`\`\`python
-page.get_by_label("Country").select_option(label="Canada")
-page.get_by_label("Tags").select_option(value=["js", "python"])
+page.get_by_text("Account menu").hover()  # reveals a dropdown menu, for example
 \`\`\`
 
----
 
-### hover
-
-**What it does:** Moves the mouse over the element. Required for menus and tooltips that appear on mouseover.
-
-**Types/params:**
-- \`force\`, \`timeout\`, \`position\` — same as click.
-
-**Pointers:**
-- Hover the trigger, then click the revealed item — two separate locator actions.
-- Touch-only mobile emulation may not support hover-dependent UI.
+position (dict {x, y}, optional) targets a specific coordinate within the element's bounding box rather than its center. This is commonly needed just to reveal an element before you can interact with what it reveals — a dropdown menu, a tooltip.
+### .drag_to() performs a full drag-and-drop sequence.
 
 \`\`\`python
-page.get_by_role("button", name="More").hover()
-page.get_by_role("menuitem", name="Export CSV").click()
+page.locator("#source-item").drag_to(page.locator("#drop-zone"))
 \`\`\`
 
----
 
-### drag_to
-
-**What it does:** Drags the source locator to the target locator.
-
-**Types/params:**
-- \`target\` (Locator): Destination element.
-- \`source_position\`, \`target_position\` (dict): Optional offsets.
-- \`force\`, \`timeout\`.
-
-**Pointers:** Kanban boards and sortable lists are the common case. Verify the app uses HTML5 drag or a library that responds to Playwright's drag simulation.
-
+target_locator (Locator object, required) is the destination element. This handles the full mousedown → mousemove → mouseup sequence internally, and works well for standard HTML5 drag-and-drop; especially custom drag implementations may need a fallback to manual mouse events (below).
+Low-level keyboard control via page.keyboard.
 \`\`\`python
-page.locator("#task-42").drag_to(page.locator("#column-done"))
+page.keyboard.press("Control+A")
+page.keyboard.type("Hello world")
+page.keyboard.down("Shift")
+page.keyboard.up("Shift")
 \`\`\`
 
----
 
-### Keyboard and mouse low-level
-
-**What it does:** \`page.keyboard\` and \`page.mouse\` expose raw input for cases locators don't cover.
-
-**Types/params:**
-- \`page.keyboard.press(key)\`, \`.type(text)\`, \`.down(key)\`, \`.up(key)\`.
-- \`page.mouse.move(x, y)\`, \`.click(x, y)\`, \`.down()\`, \`.up()\`, \`.wheel(delta_x, delta_y)\`.
-
-**Pointers:**
-- Sends to whatever element currently has focus — wrong focus = wrong target.
-- Prefer locator methods; low-level API is for canvas, games, or exotic widgets.
-
+.press(key) and .type(text) mirror the element-scoped versions but act on whatever's currently focused. .down(key) holds a key down without releasing it, and .up(key) releases a previously held-down key. You'll reach for .down()/.up() specifically for compound interactions — hold Shift, click two items, release Shift — that the convenience methods can't express on their own.
+Low-level mouse control via page.mouse.
 \`\`\`python
-page.keyboard.press("Control+K")  # command palette
-page.mouse.wheel(0, 500)          # scroll down
-\`\`\``,
+page.mouse.move(100, 200)
+page.mouse.down()
+page.mouse.move(300, 400)
+page.mouse.up()
+\`\`\`
+
+
+.move(x, y) takes absolute page coordinates as integers; .down() presses the mouse button (default left) at the current position with no parameters; .up() releases it, also with no parameters. This is the fallback for custom drag implementations where .drag_to() doesn't produce the expected event sequence, and for testing keyboard shortcuts or shift-click multi-select behavior more generally.`,
+    customSummary: `## 14. Actions
+
+.click()/.dblclick() support button, click_count, delay, modifiers, and force (skip actionability checks — avoid unless certain).
+.fill() sets value directly (fast, no keystroke events); .type() simulates real keystrokes (needed for autocomplete/character-count listeners).
+.press() sends a key or combo (e.g. "Enter", "Control+A").
+.check()/.uncheck() are idempotent — safer than .click() for guaranteed checkbox state.
+.select_option() works only on native <select>; custom dropdowns need click-to-open-then-click.
+.hover() reveals hover-triggered UI; .drag_to() handles standard HTML5 drag-and-drop.
+page.keyboard/page.mouse give low-level control for compound interactions (shift-click, custom drag) that convenience methods can't express.`,
+    chapterNum: 14,
   },
   {
-    contentMarkdown: `## Ch7 Assertions
-
-Playwright's \`expect()\` assertions auto-retry until they pass or time out — the assertion equivalent of action auto-waiting. Never use bare Python \`assert\` on DOM state in an SPA; the condition may be true a moment later.
+    id: "pw-15-assertions",
+    title: "15. Assertions with expect()",
+    minutes: 42,
+    level: "intermediate",
+    phase: "Part 2 · Core Interactions",
+    partName: "Part 2 · Core Interactions",
+    overviewText: "expect() auto-retrying assertions: to_be_visible, to_be_hidden, to_be_enabled/disabled, to_have_text, to_contain_text, to_have_value, to_be_checked, to_have_count, to_have_attribute, to_have_class, and negation with .not.",
+    why: "Bare Python assert fails once on SPAs still loading. expect() re-queries and re-checks until pass or timeout — the core anti-flake mechanism.",
+    when: "Read immediately after Actions. Revisit when choosing between to_have_text and to_contain_text or debugging assertion timeouts.",
+    practical: { app: "Dashboard SPA", scenario: "assert page.locator('.total').text_content() == '$49.99' fails intermittently.", pass: "expect(page.locator('.total')).to_have_text('$49.99') — auto-retries until rendered.", fail: "Wrap bare assert in time.sleep(3) loop." },
+    advantages: ["Auto-retry until timeout — no manual polling", "to_contain_text substring vs to_have_text exact — pick deliberately", "expect(locator).not.to_be_visible() clean negation syntax", "Soft assertions (expect.soft) collect multiple failures per test", "to_have_count() retries unlike bare .count()", "Readable failure messages show expected vs actual"],
+    limitations: ["Bare assert has zero retry — fails on first async render miss", "to_have_text exact match breaks on whitespace changes", "Soft assertions need explicit handling of collected failures", "No built-in visual assertion in this chapter — see Part 4", "Regex matchers require re.compile import", "Over-specific assertions brittle on copy changes"],
+    contentMarkdown: `## 15. Assertions with expect()
 
 \`\`\`python
 from playwright.sync_api import expect
-\`\`\`
 
----
-
-### expect(locator).to_be_visible()
-
-**What it does:** Asserts the element is attached to the DOM and visible (non-zero size, not hidden).
-
-**Types/params:**
-- \`timeout\` (float): Override default timeout in milliseconds.
-- \`visible\` (bool): When \`False\`, asserts hidden — same as \`to_be_hidden()\`.
-
-**Pointers:**
-- Most common assertion in E2E tests.
-- Fails fast with a clear message showing the locator and timeout.
-- Pair with good locators — \`to_be_visible()\` on a vague locator may pass on the wrong element.
-
-\`\`\`python
-expect(page.get_by_role("heading", name="Dashboard")).to_be_visible()
-expect(page.get_by_text("Loading...")).to_be_hidden(timeout=10_000)
-\`\`\`
-
----
-
-### expect(locator).to_have_text()
-
-**What it does:** Asserts the element's text content matches exactly (after normalization).
-
-**Types/params:**
-- \`expected\` (str | Pattern | list): Exact text or regex.
-- \`timeout\` (float): Retry window.
-
-**Pointers:**
-- Exact match — whitespace is normalized but substring won't pass.
-- For partial match, use \`to_contain_text()\`.
-- Works on a single element; for lists use \`to_have_text\` with a list or \`to_have_count\` + individual checks.
-
-\`\`\`python
-expect(page.get_by_role("status")).to_have_text("Saved successfully")
-expect(page.locator(".price")).to_have_text(re.compile(r"\\$\\d+\\.\\d{2}"))
-\`\`\`
-
----
-
-### expect(locator).to_contain_text()
-
-**What it does:** Asserts the element's text includes the expected substring (or matches regex).
-
-**Types/params:**
-- \`expected\` (str | Pattern | list): Substring(s) or regex.
-- \`timeout\` (float): Retry window.
-- \`use_inner_text\` (bool): Use inner text vs text content. Default favors inner text.
-
-**Pointers:**
-- More forgiving than \`to_have_text\` — default for dynamic content with extra whitespace or icons.
-- List form checks multiple substrings appear in order.
-
-\`\`\`python
-expect(page.get_by_role("alert")).to_contain_text("3 items added")
-expect(page.locator("tbody")).to_contain_text(["Alice", "Bob"])
-\`\`\`
-
----
-
-### expect(locator).to_have_value()
-
-**What it does:** Asserts an input, textarea, or select has the given value.
-
-**Types/params:**
-- \`value\` (str | Pattern): Expected \`value\` attribute / current input value.
-- \`timeout\` (float): Retry window.
-
-**Pointers:**
-- For \`<select>\`, asserts the selected option's value.
-- After \`fill()\`, value updates immediately — but async validation may change it; \`expect\` retries handle that.
-
-\`\`\`python
+expect(page.get_by_role("button", name="Submit")).to_be_visible()
+expect(page.get_by_role("button", name="Submit")).to_be_enabled()
+expect(page.get_by_text("Order confirmed")).to_be_visible()
 expect(page.get_by_label("Email")).to_have_value("user@example.com")
-expect(page.get_by_label("Quantity")).to_have_value("5")
+expect(page.locator(".error-message")).to_have_text("Invalid password")
+expect(page.locator(".cart-count")).to_have_text("3")
+
+expect() is auto-retrying, unlike a plain Python assert.
 \`\`\`
 
----
-
-### expect.soft()
-
-**What it does:** Soft assertion — records failure but continues the test. All soft failures are reported at the end.
-
-**Types/params:**
-- Wraps any \`expect\` matcher: \`expect.soft(locator).to_be_visible()\`.
-- Available in sync and async APIs.
-
-**Pointers:**
-- Use for non-critical checks (cosmetic copy, optional banners) where you still want to verify primary flows.
-- Don't soft-assert critical paths — a "passed" test with logged soft failures misleads CI.
-- Hard assertions (default) stop immediately — preferred for gating logic.
-
+The critical distinction: expect() polls repeatedly for a few seconds (default ~5000ms, configurable) instead of checking once and failing instantly, because a real element might take a moment to appear after a click triggers an API call. This is a classic source of flaky-test elimination — the exact same philosophy as auto-waiting on actions, just applied to verification instead of interaction. A plain assert page.locator(".cart-count").text_content() == "3" checks the DOM state at that exact instant and fails immediately if the count hasn't updated yet, even if it would have updated a fraction of a second later — this is precisely the kind of unnecessary flakiness expect() was built to eliminate, and it's why expect() should be the default choice over plain assert for anything reading live page state.
+to_be_visible(), to_be_enabled(), to_be_checked() assert element state.
+timeout (number, ms, optional, overrides the default ~5000ms) can be raised for known-slow elements or lowered for a quick negative check. These retry repeatedly within the timeout window instead of checking once, eliminating most "not ready yet" flaky failures.
+to_have_text() and to_contain_text() assert text content.
+The required argument (string or regex) with to_have_text must match the full text exactly; with to_contain_text it matches as a substring; a regex works flexibly with either. Use to_contain_text when surrounding text varies (timestamps, dynamic IDs) but the key phrase is stable.
+to_have_value() asserts an input's current value.
+The required string argument is the exact value expected in the input. Use this after .fill() to confirm the value actually stuck — it catches input masks or validation logic silently rejecting or reformatting your input.
+to_have_url(), to_have_title(), to_have_count() assert page- and collection-level state.
 \`\`\`python
-expect.soft(page.get_by_text("Beta feature")).to_be_visible()
-expect(page.get_by_role("button", name="Checkout")).to_be_enabled()  # hard — stops test if fails
+expect(page).to_have_url("https://example.com/dashboard")
+expect(page).to_have_title("Dashboard | MyApp")
+expect(page.get_by_role("listitem")).to_have_count(5)
 \`\`\`
 
----
 
-### Timeout override
-
-**What it does:** Per-assertion or global timeout controls how long \`expect\` retries.
-
-**Types/params:**
-- Per call: \`expect(locator).to_be_visible(timeout=5_000)\` (milliseconds).
-- Global: \`expect.set_options(timeout=10_000)\` in a scope.
-- Test config: \`timeout\` in \`playwright.config\` or pytest marker.
-
-**Pointers:**
-- Shorter timeouts for fast-fail smoke checks; longer for slow backends.
-- Increasing timeout without fixing the root cause just makes flaky tests slower.
-- Actions also respect \`timeout\` on the locator: \`locator.click(timeout=5_000)\`.
-
+to_have_url(url) and to_have_title(title) are called on the page object itself rather than a locator, and accept a string or regex — useful for confirming navigation actually landed where expected after a click or form submit. to_have_count(count) is called on a multi-match locator and asserts the exact number of matches, retrying until the count is correct or the timeout expires — this is the auto-retrying counterpart to the plain .count() read mentioned in Chapter 13, and is the right choice whenever you're waiting for a list to finish loading to a specific size.
+to_have_attribute(), to_have_class(), to_have_css(), to_have_id() assert element properties.
 \`\`\`python
-expect(page.get_by_text("Report ready")).to_be_visible(timeout=60_000)
-page.get_by_role("button", name="Generate").click(timeout=5_000)
+expect(page.get_by_role("link", name="Home")).to_have_attribute("href", "/home")
+expect(page.locator(".status-badge")).to_have_class("active")
+expect(page.locator(".modal")).to_have_css("display", "block")
+expect(page.locator("#main-form")).to_have_id("main-form")
 \`\`\`
 
----
 
-### Other matchers worth knowing
-
+to_have_attribute(name, value) checks a specific HTML attribute's value. to_have_class(class_name) checks the element's class list (can accept a regex for partial matching, since elements often have multiple classes). to_have_css(property, value) checks a computed CSS style value — handy for confirming a modal is actually visible (display: block) versus just present in the DOM but hidden. to_have_id(id) checks the element's id attribute directly. These are especially useful for state-driven UI (a "selected" class toggling, an aria-expanded attribute flipping) where the visible text doesn't change but an underlying property does.
+to_be_empty(), to_be_focused(), to_be_editable(), to_be_in_viewport() assert additional element states.
 \`\`\`python
-expect(page).to_have_url("**/dashboard")
-expect(page).to_have_title("Dashboard | Acme")
-expect(page.get_by_role("checkbox")).to_be_checked()
-expect(page.locator("li")).to_have_count(3)
-expect(page.get_by_role("button", name="Save")).to_be_enabled()
+expect(page.locator(".cart-items")).to_be_empty()
+expect(page.get_by_label("Email")).to_be_focused()
+expect(page.get_by_label("Notes")).to_be_editable()
+expect(page.locator("#footer")).to_be_in_viewport()
 \`\`\`
 
-**Pointers:** Page-level \`expect(page)\` is for URL/title. Locator matchers retry on DOM state. Bare \`assert page.title() == "..."\` fails instantly — always use \`expect\`.`,
+
+to_be_empty() asserts an element (commonly a container or input) has no text content or child elements. to_be_focused() asserts a specific element currently has keyboard focus — useful for confirming tab order or that a modal correctly auto-focuses its first input. to_be_editable() asserts an input is both enabled and not read-only. to_be_in_viewport() asserts the element is currently scrolled into the visible viewport, not just present somewhere on a long page — useful for confirming a "scroll to element" or "scroll into view" action actually worked.
+Negation flips any assertion using expect(locator).not_to_....
+\`\`\`python
+expect(page.get_by_text("Error")).not_to_be_visible()
+expect(page.get_by_role("button", name="Submit")).not_to_be_enabled()
+\`\`\`
+
+
+Every assertion method above has a not_to_... counterpart, retrying until the negative condition holds true (or timing out if it never does) rather than asserting the positive case failed just once. This matters because a naive negative check written as a plain assertion at a single point in time can pass by accident — e.g., checking an error message "is not visible" one frame before it actually appears would give a false pass. not_to_be_visible() instead keeps polling for the full timeout window to make sure the element genuinely never becomes visible, which is a meaningfully stronger and more honest check.
+Soft assertions let a test keep running after a failure.
+\`\`\`python
+expect.soft(page.get_by_text("Name")).to_be_visible()
+expect.soft(page.get_by_text("Email")).to_be_visible()
+expect.soft(page.get_by_text("Phone")).to_be_visible()
+# test continues even if one fails — all failures reported together at the end
+\`\`\`
+
+
+Normal assertions stop test execution on the first failure. expect.soft(locator) uses the same chained methods and arguments as regular expect(), but doesn't halt the test — pytest-playwright automatically collects and reports every soft-assertion failure together at the end of the test. Use this when checking several independent things in one test (e.g., verifying an entire form's fields are all present) so one missing field doesn't hide information about the other two.
+Overriding the default timeout for known-slow elements.
+\`\`\`python
+expect(page.get_by_text("Report generated")).to_be_visible(timeout=15000)
+\`\`\`
+
+
+This is useful for legitimately slow operations — report generation, large file processing — where the default timeout would produce a false failure. The key discipline: only extend timeouts for elements you know are legitimately slow, never as a lazy fix for a genuinely flaky or poorly-targeted locator, since that just makes a real bug take longer to surface.`,
+    customSummary: `## 15. Assertions with expect()
+
+expect() auto-retries (~5s default) instead of checking once like plain assert — eliminates timing-based flakiness.
+to_be_visible()/enabled()/checked() — state checks with configurable timeout.
+to_have_text() (exact) vs to_contain_text() (substring) — use contain for text with variable parts.
+to_have_value() — confirms input value stuck after .fill().
+to_have_url()/to_have_title() (page-level) and to_have_count() (retrying, multi-match) — prefer to_have_count() over plain .count() when waiting on a list to settle.
+to_have_attribute()/class()/css()/id() — check element properties, useful for state-driven UI.
+to_be_empty()/focused()/editable()/in_viewport() — additional state checks.
+Every assertion has a not_to_... negation that retries for the full timeout, avoiding false-pass timing bugs.
+expect.soft() collects multiple failures without halting the test — good for checking several independent things at once.
+Override timeout= only for genuinely slow elements, never to mask a flaky locator.`,
+    chapterNum: 15,
   },
   {
-    contentMarkdown: `## Ch8 Waits
+    id: "pw-16-waits",
+    title: "16. Waits & Auto-waiting",
+    minutes: 35,
+    level: "intermediate",
+    phase: "Part 2 · Core Interactions",
+    partName: "Part 2 · Core Interactions",
+    overviewText: "Playwright's five actionability checks, built-in auto-waiting on actions and expect(), page.wait_for_load_state(), page.wait_for_selector(), page.wait_for_url(), and why time.sleep() is an anti-pattern.",
+    why: "Understanding auto-waiting internals explains 80% of Playwright-vs-Selenium flake differences. Explicit waits are escape hatches, not defaults.",
+    when: "Read when tempted to add time.sleep(). Revisit for SPA navigation timing and networkidle pitfalls.",
+    practical: { app: "React SPA with client-side routing", scenario: "Test passes locally, flakes in CI after clicking nav link.", pass: "expect(page).to_have_url(re.compile(r'/dashboard')) — auto-waits for route.", fail: "time.sleep(5) after every navigation click." },
+    advantages: ["Five actionability checks before every click/fill", "expect() and actions share same retry engine", "wait_for_url() handles SPA client-side routing", "wait_for_selector(state='hidden') for spinners", "Default timeout configurable globally in playwright.config", "Zero sleep needed for 90% of real-world flows"],
+    limitations: ["networkidle dangerous on SPAs with persistent websockets", "wait_for_load_state('networkidle') often never resolves", "Explicit waits can mask missing assertions", "time.sleep() still tempting for beginners — always wrong", "Custom loading indicators need locator-based waits not load_state", "Race conditions still possible across multiple tabs"],
+    contentMarkdown: `## 16. Waits & Auto-waiting
 
-Playwright's design goal: you should almost never write manual waits. Actions and \`expect()\` poll until conditions are met. This chapter explains what Playwright waits for automatically, when explicit waits are legitimate, and why \`time.sleep\` is an anti-pattern.
-
----
-
-### The actionability checklist
-
-Before every action (\`click\`, \`fill\`, \`check\`, etc.), Playwright verifies:
-
-1. **Attached** — element exists in the DOM.
-2. **Visible** — non-zero bounding box; not \`display:none\`, \`visibility:hidden\`, or \`opacity:0\`.
-3. **Stable** — position unchanged for two consecutive animation frames (no ongoing layout shift).
-4. **Enabled** — not \`disabled\` and not \`aria-disabled\`.
-5. **Receives events** — not covered by another element (loading spinner, modal backdrop).
-
-Playwright re-runs this checklist on every retry until all pass or timeout. That is why \`page.get_by_role("button", name="Submit").click()\` works on a slow SPA without a preceding wait.
-
-**Pointers:**
-- Action timeout failures often mean an overlay is blocking — fix the app or wait for the overlay to disappear, don't \`force=True\` through it.
-- Animations shorter than two frames may still pass stability checks; long CSS transitions can delay actions legitimately.
-
+Playwright runs an actionability checklist before most actions.
+Before performing most actions, Playwright checks that the target element is: Attached (present in the DOM at all), Visible (non-zero size, not display: none/visibility: hidden), Stable (stopped moving/animating, checked across at least two animation frames), Enabled (not disabled), and able to receive events (not covered by another element, like a loading spinner overlay). Playwright re-checks this list repeatedly until all conditions pass or the timeout is hit — this is exactly why you rarely need manual waits.
+wait_for_selector() waits for an element to reach a specific state.
 \`\`\`python
-# No explicit wait needed — actionability is built in
-page.get_by_role("button", name="Submit").click()
+page.wait_for_selector(".spinner", state="hidden")   # wait for loading spinner to disappear
+page.wait_for_selector(".results", state="visible")
 \`\`\`
 
----
 
-### wait_for_selector
-
-**What it does:** Waits until an element matching the selector reaches a given state.
-
-**Types/params:**
-- \`selector\` (str): CSS or XPath selector.
-- \`state\` (str): \`"attached"\`, \`"detached"\`, \`"visible"\`, \`"hidden"\`. Default \`"visible"\`.
-- \`timeout\` (float): Max wait in ms.
-- \`strict\` (bool): Fail if multiple elements match.
-
-**Pointers:**
-- Prefer locator + \`expect\` in modern tests: \`expect(page.locator(".spinner")).to_be_hidden()\`.
-- \`wait_for_selector\` remains useful when you need imperative flow control before a block of actions.
-- Waiting for \`state="hidden"\` on a spinner is a classic legitimate explicit wait.
-
+selector (string, required) is a CSS/XPath selector for the target element. state (string, optional, default "visible") can be "attached" (present in DOM regardless of visibility), "detached" (removed from DOM), "visible" (present and visibly rendered), or "hidden" (present but not visible, or removed entirely). Use this for state-based waits that plain auto-waiting doesn't cover directly — e.g., waiting for a spinner to hit "hidden" before checking the results underneath it.
+wait_for_load_state() waits for a page-level loading milestone.
 \`\`\`python
-page.wait_for_selector(".loading-spinner", state="hidden")
-page.wait_for_selector(".results-table", state="visible", timeout=15_000)
+page.wait_for_load_state("networkidle")   # no network activity for 500ms
+page.wait_for_load_state("domcontentloaded")
+page.wait_for_load_state("load")
 \`\`\`
 
----
 
-### wait_for_load_state
-
-**What it does:** Waits for a page-level load event on the current page.
-
-**Types/params:**
-- \`state\` (str):
-  - \`"load"\` — \`load\` event fired (images, stylesheets done).
-  - \`"domcontentloaded"\` — HTML parsed, DOM ready.
-  - \`"networkidle"\` — no more than 0 network connections for ~500ms.
-
-**Pointers:**
-- After \`page.goto()\`, Playwright already waits for \`load\` by default.
-- \`networkidle\` is handy after actions that trigger background fetches with no specific element to target.
-- **Avoid \`networkidle\` on dashboards** with polling, WebSockets, or analytics — the page never idles and the test times out.
-- Prefer waiting on a specific element state over page-level idle.
+state (string, optional, default "load") can be "load" (the full page load event has fired), "domcontentloaded" (HTML parsed, DOM ready, before images/styles finish), or "networkidle" (no network connections for at least 500ms). "networkidle" is handy after actions that trigger background calls with no specific element to target as a wait signal — but avoid it on pages with continuous polling (common in dashboards), since the network will never go fully idle and the wait will simply time out.
+### Manual sleep() should essentially never be used.
 
 \`\`\`python
-page.goto("https://app.example.com/reports")
-page.get_by_role("button", name="Run report").click()
-page.wait_for_load_state("networkidle")  # only if no perpetual polling
-expect(page.get_by_text("Report complete")).to_be_visible()
+# Avoid this:
 \`\`\`
 
----
-
-### Anti-pattern: time.sleep
-
-**What it does:** Blocks the test thread for a fixed duration regardless of app state.
-
-**Why it's wrong:**
-- Too short → flaky (app wasn't ready).
-- Too long → every run wastes time even when the app responded in 200ms.
-- Masks real bugs — the test passes at 3s sleep but users on slow networks fail.
-- Doesn't compose — sleeps stack across a suite into minutes of dead time.
-
-**What to do instead:**
-
-| Instead of | Use |
-|---|---|
-| \`time.sleep(2); page.click(...)\` | \`page.get_by_role(...).click()\` (auto-waits) |
-| \`time.sleep(5)\` after navigation | \`expect(page).to_have_url(...)\` |
-| \`time.sleep(3)\` for spinner | \`expect(spinner).to_be_hidden()\` |
-| \`time.sleep(1)\` between keystrokes | \`press_sequentially(..., delay=100)\` |
-
-\`\`\`python
-import time
-
-# BAD — never do this
 time.sleep(3)
-page.get_by_role("button", name="Submit").click()
+\`\`\`python
+page.click(".submit-button")
 
-# GOOD
-page.get_by_role("button", name="Submit").click()
-expect(page.get_by_text("Success")).to_be_visible()
+# Prefer this:
+page.get_by_role("button", name="Submit").click()   # auto-waits already
 \`\`\`
 
-**Pointers:** The only borderline case is debugging locally — even then, use \`page.pause()\` (Inspector) instead of sleeps. If you genuinely cannot find an element or state to wait on, that's a testability gap worth raising with the dev team.`,
+
+A hard sleep() is a lose-lose: too short and the test is flaky; too long and every run wastes time even when the app responded instantly. Auto-waiting solves both problems simultaneously. The only legitimate reasons to add explicit waits are the state-based cases above (wait_for_selector, wait_for_load_state) — never as a blanket "just in case" habit.`,
+    customSummary: `## 16. Waits & Auto-waiting
+
+Before most actions, Playwright checks: attached, visible, stable, enabled, receives events — retried until timeout.
+wait_for_selector(selector, state=...) — waits for attached/detached/visible/hidden state.
+wait_for_load_state(state) — "load", "domcontentloaded", "networkidle" (avoid on pages with continuous polling).
+Never use time.sleep() — always too short (flaky) or too long (wastes time); rely on auto-waiting or the state-based waits above.`,
+    chapterNum: 16,
   },
   {
-    contentMarkdown: `## Ch9 Tabs and iFrames
-
-Modern apps open new tabs for external links, OAuth flows, and print previews. Payment widgets and embedded editors live in iframes. Playwright treats each tab as a separate \`Page\` object and scopes iframe content via \`frame_locator\` — no Selenium-style \`switch_to.window\`.
-
----
-
-### context.expect_page()
-
-**What it does:** Context manager that captures a reference to a newly opened tab/window when an action triggers \`window.open\` or a \`target="_blank"\` link.
-
-**Types/params:**
-- \`predicate\` (callable, optional): Filter which page event to capture.
-- \`timeout\` (float): Max wait for the new page.
-
-**Pointers:**
-- **Must wrap the triggering action** — register the listener before the click, or you race the event and miss the new tab.
-- Returns a \`Page\` via \`.value\` on the info object.
-- Call \`wait_for_load_state()\` on the new page before interacting.
+    id: "pw-17-tabs",
+    title: "17. Tabs, Windows, iFrames",
+    minutes: 38,
+    level: "intermediate",
+    phase: "Part 2 · Core Interactions",
+    partName: "Part 2 · Core Interactions",
+    overviewText: "Multi-tab workflows with context.expect_page(), page.bring_to_front(), cross-origin navigation, frame_locator() for iframes, and page.frame() for direct frame access.",
+    why: "Multi-tab and iframe handling is where Playwright's external-driver architecture shines over Cypress. These patterns appear in payment embeds, SSO, and document viewers.",
+    when: "Read when testing links that open new tabs, payment iframes, or embedded widgets.",
+    practical: { app: "HRMS with Stripe payment iframe", scenario: "Need to fill card details inside nested payment iframe.", pass: "page.frame_locator('#payment-frame').get_by_label('Card number').fill('4242...')", fail: "page.locator('#card-number') on parent page — element not found." },
+    advantages: ["context.expect_page() wraps click that opens new tab", "Multiple Page objects in one context — trivial multi-tab", "frame_locator() chains like regular locators inside iframe", "Cross-origin navigation transparent — no cy.origin() ceremony", "bring_to_front() switches active tab for screenshots", "Nested iframes supported via chained frame_locator"],
+    limitations: ["expect_page() must wrap the triggering click — timing critical", "Deeply nested iframes slow and fragile", "Third-party iframe content may block automation (CAPTCHA)", "Popup blockers can prevent new tab tests in headed mode", "frame() by name/url less stable than frame_locator by selector", "Safari WebKit iframe behavior differs slightly from Chromium"],
+    contentMarkdown: `## 17. Tabs, Windows, iFrames
 
 \`\`\`python
+page.context.expect_page() captures a newly opened tab.
 with page.context.expect_page() as new_page_info:
     page.get_by_role("link", name="Open in new tab").click()
+\`\`\`
+
+
 new_page = new_page_info.value
+\`\`\`python
 new_page.wait_for_load_state()
-expect(new_page).to_have_title("External App")
+print(new_page.title())
+\`\`\`
+
+
+Used as a context manager (with page.context.expect_page() as info:), with info.value (accessed after the block) giving the new Page object. This pattern registers the listener for the new-page event before the click happens, avoiding a race condition where the new tab opens before you started listening for it — registering after the click risks missing the event entirely.
+Multiple pages are addressed independently — there's no "switch to window" step.
+\`\`\`python
+original_page.bring_to_front()   # optional — brings a page to the foreground visually
 new_page.get_by_role("button", name="Confirm").click()
 \`\`\`
 
----
 
-### page.bring_to_front()
-
-**What it does:** Brings a specific tab to the visual foreground in headed mode.
-
-**Types/params:** None.
-
-**Pointers:**
-- **Not required for automation** — you can call \`click()\` on a background tab's \`Page\` object directly.
-- Useful when debugging with \`headless=False\` and you want to see which tab is active.
-- Each \`Page\` in \`context.pages\` is independently addressable at all times.
-
+Once you have references to multiple pages, you simply call actions on whichever page object represents the tab you want. There's no driver.switch_to.window()-style concept like Selenium's, since each Page object is independently addressable at all times. .bring_to_front() takes no parameters and is mostly cosmetic for headed debugging — it's not required to interact with a background tab programmatically.
 \`\`\`python
-pages = context.pages
-dashboard = pages[0]
-popup = pages[1]
-popup.bring_to_front()  # cosmetic in headed mode
-popup.get_by_role("button", name="Close").click()
-dashboard.get_by_text("Welcome back").is_visible()  # works without bring_to_front
-\`\`\`
-
----
-
-### page.frame_locator(selector)
-
-**What it does:** Returns a \`FrameLocator\` scoped inside an \`<iframe>\`. Locators chained on it search only within that frame's document.
-
-**Types/params:**
-- \`selector\` (str): CSS selector for the \`<iframe>\` element (e.g. \`"#payment-iframe"\`, \`"iframe[name='editor']"\`).
-
-**Pointers:**
-- Required whenever content lives inside an iframe — \`page.get_by_label(...)\` won't find it from the parent page.
-- Chain for nested iframes: \`.frame_locator("#outer").frame_locator("#inner")\`.
-- Stripe, PayPal, and reCAPTCHA are classic iframe cases.
-- \`FrameLocator\` behaves like a locator factory — no "switch back" needed.
-
-\`\`\`python
+page.frame_locator() scopes locators inside an iframe.
 frame = page.frame_locator("#payment-iframe")
 frame.get_by_label("Card number").fill("4242 4242 4242 4242")
-frame.get_by_label("Expiry").fill("12/30")
-frame.get_by_label("CVC").fill("123")
 frame.get_by_role("button", name="Pay").click()
-
-# Nested iframe
-inner = page.frame_locator("#outer").frame_locator("#inner")
-inner.get_by_role("button", name="Save").click()
 \`\`\`
 
----
 
-### Multi-tab workflow summary
+selector (string, required) is a CSS selector identifying the iframe element itself, not its contents. This is required any time content lives inside an <iframe>, and chains cleanly for nested iframes: .frame_locator("#outer").frame_locator("#inner"). A common real-world case: third-party payment widgets (Stripe, PayPal) are almost always embedded via iframe for security/PCI-compliance reasons, so this pattern comes up constantly in checkout-flow testing.`,
+    customSummary: `## 17. Tabs, Windows, iFrames
 
-\`\`\`python
-def test_oauth_popup(page, context):
-    page.goto("https://app.example.com/login")
-    with context.expect_page() as popup_info:
-        page.get_by_role("button", name="Sign in with Google").click()
-    popup = popup_info.value
-    popup.get_by_label("Email").fill("test@example.com")
-    popup.get_by_role("button", name="Next").click()
-    # popup may close itself; parent page redirects
-    expect(page).to_have_url("**/dashboard")
-\`\`\`
-
-**Pointers:** Unlike Cypress (weak multi-tab), Playwright handles multiple pages natively. Store \`Page\` references — don't assume \`page\` always means the original tab.`,
+page.context.expect_page() (context manager) captures a new tab — must wrap the triggering action to avoid a race condition.
+No "switch to window" step — every Page object is independently addressable; .bring_to_front() is just cosmetic.
+page.frame_locator(selector) scopes locators inside an iframe; chainable for nested iframes. Common for payment widgets (Stripe/PayPal).`,
+    chapterNum: 17,
   },
   {
-    contentMarkdown: `## Ch10 File Uploads and Downloads
+    id: "pw-18-files",
+    title: "18. File Uploads & Downloads",
+    minutes: 32,
+    level: "intermediate",
+    phase: "Part 2 · Core Interactions",
+    partName: "Part 2 · Core Interactions",
+    overviewText: "set_input_files() for uploads (single, multiple, directory), expect_download() for capturing downloads, and verifying suggested_filename and save_as().",
+    why: "File upload/download flows appear in HRMS document modules, expense receipts, and export features — common interview and real-project scenarios.",
+    when: "Read when testing CSV import, profile photo upload, or PDF export download.",
+    practical: { app: "HRMS document upload", scenario: "Upload employee CSV and verify import confirmation.", pass: "page.set_input_files('input[type=file]', 'fixtures/employees.csv') then expect success message.", fail: "Try to type file path into a text input instead of using file chooser." },
+    advantages: ["set_input_files() bypasses OS file dialog — headless-safe", "Multiple files via list argument", "Directory upload with path to folder", "expect_download() captures without disk clutter", "save_as() writes to specific path for content verification", "Works identically in headed and headless CI"],
+    limitations: ["Drag-and-drop file upload needs separate evaluate() approach", "Custom file-picker UI may hide real input[type=file]", "Large files slow upload tests — use small fixtures", "Download path permissions differ across CI agents", "Some browsers prompt on download — expect_download handles it", "Cloud storage direct-upload flows bypass input[type=file]"],
+    contentMarkdown: `## 18. File Uploads & Downloads
 
-File inputs and download links are common in HR portals, document managers, and reporting tools. Playwright bypasses the OS file picker for uploads and intercepts browser downloads without touching the filesystem dialog.
-
----
-
-### locator.set_input_files()
-
-**What it does:** Sets file(s) on an \`<input type="file">\` element directly, without opening the native OS file picker.
-
-**Types/params:**
-- \`files\` (str | Path | list): File path(s) relative to test dir or absolute. Pass \`[]\` to clear.
-- \`timeout\` (float): Action timeout.
-
-**Pointers:**
-- Works on **hidden** file inputs — the common pattern of a styled "Upload" button triggering a hidden \`<input type="file">\`.
-- Use absolute paths or paths relative to the test file when files live in a \`fixtures/\` folder.
-- Multiple files: pass a list for \`<input multiple>\`.
-- No OS-level automation needed — CI-friendly.
-
+.set_input_files() sets files on an input directly, bypassing the OS picker.
 \`\`\`python
-# Single file
-page.get_by_label("Upload resume").set_input_files("fixtures/resume.pdf")
-
-# Multiple files
-page.get_by_label("Attach files").set_input_files(["fixtures/doc1.png", "fixtures/doc2.png"])
-
-# Clear selection
-page.get_by_label("Upload resume").set_input_files([])
-
-# Hidden input behind a custom button
-page.locator("input[type='file']").set_input_files("fixtures/avatar.jpg")
-page.get_by_role("button", name="Upload").click()
-expect(page.get_by_text("Upload complete")).to_be_visible()
+page.get_by_label("Upload resume").set_input_files("resume.pdf")
+page.get_by_label("Attach files").set_input_files(["file1.png", "file2.png"])
+page.get_by_label("Upload resume").set_input_files([])  # clear selection
 \`\`\`
 
----
 
-### page.expect_download()
-
-**What it does:** Context manager that captures a file download triggered by a subsequent action (click on a download link/button).
-
-**Types/params:**
-- \`predicate\` (callable, optional): Filter downloads by URL or suggested filename.
-- \`timeout\` (float): Max wait for download to start.
-
-**Pointers:**
-- **Must wrap the triggering click** — same race-condition rule as \`expect_page()\`.
-- Returns a \`Download\` object via \`.value\`.
-- Download may still be in progress when captured — use \`save_as\` or \`path()\` to wait for completion.
-
+paths accepts a single string path (uploads one file), a list of string paths (uploads multiple, if the input supports it), or an empty list (clears the current selection). This works even on hidden file inputs — a styled "Upload" button triggering a hidden <input type="file"> — with no OS-level file-picker automation needed at all, since it sets the value directly on the element.
 \`\`\`python
+page.expect_download() captures a triggered file download.
 with page.expect_download() as download_info:
     page.get_by_role("button", name="Download report").click()
+
 download = download_info.value
 print(download.suggested_filename)
-download.save_as("output/report.pdf")
+download.save_as("/path/to/save/report.pdf")
 \`\`\`
 
----
 
-### download.save_as() and related APIs
+Used as a context manager, with info.value giving the Download object after the block. As with new-tab handling, this must wrap the triggering click, for the same race-condition reasoning as expect_page(). download.save_as(path) takes a required destination string path; download.suggested_filename is a read-only string property exposing the browser's suggested filename. Check suggested_filename to assert naming logic, and save + inspect contents when you need to verify actual file data, not just that a download happened.`,
+    customSummary: `## 18. File Uploads & Downloads
 
-**What it does:**
-- \`save_as(path)\`: Writes the downloaded file to a specified path on disk.
-- \`suggested_filename\`: Browser-suggested name (from \`Content-Disposition\` or link).
-- \`path()\`: Waits for download to finish and returns temp path (auto-deleted when object is garbage-collected).
-
-**Types/params:**
-- \`save_as(path)\`: \`str\` or \`Path\` — destination file path.
-
-**Pointers:**
-- Assert \`suggested_filename\` to verify naming logic without reading file bytes.
-- \`save_as\` then open/parse the file when content matters (CSV rows, PDF text).
-- Clean up saved files in test teardown or use pytest \`tmp_path\`.
-
-\`\`\`python
-with page.expect_download() as download_info:
-    page.get_by_role("link", name="Export CSV").click()
-download = download_info.value
-
-assert download.suggested_filename == "employees-2026-09.csv"
-download.save_as(tmp_path / "employees.csv")
-
-content = (tmp_path / "employees.csv").read_text()
-assert "email,department" in content
-\`\`\`
-
----
-
-### End-to-end upload + verify pattern
-
-\`\`\`python
-def test_bulk_import(page):
-    page.goto("/admin/import")
-    page.get_by_label("CSV file").set_input_files("fixtures/employees.csv")
-    page.get_by_role("button", name="Import").click()
-    expect(page.get_by_role("alert")).to_contain_text("42 records imported")
-    expect(page.get_by_role("row")).to_have_count(42)
-\`\`\`
-
-**Pointers:** Upload tests need fixture files committed to the repo. Download tests need a writable temp directory — \`tmp_path\` in pytest is ideal.`,
+.set_input_files(paths) sets file(s) directly on an input — works even on hidden inputs, no OS picker needed; empty list clears selection.
+page.expect_download() (context manager) captures a download — must wrap the triggering click.
+download.save_as(path) saves the file; download.suggested_filename exposes the browser's suggested name for naming-logic checks.`,
+    chapterNum: 18,
   },
   {
-    contentMarkdown: `## Ch11 Alerts and Dialogs
+    id: "pw-19-dialogs",
+    title: "19. Alerts, Dialogs, Popups",
+    minutes: 35,
+    level: "intermediate",
+    phase: "Part 2 · Core Interactions",
+    partName: "Part 2 · Core Interactions",
+    overviewText: "Native alert/confirm/prompt handling with page.on('dialog') and page.once('dialog'), dialog.accept()/dismiss(), dialog.message assertions, and distinguishing native dialogs from ARIA modal components.",
+    why: "Confusing native window.alert() with React modal components is a top beginner mistake. Each requires completely different handling.",
+    when: "Read when testing delete confirmations, legacy admin tools with prompt(), or custom modal dialogs.",
+    practical: { app: "Admin panel with delete confirmation", scenario: "Delete button triggers confirm() — test times out.", pass: "page.once('dialog', lambda d: d.accept()) registered BEFORE click.", fail: "Try page.get_by_role('button', name='OK') on native confirm dialog." },
+    advantages: ["page.once() auto-unregisters after one dialog — safer default", "dialog.message readable for assertion before accept", "dialog.accept('text') handles prompt() input", "Handler must register before trigger — forces correct test order", "Custom modals use normal get_by_role('dialog') — clean separation", "Works for alert, confirm, and prompt dialog types"],
+    limitations: ["Missing handler blocks page forever — cryptic timeout", "page.on() persists — stale handler fires on wrong dialog", "Native dialogs block all JS — cannot inspect with normal locators", "Multiple sequential dialogs need careful handler management", "beforeunload dialogs require special accept handling", "Modern apps rarely use native dialogs — modals dominate"],
+    contentMarkdown: `## 19. Alerts, Dialogs, Popups
 
-Native browser dialogs — \`alert()\`, \`confirm()\`, \`prompt()\` — block all JavaScript on the page until dismissed. Playwright cannot click them with normal locators; you must register a handler **before** the action that triggers the dialog.
-
----
-
-### page.on("dialog", handler)
-
-**What it does:** Registers a persistent listener that fires whenever a native dialog appears for the lifetime of the page.
-
-**Types/params:**
-- \`event\` (str): \`"dialog"\`.
-- \`handler\` (callable): Receives a \`Dialog\` object. Must call \`accept()\` or \`dismiss()\`.
-
-**Pointers:**
-- If no handler is registered, the dialog blocks the page and the test times out.
-- Handler runs synchronously in the dialog callback — keep logic simple.
-- One handler handles **all** subsequent dialogs on that page until removed.
-
+Native dialogs block JavaScript execution until a handler responds.
 \`\`\`python
 page.on("dialog", lambda dialog: dialog.accept())
 page.get_by_role("button", name="Delete account").click()  # triggers confirm()
 \`\`\`
 
----
 
-### dialog.accept() / dialog.dismiss()
-
-**What it does:**
-- \`accept(prompt_text=None)\`: Clicks OK. For \`prompt()\` dialogs, \`prompt_text\` supplies the typed value.
-- \`dismiss()\`: Clicks Cancel (for \`confirm()\` and \`prompt()\`).
-
-**Types/params:**
-- \`prompt_text\` (str, optional): Input value for \`prompt()\` dialogs only.
-
-**Pointers:**
-- Exactly one of \`accept\` or \`dismiss\` must be called per dialog — otherwise the page stays blocked forever.
-- \`alert()\` only supports \`accept()\` (no cancel button).
-
+Native browser dialogs (alert(), confirm(), prompt()) block all further JavaScript execution until dismissed. page.on("dialog", handler) registers a persistent listener that fires whenever a native dialog appears — "dialog" (string, required) is the event name, and handler (function, required) receives the dialog object as its argument. This must be registered before the triggering action, or the dialog blocks the page indefinitely and your test times out waiting.
+Accepting, dismissing, and reading dialogs.
 \`\`\`python
-# confirm() — accept
 page.on("dialog", lambda dialog: dialog.accept())
-page.get_by_role("button", name="Delete").click()
-
-# confirm() — dismiss (cancel)
 page.on("dialog", lambda dialog: dialog.dismiss())
-page.get_by_role("button", name="Delete").click()
-\`\`\`
+page.on("dialog", lambda dialog: dialog.accept("my input text"))
 
----
-
-### prompt() dialogs
-
-**What it does:** \`prompt()\` shows a text input. Pass the desired text to \`accept()\`.
-
-**Types/params:**
-- \`dialog.accept("input text")\`: Submits the prompt with that value.
-- \`dialog.dismiss()\`: Cancels without submitting.
-
-**Pointers:**
-- Read \`dialog.default_value\` if you need the pre-filled prompt text.
-- Rare in modern apps (replaced by modal components) but still appears in legacy admin tools.
-
-\`\`\`python
-page.on("dialog", lambda dialog: dialog.accept("New folder name"))
-page.get_by_role("button", name="Create folder").click()
-\`\`\`
-
----
-
-### dialog.message
-
-**What it does:** Read-only property with the dialog's displayed text.
-
-**Types/params:** No parameters — \`str\` property.
-
-**Pointers:**
-- Assert the message matches expected copy before accepting — catches wrong dialogs.
-- Branch: accept only if message contains expected text; otherwise raise to fail intentionally.
-
-\`\`\`python
-def handle_delete(dialog):
-    assert "permanently delete" in dialog.message.lower()
+def handle_dialog(dialog):
+    print(dialog.message)   # e.g., "Are you sure you want to delete this?"
     dialog.accept()
 
-page.on("dialog", handle_delete)
-page.get_by_role("button", name="Delete").click()
+page.on("dialog", handle_dialog)
 \`\`\`
 
----
 
-### page.once("dialog", handler)
+dialog.accept(prompt_text=None) clicks OK; prompt_text (string, optional) only applies to prompt() dialogs and supplies the "typed" input value. dialog.dismiss() clicks Cancel and takes no parameters. Exactly one of accept/dismiss must be called per dialog, or the page stays blocked indefinitely. dialog.message is a read-only string property exposing the dialog's displayed text, useful to log or branch on — e.g., accepting only if the confirm text matches an expected pattern, otherwise failing intentionally.
+\`\`\`python
+page.on() is persistent for the whole session; page.once() fires only once.
+page.on("dialog", handler) stays registered for every dialog for the rest of the page's session. page.once("dialog", handler) uses the same signature but auto-unregisters itself after firing a single time — use this when you expect (and want to handle) only one dialog occurrence rather than every dialog that might appear afterward.
+\`\`\`
 
-**What it does:** Same as \`page.on("dialog", ...)\` but auto-unregisters after handling one dialog.
+Cookie management lets you inspect, set, and clear session state directly.
+\`\`\`python
+cookies = page.context.cookies()
+print(cookies)
 
-**Types/params:** Same as \`page.on\`.
+page.context.add_cookies([{
+\`\`\`
 
-**Pointers:**
-- Use when only one dialog is expected — avoids a stale handler firing on an unexpected later dialog.
-- Safer default for isolated delete-confirm tests.
+    "name": "session_token",
+    "value": "abc123",
+    "domain": "example.com",
+    "path": "/"
+}])
 
 \`\`\`python
-page.once("dialog", lambda dialog: dialog.accept())
-page.get_by_role("button", name="Delete row").click()
-# handler is gone — a second dialog would block/timeout
+page.context.clear_cookies()
 \`\`\`
 
----
 
-### Custom modals vs native dialogs
-
-**Pointers:** React/Vue/Angular modal components are **not** native dialogs — they are regular DOM elements. Use normal locators:
-
+page.context.cookies() returns the current list of cookies for the context, each as a dictionary with fields like name, value, domain, path, and expiry. page.context.add_cookies([...]) injects one or more cookies directly, without going through a login UI flow at all — each dictionary needs at minimum name, value, and either url or both domain/path. page.context.clear_cookies() removes all cookies from the context. The practical value here is significant: instead of driving a full login form through the UI at the start of every single test (slow, and coupling every test to the login flow's own stability), you can programmatically inject a valid session cookie once and land directly on an authenticated page — this ties directly into the storage-state/session-reuse pattern covered later in Part 3 (Configuration Management) and Part 4 (Authentication & Session Reuse).
 \`\`\`python
-# Custom modal — NOT page.on("dialog")
-page.get_by_role("button", name="Delete").click()
-expect(page.get_by_role("dialog", name="Confirm deletion")).to_be_visible()
-page.get_by_role("button", name="Yes, delete").click()
+page.evaluate() runs raw JavaScript at the page level.
+page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+
+user_agent = page.evaluate("() => navigator.userAgent")
+
+page.evaluate("(msg) => console.log(msg)", "hello from Playwright")
 \`\`\`
 
-Native \`alert\`/\`confirm\`/\`prompt\` require \`page.on\`. ARIA \`role="dialog"\` modals use \`get_by_role\`. Confusing the two is a common beginner mistake.`,
-  },
-  {
-    contentMarkdown: `## Checkpoint · Core Interactions
 
-Gate before Part 3 (Frameworks & pytest). Complete this cold — no notes, on a real practice site.
+Unlike the locator-scoped .evaluate() from Chapter 13 (which runs JS against a specific matched DOM element), page.evaluate(js) runs arbitrary JavaScript in the context of the whole page — no element required. This is useful for page-level actions with no dedicated Playwright API: scrolling to the bottom of an infinite-scroll page, reading a global JS variable the app exposes (feature flags, app version), or manipulating localStorage/sessionStorage directly. It optionally accepts a second argument passed into the JS function as a parameter, as shown in the third example. As with the locator-level version, this is an escape hatch — reach for it when Playwright's own API genuinely doesn't cover what you need, not as a default way of interacting with the page.`,
+    customSummary: `## 19. Alerts, Dialogs, Popups
 
-### Pass criteria
-
-You are ready for Part 3 when you can do all of the following:
-
-1. **Locators** — Log in using only \`get_by_role\` and \`get_by_label\`. No CSS classes, no \`time.sleep\`.
-2. **Actions** — Submit a form with \`fill\` + \`click\`. Handle a hover-reveal menu. Explain when you'd use \`press_sequentially\` instead of \`fill\`.
-3. **Assertions** — Assert a dashboard heading with \`expect(...).to_be_visible()\`. Assert an input value with \`to_have_value\`. Articulate why bare \`assert\` fails on SPAs.
-4. **Waits** — Recite the five actionability checks from memory. Complete a flow with zero \`time.sleep\`. Explain when \`networkidle\` is dangerous.
-5. **Tabs** — Open a link in a new tab with \`context.expect_page()\`, interact with the new page, return to the original.
-6. **iFrames** — Fill a form inside an iframe using \`frame_locator\`.
-7. **Files** — Upload a fixture file with \`set_input_files\`. Capture a download with \`expect_download\` and verify \`suggested_filename\`.
-8. **Dialogs** — Handle a \`confirm()\` with \`page.once("dialog", ...)\`. Distinguish native dialogs from custom modal components.
-
-### Self-check questions
-
-- What happens if two elements match your locator and you call \`click()\`?
-- What is the difference between \`to_have_text\` and \`to_contain_text\`?
-- Why must \`expect_page()\` wrap the click that opens a new tab?
-- When is \`force=True\` acceptable on a click?
-
-### If you can't pass
-
-Stay in Part 2. Part 3 adds fixtures, Page Object Model, and CI — architectural layers that **magnify** bad habits. Brittle locators in a POM are still brittle locators, just in a class file.`,
+Native dialogs (alert/confirm/prompt) block JS until handled — register page.on("dialog", handler) before the triggering action.
+dialog.accept(prompt_text=None) / dialog.dismiss() — exactly one must be called per dialog; dialog.message exposes its text.
+page.once("dialog", ...) auto-unregisters after one use, vs page.on() which persists for the session.
+Cookie management: page.context.cookies(), add_cookies([...]), clear_cookies() — lets you inject a session directly instead of driving login UI every test (ties into Part 4's session reuse).
+page.evaluate(js) runs raw JS at the page level (no element needed) — for scrolling, reading globals, or localStorage access; an escape hatch, not a default tool.`,
+    chapterNum: 19,
   },
 ];

@@ -1,74 +1,24 @@
 import type { ChapterRecord } from "../../../types";
 
-/** 35. Interview Prep */
+/** 49. Interview Prep */
 export const chapter = {
-  "id": "pw-7-interview",
-  "title": "35. Interview Prep",
-  "minutes": 50,
-  "level": "pro",
-  "phase": "Part 7 · Real-World Project & Job Readiness",
-  "partName": "Part 7 · Real-World Project & Job Readiness",
-  "overviewText": "Interview prep for Playwright automation roles means being able to answer fluently — not memorized verbatim — across three categories: conceptual questions (why Playwright over Selenium, what the Browser/Context/Page hierarchy is), scenario-based problem solving (a test fails only in CI, a locator breaks after a UI refactor), and architecture explanations (POM, fixtures, CI setup). The strongest answers connect a general principle to a specific tool or method by name: 'I'd check the Trace Viewer output first' rather than 'I'd look into it.' Being able to explain why a decision was made — not just what it does — is consistently what separates a strong interview answer from a shallow one. Scenario-based questions are preferred by interviewers over recited definitions because they reveal hands-on experience rather than surface-level familiarity.",
-  "why": "Automation interviews test whether you can think through real problems, not whether you have memorized API documentation. A candidate who explains POM as 'it separates page logic from test logic, so when a locator changes I update one file instead of every test' demonstrates understanding. A candidate who defines POM as 'a design pattern' does not. Scenario questions — 'a test passes locally but fails in CI, what do you do?' — are specifically designed to filter out candidates who have only done tutorials. Preparing concrete answers tied to your capstone project gives you specific, defensible examples rather than generic ones.",
-  "when": "Start interview prep after the capstone (Chapter 33) is complete — you need real project experience to draw on for scenario answers. Prepare three stories before any interview: a time you debugged a CI failure, a time you improved code quality (the capstone refactor pass), and a time you made an architectural decision (choosing session reuse over repeated logins). Practice explaining POM, fixtures, and CI setup out loud, not just in writing.",
-  "practical": {
-    "app": "QA Automation Engineer — Technical interview",
-    "scenario": "The interviewer asks: 'A Playwright test passes locally but fails in CI with a TimeoutError. Walk me through your debugging process.'",
-    "pass": "You answer: 'First I download the CI artifact — screenshot and video from --screenshot=only-on-failure. If the screenshot shows the page didn't load, I check whether playwright install --with-deps is in the workflow. If the page loaded but the element wasn't found, I check whether the staging environment URL is set correctly via GitHub Secrets. I'd also check the Trace Viewer if traces are enabled.' The interviewer nods.",
-    "fail": "You answer: 'I'd run it locally again and see if it passes.' The interviewer asks what you'd do if it passes locally but fails in CI. You say 'I'd add a retry.' The interview moves on."
-  },
-  "advantages": [
-    "Concrete capstone examples make scenario answers specific and defensible",
-    "Naming specific tools (Trace Viewer, --with-deps, storage_state) signals hands-on experience",
-    "Explaining 'why' behind decisions (POM, session reuse, CI artifact upload) separates strong from shallow answers",
-    "Three prepared stories cover the most common behavioral question formats",
-    "Scenario-based prep transfers directly to live debugging exercises in technical interviews"
-  ],
-  "limitations": [
-    "Interview questions vary significantly by company and seniority level",
-    "Prepared answers can sound rehearsed — practice conversational delivery, not recitation",
-    "Live coding exercises (write a test for this page) require hands-on practice, not just conceptual prep",
-    "Framework-specific questions (pytest vs unittest, Python vs TypeScript) depend on the job listing"
-  ],
-  "tools": [
-    {
-      "name": "Playwright Trace Viewer",
-      "sub": "Debugging",
-      "url": "https://playwright.dev/python/docs/trace-viewer",
-      "desc": "The Playwright Trace Viewer is the primary tool to name in debugging scenario answers. It records a full trace of browser actions, network requests, console logs, and DOM snapshots during a test run. When a test fails in CI, downloading the trace artifact and opening it in the Trace Viewer shows exactly what the browser did, what network requests were made, and what the DOM looked like at each step — without re-running the test locally.",
-      "adv": [
-        "Shows full browser session replay — actions, network, console, DOM snapshots",
-        "Works from CI artifacts — no local re-run required to debug CI failures",
-        "Named in scenario answers — signals hands-on debugging experience to interviewers",
-        "Enabled with --tracing=retain-on-failure in pytest-playwright"
-      ],
-      "lim": [
-        "Trace files are large — retain-on-failure is essential to avoid storage bloat",
-        "Requires trace artifact to be uploaded in CI — not automatic",
-        "Trace Viewer is a local tool — must download artifact from CI first"
-      ],
-      "steps": [
-        {
-          "t": "Step 1 — Enable tracing in CI",
-          "p": "Add to pytest CI command:",
-          "c": "pytest --browser chromium --tracing=retain-on-failure"
-        },
-        {
-          "t": "Step 2 — Upload trace artifacts",
-          "p": "Add to GitHub Actions workflow:",
-          "c": "- name: Upload traces\n  if: failure()\n  uses: actions/upload-artifact@v4\n  with:\n    name: traces\n    path: test-results/"
-        },
-        {
-          "t": "Step 3 — Open Trace Viewer locally",
-          "p": "Download artifact and open:",
-          "c": "playwright show-trace test-results/test_login/trace.zip"
-        }
-      ]
-    }
-  ],
-  "contentMarkdown": "## 35. Interview Prep\n\nAutomation interviews test whether you can **build and maintain a framework**, not whether you can write a single `page.click()`.\n\n### Common questions\n\n**\"Walk me through your test framework architecture.\"**\n- Tests → workflow helpers → page objects → locators\n- Fixtures in `conftest.py` for auth, test data, and browser setup\n- CI runs on every PR; traces uploaded on failure\n\n**\"How do you handle flaky tests?\"**\n- Auto-waiting locators first (Playwright's default)\n- Trace viewer + screenshot on failure to diagnose timing vs. real bugs\n- Never `time.sleep()` — use `expect(...).to_be_visible()`\n- Quarantine pattern: mark flaky tests, fix root cause, un-quarantine\n\n**\"How do you test APIs alongside UI?\"**\n- `request` fixture (APIRequestContext) for setup, teardown, and validation\n- UI creates data → API confirms persistence → UI deletes → API confirms gone\n\n**\"Why Playwright over Selenium/Cypress?\"**\n- Auto-waiting, trace viewer, multi-browser (Chromium/Firefox/WebKit)\n- Native API testing context\n- Python bindings via pytest-playwright\n\n### Scenario debugging (live coding)\n\nExpect: \"This test fails in CI but passes locally — how do you debug?\"\n\nStructured answer:\n\n1. Download CI artifact (trace, screenshot, video)\n2. Open trace in `trace.playwright.dev` — see exact DOM state at failure\n3. Check CI-specific issues: missing `--with-deps`, headless font rendering, env vars\n4. Reproduce locally with `pytest --headed=false` to match CI\n\n### Explaining POM, fixtures, and CI\n\n**Page Object Model** — \"Each page is a class. Tests call `login_page.login(user, pass)` instead of scattering locators. When the login form changes, I fix one file, not fifty tests.\"\n\n**Fixtures** — \"Fixtures are pytest's dependency injection. My `authenticated_page` fixture logs in once per session and yields a ready page. Tests declare what they need; conftest provides it.\"\n\n**CI integration** — \"Every push runs the full suite in GitHub Actions. On failure, traces and reports upload as artifacts. The team reviews traces before merging — not just 'it passed on my machine.'\"\n\n### Practice format\n\nPick one capstone test and practice explaining it aloud in under 90 seconds: what it tests, why API validation matters, and what happens when it fails in CI.",
-  "exercises": [],
-  "resourceLinks": [],
-  "steps": [],
-  "learn": []
+  id: "pw-49-interview",
+  title: "49. Interview Prep",
+  minutes: 40,
+  level: "intermediate",
+  phase: "Part 7 · Real-World Project & Job Readiness",
+  partName: "Part 7 · Real-World Project & Job Readiness",
+  overviewText: "Common Playwright interview topics: auto-waiting vs Selenium, POM rationale, flake diagnosis, CI integration, API+UI hybrid, and scenario-based comparison answers.",
+  why: "Interviewers test judgment with scenarios, not command recitation. Prepared framing turns experience into credible narrative.",
+  when: "Read two weeks before Playwright/SDET interviews; practice answers aloud.",
+  practical: { app: "SDET technical interview", scenario: "'Why Playwright over Selenium?' and 'How do you handle flaky tests?'", pass: "Architecture comparison + concrete flake workflow (trace, quarantine, root-cause fix).", fail: "List API methods without explaining auto-waiting or CI artifact strategy." },
+  advantages: ["Scenario-based answers demonstrate hands-on judgment","Playwright vs Cypress comparison shows architectural awareness","Flake diagnosis story uses trace viewer concretely","POM explanation ties to maintenance cost not pattern worship","CI integration answer shows production mindset","API+UI hybrid demonstrates full-stack test thinking"],
+  limitations: ["Memorized answers sound robotic without real project backing","Interview focus varies — some teams test algorithms not automation","Tool comparisons outdated if interviewer uses proprietary framework","Live coding nerves override prepared talking points","Take-home assignments may test different skills than verbal prep","Over-preparing comparisons neglects domain-specific app knowledge"],
+  tools: [],
+  contentMarkdown: "## Interview Prep\n\nInterviews for QA automation roles tend to test three distinct things — technical depth, judgment, and communication — not just \"do you know the API.\" Live-coding a locator or a small test is common, but so is being asked to explain a decision (\"why would you choose get_by_role over a CSS selector here\") or to critique a piece of existing test code — preparation should cover all three, not just memorizing API syntax.\n\nCommon technical questions worth being genuinely fluent in, not just able to look up. Playwright vs. Selenium vs. Cypress (Chapter 1's comparison table, including the \"why\" behind each row, not just the row contents). Auto-waiting mechanics — what actionability checks actually run before an action (Chapter 16). Locator strategy and the specific reasoning for preferring role/test-id over CSS/XPath (Chapter 13). Page Object Model — not just \"what is POM\" but why it helps and what a test file without it looks like in practice (Chapter 23). Flaky test diagnosis — being able to walk through a systematic root-causing process (Chapter 38) rather than a vague \"just rerun it\" answer signals real experience.\n\nBehavioral/scenario questions probe judgment under realistic constraints, not textbook knowledge. Examples worth having a real, specific answer for (not a generic one): \"A test has been flaky for two weeks and no one's fixed it — what do you do?\" (tests the quarantine + root-cause discipline from Chapter 38, and the courage to flag it rather than just re-running it). \"You're asked to automate a feature that's still being actively redesigned — how do you respond?\" (tests the automation-ROI judgment from Part 0, Chapter 6). \"The suite takes 45 minutes and blocks every PR — what levers would you pull?\" (tests Chapter 44/46's suite-scaling and performance material together). Preparing a specific, concrete story for questions like these — ideally drawn from actual capstone-project or Bizlevate experience — is far stronger than a rehearsed general answer.\n\nA locator-strategy or test-design live exercise is one of the most common practical formats — practice it directly. Being handed a snippet of HTML or a live webpage and asked \"how would you locate this element, and why\" is extremely common; practicing this out loud, articulating the reasoning (not just producing a working locator), is worth deliberate rehearsal, since interviews reward visible reasoning as much as a correct final answer.\n\nSystem-design-style questions appear more often at senior levels — \"design a test framework for X.\" Being asked to sketch a framework for a hypothetical app (folder structure, fixture strategy, CI approach, how you'd handle auth/data) is effectively asking you to reproduce the reasoning from Part 6 out loud — this is a strong argument for genuinely internalizing why each Part 6 decision was made, not just being able to describe what a framework looks like.",
+  customSummary: "## Interview Prep\n\nInterviews test technical depth, judgment, and communication together — prep for live-coding, decision explanations, and code critique, not just API recall.\nBe genuinely fluent (not just able to look up) in: Playwright vs. Selenium vs. Cypress reasoning, auto-waiting mechanics, locator strategy reasoning, why POM helps, and systematic flaky-test root-causing.\nPrepare specific, real stories (ideally from capstone/Bizlevate work) for judgment scenarios: a long-standing flaky test, an unstable feature someone wants automated, a suite that's grown too slow.\nPractice live locator/test-design exercises out loud — reasoning is evaluated as much as the final answer.\nAt senior levels, expect \"design a framework for X\" — effectively asking you to reproduce Part 6's reasoning live.",
+  exercises: [],
+  resourceLinks: [],
+  steps: [],
+  learn: [],
 } as ChapterRecord;

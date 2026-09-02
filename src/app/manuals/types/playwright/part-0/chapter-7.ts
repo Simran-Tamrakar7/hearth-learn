@@ -1,0 +1,24 @@
+import type { ChapterRecord } from "../../../types";
+
+/** 6. When (and When Not) to Automate */
+export const chapter = {
+  id: "pw-6-when-automate",
+  title: "6. When (and When Not) to Automate",
+  minutes: 28,
+  level: "beginner",
+  phase: "Part 0 · Background & Context",
+  partName: "Part 0 · Background & Context",
+  overviewText: "Automate high-frequency regression on stable features and critical business paths. Hold off on exploratory testing, changing UIs, and subjective visual judgment.",
+  why: "Automating too early on unstable features produces abandoned tests that erode suite trust.",
+  when: "Read before writing your first spec. Revisit when prioritizing which Bizlevate modules to cover.",
+  practical: { app: "Bizlevate HRM", scenario: "New Appraisal UI is under active redesign.", pass: "Hold automation until UI stabilizes; automate stable Attendance clock-in/out now.", fail: "Write full E2E suite for a module changing weekly." },
+  advantages: ["ROI framework prevents wasted automation effort","Stable-feature criterion reduces maintenance churn","Critical-path focus aligns tests with business risk","Exploratory testing stays human — not forced into scripts","Data-driven scenarios are strong automation candidates","Bizlevate module examples make criteria concrete"],
+  limitations: ["Stability judgment requires product roadmap visibility","Holding off automation can look like QA inaction to managers","Critical-path definition varies across stakeholders","Manual testing cost is hard to quantify for ROI math","Automating too late misses early regression value","One-off flows rarely justify automation investment"],
+  tools: [],
+  contentMarkdown: "## 6. When (and When Not) to Automate\n\nAutomation needs to earn its cost. Not every test case should be automated — this is a common early-career misconception. Automation has real upfront and ongoing cost (writing it, maintaining it when the UI changes, debugging failures), so it needs to be justified by return on that investment. Good candidates: high-frequency regression checks. Anything re-run every release/sprint. If you'd manually test it more than a few times, automate it. Good candidates: stable features. UI/flow that isn't expected to change drastically soon. Automating a feature mid-redesign means rewriting the automation almost immediately. Good candidates: critical business paths.\n\n### Login, checkout, payroll run, leave approval — where a failure is high-cost if missed\n\nGood candidates: data-driven scenarios. The same flow tested with many input variations (e.g., leave request with different date ranges/leave types) — tedious manually, cheap once automated. Good candidates: cross-browser/cross-device checks. Manually re-testing the same flow across 3 browsers every release doesn't scale; automation does this trivially. Poor candidates: one-off or exploratory testing. Testing something once, or open-ended exploratory testing looking for unexpected bugs, doesn't benefit from a fixed automated script. Poor candidates: highly volatile UI. A screen still being actively redesigned means automation would need constant rewriting, costing more than it saves short-term. Poor candidates: purely visual/subjective judgment calls. \"Does this look aesthetically good\" isn't something a Playwright assertion can meaningfully check — visual regression testing catches unexpected changes, not subjective quality. Poor candidates: low-frequency, low-risk features. A rarely-used admin setting that almost never breaks may not be worth the automation investment. A useful mental framework. Automation pays off when (cost of manual testing) × (frequency of testing) exceeds (cost to write) + (cost to maintain) the automated version over time. New teams often automate too early on unstable features and then abandon the tests — worse than not automating at all, since broken/ignored tests erode trust in the whole suite. Practical implication for Bizlevate. A stable, frequently-regression-tested flow like Attendance clock-in/out is a strong automation candidate. A brand-new Appraisal module UI still under active iteration might be better left to manual testing until it stabilizes.",
+  customSummary: "## 6. When (and When Not) to Automate\n\n- Automation needs positive ROI (writing/maintenance cost vs. repeated manual-testing cost).\n- Good candidates: high-frequency regression, stable features, critical business paths, data-driven scenarios, cross-browser/device checks.\n- Poor candidates: one-off/exploratory testing, still-changing UI, subjective visual judgment, rarely-used low-risk features.\n### Automating too early on unstable features often backfires — broken/abandoned tests erode trust\n- Bizlevate application: automate stable flows (e.g., Attendance clock-in/out); hold off on modules under active redesign (e.g., new Appraisal UI).",
+  exercises: [],
+  resourceLinks: [],
+  steps: [],
+  learn: [],
+} as ChapterRecord;

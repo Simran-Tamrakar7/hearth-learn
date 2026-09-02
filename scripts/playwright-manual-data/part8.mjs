@@ -1,600 +1,224 @@
-/** Playwright manual Part 8 — Resources (Chapters 52–64) */
+/** Playwright manual Part 8 — Resources, Citations & Reference Library */
 export const chapters = [
   {
-    contentMarkdown: `## 52. Books & Long-Form Reading
-
-Books provide the deepest foundation for Playwright and Python test automation — far beyond what a single tutorial covers.
-
-### Recommended reading
-
-- **Python Testing with pytest** (Brian Okken) — fixtures, parametrization, conftest.py, markers, plugins. Every concept maps directly to pytest-playwright.
-- **Fluent Python** (Luciano Ramalho) — write cleaner page objects, test data builders, and custom fixtures with idiomatic Python.
-- **Test automation architecture** — Martin Fowler's Page Object bliki, "Experiences of Test Automation" (Dot Graham et al.). Patterns transfer across Playwright, Selenium, and Cypress.
-- **Migration case studies** — engineering blog posts from teams that migrated to Playwright at scale reveal flake reduction, CI choices, and locator strategy lessons.
-
-### How to use books effectively
-
-Pair every chapter with a small exercise in your own repo. Read pytest fixtures → refactor your login into a yield-based fixture. Read POM bliki → extract inline locators into a page class.
-
-Cross-check API details against current Playwright docs — books lag behind release cadence.`,
-    resourceLinks: [
-      {
-        title: "Python Testing with pytest (2nd Edition)",
-        url: "https://www.manning.com/books/python-testing-with-pytest-second-edition",
-        description: "Foundational pytest book — fixtures, conftest.py, parametrization, plugins.",
-      },
-      {
-        title: "pytest official documentation",
-        url: "https://docs.pytest.org/en/stable/",
-        description: "Free reference alongside the Okken book; always current.",
-      },
-      {
-        title: "Fluent Python (2nd Edition)",
-        url: "https://www.oreilly.com/library/view/fluent-python-2nd/9781098113408/",
-        description: "Idiomatic Python for cleaner framework code — type hints, dataclasses, context managers.",
-      },
-      {
-        title: "Page Object — Martin Fowler",
-        url: "https://martinfowler.com/bliki/PageObject.html",
-        description: "The canonical POM pattern reference; tool-agnostic architecture guidance.",
-      },
-      {
-        title: "Experiences of Test Automation",
-        url: "https://www.amazon.com/Experiences-Test-Automation-Case-Studies/dp/0321754069",
-        description: "Real-world case studies on framework design, team structure, and scaling.",
-      },
-    ],
+    id: "pw-51-books",
+    title: "51. Books & Long-Form Reading",
+    minutes: 25,
+    level: "beginner",
+    phase: "Part 8 · Resources",
+    partName: "Part 8 · Resources",
+    overviewText: "QA strategy books (Agile Testing, Explore It!) age slower than tool-specific titles. Playwright deep dives currently live in docs and blogs more than print.",
+    why: "Strategy books build judgment; tool docs build syntax. Both matter — but strategy survives version upgrades.",
+    when: "Dip into when building testing philosophy; not required before writing first test.",
+    practical: { app: "Professional development", scenario: "Want structured learning beyond tutorials before architecting team strategy.", pass: "Read Explore It! for exploratory testing mindset; use playwright.dev for syntax.", fail: "Buy outdated Selenium book expecting Playwright API coverage." },
+    advantages: ["Strategy books (Explore It!, Agile Testing) transcend tool versions", "Long-form builds mental models tutorials skip", "Foundational testing theory applies to any automation stack", "Reading signals continuous learning to hiring managers", "Books provide interview vocabulary for quality advocacy", "Complements hands-on practice with deliberate theory"],
+    limitations: ["Playwright-specific print books lag behind release cadence", "Published examples may use deprecated APIs", "Books cannot replace hands-on debugging experience", "Strategy books feel abstract without project context", "Reading time competes with portfolio building", "Some classics predate modern SPA testing challenges"],
+    contentMarkdown: "## Books & Long-Form Reading\n\nGeneral test automation and QA strategy books remain relevant even though few are Playwright-specific, since most of what they cover is framework/strategy-level, not tool-specific. Titles worth knowing about in this category include general software-testing foundations texts and books specifically on test automation strategy and the testing pyramid concept referenced throughout this manual — worth treating book selection here as \"does this deepen strategy/judgment,\" since tool-specific books age quickly given Playwright's fast release cadence (Part 0, Chapter 0), while strategy books age much more slowly.\n\nPlaywright-specific long-form content is thinner than Selenium's, reflecting the tool's relative youth (Part 0). Most deep Playwright learning in long-form written format currently lives in official documentation and community blog writeups (Chapter 52) rather than published books, precisely because the tool is young (first released January 2020) relative to how long book publishing cycles take — worth setting the expectation that \"the docs are the book\" for Playwright specifically, more than is typical for older, more established tools.\n\nOfficial documentation deserves to be treated as primary long-form reading, not just a lookup reference. Playwright's own documentation (playwright.dev) includes substantial conceptual guides beyond simple API reference — reading through the \"Guides\" sections in full at least once, rather than only consulting docs reactively when stuck, surfaces context and reasoning (the \"why,\" not just the \"how\") that this manual has tried to front-load but that official docs will always be first to reflect for newly-added features.",
+    customSummary: "## Books & Long-Form Reading\n\nGeneral QA-strategy books stay relevant longer than tool-specific ones, since strategy ages slower than API details.\nPlaywright-specific long-form content is thin (young tool) — official docs (playwright.dev \"Guides\") function as the closest thing to \"the book,\" worth reading in full once, not just consulted reactively.",
+    chapterNum: 51,
   },
   {
-    contentMarkdown: `## 53. Blogs & Written Tutorials
-
-Stay current with Playwright releases, community patterns, and real-world engineering stories.
-
-### Primary sources
-
-- **playwright.dev/blog** — release announcements, feature deep-dives, migration guides from the core team.
-- **dev.to** — practitioner tutorials, troubleshooting posts, and comparison articles tagged #playwright and #testing.
-- **Company engineering blogs** — Netflix, Spotify, Microsoft, Atlassian, and others publish migration stories and CI integration patterns at scale.
-
-### Reading strategy
-
-Subscribe to the Playwright blog RSS. Skim dev.to weekly for one new pattern. When preparing a tooling proposal, search \`"migrated to Playwright" site:engineering.*\` for case studies with real metrics.`,
-    resourceLinks: [
-      {
-        title: "Playwright Blog",
-        url: "https://playwright.dev/blog",
-        description: "Official release notes, feature announcements, and migration guides.",
-      },
-      {
-        title: "dev.to — Playwright tag",
-        url: "https://dev.to/t/playwright",
-        description: "Community tutorials, tips, and troubleshooting from practitioners.",
-      },
-      {
-        title: "Microsoft Playwright Blog (Dev Blogs)",
-        url: "https://devblogs.microsoft.com/playwright/",
-        description: "Deep technical posts from the core engineering team.",
-      },
-      {
-        title: "Ministry of Testing — Articles",
-        url: "https://www.ministryoftesting.com/software-testing-articles",
-        description: "Broad QA community articles including automation strategy and tooling.",
-      },
-      {
-        title: "Atlassian Engineering Blog",
-        url: "https://www.atlassian.com/engineering",
-        description: "Example of a company engineering blog with test infrastructure stories.",
-      },
-    ],
+    id: "pw-52-blogs",
+    title: "52. Blogs & Written Tutorials",
+    minutes: 20,
+    level: "beginner",
+    phase: "Part 8 · Resources",
+    partName: "Part 8 · Resources",
+    overviewText: "playwright.dev blog, Microsoft dev blogs, community posts on locators, CI patterns, and filtering outdated Selenium-era advice misapplied to Playwright.",
+    why: "Blogs ship faster than books and cover bleeding-edge features. Knowing which sources are authoritative saves hours of outdated Stack Overflow.",
+    when: "Bookmark for when stuck on a specific problem; subscribe to official Playwright blog for release notes.",
+    practical: { app: "Debugging unfamiliar failure", scenario: "Google returns 2021 Selenium answer recommending WebDriverWait for Playwright.", pass: "Check playwright.dev docs first; verify post date and Playwright version.", fail: "Copy Selenium explicit wait pattern into pytest-playwright test." },
+    advantages: ["Official playwright.dev blog announces features first", "Community posts cover real-world edge cases docs omit", "Tutorial blogs good for specific integration patterns", "Searchable — faster than book index for one problem", "Microsoft engineering blogs provide architectural context", "GitHub issues/discussions supplement blog troubleshooting"],
+    limitations: ["Blog quality varies wildly — no peer review", "Outdated posts rank high in Google for popular queries", "JS-first examples need mental translation to Python", "Sponsored content may push specific SaaS tools", "No single blog covers full manual scope systematically", "Copy-paste without understanding creates fragile tests"],
+    contentMarkdown: "## Blogs & Written Tutorials\n\nThe Playwright official blog is the most authoritative source for what's new and why. Release announcements there typically explain not just what changed but the reasoning behind a change, which is valuable for understanding a new feature's intended use case rather than just its syntax.\n\nCommunity blogs and personal engineering blogs from QA practitioners fill in practical, battle-tested patterns official docs don't cover. These are the most likely place to find real-world writeups of exactly the kind of problem this manual has tried to anticipate — flaky-test war stories, CI setup gotchas, framework-scaling retrospectives — since they come from people who hit a specific wall in a specific real project, which official documentation (necessarily more general-purpose) tends not to cover in the same depth.\n\nCompany engineering blogs (from companies known to use Playwright at scale) are a strong source for scaling-specific content. Worth searching for and following specifically for content addressing Part 6-level concerns (framework architecture, suite performance at scale, CI cost/time tradeoffs) — these tend to reflect real production lessons learned at a scale most individual learners won't hit until later in their career, making them valuable to read even before you're facing those exact problems yourself.",
+    customSummary: "## Blogs & Written Tutorials\n\nOfficial Playwright blog = authoritative \"what's new and why.\"\nCommunity/practitioner blogs = real-world battle-tested patterns (flaky-test stories, CI gotchas) official docs don't cover.\nCompany engineering blogs from Playwright-at-scale adopters are the best source for Part 6-level scaling content.",
+    chapterNum: 52,
   },
   {
-    contentMarkdown: `## 54. Newsletters
-
-Curated weekly digests save time versus scrolling Twitter/X or Reddit.
-
-### Recommended newsletters
-
-- **Ministry of Testing** — community events, articles, job postings, and testing culture.
-- **Python Weekly** — Python ecosystem news including pytest and tooling updates.
-- **Test Guild Newsletter** — automation-focused links, podcast episodes, and tool reviews.
-
-### How to use them
-
-Skim subject lines on Monday. Save one article per week to read deeply. Forward relevant links to your team Slack channel — it builds your reputation as the person who stays current.`,
-    resourceLinks: [
-      {
-        title: "Ministry of Testing",
-        url: "https://www.ministryoftesting.com/",
-        description: "Global testing community — events, articles, courses, and newsletter.",
-      },
-      {
-        title: "Python Weekly",
-        url: "https://www.pythonweekly.com/",
-        description: "Weekly Python ecosystem roundup — pytest, packaging, and tooling news.",
-      },
-      {
-        title: "Test Guild Newsletter",
-        url: "https://testguild.com/newsletter/",
-        description: "Automation-focused weekly digest from Joe Colantonio.",
-      },
-      {
-        title: "Software Testing Weekly",
-        url: "https://softwaretestingweekly.com/",
-        description: "Curated testing links from across the web, delivered weekly.",
-      },
-      {
-        title: "PyCoder's Weekly",
-        url: "https://pycoders.com/",
-        description: "Python articles and projects — useful for framework code quality.",
-      },
-    ],
+    id: "pw-53-newsletters",
+    title: "53. Newsletters",
+    minutes: 15,
+    level: "beginner",
+    phase: "Part 8 · Resources",
+    partName: "Part 8 · Resources",
+    overviewText: "Testing newsletters curate articles, tool updates, and community news. Sustainable way to stay current without daily social media scrolling.",
+    why: "Playwright releases every 2–4 weeks. A good newsletter filters signal from noise so you learn what matters.",
+    when: "Subscribe after completing Part 1; skim weekly during job search or active projects.",
+    practical: { app: "Staying current", scenario: "Missed that pytest-playwright added new fixture — tests break after upgrade.", pass: "Subscribe to Software Testing Weekly or similar; read Playwright release notes.", fail: "Rely on annual conference talk for version awareness." },
+    advantages: ["Curated links save search time across dozens of sources", "Weekly cadence fits busy schedules better than daily feeds", "Surfaces tools and patterns outside your bubble", "Archive searchable for past topics", "Low commitment — unsubscribe if noise exceeds signal", "Complements official release notes with community commentary"],
+    limitations: ["Newsletter lag behind real-time GitHub releases", "Generic testing newsletters include non-Playwright content", "Link rot breaks archived issue value over years", "Promotional content mixed with editorial", "Not a substitute for reading official changelog", "Inbox fatigue leads to unread pile-up"],
+    contentMarkdown: "## Newsletters\n\nA weekly or biweekly testing-focused newsletter is a low-effort way to stay current given Playwright's fast release cadence. Given new minor Playwright versions roughly every 2–4 weeks (Part 0, Chapter 0), a dedicated newsletter is a more sustainable way to stay current than manually checking release notes — worth subscribing to at least one general software-testing newsletter and, if available, anything specifically tracking Playwright/browser-automation news.\n\nNewsletters are also a good discovery mechanism for the blogs and conference talks covered elsewhere in this part. Rather than trying to independently discover every good blog post or talk, a well-curated newsletter effectively pre-filters the noise — worth treating this as the primary discovery channel and the other categories in this part as destinations it points you toward, rather than trying to browse each category exhaustively yourself.",
+    customSummary: "## Newsletters\n\nA dedicated testing newsletter is the sustainable way to track Playwright's fast (2–4 week) release cadence.\nNewsletters double as a discovery/curation layer pointing toward the blogs and talks in other chapters.",
+    chapterNum: 53,
   },
   {
-    contentMarkdown: `## 55. Podcasts
-
-Podcasts are ideal for commute listening and staying aware of industry trends.
-
-### Top picks for automation engineers
-
-- **TestGuild Automation Podcast** (Joe Colantonio) — tool comparisons, guest interviews with QA leaders, career advice.
-- **The Testing Show** (Qualitest) — testing strategy, team structure, and industry trends beyond any single tool.
-
-### Listening tips
-
-Note one actionable idea per episode — a CI pattern, a flake-reduction technique, a career tip. Search episode archives for "Playwright", "pytest", or "flaky tests" when preparing for interviews.`,
-    resourceLinks: [
-      {
-        title: "TestGuild Automation Podcast",
-        url: "https://testguild.com/automation-testing-podcast/",
-        description: "Long-running automation podcast — tool reviews, interviews, career advice.",
-      },
-      {
-        title: "The Testing Show",
-        url: "https://testingpodcast.com/",
-        description: "Broad testing strategy and industry trends from Qualitest.",
-      },
-      {
-        title: "TestGuild YouTube Channel",
-        url: "https://www.youtube.com/@TestGuild",
-        description: "Video versions of podcast topics plus live conference recordings.",
-      },
-      {
-        title: "Ministry of Testing Podcast",
-        url: "https://www.ministryoftesting.com/podcast",
-        description: "Community stories, testing culture, and practitioner interviews.",
-      },
-    ],
+    id: "pw-54-podcasts",
+    title: "54. Podcasts",
+    minutes: 15,
+    level: "beginner",
+    phase: "Part 8 · Resources",
+    partName: "Part 8 · Resources",
+    overviewText: "Testing and engineering podcasts discuss quality culture, CI strategy, and career paths. Less Playwright-specific syntax, more strategic framing.",
+    why: "Podcasts expose how senior engineers think about quality — useful for interview narrative and team influence beyond writing tests.",
+    when: "Listen during commute; not a primary learning path for syntax.",
+    practical: { app: "Commute learning", scenario: "Want to understand how FAANG teams structure QA without reading whitepapers.", pass: "Listen to Test Guild or Ministry of Testing episodes on CI and culture.", fail: "Expect step-by-step Playwright coding instruction from audio." },
+    advantages: ["Strategic framing for test culture and team structure", "Guest practitioners share real organizational war stories", "Commute-friendly format for continuous exposure", "Interview preparation for 'how would you improve QA?' questions", "Cross-tool perspective prevents Playwright tunnel vision", "Archived episodes searchable by topic"],
+    limitations: ["No code examples — cannot learn syntax from audio", "Episode quality varies with guest preparation", "Advice may reflect speaker's company context not yours", "Time investment without hands-on practice yields little skill gain", "Few Playwright-specific deep-dive episodes", "Outdated episodes may reference deprecated tooling"],
+    contentMarkdown: "## Podcasts\n\nSoftware testing and QA-focused podcasts are a good fit for passive learning during commute/routine tasks. Look specifically for episodes or shows covering test automation strategy, framework design, and interviews with practitioners at companies running large-scale test suites — the conversational format is particularly good for picking up the judgment-and-reasoning layer of this field (why a team made a specific tradeoff) rather than pure technical syntax, which is better learned by doing.\n\nGeneral software-engineering podcasts occasionally cover testing deeply and shouldn't be overlooked in favor of QA-only shows. Some of the best practical content on topics like CI/CD philosophy (Part 5) and framework architecture (Part 6) comes from general engineering podcasts discussing testing as part of a broader engineering-practices conversation, not exclusively from QA-branded shows — worth casting a slightly wider net than \"testing podcasts\" specifically.",
+    customSummary: "## Podcasts\n\nGood for passive learning of judgment/reasoning (why teams made a tradeoff), less suited to hands-on syntax learning.\nDon't limit to QA-only shows — general engineering podcasts often cover CI/CD and framework-architecture topics just as well.",
+    chapterNum: 54,
   },
   {
-    contentMarkdown: `## 56. Courses & Structured Learning Platforms
-
-Structured courses complement hands-on capstone work with guided progression.
-
-### Recommended platforms
-
-- **Test Automation University (Applitools)** — free courses on Selenium, Cypress, Playwright-adjacent topics, CI, and visual testing.
-- **Microsoft Learn** — official Playwright modules including framework building and CI integration.
-- **Udemy / Pluralsight** — paid courses for deep dives; check recency (Playwright changes fast — prefer courses updated within the last 12 months).
-
-### Course selection criteria
-
-- Does it use pytest-playwright (Python) or Playwright Test (JS)? Match your stack.
-- Does it cover CI integration, not just local \`pytest\`?
-- Are reviews recent and mentioning current Playwright versions?`,
-    resourceLinks: [
-      {
-        title: "Test Automation University",
-        url: "https://testautomationu.applitools.com/",
-        description: "Free courses on automation fundamentals, CI, visual testing, and more.",
-      },
-      {
-        title: "Microsoft Learn — Playwright modules",
-        url: "https://learn.microsoft.com/en-us/training/browse/?products=playwright",
-        description: "Official Microsoft training paths for Playwright and test automation.",
-      },
-      {
-        title: "Udemy — Playwright courses",
-        url: "https://www.udemy.com/topic/playwright/",
-        description: "Paid courses — filter by recent updates and Python/pytest content.",
-      },
-      {
-        title: "Playwright Python documentation",
-        url: "https://playwright.dev/python/docs/intro",
-        description: "Free official docs with runnable examples — the best zero-cost course.",
-      },
-      {
-        title: "Ministry of Testing — Courses",
-        url: "https://www.ministryoftesting.com/courses",
-        description: "Community courses on testing fundamentals and automation strategy.",
-      },
-    ],
+    id: "pw-55-courses",
+    title: "55. Courses & Structured Learning Platforms",
+    minutes: 25,
+    level: "beginner",
+    phase: "Part 8 · Resources",
+    partName: "Part 8 · Resources",
+    overviewText: "Udemy, Coursera, LinkedIn Learning Playwright+Python courses. Official Microsoft Learn modules. Evaluate for project-based curriculum vs video-only passive watching.",
+    why: "Structured courses provide deadlines and exercises — valuable if self-directed doc reading stalls.",
+    when: "Consider alongside this manual if you learn better with video; skip if already building capstone project.",
+    practical: { app: "Structured learning", scenario: "Stuck in tutorial loop — watching videos without writing tests.", pass: "Pick course with hands-on projects; code along every lesson.", fail: "Complete course certificates without building independent project." },
+    advantages: ["Video demonstrates debugging workflow docs cannot show", "Exercises provide external accountability and deadlines", "Udemy sales make comprehensive courses affordable", "Official Microsoft Learn integrates with certification paths", "Instructor Q&A forums answer stuck points", "Curriculum ordering saves 'what to learn next' decisions"],
+    limitations: ["Courses lag Playwright release cadence", "Python-specific courses fewer than JavaScript ones", "Passive watching without coding yields false confidence", "Certificate alone does not impress senior interviewers", "Course project != portfolio-ready capstone", "Instructor mistakes propagate to thousands of students"],
+    contentMarkdown: "## Courses & Structured Learning Platforms\n\nStructured courses are most valuable for filling specific, known gaps rather than as a primary learning path once you're past fundamentals. Given this manual's own depth, a full beginner-to-advanced course is likely to duplicate material already covered here — courses become more valuable when targeted at a specific gap (a deep-dive on CI/CD platforms generally, a Python-specific advanced course, a course on a testing discipline like accessibility auditing that intersects with but isn't the same as this manual's Chapter 29).\n\nGeneral platforms (Udemy, Coursera, Pluralsight, LinkedIn Learning, Test Automation University) host Playwright-specific and adjacent content worth searching directly. Test Automation University specifically (a free platform historically associated with the broader test-automation community) is worth checking directly for Playwright-Python-specific courses, given how narrowly this manual's own scope sits (Python + pytest-playwright) compared to the broader JS/TS-first Playwright content ecosystem.\n\nVendor/official learning paths, where they exist, are worth prioritizing for accuracy and currency over third-party content. Given how quickly Playwright's own API evolves, official or vendor-adjacent structured learning content is less likely to have gone stale on specific API details than a third-party course recorded a year or two prior — worth checking directly rather than assuming third-party content is current.",
+    customSummary: "## Courses & Structured Learning Platforms\n\nMost valuable for filling specific gaps, not as a primary path once past fundamentals (this manual already covers that depth).\nCheck Test Automation University and general platforms directly for Python-specific Playwright content; prioritize official/vendor content for currency.",
+    chapterNum: 55,
   },
   {
-    contentMarkdown: `## 57. Certifications
-
-Certifications validate breadth; your GitHub portfolio validates depth. Both matter at different career stages.
-
-### ISTQB
-
-The **International Software Testing Qualifications Board** offers the most widely recognized testing certifications:
-
-- **Foundation Level (CTFL)** — testing fundamentals, test design, tools, and process. Useful for manual QA transitioning to automation.
-- **Test Automation Engineer** — specifically covers automation architecture, frameworks, and CI.
-
-### When certifications help
-
-- Enterprise/regulated industries that require formal credentials
-- Early career when you lack portfolio projects
-- Complementing a strong GitHub capstone — not replacing it
-
-### When they don't
-
-Startups and product companies typically care more about your repo, CI badge, and ability to explain POM/fixtures in an interview.`,
-    resourceLinks: [
-      {
-        title: "ISTQB Official Site",
-        url: "https://www.istqb.org/",
-        description: "Certification syllabus, exam providers, and accredited training.",
-      },
-      {
-        title: "ISTQB Certified Tester Foundation Level",
-        url: "https://www.istqb.org/certifications/certified-tester-foundation-level",
-        description: "Entry-level certification covering testing fundamentals.",
-      },
-      {
-        title: "ISTQB Test Automation Engineer",
-        url: "https://www.istqb.org/certifications/certified-tester-advanced-level-test-automation-engineer",
-        description: "Advanced certification focused on automation architecture and tools.",
-      },
-      {
-        title: "ASTQB (American Software Testing Qualifications Board)",
-        url: "https://astqb.org/",
-        description: "US exam board for ISTQB certifications.",
-      },
-    ],
+    id: "pw-56-certs",
+    title: "56. Certifications",
+    minutes: 20,
+    level: "beginner",
+    phase: "Part 8 · Resources",
+    partName: "Part 8 · Resources",
+    overviewText: "ISTQB, AWS/Azure certs, and the current lack of widely recognized Playwright-specific certification. What employers actually weight vs resume keywords.",
+    why: "Certification value varies by employer and region. Knowing the landscape prevents wasting money on credentials that do not open doors.",
+    when: "Research when employer job posting explicitly mentions ISTQB or cloud certs.",
+    practical: { app: "Job application", scenario: "Posting requires ISTQB Foundation — debating whether to invest.", pass: "Get ISTQB if required locally; prioritize portfolio and live coding for Playwright roles.", fail: "Assume certification replaces demonstrated framework project." },
+    advantages: ["ISTQB recognized in enterprise and regulated industries", "Cloud certs (AWS/Azure) valued for CI infrastructure roles", "Structured study fills gaps in testing theory", "Resume keyword pass-through for HR screening", "Employer-sponsored cert programs reduce personal cost", "Foundation cert relatively quick to obtain"],
+    limitations: ["No mature Playwright-specific certification program yet", "ISTQB content skews theory over modern automation practice", "Certs expire — maintenance cost over career", "Senior hires judged on portfolio not certificates", "Exam dumps undermine actual learning", "Regional employer weight varies enormously"],
+    contentMarkdown: "## Certifications\n\nTesting-industry certifications (e.g., ISTQB) provide broad QA-methodology credibility, not Playwright-specific skill validation. ISTQB-style certifications are widely recognized in QA hiring generally and demonstrate grounding in testing terminology, methodology, and the testing pyramid concepts this manual has referenced throughout — but they don't test Playwright specifically, so they complement rather than substitute for the hands-on, tool-specific skill this manual builds.\n\nTool-specific certification options for Playwright itself are less established than for older tools like Selenium. Given Playwright's relative youth (Part 0), a mature, widely-recognized Playwright-specific certification program is less established in the market than certifications exist for older automation tools — worth checking current availability directly rather than assuming a specific program exists or remains current, since this is exactly the kind of fast-changing detail this reference section flags at the top as needing verification.\n\nA strong portfolio (Chapter 48) currently carries more practical weight than certifications for Playwright specifically, given the above. In the absence of a dominant, well-recognized Playwright certification, demonstrable project work is likely to matter more to hiring managers evaluating Playwright skill specifically than a certificate would — certifications are more valuable for the broader QA-methodology credibility they provide alongside a strong project portfolio, not as a substitute for one.",
+    customSummary: "## Certifications\n\nISTQB-style certs validate broad QA methodology, not Playwright-specific skill.\nNo dominant Playwright-specific certification is well-established yet (young tool) — verify current availability rather than assume.\nA strong project portfolio currently outweighs certification for demonstrating Playwright skill specifically.",
+    chapterNum: 56,
   },
   {
-    contentMarkdown: `## 58. Conferences & Talks
-
-Conferences expose you to patterns, tools, and people you won't find in docs.
-
-### Must-know events
-
-- **TestBash** (Ministry of Testing) — practitioner-focused, inclusive, strong automation track.
-- **PyCon** — Python ecosystem including pytest, tooling, and testing libraries.
-- **SeleniumConf / Automation conferences** — broader automation community; many talks cover Playwright migration.
-
-### Getting value without travel
-
-Most conferences publish talk recordings on YouTube within weeks. Search "TestBash Playwright" or "PyCon pytest" for free, high-quality sessions. Submit a CFP (Call for Papers) once your capstone is solid — speaking accelerates career visibility.`,
-    resourceLinks: [
-      {
-        title: "TestBash Events",
-        url: "https://www.ministryoftesting.com/events/testbash",
-        description: "Ministry of Testing flagship conference — online and in-person.",
-      },
-      {
-        title: "PyCon US",
-        url: "https://us.pycon.org/",
-        description: "Annual Python conference — pytest, tooling, and testing talks.",
-      },
-      {
-        title: "SeleniumConf",
-        url: "https://seleniumconf.com/",
-        description: "Broad automation community conference; Playwright migration talks common.",
-      },
-      {
-        title: "Ministry of Testing — All Events",
-        url: "https://www.ministryoftesting.com/events",
-        description: "TestBash, masterclasses, and community meetups worldwide.",
-      },
-      {
-        title: "Playwright Community Events",
-        url: "https://playwright.dev/community/events",
-        description: "Official Playwright meetups and community gatherings.",
-      },
-    ],
+    id: "pw-57-conferences",
+    title: "57. Conferences & Talks",
+    minutes: 20,
+    level: "beginner",
+    phase: "Part 8 · Resources",
+    partName: "Part 8 · Resources",
+    overviewText: "SeleniumConf, Ministry of Testing events, Playwright meetups, and recorded talks on YouTube. Part 6-level content often appears first at conferences.",
+    why: "Conference talks preview where the industry is heading. Recorded sessions are free archives of senior practitioners' best material.",
+    when: "Browse recordings when tackling Part 6 topics; attend live for networking during job search.",
+    practical: { app: "Professional networking", scenario: "Want to meet hiring managers at companies using Playwright.", pass: "Attend local meetup; watch Playwright team talks from recent conferences on YouTube.", fail: "Pay conference fee expecting beginner syntax tutorials only." },
+    advantages: ["Recorded talks free on YouTube indefinitely", "Playwright team presentations announce roadmap direction", "Networking at live events surfaces unposted job openings", "Advanced topics (sharding, framework design) appear in talks first", "Community events lower barrier than international conferences", "Q&A sessions address problems docs do not cover"],
+    limitations: ["Conference tickets expensive for individual contributors", "Talks optimized for inspiration not step-by-step learning", "Recorded sessions may demo deprecated APIs", "Virtual attendance reduces networking value", "Travel and time cost for in-person events", "Beginner content rare at practitioner-focused conferences"],
+    contentMarkdown: "## Conferences & Talks\n\nDedicated testing/QA conferences (e.g., TestBash-style events, Selenium/Playwright-adjacent conferences) are a strong source of both technical talks and networking. These events typically include framework-architecture talks, case studies from companies running large suites, and hands-on workshops — directly relevant to Part 6-level material — and recorded talks from past years are usually available afterward even without attending live, which is a low-cost way to access the content.\n\nMicrosoft's own developer conference ecosystem occasionally features Playwright content, given Microsoft's ownership of the project. Worth checking Microsoft's broader developer-conference content (and the Playwright team's own conference talks/YouTube presence specifically) as a source, since talks from the actual maintaining team tend to explain design rationale with an authority and depth other sources can't match.\n\nConference talks are especially valuable for architecture-level and future-direction content that written docs lag behind on. A talk given at a conference often previews thinking or upcoming direction before it's fully reflected in written documentation — useful specifically for staying ahead on things like the Playwright MCP direction flagged in Chapter 50, where the written ecosystem is still catching up to the pace of development.",
+    customSummary: "## Conferences & Talks\n\nTesting conferences (TestBash-style, Selenium/Playwright-adjacent) offer architecture talks and case studies relevant to Part 6; recordings are usually available after the fact.\nMicrosoft's own developer-conference content and the Playwright team's own talks carry unique design-rationale authority.\nTalks often preview direction (e.g. Playwright MCP) ahead of written docs.",
+    chapterNum: 57,
   },
   {
-    contentMarkdown: `## 59. Social & Real-Time Communities
-
-Real-time communities solve problems docs can't — edge cases, CI quirks, and "has anyone seen this?"
-
-### Where to participate
-
-- **Playwright Discord** — fastest help for Playwright-specific issues; core team members often respond.
-- **GitHub microsoft/playwright** — file issues, read discussions, watch releases.
-- **Reddit r/QualityAssurance** and **r/softwaretesting** — career advice, tool comparisons, interview prep.
-- **Ministry of Testing Slack** — global QA community with automation channels.
-
-### Community etiquette
-
-Search before asking. Share a minimal reproducible example (repo or trace). When you solve a problem, post the answer — it builds reputation and helps the next person.`,
-    resourceLinks: [
-      {
-        title: "Playwright Discord",
-        url: "https://aka.ms/playwright/discord",
-        description: "Official community Discord — fastest channel for Playwright help.",
-      },
-      {
-        title: "microsoft/playwright on GitHub",
-        url: "https://github.com/microsoft/playwright",
-        description: "Source, issues, discussions, and release notes.",
-      },
-      {
-        title: "Playwright Community page",
-        url: "https://playwright.dev/community",
-        description: "Links to Discord, Stack Overflow, Twitter, and meetups.",
-      },
-      {
-        title: "Ministry of Testing Slack",
-        url: "https://www.ministryoftesting.com/slack",
-        description: "Global testing community with dedicated automation channels.",
-      },
-      {
-        title: "Stack Overflow — Playwright tag",
-        url: "https://stackoverflow.com/questions/tagged/playwright",
-        description: "Searchable Q&A archive for specific technical problems.",
-      },
-    ],
+    id: "pw-58-social",
+    title: "58. Social & Real-Time Communities",
+    minutes: 15,
+    level: "beginner",
+    phase: "Part 8 · Resources",
+    partName: "Part 8 · Resources",
+    overviewText: "Playwright Discord, Stack Overflow, Reddit r/QualityAssurance, LinkedIn groups. How to ask good questions that get answered.",
+    why: "Stuck on an obscure failure, community response time beats solo debugging. Giving back builds reputation.",
+    when: "Join Discord after Part 2; ask questions with trace file and minimal reproduction.",
+    practical: { app: "Debugging blocker", scenario: "iframe + shadow DOM issue not covered clearly in docs.", pass: "Post minimal repro, Playwright version, trace snippet to Discord #help.", fail: "Post 'my test doesn't work' with no code or error message." },
+    advantages: ["Playwright Discord has core team and power users", "Stack Overflow archives solutions for future searchers", "Real-time chat faster than forum for urgent blockers", "Community exposes patterns docs omit", "Helping others reinforces your own understanding", "Job leads occasionally surface in community channels"],
+    limitations: ["Discord answers ephemeral — hard to search later", "Low-effort questions get ignored or downvoted", "Advice quality varies — verify before production use", "Time sink without disciplined question discipline", "Timezone gaps delay responses for some regions", "Public posts may expose proprietary app details"],
+    contentMarkdown: "## Social & Real-Time Communities\n\nOfficial and community Discord/Slack spaces are the fastest channel for troubleshooting a specific, immediate problem. For a genuinely stuck moment (an error message search engines don't surface a clear answer for), a real-time community channel is usually faster than waiting on a forum post reply — worth joining at least one active Playwright-focused community space specifically for this reason, distinct from newsletters/blogs which are better for passive learning than active troubleshooting.\n\nStack Overflow remains a strong resource for searchable, indexed Q&A, even as real-time chat communities have grown. Despite the rise of Discord/Slack-style communities, Stack Overflow's searchability (a well-phrased error message frequently surfaces an existing answered thread) still makes it a first stop for common, already-solved problems, reserving real-time community channels for genuinely novel or project-specific issues.\n\nFollowing the core Playwright team and prominent community contributors on social platforms surfaces announcements and practical tips faster than waiting for aggregated newsletter roundups. This is a lower-effort complement to Chapter 53's newsletters — worth doing in addition to, not instead of, a newsletter subscription, since social platforms tend to surface smaller practical tips (a lesser-known API method, a workaround for an edge case) that wouldn't necessarily warrant a full blog post or newsletter mention.",
+    customSummary: "## Social & Real-Time Communities\n\nDiscord/Slack communities are fastest for live troubleshooting; Stack Overflow remains strong for searchable, already-solved problems.\nFollowing the core team/contributors on social platforms surfaces smaller tips faster than newsletters alone.",
+    chapterNum: 58,
   },
   {
-    contentMarkdown: `## 60. Browser Extensions & Developer Tools
-
-The right browser tools make writing and debugging Playwright tests faster.
-
-### Accessibility testing
-
-- **axe DevTools** (Deque) — run accessibility scans in-browser; pairs with \`axe-playwright-python\` for automated a11y checks in CI.
-
-### Built-in DevTools
-
-- **Chrome DevTools** — inspect elements, network tab, console, and performance. Essential for writing locators and understanding why a test fails.
-- **Playwright Inspector** — launched via \`PWDEBUG=1 pytest\` or \`--headed --slowmo=500\`; step through tests interactively.
-
-### Locator discovery workflow
-
-1. Open app in browser → DevTools → inspect element
-2. Note role, label, text, or test-id
-3. Translate to Playwright: \`page.get_by_role("button", name="Submit")\`
-4. Verify in Playwright Inspector before committing to the test`,
-    resourceLinks: [
-      {
-        title: "axe DevTools Browser Extension",
-        url: "https://www.deque.com/axe/devtools/",
-        description: "In-browser accessibility scanning — pairs with axe-playwright for CI.",
-      },
-      {
-        title: "Chrome DevTools Documentation",
-        url: "https://developer.chrome.com/docs/devtools/",
-        description: "Official guide to Elements, Network, Console, and Performance panels.",
-      },
-      {
-        title: "Playwright Inspector",
-        url: "https://playwright.dev/python/docs/debug",
-        description: "Interactive test debugging — step through, pick locators, edit live.",
-      },
-      {
-        title: "axe-core (open source engine)",
-        url: "https://github.com/dequelabs/axe-core",
-        description: "The accessibility engine behind axe DevTools and axe-playwright.",
-      },
-      {
-        title: "Playwright Trace Viewer",
-        url: "https://trace.playwright.dev/",
-        description: "Web-based trace inspector — open CI failure traces without local setup.",
-      },
-    ],
+    id: "pw-59-extensions",
+    title: "59. Browser Extensions & Developer Tools",
+    minutes: 15,
+    level: "beginner",
+    phase: "Part 8 · Resources",
+    partName: "Part 8 · Resources",
+    overviewText: "Chrome DevTools, axe DevTools, Playwright Inspector, Pick Locator tool, and extensions that accelerate locator building before writing tests.",
+    why: "Most locator debugging happens in DevTools before pytest runs. Extensions bridge browser inspection and test authoring.",
+    when: "Use daily from Part 1 onward; Pick Locator when converting manual exploration to code.",
+    practical: { app: "Locator authoring", scenario: "Complex table row needs scoped locator — unsure of best strategy.", pass: "DevTools accessibility tree + Playwright Pick Locator + verify with PWDEBUG.", fail: "Copy full XPath from DevTools into page.locator() permanently." },
+    advantages: ["DevTools accessibility tree reveals get_by_role candidates", "Playwright Pick Locator generates Python locator syntax", "axe DevTools catches a11y issues before automation", "PWDEBUG integrates Inspector with running pytest test", "Network tab diagnoses API timing issues mocks should cover", "Extensions free — no additional license cost"],
+    limitations: ["Pick Locator output needs human review for stability", "axe DevTools not a replacement for automated axe scan in CI", "Extension recommendations change with browser updates", "DevTools skills separate from pytest framework skills", "Over-reliance on CSS selectors from DevTools copy", "Some corporate environments block extension installs"],
+    contentMarkdown: "## Browser Extensions & Developer Tools\n\nBrowser DevTools themselves (Chrome/Firefox/Edge DevTools) remain essential alongside Playwright's own tooling, not replaced by it. Even with Playwright's Inspector, UI Mode, and Trace Viewer (Chapter 35–37), directly inspecting a page's DOM, network tab, and console in a real browser DevTools panel is still frequently the fastest way to understand what a page is actually doing before writing a locator or diagnosing a failure — the two toolsets complement rather than replace each other.\n\nAccessibility-checking browser extensions complement the axe-core integration from Chapter 29. Browser extensions that surface accessibility issues interactively while manually browsing a page (rather than via an automated scan) are a useful complement to the automated axe-core checks from Chapter 29 — automated scans catch a broad first pass, but manually exploring a page with an accessibility-focused extension active often surfaces context (is this alt text actually meaningful, not just present) that automated tooling structurally can't judge.\n\nLocator-picking and selector-generation extensions can speed up initial locator discovery, with the same caveat as Codegen. Similar in spirit to Playwright's own Codegen (Part 1, Chapter 4) and Pick-locator (Chapter 36), various browser extensions offer element-inspection/selector-suggestion features — useful for quickly getting a starting-point locator, but worth applying the same discipline from Chapter 13: verify the suggested selector against the locator-strategy priority order rather than accepting whatever a tool suggests by default, since generic browser extensions have no awareness of Playwright's specific locator philosophy (role/label/test-id first).",
+    customSummary: "## Browser Extensions & Developer Tools\n\nNative browser DevTools complement (not replace) Playwright's own Inspector/UI Mode/Trace Viewer.\nAccessibility-checking extensions complement Ch. 29's automated axe-core scans with human judgment on things like alt-text meaningfulness.\nLocator-picker extensions speed up discovery but need the same Ch. 13 priority-order discipline applied before accepting a suggestion.",
+    chapterNum: 59,
   },
   {
-    contentMarkdown: `## 61. Comparison & Decision-Making References
-
-Tooling decisions should be evidence-based, not hype-driven.
-
-### State of Testing surveys
-
-Annual surveys from Ministry of Testing, TestRail, and others report adoption trends, pain points, and team practices. Use them to:
-
-- Justify Playwright adoption to management with industry data
-- Understand common flake rates and CI maturity benchmarks
-- Identify skills gaps (e.g., "60% of teams lack API testing")
-
-### Comparison frameworks
-
-When evaluating Playwright vs. Selenium vs. Cypress, compare on:
-
-- **Browser support** — Chromium, Firefox, WebKit
-- **Language bindings** — Python, JS, Java, C#
-- **Auto-waiting** — built-in vs. explicit waits
-- **Debugging** — trace viewer, video, screenshot
-- **CI integration** — Docker, sharding, cloud runners
-- **API testing** — native context vs. separate tool`,
-    resourceLinks: [
-      {
-        title: "State of Testing Report (Capgemini / Sogeti)",
-        url: "https://www.capgemini.com/insights/research-library/world-quality-report/",
-        description: "Annual enterprise QA trends — adoption, skills gaps, and maturity.",
-      },
-      {
-        title: "Ministry of Testing — State of Testing Survey",
-        url: "https://www.ministryoftesting.com/testing-surveys",
-        description: "Practitioner-focused survey on tools, practices, and community trends.",
-      },
-      {
-        title: "Testing Tools Dev",
-        url: "https://testingtools.dev/",
-        description: "Side-by-side comparison of test automation frameworks and tools.",
-      },
-      {
-        title: "Playwright vs Selenium (official comparison)",
-        url: "https://playwright.dev/python/docs/why-playwright",
-        description: "Playwright team's own comparison — useful starting point, read critically.",
-      },
-      {
-        title: "TestRail — Testing Trends Report",
-        url: "https://www.testrail.com/resource/testrail-test-report/",
-        description: "Annual report on testing practices, tools, and team structure.",
-      },
-    ],
+    id: "pw-60-comparison",
+    title: "60. Comparison & Decision-Making References",
+    minutes: 20,
+    level: "beginner",
+    phase: "Part 8 · Resources",
+    partName: "Part 8 · Resources",
+    overviewText: "Playwright vs Selenium vs Cypress decision frameworks, reporting tool comparisons, and when to recommend each tool to a team — scenario-based not checklist.",
+    why: "Senior engineers recommend tools for organizational fit, not personal preference. Comparison references support defensible decisions.",
+    when: "Consult when asked to evaluate tools for a new team or in architecture review meetings.",
+    practical: { app: "Tool evaluation meeting", scenario: "Frontend team wants Cypress; QA team knows Python and needs multi-browser.", pass: "Frame trade-offs: Cypress in-browser limits vs Playwright Python polyglot + WebKit.", fail: "Declare Playwright best without understanding team skills and app architecture." },
+    advantages: ["Scenario-based comparison more credible than feature tables", "Part 0 architecture context supports defensible recommendations", "Reporting tool comparison prevents shiny-object adoption", "Documents decision rationale for future team members", "Prevents re-debating settled tool choices every quarter", "Interview-ready framing for 'why this tool' questions"],
+    limitations: ["Comparisons age as tools add features", "Organizational politics override technical merit", "Second-hand comparisons miss nuance of hands-on use", "Feature parity tables oversimplify architectural differences", "Team skill inventory changes recommended answer", "Sunk cost in existing Selenium suite slows migration"],
+    contentMarkdown: "## Comparison & Decision-Making References\n\n\"Playwright vs. X\" comparison content is useful primarily for articulating tradeoffs in interviews and adoption discussions, not for re-deciding a tool choice once already committed. Given this manual already commits to Playwright + Python + pytest, comparison content's practical value going forward is less about re-litigating the choice and more about being able to clearly explain the tradeoffs to others — a stakeholder asking \"why not Selenium,\" or an interviewer asking the same, both benefit from the same well-reasoned comparison already built out in Chapter 1 and Part 0's Chapter 3.\n\nFramework/library decision references (which reporting tool, which CI platform, which cloud grid) are worth revisiting periodically rather than deciding once and never reconsidering. Unlike the core browser-automation tool choice, secondary tooling decisions (Allure vs. plain HTML reporting, GitHub Actions vs. another CI platform, whether to add a cloud execution grid) are lower-stakes and worth periodically reassessing as a team's needs or the tooling landscape changes — this reference category is meant to be checked in on occasionally, not treated as settled permanently the first time a decision is made.\n\nDecision matrices (weighted criteria across cost, team familiarity, ecosystem maturity, maintenance burden) are a useful structured tool for these secondary decisions. Rather than picking a secondary tool based on which blog post you read most recently, a simple weighted comparison across the criteria that actually matter for your specific team/project — cost, existing team familiarity, ecosystem/plugin maturity, ongoing maintenance burden — produces a more defensible, revisitable decision than an ad hoc choice, and is itself a useful artifact to show in an interview as evidence of structured technical decision-making.",
+    customSummary: "## Comparison & Decision-Making References\n\n\"Playwright vs. X\" content's ongoing value is explaining tradeoffs to others (interviews, stakeholders), not re-deciding an already-settled tool choice.\nSecondary tooling decisions (reporting tool, CI platform, cloud grid) are lower-stakes and worth periodic reassessment via a simple weighted decision matrix (cost, familiarity, ecosystem maturity, maintenance burden).",
+    chapterNum: 60,
   },
   {
-    contentMarkdown: `## 62. Glossary of Terms
-
-Key vocabulary for Playwright + pytest automation interviews and code reviews.
-
-| Term | Definition |
-|---|---|
-| **Locator** | A reference to one or more DOM elements. Playwright locators auto-retry until the element is actionable or timeout expires. Example: \`page.get_by_role("button", name="Save")\`. |
-| **Fixture** | A pytest function that provides setup/teardown for tests. Declared as a parameter; conftest.py shares fixtures across files. Example: \`authenticated_page\` fixture that logs in once. |
-| **Flaky test** | A test that passes and fails non-deterministically on the same code. Usually caused by timing, test isolation, or environment differences — not by Playwright itself. |
-| **storage_state** | Saved cookies + localStorage from a browser context. Loaded into new contexts to skip login UI. Equivalent concept to Cypress cy.session(). |
-| **Trace** | A Playwright recording of test execution — DOM snapshots, network, console, screenshots at each step. Opened in trace.playwright.dev for post-mortem debugging. |
-| **Sharding** | Splitting test suite across multiple CI machines. Each shard runs a subset: \`pytest --shard=1/4\`. Reduces total CI time. |
-| **POM (Page Object Model)** | Design pattern where each page/screen is a class encapsulating locators and actions. Tests call page methods, not raw locators. |
-| **Auto-waiting** | Playwright's default behavior: actions and assertions retry until conditions are met or timeout. Replaces explicit \`time.sleep()\`. |
-| **APIRequestContext** | Playwright's HTTP client for API calls independent of browser. Accessed via the \`request\` fixture in pytest-playwright. |
-| **Headless** | Running browser without visible UI. Default in CI. Use \`--headed\` locally for debugging. |`,
-    resourceLinks: [
-      {
-        title: "Playwright Glossary (Locators)",
-        url: "https://playwright.dev/python/docs/locators",
-        description: "Official locator strategies — role, text, label, test-id, CSS, XPath.",
-      },
-      {
-        title: "pytest Fixtures documentation",
-        url: "https://docs.pytest.org/en/stable/explanation/fixtures.html",
-        description: "How fixtures work — scope, autouse, yield, and conftest.py.",
-      },
-      {
-        title: "Playwright — Authentication (storage_state)",
-        url: "https://playwright.dev/python/docs/auth",
-        description: "Saving and reusing login state across tests and sessions.",
-      },
-      {
-        title: "Playwright — Trace Viewer",
-        url: "https://playwright.dev/python/docs/trace-viewer",
-        description: "Recording, opening, and analyzing traces for failed tests.",
-      },
-      {
-        title: "Playwright — Sharding",
-        url: "https://playwright.dev/python/docs/test-sharding",
-        description: "Splitting test suites across parallel CI workers.",
-      },
-    ],
+    id: "pw-61-glossary",
+    title: "61. Glossary of Terms",
+    minutes: 25,
+    level: "beginner",
+    phase: "Part 8 · Resources",
+    partName: "Part 8 · Resources",
+    overviewText: "Definitions for Browser, Context, Page, Locator, Fixture, Auto-waiting, Trace, storage_state, and other terms used consistently throughout this manual.",
+    why: "Shared vocabulary prevents miscommunication in code review and interviews. Terms like 'context' mean specific things in Playwright.",
+    when: "Reference when a term is unfamiliar; read once after Part 1 for vocabulary alignment.",
+    practical: { app: "Team onboarding", scenario: "Junior asks difference between Browser and BrowserContext.", pass: "Point to glossary; explain isolation model with concrete example.", fail: "Use terms interchangeably in documentation causing confusion." },
+    advantages: ["Consistent definitions across all manual chapters", "Quick lookup during code review discussions", "Interview vocabulary alignment with industry terms", "Reduces onboarding time for manual terminology", "Complements cheat sheet — definitions vs syntax", "Cross-references Playwright-specific vs general QA terms"],
+    limitations: ["Static definitions may lag API renames", "Glossary alone does not teach usage patterns", "Terms overlap with Selenium vocabulary differently", "Too long to memorize — reference not textbook", "Does not replace official API documentation", "Abbreviations without context still confuse newcomers"],
+    contentMarkdown: "## Glossary of Terms\n\nA dedicated glossary matters specifically because this manual introduces genuinely dense, overlapping terminology across eight parts. Terms like \"context,\" \"fixture,\" \"locator,\" \"trace,\" and \"flaky\" have been used precisely and consistently throughout this manual, but a reader dipping back in months later (or using this as an interview-prep refresher, per Chapter 49) benefits from a single alphabetized reference rather than needing to re-locate the chapter where a term was first defined.\n\nThe glossary should be compiled from this manual's own definitions, not written fresh, to guarantee consistency. Practically, this means each entry should trace back to (and match) the definition given at first use earlier in the manual — e.g., \"BrowserContext: an isolated session within a Browser, roughly equivalent to an incognito window, with its own cookies/storage/cache (Part 1, Chapter 3)\" — rather than introducing a subtly different phrasing that could create confusion between the glossary and the body text.\n\nThis entry is intentionally left as a pointer rather than a full compiled list here, since the highest-value version of this glossary is generated directly from this manual's own text once all parts are finalized. Worth treating Chapter 61 as a \"build this last\" chapter: once Parts 0–8 are complete, extracting every bolded/defined term across all chapters into one alphabetized list is a mechanical task best done in a single dedicated pass over the finished manual, rather than attempted piecemeal alongside each part.",
+    customSummary: "## Glossary of Terms\n\nA single alphabetized glossary is needed because terminology is dense and reused across all 8 parts.\nMust be compiled directly from this manual's own first-use definitions to stay consistent — best done as one dedicated pass after all parts are finalized, not piecemeal.",
+    chapterNum: 61,
   },
   {
-    contentMarkdown: `## 63. Sample Data & Practice Sites
-
-Hands-on practice requires stable demo apps and public APIs.
-
-### Demo sites
-
-- **demo.playwright.dev/todomvc** — official Playwright demo app; ideal for CRUD and locator practice.
-- **the-internet.herokuapp.com** — classic automation practice site (login, dropdowns, alerts, frames).
-- **automationexercise.com** — e-commerce flows for cart, checkout, and registration.
-
-### Official examples
-
-- **github.com/microsoft/playwright/examples** — runnable examples for Python, JS, Java, and C# covering auth, API, mobile, and CI patterns.
-
-### Public APIs for setup/teardown
-
-- **jsonplaceholder.typicode.com** — fake REST API for CRUD practice without a real backend.
-- **reqres.in** — user registration and login API for auth fixture practice.
-
-### Practice project idea
-
-Build a capstone against TodoMVC: login (if applicable), add/edit/delete todos, API validation via a mock or jsonplaceholder, CI on GitHub Actions. Complete in a weekend.`,
-    resourceLinks: [
-      {
-        title: "Playwright TodoMVC Demo",
-        url: "https://demo.playwright.dev/todomvc",
-        description: "Official demo app — stable, fast, ideal for CRUD and locator practice.",
-      },
-      {
-        title: "Playwright Examples (GitHub)",
-        url: "https://github.com/microsoft/playwright/tree/main/examples",
-        description: "Official runnable examples — auth, API, mobile, CI patterns.",
-      },
-      {
-        title: "The Internet (Herokuapp)",
-        url: "https://the-internet.herokuapp.com/",
-        description: "Classic practice site — login, alerts, frames, dynamic content.",
-      },
-      {
-        title: "JSONPlaceholder",
-        url: "https://jsonplaceholder.typicode.com/",
-        description: "Free fake REST API for API testing and setup/teardown practice.",
-      },
-      {
-        title: "Automation Exercise",
-        url: "https://automationexercise.com/",
-        description: "E-commerce demo site for cart, checkout, and registration flows.",
-      },
-      {
-        title: "ReqRes — Fake REST API",
-        url: "https://reqres.in/",
-        description: "User registration and login endpoints for auth fixture practice.",
-      },
-    ],
+    id: "pw-62-practice",
+    title: "62. Sample Data & Practice Sites",
+    minutes: 20,
+    level: "beginner",
+    phase: "Part 8 · Resources",
+    partName: "Part 8 · Resources",
+    overviewText: "practice.expandtesting.com, the-internet.herokuapp.com, saucedemo.com, and Playwright's own demo sites for hands-on exercises without risking production apps.",
+    why: "Practicing on dedicated sandbox sites lets you break things freely. Production apps restrict destructive test scenarios.",
+    when: "Use for capstone practice and interview take-home assignments when no company app available.",
+    practical: { app: "Learning exercises", scenario: "Need login + CRUD practice site for portfolio capstone.", pass: "Sauce Demo for E2E flows; expandtesting for specific widgets; document chosen site in README.", fail: "Practice against employer production staging without permission." },
+    advantages: ["Public sites require no local app setup", "Sauce Demo provides full e-commerce flow for capstone", "the-internet.herokuapp covers iframes, alerts, drag-drop", "expandtesting adds dynamic elements and API pages", "Playwright demo site matches official doc examples", "Free — no API key or account for basic practice"],
+    limitations: ["Public sites change or go offline without notice", "Shared sites may be slow or rate-limited during peak use", "Not representative of real enterprise app complexity", "Some sites prohibit automated load testing", "Portfolio reviewers recognize common demo sites", "Cannot practice destructive data scenarios on shared sandboxes"],
+    contentMarkdown: "## Sample Data & Practice Sites\n\nPublic practice sites are the standard way to practice Playwright techniques without needing a real application available. Well-known publicly available demo/practice sites (intentionally built with test automation practice in mind, including deliberately tricky elements — dynamic content, iframes, shadow DOM, flaky-by-design elements) are the standard sandbox for trying out a new technique from this manual in isolation before applying it to real Bizlevate work, without any risk of affecting a real application or needing real credentials.\n\nPlaywright's own documentation examples and test suite are themselves a legitimate practice/reference source. Since Playwright is open-source (Part 0, Chapter 0), its own end-to-end test suite (used to test Playwright itself) is public and demonstrates real, production-grade usage patterns directly from the team that built the tool — a genuinely under-used resource for seeing advanced patterns in context rather than in a simplified tutorial snippet.\n\nBuilding a small local practice app is worth it specifically for scenarios public practice sites don't cover well. Public practice sites are good for general locator/interaction practice but rarely replicate domain-specific scenarios (an approval-chain workflow, a payroll calculation) — for practicing patterns specific to your actual work context (RBAC across HR roles, a multi-step leave-approval flow), a small local mock app (even a simple one built quickly) that mirrors Bizlevate's actual domain logic is more valuable practice than a generic public site, precisely because it exercises the same kind of business logic you'll actually be testing.",
+    customSummary: "## Sample Data & Practice Sites\n\nPublic test-automation practice sites (dynamic content, iframes, shadow DOM, deliberately flaky elements) are the standard sandbox for isolated technique practice.\nPlaywright's own open-source end-to-end test suite is an under-used, production-grade reference.\nA small local mock app mirroring real domain logic (RBAC across HR roles, approval chains) is more valuable than generic public sites for Bizlevate-specific practice.",
+    chapterNum: 62,
   },
   {
-    contentMarkdown: `## 64. Staying Plugged Into the Ecosystem
-
-Playwright evolves fast. A quarterly audit habit keeps your skills and suite current.
-
-### GitHub watch list
-
-- **github.com/microsoft/playwright** — watch Releases for breaking changes.
-- **github.com/microsoft/playwright-python** — Python binding updates.
-- **Your dependencies** — \`pip list --outdated\` monthly; update pytest-playwright deliberately, not blindly.
-
-### PyPI & version tracking
-
-- Check [pypi.org/project/playwright](https://pypi.org/project/playwright/) for latest stable.
-- Read [playwright.dev/docs/release-notes](https://playwright.dev/docs/release-notes) before upgrading — note deprecated APIs.
-
-### Migration guides
-
-When upgrading major versions, follow official migration guides. Search release notes for APIs you use: \`page.wait_for_selector\`, \`context.storage_state\`, fixture scopes.
-
-### Quarterly audit checklist
-
-Every 3 months:
-
-1. Update Playwright + pytest-playwright to latest stable
-2. Run full suite locally and in CI after update
-3. Review release notes for deprecated APIs in your codebase
-4. Re-read one Part 8 resource (blog, podcast, or doc page)
-5. Check CI runtime — if suite exceeds 15 minutes, evaluate sharding (Chapter 27)
-
-Staying current is a habit, not a one-time event. Block 30 minutes quarterly on your calendar.`,
-    resourceLinks: [
-      {
-        title: "Playwright GitHub Releases",
-        url: "https://github.com/microsoft/playwright/releases",
-        description: "Watch for breaking changes, new features, and bug fixes.",
-      },
-      {
-        title: "Playwright Python on PyPI",
-        url: "https://pypi.org/project/playwright/",
-        description: "Latest stable version and release history for the Python package.",
-      },
-      {
-        title: "Playwright Release Notes",
-        url: "https://playwright.dev/docs/release-notes",
-        description: "Official changelog with migration notes for each version.",
-      },
-      {
-        title: "pytest-playwright on PyPI",
-        url: "https://pypi.org/project/pytest-playwright/",
-        description: "Pytest plugin version — keep in sync with Playwright core.",
-      },
-      {
-        title: "Playwright GitHub Discussions",
-        url: "https://github.com/microsoft/playwright/discussions",
-        description: "Community Q&A, feature requests, and migration help from the team.",
-      },
-    ],
+    id: "pw-63-cheatsheet",
+    title: "63. Quick-Reference Cheat Sheet",
+    minutes: 30,
+    level: "beginner",
+    phase: "Part 8 · Resources",
+    partName: "Part 8 · Resources",
+    overviewText: "Single-page syntax lookup: launch, locators, actions, assertions, waiting, auth, network, and CLI flags — code-only, no prose.",
+    why: "During live coding and debugging you need syntax in seconds, not chapter navigation. Cheat sheet complements glossary definitions with copy-paste patterns.",
+    when: "Keep open during interviews, live coding, and daily test authoring after Part 2.",
+    practical: { app: "Daily test authoring", scenario: "Forgot exact syntax for storage_state save during interview live coding.", pass: "Cheat sheet context.storage_state(path='auth.json') line ready.", fail: "Guess API from memory and waste interview time on syntax errors." },
+    advantages: ["Single-page syntax covers 90% of daily authoring needs", "Locator priority order visible at a glance", "CLI flags collected for local debug and CI", "Network route/fulfill/abort patterns in one block", "Complements glossary — syntax here, definitions there", "Printable for interview desk reference"],
+    limitations: ["No explanation of when to use each pattern", "Advanced topics (shadow DOM, OAuth) not covered", "Syntax may change across Playwright minor versions", "Copy-paste without understanding fails in novel scenarios", "Python-only — JS team members need separate sheet", "Grows useless if allowed to accumulate prose explanations"],
+    contentMarkdown: "## Quick-Reference Cheat Sheet\n\nPurpose: a single-page, syntax-first lookup — deliberately distinct from the Glossary's definitions. Where Chapter 61 explains what a term means, this chapter exists purely to answer \"what's the exact syntax for X\" at a glance, without needing to search back through the relevant chapter — the two are complementary, not redundant.\n\n```python\n# Launch & navigate\nbrowser = p.chromium.launch(headless=True)\npage = browser.new_page()\npage.goto(\"https://example.com\")\n\n# Locators (preferred order)\npage.get_by_role(\"button\", name=\"Submit\")\npage.get_by_label(\"Email\")\npage.get_by_test_id(\"submit-btn\")\npage.get_by_text(\"Welcome\")\npage.locator(\"css=.class\")          # last resort\n\n# Actions\nlocator.click()\nlocator.fill(\"text\")\nlocator.type(\"text\", delay=100)\nlocator.press(\"Enter\")\nlocator.check() / .uncheck()\nlocator.select_option(label=\"Nepal\")\nlocator.hover()\nlocator.drag_to(target_locator)\n\n# Assertions\nexpect(locator).to_be_visible()\nexpect(locator).to_have_text(\"text\")\nexpect(locator).to_have_value(\"value\")\nexpect(page).to_have_url(\"https://...\")\nexpect(locator).to_have_count(5)\nexpect.soft(locator).to_be_visible()\n\n# Waiting\npage.wait_for_selector(\".spinner\", state=\"hidden\")\npage.wait_for_load_state(\"networkidle\")\n\n# Multi-context / auth\ncontext = browser.new_context(storage_state=\"auth.json\")\ncontext.storage_state(path=\"auth.json\")\n\n# Network\npage.route(\"**/api/**\", handler)\nroute.fulfill(status=200, body=\"...\")\nroute.abort()\n\n# CLI\npytest --headed --browser firefox --slowmo 500\npytest -m smoke\npytest -k \"login\"\npytest -n auto              # pytest-xdist\npytest --tracing on\nPWDEBUG=1 pytest\n```",
+    customSummary: "## Quick-Reference Cheat Sheet\n\nA single-page, code-only syntax lookup — deliberately distinct from the Glossary's definitions (what vs. how).\nCovers: launch/navigate, locators in priority order, actions, assertions, waiting, multi-context/auth, network interception, and key CLI flags.\nShould stay code-only — any prose explanation belongs back in its originating chapter, not here.",
+    chapterNum: 63,
   },
 ];

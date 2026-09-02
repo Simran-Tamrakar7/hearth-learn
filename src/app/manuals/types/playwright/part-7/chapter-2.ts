@@ -1,75 +1,24 @@
 import type { ChapterRecord } from "../../../types";
 
-/** 34. Portfolio Building */
+/** 48. Portfolio Building */
 export const chapter = {
-  "id": "pw-7-portfolio",
-  "title": "34. Portfolio Building",
-  "minutes": 45,
-  "level": "pro",
-  "phase": "Part 7 · Real-World Project & Job Readiness",
-  "partName": "Part 7 · Real-World Project & Job Readiness",
-  "overviewText": "Portfolio building for Playwright automation means structuring your GitHub repo so a recruiter or hiring manager can evaluate your competence in under a minute — before reading a single line of test code. The repo structure should match the enterprise-grade layout from Chapter 29: .github/workflows/ for CI, pages/ and tests/ for the framework, utils/ and config/ for supporting code, and docs/architecture.md for design decisions. The README is the most important file — it must answer, in order: what this project demonstrates, how to run it, and why it is built the way it is. Explicitly naming the patterns demonstrated (POM, session reuse, CI integration, API validation) in the README does real work — it is often the first and only place a time-pressed reviewer looks to judge whether you understand the 'why,' not just the 'how.' A 2–3 minute screen recording showing the suite running, the folder structure, and the HTML report is a low-effort, high-impact differentiator most candidate repos do not include.",
-  "why": "Hiring managers reviewing automation candidates face the same problem as code reviewers: they have limited time and many applicants. A repo with no README, a flat file structure, and no CI badge requires the reviewer to clone, install dependencies, and figure out what they are looking at — most will not. A well-structured repo with a clear README, green CI badge, and architecture doc lets a reviewer evaluate your competence in 60 seconds. For candidates transitioning from manual QA to automation, the portfolio repo is often the primary evidence of automation skill — more important than certifications or course completions.",
-  "when": "Build the portfolio repo presentation immediately after the capstone (Chapter 33) is CI-green. Write the README before sharing the repo link with anyone — a repo without a README is worse than no repo at all. Record the demo walkthrough once the README and CI pipeline are complete. Update the README whenever you add significant new patterns or modules to the framework.",
-  "practical": {
-    "app": "Playwright Task Manager Framework — Portfolio repo",
-    "scenario": "A hiring manager receives your resume with a GitHub link. They open the repo, see a green CI badge, read the README listing POM architecture, session reuse, API validation, and GitHub Actions CI, skim docs/architecture.md, and watch the 2-minute demo video.",
-    "pass": "The hiring manager understands within 60 seconds what the project demonstrates, sees the green CI badge, and clicks through to the demo video. They add you to the interview shortlist based on the repo alone.",
-    "fail": "The hiring manager opens the repo, finds no README, a flat tests/ folder with 15 files, no CI badge, and closes the tab. Your automation skills are never evaluated because the repo did not communicate them."
-  },
-  "advantages": [
-    "Clean repo structure signals competence before a reviewer reads any test code",
-    "README with named patterns (POM, session reuse, CI) answers 'does this person understand why?' immediately",
-    "Green CI badge on the repo is passive, always-on proof the suite works",
-    "Demo video lets reviewers see the framework run without cloning and setting up",
-    "docs/architecture.md explains design decisions — shows engineering thinking, not just coding",
-    "Portfolio repo URL is directly pasteable into resume, LinkedIn, and cover letters"
-  ],
-  "limitations": [
-    "Portfolio quality depends on capstone quality — a poorly built framework with good README still fails under interview scrutiny",
-    "Demo video requires basic screen recording tooling and takes time to produce well",
-    "Repo structure conventions vary by team — some reviewers prefer different layouts",
-    "A portfolio repo without real CI green runs is worse than no badge at all"
-  ],
-  "tools": [
-    {
-      "name": "GitHub",
-      "sub": "Portfolio Hosting",
-      "url": "https://github.com",
-      "desc": "GitHub hosts the portfolio repo and provides the CI badge, README rendering, and Actions tab that hiring managers evaluate. The repo should be public (or accessible via link) with a descriptive name like playwright-task-manager-framework rather than a generic name like test-project. Pin the repo on your GitHub profile. Enable GitHub Pages optionally for hosting the Allure report history.",
-      "adv": [
-        "README renders automatically on the repo homepage — first thing reviewers see",
-        "CI badge embeddable in README with one markdown line",
-        "Public repos are indexable — recruiters searching for Playwright examples may find yours",
-        "GitHub profile pin feature puts the portfolio repo at the top of your profile"
-      ],
-      "lim": [
-        "Public repos expose all commit history — ensure no secrets were ever committed",
-        "GitHub Pages Allure hosting requires a separate workflow step",
-        "Private repos require reviewers to have access granted manually"
-      ],
-      "steps": [
-        {
-          "t": "Step 1 — Write the README",
-          "p": "Answer what, how, and why in order:",
-          "c": "# Playwright + Python Test Automation Framework\n\n## What this demonstrates\n- Page Object Model with a shared base page\n- Auth session reuse via storage_state\n- Combined UI + API testing for full-stack validation\n- GitHub Actions CI pipeline with HTML reporting\n\n## Running locally\npip install -r requirements.txt\nplaywright install --with-deps\npytest --browser chromium --html=report.html\n\n## Architecture\nSee docs/architecture.md for folder structure and design decisions."
-        },
-        {
-          "t": "Step 2 — Add CI badge to README",
-          "p": "Embed the GitHub Actions status badge:",
-          "c": "![Playwright Tests](https://github.com/yourusername/your-repo/actions/workflows/playwright.yml/badge.svg)"
-        },
-        {
-          "t": "Step 3 — Record and link the demo video",
-          "p": "2–3 minute screen recording showing: terminal test run, folder structure, HTML report.",
-          "c": "## Demo\n[Watch a 2-minute walkthrough](https://www.youtube.com/watch?v=...)"
-        }
-      ]
-    }
-  ],
-  "contentMarkdown": "## 34. Portfolio Building\n\nYour GitHub repo is often the first thing a hiring manager opens. Structure it like a professional framework, not a homework dump.\n\n### Recommended repo structure\n\n```\nplaywright-capstone/\n├── .github/workflows/playwright.yml   # CI runs on every push\n├── pages/                             # Page Object Model classes\n│   ├── login_page.py\n│   └── tasks_page.py\n├── tests/\n│   ├── conftest.py                    # Fixtures (auth, API context)\n│   └── test_task_crud.py\n├── fixtures/                          # Test data (JSON, factories)\n├── playwright.config.py               # Or pytest.ini + conftest\n├── requirements.txt\n├── README.md                          # First impression — make it count\n└── .gitignore                         # Exclude .env, traces, __pycache__\n```\n\n### README template\n\nYour README should answer four questions in under two minutes of reading:\n\n1. **What does this test?** — One sentence on the app and scope (login + CRUD + API validation).\n2. **How do I run it?** — Copy-paste commands that actually work:\n   ```bash\n   pip install -r requirements.txt\n   playwright install\n   pytest\n   ```\n3. **What's the architecture?** — Brief note on POM, fixtures, and CI.\n4. **Proof it works** — Screenshot of a green CI run or link to Actions badge.\n\n```markdown\n# Task Manager — Playwright Capstone\n\nEnd-to-end Playwright + pytest suite covering login, task CRUD, and API validation.\n\n## Quick start\npip install -r requirements.txt && playwright install && pytest\n\n## Architecture\n- Page Object Model in `pages/`\n- Session-scoped auth fixture in `conftest.py`\n- GitHub Actions CI on every push\n\n## CI status\n![Playwright Tests](https://github.com/yourname/playwright-capstone/actions/workflows/playwright.yml/badge.svg)\n```\n\n### Demo video (2–3 minutes)\n\nRecord a short walkthrough showing:\n\n1. Repo structure (30 seconds)\n2. One test running locally with trace on failure (60 seconds)\n3. Green GitHub Actions run + report artifact (30 seconds)\n\nUpload to YouTube (unlisted) or Loom and link from the README. Recruiters rarely clone repos — a video proves you built it and can explain it.\n\n### What to highlight\n\n- API validation alongside UI assertions\n- Session reuse (not logging in every test)\n- CI that actually runs (green badge, not red X)\n- Clean locator strategy (roles/labels, not XPath soup)",
-  "exercises": [],
-  "resourceLinks": [],
-  "steps": [],
-  "learn": []
+  id: "pw-48-portfolio",
+  title: "48. Portfolio Building",
+  minutes: 35,
+  level: "intermediate",
+  phase: "Part 7 · Real-World Project & Job Readiness",
+  partName: "Part 7 · Real-World Project & Job Readiness",
+  overviewText: "GitHub portfolio presentation: README structure, CI badges, architecture diagrams, test reports as screenshots, and what recruiters actually scan in 60 seconds.",
+  why: "Recruiters spend under two minutes on a GitHub profile. Presentation quality signals professionalism as much as code quality.",
+  when: "Read before submitting job applications or updating LinkedIn with project links.",
+  practical: { app: "GitHub profile", scenario: "Recruiter opens your repo — sees empty README and no CI badge.", pass: "README with setup steps, architecture diagram, passing CI badge, sample Allure screenshot.", fail: "Raw test files with no context; secrets in committed .env file." },
+  advantages: ["CI badge immediately signals tests run automatically","Architecture diagram communicates senior thinking fast","Sample report screenshot shows reporting maturity","Clear setup instructions reduce reviewer friction","Pinned repos highlight best work above random forks","Contribution graph supplemented by substantive README"],
+  limitations: ["Polished README cannot compensate for shallow test coverage","Screenshots of reports go stale — date them","Public repos expose techniques competitors copy","Portfolio projects without real app look academic","Over-designed READMEs distract from code quality review","Some employers use private take-home instead of public repos"],
+  tools: [],
+  contentMarkdown: "## Portfolio Building\n\nA portfolio's job is to make your actual capability legible to someone skimming quickly, not to impress on close reading alone. Most people reviewing a portfolio (a recruiter, a hiring manager, an interviewer prepping questions) spend a few minutes, not a few hours — the structure needs to communicate competence fast: a clear README, a sensible folder structure recognizable at a glance (tying back to Chapter 43's layered architecture), and visible CI (a passing-build badge) before anyone reads a single line of test code.\n\nA GitHub repository is the practical baseline; presentation quality matters as much as code quality. Concrete elements worth including deliberately: a README with a project overview, the tech stack, how to run it locally, and a short \"design decisions\" section (from Chapter 47); a CI badge showing the suite actually runs and passes; a linked HTML/Allure report (Chapter 40) either committed as a static artifact or generated fresh via a GitHub Pages deploy, so a reviewer can see actual output without cloning and running anything themselves.\n\nCase-study writeups turn a repository into a legible story, not just a code dump. A short writeup (README section, or a separate blog-style post) walking through one specific interesting decision — \"why I chose to mock the payment API instead of hitting a sandbox environment,\" \"how I structured RBAC testing across three roles\" — demonstrates judgment and reasoning in a way that a directory of test files alone doesn't. This is also where the Bizlevate context becomes a genuine portfolio asset: a project framed around a real domain (HR/payroll workflows) with real business logic (leave balance validation, approval chains) reads as more substantive than a generic to-do-app or e-commerce-demo clone, which interviewers have typically seen dozens of times already.\n\nContributing to open-source Playwright-adjacent projects is a credible, visible way to demonstrate skill beyond a solo project. Even a small, well-scoped contribution (fixing a documentation gap, adding a test to an open-source project that lacks coverage, contributing a plugin or utility) is verifiable, public evidence of real-world collaboration — reviewable by a PR history, not just a claim on a resume. This is a slower-burn portfolio strategy compared to a capstone project, but it compounds credibly over time and demonstrates comfort working within someone else's codebase and review process, which a solo project can't fully demonstrate on its own.",
+  customSummary: "## Portfolio Building\n\nA portfolio must communicate competence in minutes, not hours — clear README, recognizable structure, visible passing CI badge before anyone reads test code.\nInclude: overview + tech stack + run instructions + a design-decisions section, a CI badge, and a linked/committed HTML or Allure report so output is visible without cloning.\nA short case-study writeup on one specific decision demonstrates judgment beyond what a code dump shows; framing the project around a real domain (HR/payroll) reads as more substantive than a generic demo-app clone.\nOpen-source contributions (even small, well-scoped ones) provide public, verifiable, review-history evidence of real-world collaboration — a slower but credible complement to a solo capstone.",
+  exercises: [],
+  resourceLinks: [],
+  steps: [],
+  learn: [],
 } as ChapterRecord;

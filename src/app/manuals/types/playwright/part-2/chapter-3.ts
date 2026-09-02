@@ -1,88 +1,24 @@
 import type { ChapterRecord } from "../../../types";
 
-/** 7. Assertions with expect() */
+/** 15. Assertions with expect() */
 export const chapter = {
-  "id": "pw-2-expect",
-  "title": "7. Assertions with expect()",
-  "minutes": 40,
-  "level": "beginner",
-  "phase": "Part 2 · Core Interactions",
-  "partName": "Part 2 · Core Interactions",
-  "overviewText": "Playwright's expect() assertion library auto-retries conditions until they pass or a timeout expires — the assertion equivalent of auto-waiting on actions. A bare assert page.title() == 'Dashboard' fails instantly if the SPA hasn't updated the title yet; expect(page).to_have_title('Dashboard') polls until true. Use expect on locators for visibility, text, values, attributes, and count; use expect(page) for URL and title. This retrying behavior is what makes Playwright assertions reliable on async UIs without time.sleep().",
-  "why": "Tests without retrying assertions are flaky by design on modern SPAs. The title, URL, and visible text change asynchronously after clicks — instant Python asserts race the UI and fail randomly. expect() is the difference between a suite that passes consistently and one that passes locally but fails on CI.",
-  "when": "Replace every bare assert on page/locator state with expect() starting in this chapter. Use to_be_visible after navigation, to_have_url after redirects, to_contain_text for confirmation messages, and to_have_count when verifying list lengths. Pair with locators from Chapter 5, not raw CSS strings.",
-  "practical": {
-    "app": "Leave management — submit confirmation",
-    "scenario": "After clicking 'Submit Leave Request', the SPA shows a toast 'Request submitted' and redirects to /leave/history without a full page reload. assert 'Request submitted' in page.content() fails intermittently because the toast appears 200ms later. expect(page.get_by_text('Request submitted')).to_be_visible() retries until the toast renders or times out with a clear message.",
-    "pass": "expect() passes reliably on CI; failure message shows expected vs actual text and timeout duration.",
-    "fail": "Bare assert fails 30% of CI runs; team adds time.sleep(1) — suite slows by 40 seconds total per run."
-  },
-  "advantages": [
-    "Auto-retry until timeout — assertions sync with async UI updates",
-    "Clear failure messages show expected vs actual values and which condition timed out",
-    "Rich matcher set: visibility, text, value, checked state, attribute, count, URL, title",
-    "Consistent philosophy with action auto-waiting — one mental model for waits",
-    "to_contain_text handles partial matches — useful for dynamic content with IDs",
-    "Integrates directly with locators — expect(locator).to_be_visible() not expect(page.locator(...))"
-  ],
-  "limitations": [
-    "Default timeout (often 5s) may be too short for slow backend operations — configure per assertion",
-    "No built-in soft assertions in pytest by default — first expect failure stops the test",
-    "to_have_text requires exact match — use to_contain_text for partial or use regex",
-    "Polling assertions on fast-fading toasts need tight timeouts or locator stability tricks",
-    "expect doesn't replace waiting for spinners to disappear — combine with wait_for_selector",
-    "Over-using long timeouts on every expect masks genuine performance problems"
-  ],
-  "tools": [
-    {
-      "name": "Playwright expect()",
-      "sub": "Auto-retrying assertions",
-      "url": "https://playwright.dev/python/docs/test-assertions",
-      "desc": "Import expect from playwright.sync_api. It wraps locators and pages with assertion methods that poll until the condition is met or timeout. Unlike pytest's assert, expect understands Playwright's async rendering model and retries intelligently. Common matchers: to_be_visible(), to_be_hidden(), to_have_text(), to_contain_text(), to_have_value(), to_be_checked(), to_have_attribute(), to_have_count(), to_have_url(), to_have_title().",
-      "adv": [
-        "Eliminates timing-based flakes on SPAs without sleep()",
-        "Failure output includes locator description and timeout — faster debugging",
-        "Works with regex: to_have_text(re.compile('Order #\\\\d+'))",
-        "Same API across Python, JS, Java, .NET"
-      ],
-      "lim": [
-        "Only works on Playwright locators/pages — not arbitrary Python values",
-        "Timeout configuration is per-call or global — no per-suite profiles without conftest",
-        "Not a replacement for API-level contract validation",
-        "Soft assert patterns require pytest plugins or manual collection"
-      ],
-      "steps": [
-        {
-          "t": "Step 1 — Import and basic visibility check",
-          "p": "After an action that reveals content:",
-          "c": "from playwright.sync_api import expect\n\nexpect(page.get_by_role(\"heading\", name=\"Dashboard\")).to_be_visible()"
-        },
-        {
-          "t": "Step 2 — Assert URL and title",
-          "p": "After navigation or redirect:",
-          "c": "expect(page).to_have_url(\"**/dashboard\")\nexpect(page).to_have_title(\"Dashboard\")"
-        },
-        {
-          "t": "Step 3 — Text and value matchers",
-          "p": "Confirmation messages and form state:",
-          "c": "expect(page.get_by_text(\"Saved\")).to_be_visible()\nexpect(page.get_by_label(\"Email\")).to_have_value(\"user@example.com\")"
-        },
-        {
-          "t": "Step 4 — List count and checked state",
-          "p": "Verify table rows or checkbox state:",
-          "c": "expect(page.get_by_role(\"row\")).to_have_count(5)\nexpect(page.get_by_label(\"Agree to terms\")).to_be_checked()"
-        },
-        {
-          "t": "Step 5 — Custom timeout for slow operations",
-          "p": "Extend timeout for known-slow backend:",
-          "c": "expect(page.get_by_text(\"Report ready\")).to_be_visible(timeout=30000)"
-        }
-      ]
-    }
-  ],
-  "contentMarkdown": "## Ch7 Assertions\n\nPlaywright's `expect()` assertions auto-retry until they pass or time out — the assertion equivalent of action auto-waiting. Never use bare Python `assert` on DOM state in an SPA; the condition may be true a moment later.\n\n```python\nfrom playwright.sync_api import expect\n```\n\n---\n\n### expect(locator).to_be_visible()\n\n**What it does:** Asserts the element is attached to the DOM and visible (non-zero size, not hidden).\n\n**Types/params:**\n- `timeout` (float): Override default timeout in milliseconds.\n- `visible` (bool): When `False`, asserts hidden — same as `to_be_hidden()`.\n\n**Pointers:**\n- Most common assertion in E2E tests.\n- Fails fast with a clear message showing the locator and timeout.\n- Pair with good locators — `to_be_visible()` on a vague locator may pass on the wrong element.\n\n```python\nexpect(page.get_by_role(\"heading\", name=\"Dashboard\")).to_be_visible()\nexpect(page.get_by_text(\"Loading...\")).to_be_hidden(timeout=10_000)\n```\n\n---\n\n### expect(locator).to_have_text()\n\n**What it does:** Asserts the element's text content matches exactly (after normalization).\n\n**Types/params:**\n- `expected` (str | Pattern | list): Exact text or regex.\n- `timeout` (float): Retry window.\n\n**Pointers:**\n- Exact match — whitespace is normalized but substring won't pass.\n- For partial match, use `to_contain_text()`.\n- Works on a single element; for lists use `to_have_text` with a list or `to_have_count` + individual checks.\n\n```python\nexpect(page.get_by_role(\"status\")).to_have_text(\"Saved successfully\")\nexpect(page.locator(\".price\")).to_have_text(re.compile(r\"\\$\\d+\\.\\d{2}\"))\n```\n\n---\n\n### expect(locator).to_contain_text()\n\n**What it does:** Asserts the element's text includes the expected substring (or matches regex).\n\n**Types/params:**\n- `expected` (str | Pattern | list): Substring(s) or regex.\n- `timeout` (float): Retry window.\n- `use_inner_text` (bool): Use inner text vs text content. Default favors inner text.\n\n**Pointers:**\n- More forgiving than `to_have_text` — default for dynamic content with extra whitespace or icons.\n- List form checks multiple substrings appear in order.\n\n```python\nexpect(page.get_by_role(\"alert\")).to_contain_text(\"3 items added\")\nexpect(page.locator(\"tbody\")).to_contain_text([\"Alice\", \"Bob\"])\n```\n\n---\n\n### expect(locator).to_have_value()\n\n**What it does:** Asserts an input, textarea, or select has the given value.\n\n**Types/params:**\n- `value` (str | Pattern): Expected `value` attribute / current input value.\n- `timeout` (float): Retry window.\n\n**Pointers:**\n- For `<select>`, asserts the selected option's value.\n- After `fill()`, value updates immediately — but async validation may change it; `expect` retries handle that.\n\n```python\nexpect(page.get_by_label(\"Email\")).to_have_value(\"user@example.com\")\nexpect(page.get_by_label(\"Quantity\")).to_have_value(\"5\")\n```\n\n---\n\n### expect.soft()\n\n**What it does:** Soft assertion — records failure but continues the test. All soft failures are reported at the end.\n\n**Types/params:**\n- Wraps any `expect` matcher: `expect.soft(locator).to_be_visible()`.\n- Available in sync and async APIs.\n\n**Pointers:**\n- Use for non-critical checks (cosmetic copy, optional banners) where you still want to verify primary flows.\n- Don't soft-assert critical paths — a \"passed\" test with logged soft failures misleads CI.\n- Hard assertions (default) stop immediately — preferred for gating logic.\n\n```python\nexpect.soft(page.get_by_text(\"Beta feature\")).to_be_visible()\nexpect(page.get_by_role(\"button\", name=\"Checkout\")).to_be_enabled()  # hard — stops test if fails\n```\n\n---\n\n### Timeout override\n\n**What it does:** Per-assertion or global timeout controls how long `expect` retries.\n\n**Types/params:**\n- Per call: `expect(locator).to_be_visible(timeout=5_000)` (milliseconds).\n- Global: `expect.set_options(timeout=10_000)` in a scope.\n- Test config: `timeout` in `playwright.config` or pytest marker.\n\n**Pointers:**\n- Shorter timeouts for fast-fail smoke checks; longer for slow backends.\n- Increasing timeout without fixing the root cause just makes flaky tests slower.\n- Actions also respect `timeout` on the locator: `locator.click(timeout=5_000)`.\n\n```python\nexpect(page.get_by_text(\"Report ready\")).to_be_visible(timeout=60_000)\npage.get_by_role(\"button\", name=\"Generate\").click(timeout=5_000)\n```\n\n---\n\n### Other matchers worth knowing\n\n```python\nexpect(page).to_have_url(\"**/dashboard\")\nexpect(page).to_have_title(\"Dashboard | Acme\")\nexpect(page.get_by_role(\"checkbox\")).to_be_checked()\nexpect(page.locator(\"li\")).to_have_count(3)\nexpect(page.get_by_role(\"button\", name=\"Save\")).to_be_enabled()\n```\n\n**Pointers:** Page-level `expect(page)` is for URL/title. Locator matchers retry on DOM state. Bare `assert page.title() == \"...\"` fails instantly — always use `expect`.",
-  "exercises": [],
-  "resourceLinks": [],
-  "steps": [],
-  "learn": []
+  id: "pw-15-assertions",
+  title: "15. Assertions with expect()",
+  minutes: 42,
+  level: "intermediate",
+  phase: "Part 2 · Core Interactions",
+  partName: "Part 2 · Core Interactions",
+  overviewText: "expect() auto-retrying assertions: to_be_visible, to_be_hidden, to_be_enabled/disabled, to_have_text, to_contain_text, to_have_value, to_be_checked, to_have_count, to_have_attribute, to_have_class, and negation with .not.",
+  why: "Bare Python assert fails once on SPAs still loading. expect() re-queries and re-checks until pass or timeout — the core anti-flake mechanism.",
+  when: "Read immediately after Actions. Revisit when choosing between to_have_text and to_contain_text or debugging assertion timeouts.",
+  practical: { app: "Dashboard SPA", scenario: "assert page.locator('.total').text_content() == '$49.99' fails intermittently.", pass: "expect(page.locator('.total')).to_have_text('$49.99') — auto-retries until rendered.", fail: "Wrap bare assert in time.sleep(3) loop." },
+  advantages: ["Auto-retry until timeout — no manual polling","to_contain_text substring vs to_have_text exact — pick deliberately","expect(locator).not.to_be_visible() clean negation syntax","Soft assertions (expect.soft) collect multiple failures per test","to_have_count() retries unlike bare .count()","Readable failure messages show expected vs actual"],
+  limitations: ["Bare assert has zero retry — fails on first async render miss","to_have_text exact match breaks on whitespace changes","Soft assertions need explicit handling of collected failures","No built-in visual assertion in this chapter — see Part 4","Regex matchers require re.compile import","Over-specific assertions brittle on copy changes"],
+  tools: [],
+  contentMarkdown: "## 15. Assertions with expect()\n\n```python\nfrom playwright.sync_api import expect\n\nexpect(page.get_by_role(\"button\", name=\"Submit\")).to_be_visible()\nexpect(page.get_by_role(\"button\", name=\"Submit\")).to_be_enabled()\nexpect(page.get_by_text(\"Order confirmed\")).to_be_visible()\nexpect(page.get_by_label(\"Email\")).to_have_value(\"user@example.com\")\nexpect(page.locator(\".error-message\")).to_have_text(\"Invalid password\")\nexpect(page.locator(\".cart-count\")).to_have_text(\"3\")\n\nexpect() is auto-retrying, unlike a plain Python assert.\n```\n\nThe critical distinction: expect() polls repeatedly for a few seconds (default ~5000ms, configurable) instead of checking once and failing instantly, because a real element might take a moment to appear after a click triggers an API call. This is a classic source of flaky-test elimination — the exact same philosophy as auto-waiting on actions, just applied to verification instead of interaction. A plain assert page.locator(\".cart-count\").text_content() == \"3\" checks the DOM state at that exact instant and fails immediately if the count hasn't updated yet, even if it would have updated a fraction of a second later — this is precisely the kind of unnecessary flakiness expect() was built to eliminate, and it's why expect() should be the default choice over plain assert for anything reading live page state.\nto_be_visible(), to_be_enabled(), to_be_checked() assert element state.\ntimeout (number, ms, optional, overrides the default ~5000ms) can be raised for known-slow elements or lowered for a quick negative check. These retry repeatedly within the timeout window instead of checking once, eliminating most \"not ready yet\" flaky failures.\nto_have_text() and to_contain_text() assert text content.\nThe required argument (string or regex) with to_have_text must match the full text exactly; with to_contain_text it matches as a substring; a regex works flexibly with either. Use to_contain_text when surrounding text varies (timestamps, dynamic IDs) but the key phrase is stable.\nto_have_value() asserts an input's current value.\nThe required string argument is the exact value expected in the input. Use this after .fill() to confirm the value actually stuck — it catches input masks or validation logic silently rejecting or reformatting your input.\nto_have_url(), to_have_title(), to_have_count() assert page- and collection-level state.\n```python\nexpect(page).to_have_url(\"https://example.com/dashboard\")\nexpect(page).to_have_title(\"Dashboard | MyApp\")\nexpect(page.get_by_role(\"listitem\")).to_have_count(5)\n```\n\n\nto_have_url(url) and to_have_title(title) are called on the page object itself rather than a locator, and accept a string or regex — useful for confirming navigation actually landed where expected after a click or form submit. to_have_count(count) is called on a multi-match locator and asserts the exact number of matches, retrying until the count is correct or the timeout expires — this is the auto-retrying counterpart to the plain .count() read mentioned in Chapter 13, and is the right choice whenever you're waiting for a list to finish loading to a specific size.\nto_have_attribute(), to_have_class(), to_have_css(), to_have_id() assert element properties.\n```python\nexpect(page.get_by_role(\"link\", name=\"Home\")).to_have_attribute(\"href\", \"/home\")\nexpect(page.locator(\".status-badge\")).to_have_class(\"active\")\nexpect(page.locator(\".modal\")).to_have_css(\"display\", \"block\")\nexpect(page.locator(\"#main-form\")).to_have_id(\"main-form\")\n```\n\n\nto_have_attribute(name, value) checks a specific HTML attribute's value. to_have_class(class_name) checks the element's class list (can accept a regex for partial matching, since elements often have multiple classes). to_have_css(property, value) checks a computed CSS style value — handy for confirming a modal is actually visible (display: block) versus just present in the DOM but hidden. to_have_id(id) checks the element's id attribute directly. These are especially useful for state-driven UI (a \"selected\" class toggling, an aria-expanded attribute flipping) where the visible text doesn't change but an underlying property does.\nto_be_empty(), to_be_focused(), to_be_editable(), to_be_in_viewport() assert additional element states.\n```python\nexpect(page.locator(\".cart-items\")).to_be_empty()\nexpect(page.get_by_label(\"Email\")).to_be_focused()\nexpect(page.get_by_label(\"Notes\")).to_be_editable()\nexpect(page.locator(\"#footer\")).to_be_in_viewport()\n```\n\n\nto_be_empty() asserts an element (commonly a container or input) has no text content or child elements. to_be_focused() asserts a specific element currently has keyboard focus — useful for confirming tab order or that a modal correctly auto-focuses its first input. to_be_editable() asserts an input is both enabled and not read-only. to_be_in_viewport() asserts the element is currently scrolled into the visible viewport, not just present somewhere on a long page — useful for confirming a \"scroll to element\" or \"scroll into view\" action actually worked.\nNegation flips any assertion using expect(locator).not_to_....\n```python\nexpect(page.get_by_text(\"Error\")).not_to_be_visible()\nexpect(page.get_by_role(\"button\", name=\"Submit\")).not_to_be_enabled()\n```\n\n\nEvery assertion method above has a not_to_... counterpart, retrying until the negative condition holds true (or timing out if it never does) rather than asserting the positive case failed just once. This matters because a naive negative check written as a plain assertion at a single point in time can pass by accident — e.g., checking an error message \"is not visible\" one frame before it actually appears would give a false pass. not_to_be_visible() instead keeps polling for the full timeout window to make sure the element genuinely never becomes visible, which is a meaningfully stronger and more honest check.\nSoft assertions let a test keep running after a failure.\n```python\nexpect.soft(page.get_by_text(\"Name\")).to_be_visible()\nexpect.soft(page.get_by_text(\"Email\")).to_be_visible()\nexpect.soft(page.get_by_text(\"Phone\")).to_be_visible()\n# test continues even if one fails — all failures reported together at the end\n```\n\n\nNormal assertions stop test execution on the first failure. expect.soft(locator) uses the same chained methods and arguments as regular expect(), but doesn't halt the test — pytest-playwright automatically collects and reports every soft-assertion failure together at the end of the test. Use this when checking several independent things in one test (e.g., verifying an entire form's fields are all present) so one missing field doesn't hide information about the other two.\nOverriding the default timeout for known-slow elements.\n```python\nexpect(page.get_by_text(\"Report generated\")).to_be_visible(timeout=15000)\n```\n\n\nThis is useful for legitimately slow operations — report generation, large file processing — where the default timeout would produce a false failure. The key discipline: only extend timeouts for elements you know are legitimately slow, never as a lazy fix for a genuinely flaky or poorly-targeted locator, since that just makes a real bug take longer to surface.",
+  customSummary: "## 15. Assertions with expect()\n\nexpect() auto-retries (~5s default) instead of checking once like plain assert — eliminates timing-based flakiness.\nto_be_visible()/enabled()/checked() — state checks with configurable timeout.\nto_have_text() (exact) vs to_contain_text() (substring) — use contain for text with variable parts.\nto_have_value() — confirms input value stuck after .fill().\nto_have_url()/to_have_title() (page-level) and to_have_count() (retrying, multi-match) — prefer to_have_count() over plain .count() when waiting on a list to settle.\nto_have_attribute()/class()/css()/id() — check element properties, useful for state-driven UI.\nto_be_empty()/focused()/editable()/in_viewport() — additional state checks.\nEvery assertion has a not_to_... negation that retries for the full timeout, avoiding false-pass timing bugs.\nexpect.soft() collects multiple failures without halting the test — good for checking several independent things at once.\nOverride timeout= only for genuinely slow elements, never to mask a flaky locator.",
+  exercises: [],
+  resourceLinks: [],
+  steps: [],
+  learn: [],
 } as ChapterRecord;

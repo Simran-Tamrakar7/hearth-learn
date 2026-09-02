@@ -1,567 +1,71 @@
 /** Playwright manual Part 5 — CI/CD & Reporting */
 export const chapters = [
   {
-    contentMarkdown: `## GitHub Actions workflow setup
-
-A GitHub Actions workflow is a YAML file in \`.github/workflows/\` that defines when tests run and what steps execute. For Playwright with pytest, the standard pattern checks out code, installs Python dependencies, installs browsers with OS libraries, runs tests, and uploads artifacts on failure.
-
-\`\`\`yaml
-# .github/workflows/playwright.yml
-name: Playwright Tests
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-          playwright install --with-deps
-
-      - name: Run Playwright tests
-        env:
-          BASE_URL: \${{ secrets.STAGING_URL }}
-        run: pytest --browser chromium -m smoke
-
-      - name: Upload report on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: |
-            report.html
-            test-results/
-\`\`\`
-
-The \`on:\` block controls triggers. \`pull_request\` gives fast feedback before merge; \`schedule\` (cron) is useful for nightly full-regression runs that do not block day-to-day development.
-
-## playwright install --with-deps
-
-On a fresh CI runner, browser binaries alone are not enough. Chromium and Firefox need system libraries (fonts, libgbm, libnss3, etc.) that your laptop already has. The \`--with-deps\` flag installs both browsers and the OS packages they require.
-
-\`\`\`bash
-# Local dev — often works without --with-deps if you already ran it once
-playwright install chromium
-
-# CI — always use --with-deps on Ubuntu runners
-playwright install --with-deps chromium
-\`\`\`
-
-Skipping \`--with-deps\` is the single most common cause of "works locally, fails in CI" browser launch errors. If you see \`Browser closed unexpectedly\` or missing shared library errors in CI logs, this is the first thing to check.
-
-## Jenkins pipeline basics
-
-Jenkins uses a \`Jenkinsfile\` (Groovy DSL) to define pipeline stages. Enterprise teams often prefer Jenkins for self-hosted runners with access to internal staging environments.
-
-\`\`\`groovy
-// Jenkinsfile
-pipeline {
-    agent any
-
-    environment {
-        BASE_URL = credentials('staging-url')
-    }
-
-    stages {
-        stage('Install') {
-            steps {
-                sh 'pip install -r requirements.txt'
-                sh 'playwright install --with-deps'
-            }
-        }
-        stage('Test') {
-            steps {
-                sh 'pytest --browser chromium --junitxml=results.xml'
-            }
-        }
-    }
-
-    post {
-        always {
-            junit 'results.xml'
-            archiveArtifacts artifacts: 'report.html', allowEmptyArchive: true
-        }
-    }
-}
-\`\`\`
-
-The \`--junitxml=results.xml\` flag produces output Jenkins understands natively. The \`junit\` post-step renders pass/fail trends over time in the Jenkins dashboard — the Jenkins equivalent of GitHub Actions' built-in test summary.
-
-## Running headless in CI
-
-CI runners have no display server. pytest-playwright defaults to headless mode, but being explicit prevents surprises when someone adds \`--headed\` locally and commits a conftest override.
-
-\`\`\`python
-# conftest.py — explicit headless default
-import pytest
-
-@pytest.fixture(scope="session")
-def browser_type_launch_args(browser_type_launch_args):
-    return {**browser_type_launch_args, "headless": True}
-\`\`\`
-
-\`\`\`bash
-# Explicit CLI — headless is default, but document intent in CI scripts
-pytest --browser chromium
-
-# Headed mode fails on typical CI unless xvfb is configured — avoid it
-# pytest --headed  # will fail on ubuntu-latest without a virtual display
-\`\`\`
-
-Headless execution is faster and more stable in CI. Reserve headed mode for local debugging only.
-
-## Environment secrets and selective runs
-
-Store staging URLs and credentials in GitHub Secrets or Jenkins credentials — never commit them to the repo.
-
-\`\`\`yaml
-env:
-  BASE_URL: \${{ secrets.STAGING_URL }}
-  TEST_USER: \${{ secrets.TEST_USER }}
-  TEST_PASSWORD: \${{ secrets.TEST_PASSWORD }}
-\`\`\`
-
-Use pytest markers to keep PR checks fast (\`-m smoke\`) while running the full suite on a schedule or before release.`,
+    id: "pw-39-cicd",
+    title: "39. CI/CD Integration",
+    minutes: 35,
+    level: "intermediate",
+    phase: "Part 5 · CI/CD & Reporting",
+    partName: "Part 5 · CI/CD & Reporting",
+    overviewText: "Wire Playwright pytest suites into GitHub Actions and Jenkins: install browsers with --with-deps, run headless smoke on PRs, cache binaries, upload failure artifacts.",
+    why: "A suite that only runs manually on laptops is not a safety net. CI integration is what turns tests into enforced merge gates.",
+    when: "Read when setting up your first pipeline or debugging 'works locally, fails in CI' browser launch errors.",
+    practical: { app: "HRMS staging environment", scenario: "PR merge blocked because Playwright fails on ubuntu-latest with missing shared libraries.", pass: "playwright install --with-deps in workflow; BASE_URL from secrets; -m smoke on PR.", fail: "Skip --with-deps; hardcode localhost URL; run full regression on every push." },
+    advantages: ["GitHub Actions YAML pattern is copy-paste ready for pytest-playwright", "playwright install --with-deps fixes most Linux CI launch failures", "Marker-based smoke vs regression keeps PR feedback under minutes", "actions/cache speeds repeated runs on browser binaries", "if: always() uploads reports even when tests fail", "Jenkins junit + archiveArtifacts integrates with enterprise dashboards"],
+    limitations: ["Headed mode fails on CI without xvfb virtual display", "Secrets misconfiguration runs tests against wrong environment silently", "Caching stale browser versions after playwright package upgrade", "Full regression on every push slows team velocity", "Self-hosted runners need same --with-deps discipline as cloud", "Parallel sharding requires extra orchestration beyond basic workflow"],
+    contentMarkdown: "## CI/CD Integration\n\nRunning Playwright tests automatically on every push or pull request is what turns a test suite into an actual safety net.\n\nA suite that only ever runs manually on someone's laptop provides much weaker protection than one wired into CI — manual runs get forgotten, skipped under deadline pressure, or run against a stale local branch. CI integration means every code change gets checked automatically, consistently, before it merges, closing the gap between \"we have tests\" and \"the tests are actually protecting us.\"\n\nA basic GitHub Actions workflow shows the shape of the whole problem.\n\n```yaml\n# .github/workflows/playwright.yml\nname: Playwright Tests\non:\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-python@v5\n        with:\n          python-version: '3.11'\n      - name: Install dependencies\n        run: |\n```\n\npip install -r requirements.txt\n\n```yaml\nplaywright install --with-deps\n      - name: Run tests\n        run: pytest --browser chromium -m smoke\n      - uses: actions/upload-artifact@v4\n        if: always()\n        with:\n          name: playwright-report\n          path: playwright-report/\n\non: defines which events trigger the workflow — here, every push to main and every pull request targeting main. runs-on: ubuntu-latest picks the CI runner's operating system. playwright install --with-deps is worth calling out specifically: the --with-deps flag additionally installs OS-level system libraries the browser binaries need to actually launch on a bare Linux CI image (font libraries, codec libraries, etc.) — skipping this on a fresh CI runner is one of the most common first-time CI setup failures, since local dev machines usually already have these libraries installed from general use, masking the dependency until you hit a genuinely clean environment. if: always() on the artifact upload step ensures the report gets uploaded even when the test step fails — without this, a failing run wouldn't produce the very report you need to diagnose why it failed.\n```\n\nCI runs should default to headless, and typically restrict to a fast subset on every push.\n\nHeadless is the default for pytest-playwright already, but it's worth being explicit that CI should never accidentally run headed (there's no display server on most CI runners to render a headed browser against anyway, and this would simply fail to launch). Tying back to Chapter 22's marker discipline: a common pattern runs -m smoke on every push for fast feedback (a few minutes), reserving the full -m regression suite for a nightly scheduled run or a pre-release gate, since running everything on every single commit would slow down the development feedback loop unnecessarily.\n\nCaching browser binaries and dependencies speeds up repeated CI runs significantly.\n\n```python\n- name: Cache Playwright browsers\n  uses: actions/cache@v4\n  with:\n    path: ~/.cache/ms-playwright\n    key: ${{ runner.os }}-playwright-${{ hashFiles('requirements.txt') }}\n```\n\nDownloading and installing browser binaries fresh on every single CI run adds real time (browser binaries are sizable) and unnecessary network load. Caching the Playwright browser cache directory, keyed by a hash of requirements.txt (so the cache automatically invalidates if the Playwright version changes), means most CI runs reuse an already-downloaded set of binaries instead of re-fetching them every time.\n\nPlaywright version upgrades need a deliberate strategy, not a blind pip install --upgrade.\n\nBecause Playwright ships its own pinned browser binaries (Part 1, Chapter 2), upgrading the playwright/pytest-playwright package version and running playwright install afterward effectively swaps out the underlying browser engines your entire suite runs against — not just a library version bump in the usual sense. A new Playwright version can occasionally introduce breaking API changes (a method renamed, a default behavior changed) documented in its release notes/changelog, and separately, updated browser binaries can occasionally surface real bugs in your application that the previous browser version happened not to trigger (since you're now testing against a genuinely different, newer browser build). The practical discipline: upgrade deliberately on a schedule (not reflexively on every release) in a dedicated branch/PR, run the full suite (not just smoke tests) against the new version before merging, and read the changelog for breaking changes rather than assuming the upgrade is a no-op. This connects directly to Part 0's point about Playwright's fast release cadence (every 2–4 weeks) — that pace is a strength for getting new features/fixes quickly, but it does mean upgrade discipline matters more than it would for a slower-moving tool.\n\nBreaking changes typically fall into a few recognizable categories worth watching for specifically.\n\nAPI surface changes (a method signature changing, a parameter being renamed or removed) are usually the most visible, since they cause immediate, loud failures at import/call time rather than a passing-but-wrong result — genuinely convenient for catching early. Default behavior changes (e.g., a default timeout value changing, or an assertion becoming stricter by default) are more insidious, since existing tests might start failing without any code change on your side, purely because the framework's own defaults shifted underneath you. Browser binary behavior changes (a newer Chromium version rendering something subtly differently, or enforcing a security policy more strictly) are the hardest category to anticipate from release notes alone, since they're really changes in the browser itself rather than in Playwright's API — this is exactly why running the full suite against a new version before merging matters more than just skimming a changelog.",
+    customSummary: "## CI/CD Integration\n\nCI integration turns a test suite into an actual enforced safety net rather than an optional manual step.\nA GitHub Actions workflow needs: checkout, Python setup, pip install + playwright install --with-deps (the --with-deps flag installs OS-level libraries often missing on bare CI images), the test run, and an artifact upload step marked if: always() so reports upload even on failure.\nCI should run headless by default; use -m smoke on every push for fast feedback, reserve -m regression for nightly/pre-release runs.\nCache the Playwright browser binary directory (keyed by a hash of requirements.txt) to avoid re-downloading browsers on every run.\nPlaywright upgrades swap out actual browser engines, not just a library version — upgrade deliberately on a schedule, run the full suite against the new version before merging, and read the changelog rather than assuming a no-op.\nWatch for three breaking-change categories: API surface changes (loud, easy to catch), default behavior changes (silent, insidious), and browser-binary behavior changes (hardest to predict from changelogs alone).",
+    chapterNum: 39,
   },
   {
-    contentMarkdown: `## pytest-html — quick HTML reports
-
-\`pytest-html\` generates a self-contained HTML report from any pytest run. It requires zero configuration for basic use and produces a file you can open in a browser or attach to a bug ticket.
-
-\`\`\`bash
-pip install pytest-html
-\`\`\`
-
-\`\`\`bash
-# Generate report.html in the project root
-pytest --html=report.html --self-contained-html
-
-# --self-contained-html embeds CSS/JS inline — single file, easy to email or upload
-\`\`\`
-
-\`\`\`python
-# conftest.py — attach screenshot to HTML report on failure
-import pytest
-
-@pytest.hookimpl(hookwrapper=True)
-def pytest_runtest_makereport(item, call):
-    outcome = yield
-    report = outcome.get_result()
-    if report.when == "call" and report.failed:
-        page = item.funcargs.get("page")
-        if page:
-            screenshot = page.screenshot()
-            import pytest_html
-            extra = getattr(report, "extra", [])
-            extra.append(pytest_html.extras.png(screenshot, "Failure screenshot"))
-            report.extra = extra
-\`\`\`
-
-The hook above embeds a failure screenshot directly into the HTML report — invaluable when debugging CI failures without re-running locally.
-
-## Allure reporting
-
-Allure produces rich, interactive reports with history, trends, categories, and step-level detail. It is the standard choice for teams that need stakeholder-friendly dashboards.
-
-\`\`\`bash
-pip install allure-pytest
-\`\`\`
-
-\`\`\`bash
-# Run tests with Allure results directory
-pytest --alluredir=allure-results
-
-# Generate and open the HTML report locally
-allure serve allure-results
-\`\`\`
-
-\`\`\`python
-# pytest.ini
-[pytest]
-addopts = --alluredir=allure-results
-\`\`\`
-
-Allure reports group tests by feature, show duration trends across runs, and link attachments (screenshots, logs) to specific steps — far more navigable than a flat HTML table for large suites.
-
-## @allure.step — structured test narration
-
-\`@allure.step\` decorates functions and methods so Allure renders them as expandable steps in the report. Page object methods are the natural place to add steps.
-
-\`\`\`python
-import allure
-from playwright.sync_api import Page
-
-class LeavePage:
-    def __init__(self, page: Page):
-        self.page = page
-
-    @allure.step("Navigate to leave request form")
-    def open_new_request(self):
-        self.page.goto("/leave/new")
-        self.page.get_by_role("button", name="New Request").click()
-
-    @allure.step("Submit leave request: {leave_type} from {start} to {end}")
-    def submit_request(self, leave_type: str, start: str, end: str):
-        self.page.get_by_label("Leave Type").select_option(leave_type)
-        self.page.get_by_label("Start Date").fill(start)
-        self.page.get_by_label("End Date").fill(end)
-        self.page.get_by_role("button", name="Submit").click()
-\`\`\`
-
-When a test fails at \`submit_request\`, the Allure report shows exactly which step broke and with what parameters — no log-diving required.
-
-## CI artifact upload
-
-Reports are useless in CI if they disappear when the runner shuts down. Upload them as artifacts on every run, especially on failure.
-
-\`\`\`yaml
-# GitHub Actions — upload multiple report types
-- name: Upload test artifacts
-  if: always()
-  uses: actions/upload-artifact@v4
-  with:
-    name: test-reports-\${{ github.run_number }}
-    path: |
-      report.html
-      allure-results/
-      test-results/
-    retention-days: 14
-\`\`\`
-
-\`\`\`bash
-# Jenkins — archive in post block
-archiveArtifacts artifacts: 'report.html, allure-results/**', allowEmptyArchive: true
-\`\`\`
-
-Set \`if: always()\` (GitHub Actions) or use a \`post { always { ... } }\` block (Jenkins) so reports upload even when tests fail — that is precisely when you need them most.
-
-## Choosing a reporting strategy
-
-Use \`pytest-html\` for quick, zero-setup reports on small teams. Adopt Allure when the suite grows past ~50 tests, multiple contributors need to triage failures, or stakeholders want trend dashboards. Many teams run both: pytest-html for fast PR artifact review, Allure for nightly trend analysis.`,
+    id: "pw-40-reporting",
+    title: "40. Test Reporting",
+    minutes: 30,
+    level: "intermediate",
+    phase: "Part 5 · CI/CD & Reporting",
+    partName: "Part 5 · CI/CD & Reporting",
+    overviewText: "pytest-html for quick self-contained reports, Allure for rich step-level dashboards, screenshot hooks on failure, and CI artifact upload patterns.",
+    why: "Raw console output is insufficient when debugging CI failures you cannot reproduce locally. Reports are the primary artifact stakeholders review.",
+    when: "Read when stakeholders ask 'show me what failed' or when onboarding Allure to a growing suite.",
+    practical: { app: "Nightly regression suite", scenario: "Manager wants pass/fail trends and failure screenshots without re-running tests.", pass: "pytest-html with screenshot hook; upload report.html as CI artifact on failure.", fail: "Rely on terminal scrollback only; no artifacts retained after job ends." },
+    advantages: ["pytest-html --self-contained-html is single-file and email-friendly", "Allure @allure.step narrates test flow for non-engineers", "pytest_runtest_makereport hook embeds failure screenshots", "JUnit XML integrates with Jenkins and GitHub test summaries", "allure serve gives interactive local debugging of results", "Historical Allure trends surface flaky tests over time"],
+    limitations: ["Allure requires separate generate/serve step beyond pytest run", "Large screenshot attachments bloat artifact storage", "Self-contained HTML reports grow heavy for thousand-test suites", "Report plugins drift from pytest major version upgrades", "Allure history needs persistent storage across CI runs", "Over-annotating every line with @allure.step adds maintenance noise"],
+    contentMarkdown: "## Test Reporting\n\nThe built-in HTML reporter gives a readable, browsable summary of a test run without any extra plugin.\n\n```bash\npytest --html=report.html --self-contained-html\n\n# pytest.ini\n[pytest]\naddopts = --html=report.html --self-contained-html\n```\n\n--html=report.html (via the pytest-html plugin) generates a single HTML file summarizing pass/fail/skip counts, execution time, and per-test details. --self-contained-html bundles CSS/JS directly into the file so it's fully viewable by opening it locally or attaching it as a CI artifact, without needing separate asset files alongside it. This is often the first reporting step a team adopts, since it requires minimal setup and immediately turns raw terminal output into something shareable with non-technical stakeholders.\n\nPlaywright's own HTML report (available via pytest-playwright) adds richer, Playwright-specific detail.\n\n```bash\npytest --output=test-results\n```\n\nPlaywright-specific reporting can include embedded screenshots, videos, and trace links directly per failed test (tying back to Chapter 37's Trace Viewer), which a generic pytest HTML report doesn't provide out of the box. For a team that's already invested in tracing/screenshot-on-failure (covered later in this part, Chapter 42), a Playwright-aware report format surfaces that evidence directly next to the failure, rather than requiring someone to separately dig through an artifacts folder to find the matching trace file.\n\nAllure provides a more feature-rich, dashboard-style reporting layer for larger teams.\n\n# Using allure-pytest\n\n```python\nimport allure\n\n@allure.step(\"Log in as a valid user\")\ndef login(page, username, password):\n```\n\npage.get_by_label(\"Username\").fill(username) page.get_by_label(\"Password\").fill(password) page.get_by_role(\"button\", name=\"Log in\").click()\n\n```python\n@allure.feature(\"Authentication\")\n@allure.title(\"Successful login shows dashboard\")\ndef test_successful_login(page):\n```\n\nlogin(page, \"testuser\", \"testpass\")\n\n```python\nexpect(page.get_by_text(\"Welcome\")).to_be_visible()\n\npytest --alluredir=allure-results\n```\n\nallure serve allure-results\n\n```python\n@allure.step(description) breaks a test down into named, collapsible steps in the final report — useful for quickly seeing exactly which step within a longer test failed, rather than just \"this test failed\" with no finer-grained breakdown. @allure.feature(name) and @allure.title(name) organize tests into a feature-based hierarchy in the report UI, rather than just a flat list of function names, and allure serve spins up a local web server to browse the generated report interactively, with trend graphs across multiple runs, categorized failure types, and historical pass-rate tracking — genuinely useful once a suite and team are large enough that a simple flat HTML report becomes hard to navigate.\n```\n\nReports should be treated as a communication tool for the whole team, not just a developer debugging aid.\n\nA well-organized report (clear feature/module grouping, embedded failure evidence, historical trends) is something a non-technical stakeholder — a QA manager, a product owner — can meaningfully look at without needing someone to translate raw terminal output for them. This connects back to your Bizlevate documentation-focused role specifically: a report structured around Bizlevate's actual modules (Employee Management, Attendance, Leave, Payroll) rather than raw file/function names makes it directly useful for reporting test coverage and status to non-QA stakeholders, not just for your own debugging.",
+    customSummary: "## Test Reporting\n\npytest-html's --html=report.html --self-contained-html gives a quick, shareable, no-dependency HTML summary.\nPlaywright-aware reporting can embed screenshots/video/trace links directly per failed test, more useful than a generic report once failure-artifact capture (Ch. 42) is in place.\nAllure (allure-pytest) adds step-level breakdown (@allure.step), feature-based organization (@allure.feature/@allure.title), and trend/history dashboards (allure serve) — valuable once a suite/team outgrows a flat report.\nReports are a communication tool for non-technical stakeholders too — organizing by actual product modules (e.g. Bizlevate's Attendance/Leave/Payroll) makes them useful beyond developer debugging.",
+    chapterNum: 40,
   },
   {
-    contentMarkdown: `## Official Playwright Docker image
-
-Microsoft publishes maintained Docker images with browsers and all system dependencies pre-installed. Using the official image eliminates the "install browsers on CI" step entirely and guarantees a consistent environment across local, CI, and cloud runners.
-
-\`\`\`bash
-# Pull the image matching your Playwright version
-docker pull mcr.microsoft.com/playwright/python:v1.49.0-noble
-
-# Run tests inside the container
-docker run --rm -v $(pwd):/app -w /app \\
-  mcr.microsoft.com/playwright/python:v1.49.0-noble \\
-  pytest --browser chromium
-\`\`\`
-
-Always pin the image tag to your \`playwright\` package version. A mismatch between the Python package and the Docker image browser version causes subtle, hard-to-debug failures.
-
-## Dockerfile example
-
-For teams that need custom dependencies (internal packages, database clients, test data generators), build a thin layer on top of the official image.
-
-\`\`\`dockerfile
-# Dockerfile
-FROM mcr.microsoft.com/playwright/python:v1.49.0-noble
-
-WORKDIR /app
-
-# Install Python dependencies first — cached layer on rebuild
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy test suite
-COPY . .
-
-# Default command — override in CI or docker-compose
-CMD ["pytest", "--browser", "chromium", "-m", "smoke"]
-\`\`\`
-
-\`\`\`bash
-# Build and run
-docker build -t playwright-tests .
-docker run --rm \\
-  -e BASE_URL=https://staging.example.com \\
-  -e TEST_USER=testuser \\
-  -e TEST_PASSWORD=secret \\
-  playwright-tests
-\`\`\`
-
-## docker-compose for local parity
-
-docker-compose makes it easy for any developer to run the full suite without installing browsers locally.
-
-\`\`\`yaml
-# docker-compose.yml
-services:
-  tests:
-    build: .
-    environment:
-      BASE_URL: \${BASE_URL:-http://host.docker.internal:3000}
-      TEST_USER: \${TEST_USER}
-      TEST_PASSWORD: \${TEST_PASSWORD}
-    volumes:
-      - ./test-results:/app/test-results
-      - ./report.html:/app/report.html
-\`\`\`
-
-\`\`\`bash
-docker compose run --rm tests pytest --browser chromium -m regression
-\`\`\`
-
-Mounting \`test-results/\` preserves screenshots, videos, and traces on the host after the container exits.
-
-## CI integration with Docker
-
-In GitHub Actions, run tests inside the Playwright container instead of installing browsers on the runner.
-
-\`\`\`yaml
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    container:
-      image: mcr.microsoft.com/playwright/python:v1.49.0-noble
-    steps:
-      - uses: actions/checkout@v4
-      - run: pip install -r requirements.txt
-      - run: pytest --browser chromium --junitxml=results.xml
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-results
-          path: test-results/
-\`\`\`
-
-## When to use Docker vs install --with-deps
-
-Use \`playwright install --with-deps\` on bare CI runners when you want the simplest setup with no Docker knowledge required. Use the official Docker image when you need reproducible environments across developers, CI, and cloud providers, or when your test suite has non-standard system dependencies. Both approaches are production-valid — pick one and standardize on it across the team.`,
+    id: "pw-41-docker",
+    title: "41. Dockerizing Playwright Tests",
+    minutes: 32,
+    level: "intermediate",
+    phase: "Part 5 · CI/CD & Reporting",
+    partName: "Part 5 · CI/CD & Reporting",
+    overviewText: "Official mcr.microsoft.com/playwright images bundle browsers and OS deps. Dockerfile patterns, docker-compose for local parity, and CI container jobs.",
+    why: "Docker guarantees the same browser + library stack on laptop, CI, and teammate machines — eliminating 'works on my machine' for environment issues.",
+    when: "Read when CI and local environments diverge or when standardizing on container-based pipelines.",
+    practical: { app: "Containerized CI pipeline", scenario: "Developer on Mac, CI on Ubuntu — intermittent font rendering differences break visual tests.", pass: "Run tests inside official Playwright Docker image pinned to library version.", fail: "Install browsers directly on heterogeneous host OS images without pinning." },
+    advantages: ["Official image includes browsers and system dependencies pre-installed", "Version pin mcr.microsoft.com/playwright:v1.xx-noble matches pip playwright", "Identical environment locally via docker compose run test", "CI job uses container: without manual playwright install step", "Isolates test dependencies from host runner pollution", "Reproducible builds for compliance and audit trails"],
+    limitations: ["Image size is large — pull time on cold CI runners", "Must keep Docker image tag synced with pip playwright version", "Debugging inside container is slower than native headed runs", "Volume mounts for reports need explicit docker configuration", "ARM vs x86 image tags differ — M-series Macs need attention", "Not a substitute for application-under-test container orchestration"],
+    contentMarkdown: "## Dockerizing Playwright Tests\n\nRunning tests inside a Docker container guarantees a consistent environment regardless of where CI actually executes.\n\nThe core problem Docker solves here: a CI runner's exact OS version, installed system libraries, and even installed browser binary versions can drift or differ subtly from what you tested locally, producing \"works on my machine, fails in CI\" bugs that have nothing to do with your actual test logic. A Docker container pins the entire environment — OS, system libraries, Python version, Playwright version, browser binaries — into one reproducible image, so the exact same environment runs whether it's your laptop, a teammate's laptop, or any CI provider.\n\nPlaywright publishes official pre-built Docker images with browsers already installed.\n\n```dockerfile\nFROM mcr.microsoft.com/playwright/python:v1.48.0-jammy\n\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install -r requirements.txt\n\nCOPY . .\nCMD [\"pytest\", \"--browser\", \"chromium\"]\n```\n\nUsing Microsoft's official mcr.microsoft.com/playwright/python image (versioned to match a specific Playwright release) means the browser binaries and their OS-level dependencies are already correctly installed and tested together by the Playwright team itself — you don't need to separately figure out --with-deps system library requirements (Chapter 39) or debug obscure missing-library errors on a bare custom image. The version tag (v1.48.0-jammy in the example) should match your requirements.txt's pinned Playwright version exactly, since a mismatch between the image's pre-installed browsers and your Python package's expected browser version can cause confusing failures.\n\nBuilding and running the container locally mirrors exactly what CI will do.\n\n```dockerfile\ndocker build -t playwright-tests .\ndocker run --rm playwright-tests\n```\n\nBeing able to run the exact same container locally that CI will run remotely is a genuinely valuable debugging property — if a test fails in CI and you can't reproduce it locally in your normal dev environment, running it inside the same Docker image locally often reproduces the failure reliably, since you've eliminated environment drift as a variable.\n\nMounting volumes lets you persist test artifacts (reports, traces, screenshots) outside the ephemeral container.\n\n```bash\ndocker run --rm -v $(pwd)/test-results:/app/test-results playwright-tests\n```\n\nSince a Docker container's filesystem is normally discarded when it exits, -v $(pwd)/test-results:/app/test-results mounts a local host directory into the container at the path where test artifacts get written, so reports/traces/screenshots survive after the container stops — without this, you'd get a pass/fail exit code from the container but lose all the diagnostic evidence generated during the run.\n\nDocker Compose helps when tests need supporting services (a database, a mock API) running alongside them.\n\n# docker-compose.yml\n\n```python\nservices:\n  app:\n    build: .\n    depends_on:\n```\n\n- test-db test-db:\n\n```python\nimage: postgres:15\n    environment:\n      POSTGRES_PASSWORD: testpass\n```\n\nFor a suite that needs DB-level assertions (Chapter 35) or a real backend to test against, Docker Compose lets you define the test runner alongside a database (or other dependency) as separate services that start together, with depends_on controlling startup order — this keeps the full test environment (app + dependencies) reproducible and version-pinned as a single unit, rather than assuming a database happens to already be running and correctly configured wherever the tests execute.",
+    customSummary: "## Dockerizing Playwright Tests\n\nDocker pins the whole environment (OS, libraries, Python, Playwright, browsers) into one reproducible image, eliminating \"works on my machine\" drift between local, CI, and teammates.\nUse Microsoft's official mcr.microsoft.com/playwright/python image, version-matched to your requirements.txt's Playwright version — browsers and system deps are already correctly bundled.\nRunning the same image locally that CI runs remotely is a strong debugging tool — if a CI failure won't reproduce locally, running the container often will.\nMount a volume (-v host:container) to persist reports/traces/screenshots after the ephemeral container exits.\nDocker Compose runs the test suite alongside dependent services (a test database, a mock API) as a version-pinned, reproducible unit.",
+    chapterNum: 41,
   },
   {
-    contentMarkdown: `## Structured logging with logging.basicConfig
-
-Playwright tests fail in CI with minimal console output unless you configure logging explicitly. Set up logging once in \`conftest.py\` so every test emits timestamped, leveled messages.
-
-\`\`\`python
-# conftest.py
-import logging
-import pytest
-
-def pytest_configure(config):
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
-
-@pytest.fixture(autouse=True)
-def log_test_name(request):
-    logger = logging.getLogger("playwright.tests")
-    logger.info("START: %s", request.node.name)
-    yield
-    logger.info("END: %s", request.node.name)
-\`\`\`
-
-Use module-level loggers in page objects and utilities rather than \`print()\` — log levels let you dial verbosity up in CI (\`--log-cli-level=DEBUG\`) without changing code.
-
-\`\`\`python
-import logging
-
-logger = logging.getLogger(__name__)
-
-class LoginPage:
-    def login(self, page, username: str, password: str):
-        logger.info("Logging in as %s", username)
-        page.goto("/login")
-        page.get_by_label("Username").fill(username)
-        page.get_by_label("Password").fill(password)
-        page.get_by_role("button", name="Sign in").click()
-        logger.info("Login submitted, waiting for dashboard")
-\`\`\`
-
-## Screenshot on failure
-
-pytest-playwright captures screenshots automatically when configured in \`conftest.py\` or via CLI flags.
-
-\`\`\`python
-# conftest.py
-import pytest
-
-@pytest.fixture(scope="session")
-def browser_context_args(browser_context_args):
-    return {
-        **browser_context_args,
-        "record_video_dir": "test-results/videos/",
-    }
-\`\`\`
-
-\`\`\`bash
-# CLI flags — screenshot and video on failure
-pytest --screenshot=only-on-failure --video=retain-on-failure
-
-# Trace on first retry — best debugging artifact Playwright offers
-pytest --tracing=retain-on-failure
-\`\`\`
-
-\`\`\`python
-# conftest.py — programmatic screenshot in a hook
-@pytest.hookimpl(tryfirst=True, hookwrapper=True)
-def pytest_runtest_makereport(item, call):
-    outcome = yield
-    report = outcome.get_result()
-    if report.when == "call" and report.failed:
-        page = item.funcargs.get("page")
-        if page and page.context.pages:
-            path = f"test-results/{item.nodeid.replace('::', '_')}.png"
-            page.screenshot(path=path, full_page=True)
-\`\`\`
-
-Screenshots answer "what did the page look like when it broke?" Traces answer "what happened step by step?" — capture both on failure in CI.
-
-## Video recording
-
-Videos are heavier than screenshots but invaluable for timing-related failures and animations.
-
-\`\`\`python
-# conftest.py
-@pytest.fixture(scope="session")
-def browser_context_args(browser_context_args):
-    return {
-        **browser_context_args,
-        "record_video_dir": "test-results/videos/",
-        "record_video_size": {"width": 1280, "height": 720},
-    }
-\`\`\`
-
-\`\`\`bash
-pytest --video=retain-on-failure
-\`\`\`
-
-Upload \`test-results/\` as a CI artifact so videos survive runner teardown. A 30-second failure video often saves 30 minutes of local reproduction.
-
-## pytest-rerunfailures for transient flakes
-
-\`pytest-rerunfailures\` automatically retries failed tests a configurable number of times before marking them as failed. Use it as a safety net, not a substitute for fixing root causes.
-
-\`\`\`bash
-pip install pytest-rerunfailures
-\`\`\`
-
-\`\`\`bash
-# Retry each failure up to 2 times
-pytest --reruns 2 --reruns-delay 1
-
-# Retry only tests marked @pytest.mark.flaky
-pytest --reruns 2 --only-rerun flaky
-\`\`\`
-
-\`\`\`python
-import pytest
-
-@pytest.mark.flaky(reruns=2, reruns_delay=1)
-def test_dashboard_loads(page):
-    page.goto("/dashboard")
-    page.get_by_text("Welcome").wait_for(state="visible", timeout=5000)
-\`\`\`
-
-Pair reruns with trace capture on the final failure (\`--tracing=retain-on-failure\`) so you still get a debug artifact when all retries exhaust.
-
-## Error handling patterns
-
-Wrap API setup and teardown in try/finally blocks so a failed assertion does not leave orphaned test data.
-
-\`\`\`python
-def test_approve_leave_request(page, api_client, leave_factory):
-    leave_id = None
-    try:
-        leave_id = leave_factory.create(status="pending")
-        page.goto(f"/admin/leave/{leave_id}")
-        page.get_by_role("button", name="Approve").click()
-        page.get_by_text("Approved").wait_for()
-    finally:
-        if leave_id:
-            api_client.delete(f"/api/leave/{leave_id}")
-\`\`\`
-
-Clean logging, failure artifacts, controlled reruns, and reliable teardown together make CI failures diagnosable in minutes instead of hours.`,
-  },
-  {
-    contentMarkdown: `## Checkpoint — CI/CD & Reporting
-
-Use this checkpoint to verify you can design, run, and debug a Playwright suite in a real CI pipeline. Answer each item from memory before moving to Part 6.
-
-## Self-check questions
-
-**CI/CD Integration**
-1. What file and directory does a GitHub Actions workflow live in?
-2. Why is \`playwright install --with-deps\` required on CI but often optional locally?
-3. What is the difference between triggering on \`pull_request\` vs \`schedule\`?
-4. Write the Jenkins \`post\` block that publishes JUnit XML results.
-5. Why does headed mode fail on a typical CI runner?
-
-**Test Reporting**
-6. What flag makes \`pytest-html\` produce a single self-contained file?
-7. What command generates and serves an Allure report locally?
-8. Where do you add \`@allure.step\` — in tests or page objects? Why?
-9. Why should artifact upload steps use \`if: always()\` instead of \`if: failure()\`?
-
-**Docker**
-10. Why must the Docker image tag match your \`playwright\` package version?
-11. What does \`-v $(pwd):/app\` accomplish when running tests in Docker?
-
-**Logging & Error Handling**
-12. Where should \`logging.basicConfig\` be called in a pytest project?
-13. Name three Playwright failure artifacts and what each is best for.
-14. When is \`pytest-rerunfailures\` appropriate — and when is it masking a real bug?
-
-## Practical exercise
-
-Create a minimal GitHub Actions workflow that:
-- Triggers on pull requests to \`main\`
-- Installs dependencies and runs \`playwright install --with-deps\`
-- Runs \`pytest --browser chromium -m smoke --html=report.html --self-contained-html\`
-- Uploads \`report.html\` and \`test-results/\` as artifacts regardless of pass/fail
-
-\`\`\`yaml
-# Your answer here — then compare against the solution below
-name: Playwright Smoke Tests
-on:
-  pull_request:
-    branches: [main]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: |
-          pip install -r requirements.txt
-          playwright install --with-deps
-      - run: pytest --browser chromium -m smoke --html=report.html --self-contained-html
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: smoke-report
-          path: |
-            report.html
-            test-results/
-\`\`\`
-
-## Pass criteria
-
-You are ready for Part 6 if you can explain why CI failures often appear only in headless mode, produce an HTML or Allure report from a pytest run, upload artifacts from a workflow YAML file, and describe when Docker replaces \`install --with-deps\`. If any item above took more than 30 seconds to answer, revisit that chapter before continuing.`,
+    id: "pw-42-logging",
+    title: "42. Logging & Error Handling",
+    minutes: 28,
+    level: "intermediate",
+    phase: "Part 5 · CI/CD & Reporting",
+    partName: "Part 5 · CI/CD & Reporting",
+    overviewText: "Structured logging with Python logging module, pytest hooks for context on failure, --tracing retain-on-failure, screenshot/video flags, and pytest-rerunfailures for known flakes.",
+    why: "A timeout message without context wastes hours. Logging, traces, and screenshots turn opaque CI failures into actionable diagnoses.",
+    when: "Read when debugging intermittent failures or standardizing what artifacts every failed test produces.",
+    practical: { app: "Flaky login test in CI", scenario: "Test times out on staging but passes locally — no logs explain which step hung.", pass: "logging in test + trace retain-on-failure + screenshot hook; review trace.zip.", fail: "Bare assert with no logging; tracing off in CI to save seconds." },
+    advantages: ["logging.basicConfig gives structured CI log output", "pytest --tracing retain-on-failure captures only failures", "playwright show-trace reveals network, console, and DOM timeline", "pytest-rerunfailures quarantines known flakes without hiding new ones", "conftest autouse listener logs console errors from page", "Video on failure (--video=retain-on-failure) shows visual context"],
+    limitations: ["Verbose logging slows CI and obscures signal in noise", "Traces are large — retain-on-failure still needs artifact cleanup policy", "pytest-rerunfailures masks real bugs if overused", "Console listener misses errors in closed worker tabs", "Video storage multiplies quickly across parallel workers", "Logging secrets accidentally if URLs contain tokens in log lines"],
+    contentMarkdown: "## Logging & Error Handling\n\nStructured logging inside tests makes CI failures far easier to diagnose than bare pass/fail output.\n\n```python\nimport logging\n```\n\nlogger = logging.getLogger(__name__)\n\n```python\ndef test_leave_request_submission(page):\n    logger.info(\"Navigating to leave request form\")\n```\n\npage.goto(\"https://app.example.com/leave-requests/new\")\n\n```python\nlogger.info(\"Filling leave request details\")\n```\n\npage.get_by_label(\"Start date\").fill(\"2026-03-01\") page.get_by_label(\"End date\").fill(\"2026-03-03\")\n\n```python\nlogger.info(\"Submitting leave request\")\n```\n\npage.get_by_role(\"button\", name=\"Submit\").click()\n\n```python\nlogger.info(\"Verifying confirmation message appears\")\n    expect(page.get_by_text(\"Leave request submitted\")).to_be_visible()\n```\n\nPython's standard logging module, used deliberately at each meaningful step, gives a readable narrative of what a test was doing right up to the point of failure — genuinely more useful in a CI log than a bare stack trace alone, especially for a longer test with many steps, since it narrows down which specific step was in progress when things went wrong without needing a trace file open at all.\n\nCustom exception handling around flaky-prone operations can add useful context before a failure propagates.\n\n```python\ndef safe_click_with_context(locator, description):\n    try:\n        locator.click()\n```\n\nexcept Exception as e:\n\n```python\nlogger.error(f\"Failed to click '{description}': {e}\")\n```\n\nraise\n\nWrapping a risky action with additional logging before re-raising the original exception (raise with no arguments preserves the original traceback) adds human-readable context — \"Failed to click 'Submit leave request button'\" — on top of Playwright's own error message, which can otherwise be a fairly technical locator-resolution error that doesn't immediately convey which part of the user flow was in progress. Note the discipline here: catch, log, and re-raise — swallowing the exception entirely and continuing would hide a real failure rather than surfacing it, which defeats the entire purpose of the test.\n\nFailure artifact capture — screenshots, video, and traces on failure only — is the practical middle ground between \"no evidence\" and \"excessive overhead.\"\n\n```python\n# pytest.ini\n[pytest]\naddopts = --screenshot=only-on-failure --video=retain-on-failure --tracing=retain-on-failure\n```\n\n--screenshot=only-on-failure captures a screenshot at the moment of failure (rather than for every test, most of which pass and don't need one). --video=retain-on-failure records video throughout the test but only keeps the file if the test fails. --tracing=retain-on-failure mirrors the same pattern from Chapter 37. All three together give you rich diagnostic evidence (a screenshot, a full video replay, and an interactive trace) specifically for the tests that actually failed, without the storage and performance cost of capturing all three for every single passing test in a large suite — this \"only on failure\" pattern is a recurring theme across Playwright's tooling precisely because storage/performance cost scales with suite size, while diagnostic value is concentrated almost entirely in the failures.\n\nCloud execution grids (BrowserStack, LambdaTest, Sauce Labs) run your suite against real device/browser combinations you don't want to self-host.\n\n# Example: connecting to BrowserStack via connect endpoint\n\n```python\nfrom playwright.sync_api import sync_playwright\n```\n\nwith sync_playwright() as p:\n\n```python\nbrowser = p.chromium.connect(\n```\n\n\"wss://cdp.browserstack.com/playwright?caps=\" + encoded_capabilities )\n\nThese are third-party services (not part of Playwright itself, tying back to Part 0's tooling ecosystem overview) that host real physical devices and a wide matrix of browser/OS combinations, letting you run your existing Playwright test code against them over a remote connection rather than maintaining that device/browser matrix yourself. This matters most for genuinely broad compatibility testing — real Safari on an actual iPhone, a specific older Android version, a specific Windows/Edge combination — that would otherwise require physically owning or emulating hardware you don't have. The tradeoff is cost (these are paid services) and some added latency from running over a remote connection — most teams use cloud grids for a periodic broader compatibility pass (e.g., before a major release) rather than as part of every single CI run, reserving local/CI-native browser runs (Chromium/Firefox/WebKit via Playwright's own binaries) for the frequent, fast feedback loop.",
+    customSummary: "## Logging & Error Handling\n\nDeliberate logging calls at each meaningful test step give a readable narrative in CI logs, narrowing down where a failure occurred without needing a trace file.\nWrap risky actions in try/except that logs added context and then re-raises (never swallows) the original exception.\n--screenshot=only-on-failure, --video=retain-on-failure, --tracing=retain-on-failure give full diagnostic evidence exactly for failing tests, without the storage/performance cost of capturing it for every passing test too.\nCloud execution grids (BrowserStack/LambdaTest/Sauce Labs) run your existing Playwright code against real device/browser combinations you don't want to self-host — paid, third-party, best used for periodic broad compatibility passes rather than every CI run.",
+    chapterNum: 42,
   },
 ];

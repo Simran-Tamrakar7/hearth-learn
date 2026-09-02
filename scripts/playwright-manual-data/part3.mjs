@@ -1,815 +1,605 @@
 /** Playwright manual Part 3 — Test Structure & Framework */
 export const chapters = [
   {
-    contentMarkdown: `## Pytest as the Test Runner
+    id: "pw-20-pytest",
+    title: "20. Pytest Basics for Playwright",
+    minutes: 40,
+    level: "intermediate",
+    phase: "Part 3 · Test Structure & Framework",
+    partName: "Part 3 · Test Structure & Framework",
+    overviewText: "pytest-playwright integration: test discovery, the page fixture, sync vs async API, CLI flags (--headed, --browser, --slowmo), and running tests with pytest.",
+    why: "pytest is the standard Python test runner for Playwright. Fixture injection, markers, and CLI flags are daily workflow — not optional framework knowledge.",
+    when: "Read at the start of Part 3 before writing multi-file suites. Revisit for CLI debugging flags.",
+    practical: { app: "New Playwright pytest project", scenario: "Tests run headless but developer needs to watch login flow.", pass: "pytest --headed --slowmo=500 tests/test_login.py", fail: "Hardcode headless=False in every test file." },
+    advantages: ["page fixture injected automatically by pytest-playwright", "pytest -k flag runs subset by name expression", "--browser firefox switches engine from CLI", "--tracing retain-on-failure captures debug traces", "Sync API simpler for pytest — no async boilerplate", "pytest.ini centralizes browser and timeout defaults"],
+    limitations: ["Async API needs pytest-asyncio — extra setup", "Sync API blocks — no parallel coroutines in one test", "Fixture scope mistakes cause slow or leaking tests", "pytest-xdist parallel needs worker isolation awareness", "No built-in BDD — need pytest-bdd separately", "JS @playwright/test runner features not in Python binding"],
+    contentMarkdown: `## 20. Pytest Basics for Playwright
 
-Playwright Python tests are plain pytest tests. You write functions named \`test_*\`, use \`assert\` or Playwright's \`expect()\`, and run them with \`pytest\`. The **pytest-playwright** plugin wires browser lifecycle into pytest's fixture system so you never manually launch Chromium in every file.
+This is where scripts stop being one-off files and start becoming a real test framework.
+Everything in this chapter is pytest itself — Playwright plugs into it via pytest-playwright, it doesn't replace it. Up to this point, every example has been a standalone script; from here on, the manual assumes you're building an actual suite that runs many tests, shares setup, and gets executed repeatedly in CI.
+A fixture is reusable setup (and optional teardown) code a test requests by naming it as a parameter.
+Instead of copy-pasting login steps into every test function, you write it once as a fixture and every test that needs a logged-in user just asks for it.
+\`\`\`python
+import pytest
 
-Install both packages:
+@pytest.fixture
+def logged_in_page(page):
+    page.goto("https://app.example.com/login")
+    page.get_by_label("Username").fill("testuser")
+    page.get_by_label("Password").fill("testpass")
+    page.get_by_role("button", name="Log in").click()
+    yield page
+    # teardown (runs after the test finishes) — anything after yield
+    page.get_by_role("button", name="Log out").click()
 
-\`\`\`bash
-pip install pytest pytest-playwright
-playwright install
+def test_dashboard_shows_welcome_message(logged_in_page):
+    expect(logged_in_page.get_by_text("Welcome, testuser")).to_be_visible()
+
+@pytest.fixture marks a function as a reusable setup/teardown block.
 \`\`\`
 
-A minimal test requests the \`page\` fixture injected by pytest-playwright:
-
+scope (string, optional, default "function") controls how often it re-runs: "function" re-runs for every single test that uses it, "class" runs once per test class, "module" runs once per test file, and "session" runs once for the entire test run. autouse (boolean, optional, default False) makes the fixture run automatically for every applicable test without being explicitly requested when True. params (list, optional) turns the fixture into a parametrized fixture, running the test once per value in the list. Code after yield is teardown — it runs after the test completes, pass or fail, making fixtures the right place for cleanup logic (logging out, deleting test data) rather than scattering try/finally blocks through every test.
+conftest.py shares fixtures across test files without any import statement.
+Fixtures defined there are automatically available to every test file in the same folder (and subfolders). This is how shared setup — like a logged_in_page fixture used across dozens of test files — gets centralized in one place instead of duplicated or manually imported everywhere.
 \`\`\`python
-from playwright.sync_api import Page, expect
+# conftest.py
+import pytest
 
-def test_homepage_title(page: Page):
+@pytest.fixture(scope="session")
+def api_base_url():
+    return "https://api.example.com"
+
+@pytest.fixture(scope="function")
+def clean_page(page):
+    page.goto("https://app.example.com")
+    yield page
+\`\`\`
+
+
+Fixture scope choice is a real speed/safety tradeoff, not just a config detail.
+A session-scoped login fixture — log in once, reuse the saved session for every test (tying into storage_state, covered in Part 4's Authentication & Session Reuse chapter) — can save enormous amounts of time versus a function-scoped one that logs in fresh before every single test. But scope should match reality: if tests mutate shared state (one test changes a setting another test depends on being default), a broader scope than "function" can cause tests to interfere with each other in ways that are painful to debug. As a rule of thumb, default to "function" scope for anything that mutates state, and only widen the scope deliberately once you've confirmed the fixture's setup is genuinely safe to share.
+conftest.py is a file location convention, not a callable.
+It's a special filename pytest auto-discovers — fixtures defined here are shared across all test files in that directory and below, with no import needed. Put widely-shared fixtures (base URL, login, browser context config) here; test-file-specific fixtures can stay local to that file instead, to avoid a bloated global conftest.py.
+Installing pytest-playwright gives you page, browser, and context fixtures for free.
+\`\`\`python
+def test_homepage_title(page):
     page.goto("https://example.com")
     expect(page).to_have_title("Example Domain")
 \`\`\`
 
-## Built-in Fixtures: page, browser, context
 
-pytest-playwright provides three core fixtures:
-
-| Fixture | Scope | What you get |
-|---------|-------|--------------|
-| \`page\` | function | A fresh \`Page\` in an isolated \`BrowserContext\` |
-| \`context\` | function | A \`BrowserContext\` (cookies, storage, permissions) |
-| \`browser\` | session | The shared \`Browser\` instance for the run |
-
-Most tests only need \`page\`. Reach for \`context\` when you need to set permissions, geolocation, or locale before creating pages. Use \`browser\` when you need multiple contexts in one test (e.g., two users chatting).
-
+These are automatically provided fixtures giving you a ready-to-use Page/Browser/BrowserContext in any test function, without manual setup — you request them by naming them as test function parameters, e.g. def test_x(page):. page is by far the most commonly used — it comes with a fresh BrowserContext per test by default, giving you test isolation automatically (tying back to Part 1's Browser/Context/Page hierarchy).
+The plugin also adds useful command-line flags.
 \`\`\`python
-def test_two_tabs(context):
-    page_a = context.new_page()
-    page_b = context.new_page()
-    page_a.goto("https://example.com")
-    page_b.goto("https://playwright.dev")
+pytest --headed              # run visibly instead of headless
+pytest --browser firefox     # run against Firefox instead of default Chromium
+pytest --slowmo 500          # slow down actions by 500ms, helpful for watching a test run
 \`\`\`
 
-## Writing Your Own Fixtures
 
-Fixtures replace copy-pasted setup. Define a function decorated with \`@pytest.fixture\`, use \`yield\` to hand the resource to the test, and put cleanup after \`yield\`:
+These are especially useful while developing or debugging a test locally — you can flip to headed mode and slow motion without changing a single line of test code, then drop back to defaults (headless, full speed) before committing.`,
+    customSummary: `## 20. Pytest Basics for Playwright
 
+Fixtures are reusable setup/teardown blocks requested by parameter name — code after yield is teardown, runs regardless of pass/fail.
+scope controls fixture lifetime: function (default), class, module, session; autouse=True runs it automatically without being requested.
+conftest.py shares fixtures across a folder/subfolders with no import needed — put widely-shared setup there.
+Session-scoped login fixtures save time but risk cross-test interference if tests mutate shared state — default to function scope for anything that mutates state.
+pytest-playwright gives page/browser/context fixtures for free; page includes a fresh context per test = automatic isolation.
+CLI flags: --headed, --browser firefox, --slowmo 500 — useful for local debugging, not for CI defaults.`,
+    chapterNum: 20,
+  },
+  {
+    id: "pw-21-fixtures",
+    title: "21. Fixtures Deep Dive",
+    minutes: 42,
+    level: "intermediate",
+    phase: "Part 3 · Test Structure & Framework",
+    partName: "Part 3 · Test Structure & Framework",
+    overviewText: "pytest fixture scopes (function, class, module, session), autouse, yield teardown, conftest.py sharing, custom browser/context fixtures, and authenticated session patterns.",
+    why: "Fixtures are how Playwright tests share login state, test data, and browser configuration without copy-paste setup in every test.",
+    when: "Read when duplicating login code across files or when tests leak state between runs.",
+    practical: { app: "HRMS test suite with admin login", scenario: "Every test repeats 15-second login flow.", pass: "Session-scoped authenticated_page fixture with storage_state reuse.", fail: "Copy-paste login steps into all 40 test functions." },
+    advantages: ["Session-scoped login saves minutes per CI run", "conftest.py auto-discovered — no imports needed", "yield fixture guarantees teardown even on failure", "storage_state persists cookies/localStorage across tests", "Custom context fixture sets viewport/locale per suite", "autouse=True for global setup like tracing"],
+    limitations: ["Session-scoped browser leaks state if tests mutate shared data", "Over-scoped fixtures cause test interdependence", "conftest.py discovery rules confuse nested folder layouts", "storage_state stale after app schema changes", "Fixture dependency chains hard to debug when deep", "Module scope rare — most Playwright fixtures are function-scoped"],
+    contentMarkdown: `## 21. Fixtures Deep Dive
+
+Pytest fixtures and Playwright's own fixtures are two different layers working together.
+Playwright's built-in fixtures (page, browser, context, browser_name) are themselves implemented as ordinary pytest fixtures under the hood — pytest-playwright is, mechanically, just a plugin that registers a set of fixtures into the pytest ecosystem you already know. This matters conceptually: there's no separate "Playwright fixture system" to learn on top of pytest's — everything you learn about scope, yield, autouse, and composition in plain pytest applies identically to Playwright's own fixtures, and to any custom fixture you build that depends on them (like the logged_in_page example above, which is a custom fixture built on top of Playwright's built-in page fixture).
+Fixtures can request other fixtures, forming a dependency chain — this is composition.
 \`\`\`python
 import pytest
-from playwright.sync_api import Page
+
+@pytest.fixture(scope="session")
+def api_base_url():
+    return "https://api.example.com"
 
 @pytest.fixture
-def logged_in_page(page: Page) -> Page:
-    page.goto("/login")
-    page.get_by_label("Email").fill("qa@example.com")
-    page.get_by_label("Password").fill("secret")
-    page.get_by_role("button", name="Sign in").click()
-    page.wait_for_url("**/dashboard")
+def authenticated_context(browser, api_base_url):
+    context = browser.new_context(base_url=api_base_url)
+    # perform login via API, then attach session cookie to context
+    yield context
+    context.close()
+
+@pytest.fixture
+def logged_in_page(authenticated_context):
+    page = authenticated_context.new_page()
     yield page
-    # teardown runs even if the test fails
-    page.goto("/logout")
-
-def test_dashboard_widget(logged_in_page):
-    expect(logged_in_page.get_by_text("Leave balance")).to_be_visible()
 \`\`\`
 
-Tests declare fixtures as **parameters** — pytest resolves the dependency graph automatically.
 
-## conftest.py — Shared Fixtures Without Imports
-
-Place a \`conftest.py\` file in any test directory. Fixtures defined there are auto-discovered for that folder and all subfolders. No import statement needed.
-
+Here, logged_in_page depends on authenticated_context, which itself depends on browser (a Playwright built-in) and api_base_url (a custom session-scoped fixture). Pytest resolves this chain automatically — a test that requests logged_in_page transparently gets the whole chain set up in the right order, and torn down in reverse order once the test finishes. This composability is what lets a suite grow in complexity (multi-user setups, pre-seeded data, multiple browser contexts) without every test function needing to manually orchestrate all of it — each layer of setup lives in exactly one fixture, reused everywhere it's needed.
+Fixture scope interacts with dependency chains in a way worth understanding precisely.
+A fixture's effective scope is capped by the narrowest scope of anything it depends on — a session-scoped fixture cannot safely depend on a function-scoped one, because the function-scoped dependency would be torn down and recreated far more often than the session-scoped fixture expects to see it change. Pytest will actually raise an error if you try this (a ScopeMismatch), which is a useful guardrail: it forces you to think through whether your fixture hierarchy's lifetimes actually make sense together, rather than silently producing a fixture holding a stale/closed reference to something scoped more narrowly than itself.
+autouse=True runs a fixture for every applicable test without being explicitly requested.
+\`\`\`python
+@pytest.fixture(autouse=True)
+def set_default_timeout(page):
+    page.set_default_timeout(10000)
 \`\`\`
-tests/
-  conftest.py          # project-wide fixtures
-  e2e/
-    conftest.py        # e2e-only fixtures (e.g., BASE_URL)
-    test_login.py
-    test_dashboard.py
+
+
+This is useful for genuinely universal setup — a default timeout override, a console-error listener that should run on every single test regardless of whether the test author remembered to ask for it. The tradeoff: autouse fixtures are invisible in a test's own signature, so overusing them makes it harder to read a test function and know everything that's happening around it just by looking at its parameters. Reserve autouse for setup that genuinely applies to every test in scope, not as a shortcut to avoid naming a fixture explicitly.
+Fixture teardown order is the reverse of setup order, and this matters for correctness.
+If fixture B depends on fixture A, A is set up first and B second — but on teardown, B tears down first and A second. This mirrors resource-management logic you'd expect from nested context managers: you don't want to close a browser context (A) while a page object (B) that lives inside it hasn't been cleaned up yet. This ordering is automatic and you don't need to manage it manually, but understanding it explains why teardown code should reference only what its own fixture set up, not assume anything about a fixture that depends on it.
+Parametrized fixtures run every dependent test once per parameter value.
+\`\`\`python
+@pytest.fixture(params=["chromium", "firefox", "webkit"])
+def browser_type_name(request):
+    return request.param
+
+def test_page_loads(browser_type_name):
+    # this test runs 3 times, once per browser_type_name value
+    ...
+\`\`\`
+
+params (list, optional) turns the fixture into a generator of test variations — request.param (accessed via pytest's built-in request fixture) gives the current value inside the fixture body. Every test depending on this fixture runs once per value in the list, similar in effect to @pytest.mark.parametrize but scoped at the fixture level instead of the test level — useful when the same parametrization needs to apply across many different tests that all share the fixture, rather than repeating a parametrize decorator on each one individually.`,
+    customSummary: `## 21. Fixtures Deep Dive
+
+Playwright's fixtures are ordinary pytest fixtures under the hood — no separate system to learn.
+Fixtures can depend on other fixtures (composition) — pytest resolves and tears down the chain automatically, in reverse order of setup.
+A fixture's scope is capped by its narrowest dependency — pytest raises a ScopeMismatch error if a session-scoped fixture depends on a function-scoped one.
+autouse=True fixtures run invisibly for every applicable test — reserve for truly universal setup (default timeouts, global listeners), since overuse hides what's happening in a test.
+Parametrized fixtures (params=[...], read via request.param) run every dependent test once per value — useful when the same parametrization needs to apply across many tests sharing a fixture.`,
+    chapterNum: 21,
+  },
+  {
+    id: "pw-22-organization",
+    title: "22. Test Organization",
+    minutes: 38,
+    level: "intermediate",
+    phase: "Part 3 · Test Structure & Framework",
+    partName: "Part 3 · Test Structure & Framework",
+    overviewText: "Folder structure, naming conventions, test markers (@pytest.mark.smoke), grouping by feature/module, separating E2E from API tests, and scaling beyond a single test file.",
+    why: "A 200-test suite without organization becomes unmaintainable. Structure decisions made early compound — or haunt — for years.",
+    when: "Read when your tests/ folder exceeds 5 files or when CI needs smoke vs regression subsets.",
+    practical: { app: "Growing HRMS test suite", scenario: "CI needs 3-minute smoke run separate from full regression.", pass: "@pytest.mark.smoke on critical paths; pytest -m smoke in CI job.", fail: "One giant test_e2e.py with 80 tests and no markers." },
+    advantages: ["Feature-folder mirroring (tests/leave/, tests/payroll/) aids navigation", "Markers enable selective CI runs (-m smoke, -m 'not slow')", "Descriptive test names serve as living documentation", "Separate conftest.py per feature folder for scoped fixtures", "API tests in tests/api/ share project without browser overhead", "README in tests/ documents setup assumptions for new team members"],
+    limitations: ["Over-nested folders create import path confusion", "Marker proliferation without convention becomes noise", "Shared conftest.py conflicts in deeply nested trees", "No enforced structure — pytest allows anything", "Renaming tests breaks CI job filters referencing names", "Cross-feature tests don't fit clean folder boundaries"],
+    contentMarkdown: `## 22. Test Organization
+
+Markers tag tests so you can selectively run subsets instead of the entire suite every time.
+\`\`\`python
+import pytest
+
+@pytest.mark.smoke
+def test_login_works():
+    ...
 \`\`\`
 
 \`\`\`python
-# tests/conftest.py
+@pytest.mark.regression
+def test_edge_case_special_characters_in_username():
+    ...
+\`\`\`
+
+\`\`\`python
+pytest -m smoke              # run only smoke-tagged tests
+pytest -m "not regression"   # run everything except regression tests
+\`\`\`
+
+
+Custom markers need to be registered in pytest.ini (Chapter 24) or pytest will emit a warning about unknown markers.
+\`\`\`python
+@pytest.mark.<name> attaches a tag to a test function.
+\`\`\`
+
+<name> (any string you choose, e.g. smoke, regression, slow) must be registered in config to avoid warnings. Built-in markers also exist, like @pytest.mark.skip(reason="...") and @pytest.mark.xfail(reason="...") (expected to fail). Use a consistent, small marker vocabulary across the team (smoke, regression, critical) rather than ad-hoc one-off tags — otherwise -m filtering becomes unreliable as the vocabulary sprawls.
+Parametrized tests run one function multiple times with different data.
+\`\`\`python
+import pytest
+
+@pytest.mark.parametrize("username,password,expected_error", [
+\`\`\`
+
+    ("", "validpass", "Username is required"),
+    ("validuser", "", "Password is required"),
+    ("validuser", "wrongpass", "Invalid credentials"),
+])
+\`\`\`python
+def test_login_validation(page, username, password, expected_error):
+    page.get_by_label("Username").fill(username)
+    page.get_by_label("Password").fill(password)
+    page.get_by_role("button", name="Log in").click()
+    expect(page.get_by_text(expected_error)).to_be_visible()
+\`\`\`
+
+
+This runs as three separate test cases in the report, each clearly showing which input combination passed/failed — far more maintainable than three nearly-identical copy-pasted test functions. argnames (string, comma-separated) names the parameters the test function will receive; argvalues (list of tuples) provides one tuple of values per test run, with tuple order matching argnames order. Each parameter set shows up as a distinct test in reports (e.g., test_login_validation[validuser-wrongpass-Invalid credentials]), making failures easy to pinpoint to a specific data combination.
+Folder structure gives a second, independent way to organize and slice tests.
+tests/
+├── smoke/
+│   └── test_critical_paths.py
+├── regression/
+│   └── test_edge_cases.py
+└── modules/
+    ├── test_leave_management.py
+    └── test_attendance.py
+
+Combined with markers, this gives two independent ways to slice the suite — by folder (pytest tests/smoke/) or by tag (pytest -m smoke) — useful since a "smoke" test might live logically inside a feature folder but still need to run as part of a fast pre-deploy check.
+@smoke/@regression-style tagging is the practical foundation of selective execution in CI.
+In real pipelines, you rarely run the entire suite on every single commit — a common pattern is running @smoke-tagged tests on every push (fast feedback, a few minutes), and reserving the full @regression suite for a nightly run or pre-release gate (slower, more thorough). This is why marker discipline (naming things consistently, registering them properly) matters beyond just local convenience — it becomes the actual mechanism controlling what runs when in CI/CD (tying forward into Part 5's CI/CD Integration chapter).
+--grep/--grep-invert-style selective execution filters by test name pattern rather than by marker.
+Playwright's JS/TS test runner has native --grep/--grep-invert flags that filter tests by matching (or excluding) a pattern against the test's title string. Python's pytest-playwright doesn't have an identically-named flag, but pytest's own -k flag provides equivalent behavior:
+\`\`\`python
+pytest -k "login"              # run only tests with "login" in their name
+pytest -k "not slow"           # exclude tests with "slow" in their name
+pytest -k "login and not slow" # combine conditions
+\`\`\`
+
+
+-k (string expression) matches against test function names and can combine conditions with and/or/not. The practical difference from markers: -k requires no upfront tagging/registration — it works off whatever your test names already are — which makes it convenient for a one-off local run ("just run the tests related to leave requests right now"), whereas markers are the more deliberate, intentional mechanism for stable, repeatable CI filtering. Use -k for ad-hoc local filtering and markers for anything that needs to be reliably referenced in a pipeline config.`,
+    customSummary: `## 22. Test Organization
+
+@pytest.mark.<name> tags tests for selective running (pytest -m smoke, pytest -m "not regression") — must be registered in pytest.ini or triggers warnings.
+@pytest.mark.parametrize(argnames, argvalues) runs one test function multiple times with different data — each combination shows as a distinct result in reports.
+Folder structure (e.g. smoke/, regression/, modules/) gives a second, independent way to slice the suite alongside markers.
+Marker discipline (small, consistent vocabulary) is what makes CI selective-execution reliable — e.g. running @smoke on every push, full @regression nightly.
+Pytest's -k "expression" filters by test name pattern (supports and/or/not) — good for ad-hoc local runs; markers are better for stable CI-referenced filtering.`,
+    chapterNum: 22,
+  },
+  {
+    id: "pw-23-pom",
+    title: "23. Page Object Model (POM)",
+    minutes: 40,
+    level: "intermediate",
+    phase: "Part 3 · Test Structure & Framework",
+    partName: "Part 3 · Test Structure & Framework",
+    overviewText: "Page Object Model pattern: page classes encapsulating locators and actions, BasePage shared utilities, composition over inheritance, and keeping tests readable as user-journey scripts.",
+    why: "POM is the standard interview answer for 'how do you maintain a large test suite?' Locator changes touch one class, not 50 tests.",
+    when: "Read when the same page interactions appear in 3+ tests or when onboarding teammates to the suite.",
+    practical: { app: "HRMS login used by 30 tests", scenario: "Login button renamed from 'Sign In' to 'Log In' — 30 tests break.", pass: "LoginPage.login() method updated once; all tests pass.", fail: "Find-and-replace get_by_role('button', name='Sign In') across 30 files." },
+    advantages: ["Locator change isolated to one Page class", "Tests read as user journeys — high-level intent clear", "BasePage shares wait helpers and navigation utilities", "Composition (LoginPage used by DashboardPage) over deep inheritance", "Page classes testable independently of pytest fixtures", "Interview-standard pattern recognized across the industry"],
+    limitations: ["Over-abstraction creates indirection — hard to debug", "POM classes can become god-objects with every method", "Inheritance hierarchies brittle when pages share little", "Not Playwright-specific — adds boilerplate for small suites", "Async page methods need consistent await/sync choice", "Page objects don't replace good locator strategy — garbage in, garbage out"],
+    contentMarkdown: `## 23. Page Object Model (POM)
+
+POM centralizes each page's locators and actions into a dedicated class.
+Without POM, locators get written directly inside test functions — meaning if the UI changes (a button's text, an ID), you have to hunt down and fix every test that touches that element. POM solves this by centralizing each page's locators and actions into one class, so a UI change means fixing one class, not dozens of tests.
+project/
+├── pages/
+│   ├── base_page.py
+│   ├── login_page.py
+│   └── dashboard_page.py
+├── tests/
+│   ├── test_login.py
+│   └── test_dashboard.py
+└── conftest.py
+
+A BasePage class holds behavior common to every page.
+\`\`\`python
+# pages/base_page.py
+class BasePage:
+    def __init__(self, page):
+        self.page = page
+
+    def navigate(self, path):
+        self.page.goto(f"https://app.example.com{path}")
+
+    def wait_for_load(self):
+        self.page.wait_for_load_state("networkidle")
+\`\`\`
+
+
+BasePage.__init__(self, page) stores a reference to the Playwright page object so every method in the class (and its subclasses) can use it. page (Page object, required) is typically passed in from the page pytest fixture. Every page class should inherit from this and call super().__init__(page) to get this shared setup for free — navigation helpers, generic wait logic, anything that would otherwise be duplicated across every single page class.
+Individual page classes hold their own locators and user-facing methods.
+\`\`\`python
+# pages/login_page.py
+from pages.base_page import BasePage
+
+class LoginPage(BasePage):
+    def __init__(self, page):
+\`\`\`
+
+        super().__init__(page)
+\`\`\`python
+        self.username_input = page.get_by_label("Username")
+        self.password_input = page.get_by_label("Password")
+        self.login_button = page.get_by_role("button", name="Log in")
+
+    def login(self, username, password):
+        self.navigate("/login")
+        self.username_input.fill(username)
+        self.password_input.fill(password)
+        self.login_button.click()
+
+# tests/test_login.py
+from pages.login_page import LoginPage
+
+def test_successful_login(page):
+\`\`\`
+
+    login_page = LoginPage(page)
+\`\`\`python
+    login_page.login("testuser", "testpass")
+    expect(page.get_by_text("Welcome, testuser")).to_be_visible()
+\`\`\`
+
+
+LoginPage.login(self, username, password) encapsulates the full "log in" user flow as one method call, hiding the individual locator/action steps from the test itself. username and password (both strings, required) are the only things the test needs to supply. The test file itself should read almost like plain English (login_page.login(...)) — if a test file is full of raw locators and .fill()/.click() calls, that's a signal POM isn't being followed consistently, and locator maintenance will end up scattered across test files instead of contained in the page classes where it belongs.`,
+    customSummary: `## 23. Page Object Model (POM)
+
+POM centralizes each page's locators/actions into a dedicated class — a UI change means fixing one class, not every test that touches it.
+BasePage holds shared behavior (navigation, generic waits); every page class inherits from it via super().__init__(page).
+Page classes hold locators as attributes and expose plain-English methods (e.g. login_page.login(username, password)).
+A test file full of raw locators/.fill()/.click() calls signals POM isn't being followed — the test should read like plain English instead.`,
+    chapterNum: 23,
+  },
+  {
+    id: "pw-24-config",
+    title: "24. Configuration Management",
+    minutes: 38,
+    level: "intermediate",
+    phase: "Part 3 · Test Structure & Framework",
+    partName: "Part 3 · Test Structure & Framework",
+    overviewText: "playwright.config / pytest.ini settings, environment variables, baseURL, timeout defaults, screenshot/video/trace on failure, multi-environment configs (dev/staging/prod), and .env patterns.",
+    why: "Hardcoded URLs and timeouts in test files break the moment you run against staging. Central config is the difference between portable and fragile suites.",
+    when: "Read when pointing tests at staging, tuning CI timeouts, or enabling trace-on-failure.",
+    practical: { app: "HRMS tested against dev and staging", scenario: "Developer runs tests locally against localhost; CI runs against staging URL.", pass: "BASE_URL env var in pytest.ini; page.goto('/login') uses baseURL.", fail: "Hardcode https://staging.hrm.example.com in every test file." },
+    advantages: ["baseURL in config — relative paths in tests", "Environment variables switch targets without code changes", "Global timeout prevents hung tests eating CI minutes", "trace=retain-on-failure auto-captures debug artifacts", "pytest.ini co-locates Playwright and pytest settings", "Per-project config for multi-app monorepos"],
+    limitations: ["Config spread across pytest.ini, conftest.py, and .env confuses newcomers", "Wrong BASE_URL causes silent tests against wrong environment", "Global timeout too short for slow staging; too long wastes CI", "Secrets in .env need .gitignore discipline", "Playwright Python config less documented than JS playwright.config.ts", "Multi-browser matrix multiplies CI time linearly"],
+    contentMarkdown: `## 24. Configuration Management
+
+pytest.ini and conftest.py together fill the role of a config file.
+Since Python Playwright has no built-in config file (unlike the JS test runner's playwright.config.ts), pytest.ini fills that role for pytest-level settings, and conftest.py handles anything needing actual code (like environment-based fixture values).
+\`\`\`python
+# pytest.ini
+[pytest]
+markers =
+\`\`\`
+
+    smoke: quick critical-path tests
+    regression: full regression suite
+\`\`\`python
+addopts = --headed --browser chromium
+\`\`\`
+
+
+The [pytest] section is the central place for pytest-level settings: registered markers, default command-line options, test discovery rules. markers is a list of name: description pairs, required to avoid "unknown marker" warnings. addopts is a string of default CLI flags applied to every pytest run automatically. Registering markers here is what keeps @pytest.mark.smoke from producing warnings, and documents what each marker means for the rest of the team.
+Environment variables let a suite run against different URLs without code changes.
+\`\`\`python
+# conftest.py
 import os
 import pytest
 
 @pytest.fixture(scope="session")
 def base_url():
-    return os.environ.get("BASE_URL", "http://localhost:3000")
+    return os.environ.get("BASE_URL", "https://staging.example.com")
 \`\`\`
 
+
+BASE_URL=https://prod.example.com pytest
+
+os.environ.get(key, default) reads an environment variable, falling back to a default if it isn't set. key (string, required) is the environment variable name, and default (any, optional) is the value returned if the variable isn't set. This is the standard pattern for making a test suite environment-aware without hardcoding URLs, so the exact same test code runs against dev, staging, or prod depending on how it's invoked.
+A config dictionary keyed by environment name manages multiple environments cleanly.
 \`\`\`python
-# tests/e2e/test_dashboard.py
-def test_loads(base_url, page):
-    page.goto(f"{base_url}/dashboard")
+# conftest.py
 \`\`\`
 
-## Fixture Scopes
-
-Scope controls how often a fixture is created:
-
-| Scope | Created | Use when |
-|-------|---------|----------|
-| \`function\` | Once per test (default) | Page state must be isolated |
-| \`class\` | Once per test class | Shared setup within a class |
-| \`module\` | Once per file | Expensive read-only setup |
-| \`session\` | Once per pytest run | Browser launch, auth token |
-
-**Default to \`function\` scope.** Session-scoped fixtures that mutate shared data cause cross-test pollution — a classic source of flaky suites.
+ENVIRONMENTS = {
+    "dev": "https://dev.example.com",
+    "staging": "https://staging.example.com",
+    "prod": "https://app.example.com",
+}
 
 \`\`\`python
 @pytest.fixture(scope="session")
-def browser_context_args(browser_context_args):
-    return {**browser_context_args, "viewport": {"width": 1280, "height": 720}}
+def base_url():
 \`\`\`
 
-The \`browser_context_args\` hook fixture lets you customize every context's defaults project-wide.
-
-## CLI Flags
-
-pytest-playwright adds browser flags you pass through pytest:
-
-\`\`\`bash
-pytest --headed                  # show the browser window
-pytest --browser firefox         # run in Firefox instead of Chromium
-pytest --browser webkit          # run in WebKit (Safari engine)
-pytest --slowmo 500              # 500 ms delay between actions
-pytest --tracing on              # record trace for every test
-pytest --screenshot only-on-failure
-pytest --video retain-on-failure
-pytest tests/e2e/test_login.py -k "valid"   # keyword filter
-pytest -m smoke                  # run only @pytest.mark.smoke tests
+    env = os.environ.get("TEST_ENV", "staging")
+\`\`\`python
+    return ENVIRONMENTS[env]
 \`\`\`
 
-Combine flags freely. In CI, headless + tracing on failure is the standard starting point.
 
-## Async vs Sync API
+TEST_ENV=prod pytest    # careful — running full suites against prod is usually restricted to read-only smoke tests
 
-pytest-playwright supports both sync and async fixtures. The sync API (\`playwright.sync_api\`) is simpler for most teams. If your app is async-native (FastAPI background tasks, asyncio event loops), use the async plugin variant with \`async def test_...\` and \`await page.goto(...)\`.
+Running write-heavy tests (creating/deleting data) against production is a common real-world mistake — most teams restrict prod runs to smoke-tagged, non-destructive tests only, enforced by combining TEST_ENV with markers from Chapter 22.
+.env files keep environment-specific values out of version control and out of shell commands.
+Rather than passing environment variables inline on every command (BASE_URL=... TEST_ENV=... pytest), most real projects use a .env file per environment (.env.dev, .env.staging, .env.prod) loaded via a package like python-dotenv:
+\`\`\`python
+# conftest.py
+from dotenv import load_dotenv
+import os
+\`\`\`
 
-## Key Takeaways
 
-- Install \`pytest-playwright\`; request \`page\` in every test signature.
-- Put shared fixtures in \`conftest.py\`; keep scope at \`function\` unless you have a measured reason not to.
-- Use \`yield\` fixtures for guaranteed teardown.
-- Pass \`--headed\`, \`--browser\`, and \`--slowmo\` from the CLI — no wrapper scripts needed.`,
+load_dotenv(f".env.{os.environ.get('TEST_ENV', 'staging')}")
+
+\`\`\`python
+@pytest.fixture(scope="session")
+def base_url():
+    return os.environ["BASE_URL"]
+
+# .env.staging
+\`\`\`
+
+BASE_URL=https://staging.example.com
+API_KEY=stg_xxx123
+
+This keeps secrets and per-environment values (API keys, base URLs, feature-flag toggles) out of the codebase itself — .env files are added to .gitignore and never committed, so credentials don't end up in source control history. It also means switching environments is a one-flag change (TEST_ENV=prod) rather than remembering and retyping a whole set of variables by hand every time.
+Global Setup and Teardown hooks run once for the entire test session, not per-test.
+Pytest supports this via session-scoped fixtures combined with autouse=True, which is the Python-side equivalent of what the JS test runner calls globalSetup/globalTeardown in its config file:
+\`\`\`python
+# conftest.py
+import pytest
+
+@pytest.fixture(scope="session", autouse=True)
+def global_setup_teardown():
+    print("Running global setup — e.g., seeding a test database, warming a cache")
+    # setup code here
+\`\`\`
+
+    yield
+\`\`\`python
+    print("Running global teardown — e.g., tearing down shared test infrastructure")
+    # teardown code here
+\`\`\`
+
+
+This is the right place for expensive, one-time setup that every test in the run depends on but that would be wasteful to repeat per-test — seeding a shared test database with baseline reference data, starting a mock server, or authenticating a service account once for the whole run. The autouse=True + session scope combination guarantees it runs exactly once, automatically, without any test needing to explicitly request it.`,
+    customSummary: `## 24. Configuration Management
+
+pytest.ini's [pytest] section holds registered markers and addopts (default CLI flags) — the closest Python equivalent to playwright.config.ts.
+os.environ.get(key, default) reads env vars for base URLs, keeping test code environment-agnostic.
+A config dictionary keyed by environment name (dev/staging/prod) plus a TEST_ENV variable manages multi-environment runs — restrict prod runs to non-destructive smoke tests only.
+.env files (loaded via python-dotenv, git-ignored) keep secrets/URLs out of source control and out of manual shell commands.
+Global Setup/Teardown = a session-scoped, autouse=True fixture with yield — Python's equivalent of JS's globalSetup/globalTeardown, for one-time expensive setup (seeding a DB, starting a mock server).`,
+    chapterNum: 24,
   },
   {
-    contentMarkdown: `## Why Organization Matters
+    id: "pw-25-test-data",
+    title: "25. Test Data Management",
+    minutes: 40,
+    level: "intermediate",
+    phase: "Part 3 · Test Structure & Framework",
+    partName: "Part 3 · Test Structure & Framework",
+    overviewText: "Test data strategies: JSON/CSV fixtures, factory functions, Faker for dynamic data, API seeding before UI tests, data-driven tests with @pytest.mark.parametrize, and cleanup patterns.",
+    why: "Tests that depend on specific database rows break when data changes. Managing test data is as important as managing locators.",
+    when: "Read when tests fail because 'user john@example.com already exists' or when parametrize would eliminate duplicate test bodies.",
+    practical: { app: "HRMS employee creation tests", scenario: "Test creates employee with fixed email — fails on second run.", pass: "Faker-generated unique email per run; API teardown deletes record after.", fail: "Hardcode test@example.com and manually delete from DB between runs." },
+    advantages: ["JSON fixtures version-controlled alongside tests", "Faker generates unique emails/names — no collision", "API seeding faster than UI setup for test prerequisites", "@pytest.mark.parametrize eliminates copy-paste test bodies", "Factory functions compose complex objects from defaults", "storage_state fixture reuses auth without re-login"],
+    limitations: ["Faker data not reproducible without seed — harder to debug", "API seeding requires backend endpoints or direct DB access", "Fixture files drift from current app schema", "Parametrize explosion — 50 combinations from 5 params", "Cleanup missed on failure leaves dirty database", "Shared test data causes order-dependent failures in parallel runs"],
+    contentMarkdown: `## 25. Test Data Management
 
-A Playwright suite grows fast. Without structure, you end up with 200 tests in one folder, no way to run a quick smoke check before deploy, and duplicated login code in every file. pytest gives you **markers**, **parametrize**, and conventional folder layouts to keep large suites navigable.
-
-## Folder Structure
-
-A practical layout separates concerns by feature and test type:
-
-\`\`\`
-tests/
-  conftest.py
-  pytest.ini
-  e2e/
-    conftest.py
-    smoke/
-      test_login.py
-      test_homepage.py
-    regression/
-      test_checkout.py
-      test_user_settings.py
-    pages/
-      base_page.py
-      login_page.py
-    data/
-      users.json
-\`\`\`
-
-- \`smoke/\` — fast, critical-path tests run on every PR.
-- \`regression/\` — broader coverage run nightly or pre-release.
-- \`pages/\` — Page Object classes (Chapter 14).
-- \`data/\` — JSON or CSV test data files.
-
-Point pytest at the right subtree:
-
-\`\`\`bash
-pytest tests/e2e/smoke/          # smoke only
-pytest tests/e2e/regression/     # full regression
-\`\`\`
-
-## Markers — Label and Filter Tests
-
-Markers tag tests with metadata. Register them in \`pytest.ini\` so typos fail loudly:
-
-\`\`\`ini
-[pytest]
-markers =
-    smoke: critical path, run on every PR
-    regression: full coverage, run nightly
-    slow: tests that take > 30 seconds
-\`\`\`
-
-Apply markers to tests:
+Static fixtures (JSON/CSV/YAML) store predictable, reusable test data outside the test code itself.
+// test_data/users.json
+{
+  "valid_user": {"username": "testuser", "password": "testpass"},
+  "invalid_user": {"username": "baduser", "password": "wrongpass"}
+}
 
 \`\`\`python
-import pytest
-from playwright.sync_api import Page, expect
-
-@pytest.mark.smoke
-def test_login_page_loads(page: Page):
-    page.goto("/login")
-    expect(page.get_by_role("heading", name="Sign in")).to_be_visible()
-
-@pytest.mark.regression
-@pytest.mark.slow
-def test_full_checkout_flow(page: Page):
-    # multi-step flow ...
-    pass
-\`\`\`
-
-Run subsets from the CLI:
-
-\`\`\`bash
-pytest -m smoke                  # only smoke tests
-pytest -m "smoke and not slow"   # smoke, skip slow ones
-pytest -m regression             # nightly suite
-\`\`\`
-
-## Smoke vs Regression Grouping
-
-| Group | Goal | Typical count | When to run |
-|-------|------|---------------|-------------|
-| Smoke | Prove the app is alive | 5–15 tests | Every commit / PR |
-| Regression | Broad feature coverage | 50–500+ tests | Nightly, pre-release |
-
-Smoke tests should complete in under five minutes total. They cover login, one read path, and one write path. Regression tests exercise edge cases, error states, and multi-step workflows.
-
-In CI pipelines, run smoke on every push and regression on a schedule:
-
-\`\`\`yaml
-# GitHub Actions example
-- name: Smoke tests
-  run: pytest -m smoke --browser chromium
-
-- name: Regression (nightly)
-  if: github.event_name == 'schedule'
-  run: pytest -m regression --browser chromium
-\`\`\`
-
-## Parametrize — One Test, Many Inputs
-
-\`@pytest.mark.parametrize\` runs the same test logic with different data without copy-pasting:
-
-\`\`\`python
-import pytest
-from playwright.sync_api import Page, expect
-
-@pytest.mark.parametrize("email,password,expected_error", [
-    ("", "secret", "Email is required"),
-    ("bad@", "secret", "Invalid email format"),
-    ("qa@example.com", "", "Password is required"),
-    ("qa@example.com", "wrong", "Invalid credentials"),
-])
-def test_login_validation(page: Page, email, password, expected_error):
-    page.goto("/login")
-    page.get_by_label("Email").fill(email)
-    page.get_by_label("Password").fill(password)
-    page.get_by_role("button", name="Sign in").click()
-    expect(page.get_by_role("alert")).to_contain_text(expected_error)
-\`\`\`
-
-Each tuple becomes a separate test case in the report — failures show exactly which input broke.
-
-Parametrize works with fixtures too:
-
-\`\`\`python
-@pytest.mark.parametrize("browser_name", ["chromium", "firefox", "webkit"])
-def test_cross_browser(page, browser_name):
-    page.goto("/")
-    expect(page).to_have_title("My App")
-\`\`\`
-
-## Combining Markers and Parametrize
-
-Stack decorators — parametrize expands first, then markers apply to every generated test:
-
-\`\`\`python
-@pytest.mark.smoke
-@pytest.mark.parametrize("path", ["/", "/pricing", "/about"])
-def test_public_pages_load(page, path):
-    page.goto(path)
-    expect(page).not_to_have_title("")
-\`\`\`
-
-## Naming Conventions
-
-Consistent names make failures scannable:
-
-- Files: \`test_<feature>.py\` (pytest discovers \`test_*\` files automatically).
-- Functions: \`test_<action>_<expected_outcome>\` — e.g., \`test_login_with_valid_credentials_redirects_to_dashboard\`.
-- Markers: lowercase, no spaces — \`smoke\`, not \`Smoke Test\`.
-
-## Key Takeaways
-
-- Split tests into \`smoke/\` and \`regression/\` folders; register markers in \`pytest.ini\`.
-- Use \`-m smoke\` in CI for fast feedback; run regression on a schedule.
-- Parametrize validation and boundary cases instead of duplicating test functions.
-- Keep smoke suites under five minutes — if they grow, promote only the most critical paths.`,
-  },
-  {
-    contentMarkdown: `## Why Page Object Model?
-
-Raw Playwright tests interleave selectors, waits, and assertions in one function. When the login form changes from \`#email\` to \`[data-testid="email"]\`, you hunt through dozens of files. The **Page Object Model (POM)** encapsulates each page's locators and actions behind a class. Tests read like user stories; UI changes touch one file.
-
-Benefits:
-
-- **Single source of truth** for selectors on a given page.
-- **Readable tests** — \`login_page.sign_in(email, password)\` instead of five locator lines.
-- **Reusable actions** — navigation, form fills, and waits live in one place.
-- **Easier onboarding** — new team members learn the page API, not every selector in the app.
-
-## Folder Structure
-
-\`\`\`
-tests/
-  e2e/
-    pages/
-      __init__.py
-      base_page.py
-      login_page.py
-      dashboard_page.py
-    test_login.py
-    test_dashboard.py
-\`\`\`
-
-Each page class maps to one route or major UI surface. Complex flows compose multiple page objects.
-
-## BasePage — Shared Behavior
-
-A base class holds navigation, waits, and utilities every page needs:
-
-\`\`\`python
-from playwright.sync_api import Page, expect
-
-class BasePage:
-    def __init__(self, page: Page, base_url: str):
-        self.page = page
-        self.base_url = base_url
-
-    def navigate(self, path: str = "/"):
-        self.page.goto(f"{self.base_url}{path}")
-
-    def wait_for_load(self):
-        self.page.wait_for_load_state("networkidle")
-
-    def screenshot(self, name: str):
-        self.page.screenshot(path=f"screenshots/{name}.png")
-\`\`\`
-
-Subclasses inherit \`navigate\`, \`wait_for_load\`, and any shared assertion helpers.
-
-## LoginPage Example
-
-Define locators as properties or class attributes. Wrap user actions in methods:
-
-\`\`\`python
-from playwright.sync_api import Page, expect
-from .base_page import BasePage
-
-class LoginPage(BasePage):
-    def __init__(self, page: Page, base_url: str):
-        super().__init__(page, base_url)
-        self.email_input = page.get_by_label("Email")
-        self.password_input = page.get_by_label("Password")
-        self.sign_in_button = page.get_by_role("button", name="Sign in")
-        self.error_alert = page.get_by_role("alert")
-
-    def open(self):
-        self.navigate("/login")
-
-    def sign_in(self, email: str, password: str):
-        self.email_input.fill(email)
-        self.password_input.fill(password)
-        self.sign_in_button.click()
-
-    def expect_error(self, message: str):
-        expect(self.error_alert).to_contain_text(message)
-
-    def expect_redirect_to_dashboard(self):
-        expect(self.page).to_have_url(f"{self.base_url}/dashboard")
-\`\`\`
-
-## Tests Using Page Objects
-
-Tests become thin orchestration layers:
-
-\`\`\`python
-import pytest
-from playwright.sync_api import Page
-from pages.login_page import LoginPage
+import json
 
 @pytest.fixture
-def login_page(page: Page, base_url) -> LoginPage:
-    return LoginPage(page, base_url)
+def user_data():
+    with open("test_data/users.json") as f:
+        return json.load(f)
 
-def test_valid_login_redirects_to_dashboard(login_page):
-    login_page.open()
-    login_page.sign_in("qa@example.com", "secret")
-    login_page.expect_redirect_to_dashboard()
-
-def test_invalid_password_shows_error(login_page):
-    login_page.open()
-    login_page.sign_in("qa@example.com", "wrong")
-    login_page.expect_error("Invalid credentials")
+def test_login(page, user_data):
 \`\`\`
 
-When the login form adds a "Remember me" checkbox, you update \`LoginPage.sign_in()\` once — not every test file.
+    creds = user_data["valid_user"]
+\`\`\`python
+    login_page.login(creds["username"], creds["password"])
+\`\`\`
 
-## Composing Page Objects
 
-Multi-step flows chain page objects:
+json.load(file_object) parses a JSON file into a Python dictionary/list; file_object (an open file handle, required) must be opened in read mode first. Keep test data files separate from test logic — this lets non-engineers (or future you) update test data without touching test code, and keeps large data sets from cluttering test files.
+faker generates realistic, unique data on the fly.
+\`\`\`python
+from faker import Faker
+\`\`\`
+
+
+fake = Faker()
 
 \`\`\`python
-def test_create_leave_request(logged_in_page, base_url):
-    dashboard = DashboardPage(logged_in_page, base_url)
-    leave_form = LeaveRequestPage(logged_in_page, base_url)
-
-    dashboard.open()
-    dashboard.click_new_leave_request()
-    leave_form.fill(start_date="2026-06-01", end_date="2026-06-05", reason="Vacation")
-    leave_form.submit()
-    leave_form.expect_success_message("Leave request submitted")
+@pytest.fixture
+def random_user():
+    return {
 \`\`\`
 
-## POM Guidelines
-
-- **Locators live in page classes**, not in test files.
-- **Methods return self or the next page** for fluent chaining: \`return DashboardPage(self.page, self.base_url)\`.
-- **Assertions can live in page objects** (\`expect_error\`) or in tests — pick one convention and stick with it.
-- **Do not over-abstract** — a page with one button does not need its own class.
-- **Prefer role and label locators** inside page objects; they survive CSS refactors better than XPath.
-
-## Anti-patterns to Avoid
-
-- **God objects** — one \`AppPage\` with 200 methods. Split by route.
-- **Assertions only in tests, locators only in pages** is fine, but mixing both styles in the same project confuses readers.
-- **Leaking Playwright \`Page\` into tests** defeats the purpose. Tests should call page-object methods, not raw \`page.locator()\` calls.
-
-## Key Takeaways
-
-- One class per page; shared behavior in \`BasePage\`.
-- Locators and actions are encapsulated; tests read like user workflows.
-- UI changes update one page class, not every test.
-- Compose page objects for multi-step flows; keep classes focused.`,
-  },
-  {
-    contentMarkdown: `## Configuration at the Project Level
-
-Hard-coded URLs, timeouts, and browser options scattered across test files become a maintenance burden the moment you add a staging environment. Centralize configuration in **pytest.ini**, environment variables, and \`conftest.py\` hooks so one change propagates everywhere.
-
-## pytest.ini — The Project Config File
-
-Place \`pytest.ini\` at the repository root (or \`tests/\` directory):
-
-\`\`\`ini
-[pytest]
-testpaths = tests/e2e
-python_files = test_*.py
-python_classes = Test*
-python_functions = test_*
-
-markers =
-    smoke: critical path tests
-    regression: full coverage tests
-    slow: tests exceeding 30 seconds
-
-addopts =
-    --strict-markers
-    --tb=short
-    -ra
-
-# Playwright-specific defaults (pytest-playwright)
-# These can also be set via CLI; pytest.ini provides the baseline
-\`\`\`
-
-\`--strict-markers\` fails on unregistered marker names — catches typos like \`@pytest.mark.smoek\`.
-
-## Environment Variables
-
-Never commit secrets or environment-specific URLs. Read them at runtime:
+        "email": fake.email(),
+        "name": fake.name(),
+        "phone": fake.phone_number(),
+    }
 
 \`\`\`python
-# tests/conftest.py
+def test_signup(page, random_user):
+    page.get_by_label("Email").fill(random_user["email"])
+    page.get_by_label("Name").fill(random_user["name"])
+\`\`\`
+
+
+For tests needing unique data every run — signup flows that reject duplicate emails, for example — generate realistic fake data on the fly instead of relying on static fixtures. Faker(locale) (optional locale string, e.g. "en_US", "ne_NP" if available) localizes generated data. Generator methods like .email(), .name(), .phone_number() take no required parameters and return a string appropriate to their name. Each call returns a new random value — call it once and store the result in a variable if you need the same value used consistently across multiple steps in a test.
+Data cleanup strategies prevent test-created data from accumulating and breaking unrelated tests.
+\`\`\`python
+@pytest.fixture
+def created_user(page, random_user):
+    # setup: create the user via UI or API
+\`\`\`
+
+    api_create_user(random_user)
+\`\`\`python
+    yield random_user
+    # teardown: clean up after the test, regardless of pass/fail
+\`\`\`
+
+    api_delete_user(random_user["email"])
+
+Tests that create data (a new user, a new leave request) need a plan for removing it afterward, or repeated test runs accumulate junk that can eventually cause unrelated failures — e.g., a "list should show exactly 3 items" test failing because 200 leftover test users are also in the list. Cleanup via API (fast, direct) is generally preferable to cleanup via UI (slow, another thing that can flake). Using a fixture's yield pattern guarantees cleanup runs even if the test itself fails partway through, which a cleanup step placed only at the end of a test function would not guarantee.
+Secrets and credentials need handling distinct from ordinary test data.
+Test data like a fake user's name or email is safe to commit to version control — but credentials (API keys, service account passwords, database connection strings, test-account passwords for real staging environments) are not, even in a "test" context, since a leaked staging credential can still be a real security exposure. The standard approach layers on top of the .env pattern from Chapter 24: secrets live in environment variables or a dedicated secrets manager (not hardcoded in test files, not committed in a test_data/ JSON file), and CI pipelines inject them at runtime from the CI platform's own secrets store (GitHub Actions secrets, Azure DevOps variable groups, etc. — covered concretely in Part 5's CI/CD Integration chapter).
+\`\`\`python
+# conftest.py
 import os
-import pytest
-
-@pytest.fixture(scope="session")
-def base_url() -> str:
-    url = os.environ.get("BASE_URL")
-    if not url:
-        raise RuntimeError("BASE_URL environment variable is required")
-    return url.rstrip("/")
 
 @pytest.fixture(scope="session")
 def admin_credentials():
     return {
-        "email": os.environ["ADMIN_EMAIL"],
-        "password": os.environ["ADMIN_PASSWORD"],
-    }
 \`\`\`
 
-Set variables locally and in CI:
-
-\`\`\`bash
-# .env.local (gitignored)
-BASE_URL=http://localhost:3000
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=local-dev-secret
-\`\`\`
-
-\`\`\`bash
-export BASE_URL=https://staging.example.com
-pytest -m smoke
-\`\`\`
-
-For local development, load \`.env\` files with \`python-dotenv\` in \`conftest.py\`:
-
-\`\`\`python
-from dotenv import load_dotenv
-load_dotenv()  # reads .env before fixtures resolve
-\`\`\`
-
-## BASE_URL Pattern
-
-Every test navigates relative to a single base URL fixture:
-
-\`\`\`python
-def test_pricing_page(page, base_url):
-    page.goto(f"{base_url}/pricing")
-    expect(page.get_by_role("heading", name="Pricing")).to_be_visible()
-\`\`\`
-
-Page objects accept \`base_url\` in their constructor (Chapter 14):
-
-\`\`\`python
-class DashboardPage(BasePage):
-    def open(self):
-        self.navigate("/dashboard")  # uses self.base_url internally
-\`\`\`
-
-## Multi-Environment Pattern
-
-Teams typically run against three targets:
-
-| Environment | BASE_URL | When |
-|-------------|----------|------|
-| Local | \`http://localhost:3000\` | Developer machine |
-| Staging | \`https://staging.example.com\` | PR checks, QA |
-| Production | \`https://app.example.com\` | Smoke only, read-only tests |
-
-Switch environments without code changes:
-
-\`\`\`bash
-BASE_URL=https://staging.example.com pytest -m smoke
-BASE_URL=https://app.example.com pytest -m smoke --headed
-\`\`\`
-
-In CI, set \`BASE_URL\` per job:
-
-\`\`\`yaml
-env:
-  BASE_URL: https://staging.example.com
-  ADMIN_EMAIL: \${{ secrets.STAGING_ADMIN_EMAIL }}
-  ADMIN_PASSWORD: \${{ secrets.STAGING_ADMIN_PASSWORD }}
-\`\`\`
-
-## Playwright-Specific Configuration Hooks
-
-pytest-playwright exposes hook fixtures in \`conftest.py\`:
-
-\`\`\`python
-import pytest
-
-@pytest.fixture(scope="session")
-def browser_type_launch_args(browser_type_launch_args):
-    return {
-        **browser_type_launch_args,
-        "headless": True,
-        "slow_mo": 0,
+        "username": os.environ["ADMIN_USERNAME"],
+        "password": os.environ["ADMIN_PASSWORD"],  # never hardcoded, never committed
     }
 
-@pytest.fixture(scope="session")
-def browser_context_args(browser_context_args, base_url):
-    return {
-        **browser_context_args,
-        "base_url": base_url,
-        "viewport": {"width": 1440, "height": 900},
-        "ignore_https_errors": True,
-    }
-\`\`\`
-
-With \`base_url\` set on the context, tests can use relative paths:
-
-\`\`\`python
-def test_homepage(page):
-    page.goto("/")  # resolves against context base_url
-\`\`\`
-
-## Timeouts and Retries
-
-Set global timeouts in config or conftest:
-
-\`\`\`python
-@pytest.fixture(autouse=True)
-def set_default_timeouts(page):
-    page.set_default_timeout(15_000)       # locator actions
-    page.set_default_navigation_timeout(30_000)
-\`\`\`
-
-For flaky network environments, consider \`pytest-rerunfailures\` — but fix root causes rather than masking them.
-
-## Key Takeaways
-
-- \`pytest.ini\` registers markers and default CLI options.
-- \`BASE_URL\` and credentials come from environment variables, never hard-coded.
-- Use \`browser_context_args\` to set viewport, \`base_url\`, and HTTPS settings project-wide.
-- One config change switches between local, staging, and production.`,
-  },
-  {
-    contentMarkdown: `## Separating Test Data from Test Logic
-
-Tests that embed \`"qa@example.com"\` and \`"SuperSecret123"\` inline are hard to update and impossible to share across environments. **Test data management** keeps inputs in dedicated files or factories, loads them through fixtures, and cleans up created records after each test.
-
-## JSON Fixtures
-
-Store static data in \`tests/e2e/data/\`:
-
-\`\`\`json
-{
-  "valid_user": {
-    "email": "qa@example.com",
-    "password": "TestPass123!",
-    "display_name": "QA User"
-  },
-  "invalid_users": [
-    {"email": "", "password": "secret", "error": "Email is required"},
-    {"email": "bad@", "password": "secret", "error": "Invalid email"}
-  ]
-}
-\`\`\`
-
-Load with a fixture:
-
-\`\`\`python
-import json
-import pytest
-from pathlib import Path
-
-DATA_DIR = Path(__file__).parent / "data"
-
-@pytest.fixture(scope="session")
-def users_data():
-    with open(DATA_DIR / "users.json") as f:
-        return json.load(f)
-
-def test_login_with_valid_user(page, users_data, login_page):
-    user = users_data["valid_user"]
-    login_page.open()
-    login_page.sign_in(user["email"], user["password"])
-    login_page.expect_redirect_to_dashboard()
-\`\`\`
-
-JSON fixtures work well for static, version-controlled data. Commit them alongside tests so PRs show data changes explicitly.
-
-## Dynamic Data with Faker
-
-Static emails collide when tests run in parallel — two tests creating \`qa@example.com\` cause unique-constraint failures. Generate unique values with **Faker**:
-
-\`\`\`bash
-pip install faker
-\`\`\`
-
-\`\`\`python
-import pytest
-from faker import Faker
-
-@pytest.fixture
-def fake() -> Faker:
-    return Faker()
-
-@pytest.fixture
-def new_user(fake):
-    return {
-        "email": fake.unique.email(),
-        "password": fake.password(length=16),
-        "first_name": fake.first_name(),
-        "last_name": fake.last_name(),
-    }
-
-def test_register_new_user(page, new_user):
-    page.goto("/register")
-    page.get_by_label("Email").fill(new_user["email"])
-    page.get_by_label("Password").fill(new_user["password"])
-    page.get_by_role("button", name="Create account").click()
-    expect(page.get_by_text("Welcome")).to_be_visible()
-\`\`\`
-
-\`fake.unique\` ensures no duplicate emails within a single test run.
-
-## API Seeding — Create Data Before UI Tests
-
-For complex entities (orders, projects, leave requests), seed via API instead of clicking through the UI:
-
-\`\`\`python
-import pytest
-import requests
-
-@pytest.fixture
-def api_client(base_url):
-    session = requests.Session()
-    session.headers["Authorization"] = f"Bearer {os.environ['API_TOKEN']}"
-    session.base_url = base_url
-    return session
-
-@pytest.fixture
-def seeded_project(api_client, fake):
-    payload = {"name": fake.company(), "status": "active"}
-    resp = api_client.post(f"{api_client.base_url}/api/projects", json=payload)
-    resp.raise_for_status()
-    project = resp.json()
-    yield project
-    # cleanup
-    api_client.delete(f"{api_client.base_url}/api/projects/{project['id']}")
-\`\`\`
-
-The UI test starts on a page that already has data:
-
-\`\`\`python
-def test_project_dashboard(page, base_url, seeded_project):
-    page.goto(f"{base_url}/projects/{seeded_project['id']}")
-    expect(page.get_by_role("heading")).to_contain_text(seeded_project["name"])
-\`\`\`
-
-## Cleanup with yield Fixtures
-
-**Always clean up data your test creates.** A \`yield\` fixture guarantees teardown runs after pass or fail:
-
+Note the use of os.environ["ADMIN_PASSWORD"] (bracket access, which raises a clear error if missing) rather than .get() with a default here — for credentials specifically, failing loudly if a secret isn't configured is usually preferable to silently falling back to some placeholder value that would produce a confusing downstream failure instead.
+Teardown and rollback strategies for API-seeded data need to handle partial failure gracefully.
+The yield-based cleanup pattern above works cleanly for the common case, but real suites often need to go a step further: what happens if the setup step itself partially succeeds before failing (e.g., a test creates three related records via API, and the second one fails)? A robust pattern tracks everything created so far and rolls all of it back, not just the last successful step:
 \`\`\`python
 @pytest.fixture
-def created_employee(api_client, fake):
-    employee = {
-        "email": fake.unique.email(),
-        "department": "Engineering",
-    }
-    resp = api_client.post("/api/employees", json=employee)
-    resp.raise_for_status()
-    employee["id"] = resp.json()["id"]
-
-    yield employee
-
-    api_client.delete(f"/api/employees/{employee['id']}")
+def seeded_leave_request(api_client, random_user):
 \`\`\`
 
-If the test fails mid-flow, pytest still executes the code after \`yield\`. This prevents orphaned records from polluting the next run.
+    created_ids = []
+### try
 
-## Combining JSON and Faker
+        user_id = api_client.create_user(random_user)
+        created_ids.append(("user", user_id))
+        leave_id = api_client.create_leave_request(user_id, days=3)
+        created_ids.append(("leave_request", leave_id))
+\`\`\`python
+        yield {"user_id": user_id, "leave_id": leave_id}
+\`\`\`
 
-A common pattern: JSON provides the template, Faker provides uniqueness:
+### finally
 
 \`\`\`python
-@pytest.fixture
-def employee_payload(users_data, fake):
-    template = users_data["employee_template"].copy()
-    template["email"] = fake.unique.email()
-    template["employee_id"] = fake.uuid4()
-    return template
+        # roll back everything created, in reverse order, regardless of how far setup got
+        for kind, obj_id in reversed(created_ids):
 \`\`\`
 
-## Data Directory Conventions
+            api_client.delete(kind, obj_id)
 
-\`\`\`
-tests/e2e/data/
-  users.json           # static user accounts
-  products.json        # catalog items for e-commerce tests
-  api_responses/       # mock response bodies (used with page.route)
-    empty_search.json
-    server_error.json
-\`\`\`
+Wrapping setup in try/finally (with created_ids tracked incrementally) ensures that even a failure halfway through setup still cleans up whatever was successfully created before the failure — a bare yield-after-everything pattern would skip cleanup entirely if setup itself raised an exception before reaching the yield. Rolling back in reverse creation order also matters when records have dependencies (deleting a user before deleting their leave request might fail due to a foreign-key constraint on the backend) — cleaning up in the exact reverse order they were created mirrors how the dependencies were built up in the first place, and is the safest general default.`,
+    customSummary: `## 25. Test Data Management
 
-Keep sensitive production data out of the repo. Generate synthetic data with Faker or use dedicated test-environment accounts.
-
-## Key Takeaways
-
-- Static data in JSON files; dynamic unique values from Faker.
-- Seed complex state via API fixtures, not UI clicks.
-- Use \`yield\` fixtures for guaranteed cleanup — teardown runs on failure too.
-- Never commit real user passwords or production data to version control.`,
-  },
-  {
-    contentMarkdown: `## Checkpoint — Framework
-
-Verify you can apply Part 3 concepts before moving to advanced topics.
-
-- [ ] I can write a Playwright test that requests the \`page\` fixture and runs with \`pytest\`.
-- [ ] I have a \`conftest.py\` with at least one shared fixture using \`yield\` teardown.
-- [ ] I understand fixture scopes and default to \`function\` unless I have a measured reason not to.
-- [ ] I can run \`pytest -m smoke\` and \`pytest -m regression\` with markers registered in \`pytest.ini\`.
-- [ ] I have used \`@pytest.mark.parametrize\` for at least one data-driven test.
-- [ ] My project has a \`pages/\` folder with a \`BasePage\` and at least one page object class.
-- [ ] Tests call page-object methods, not raw locators scattered in test files.
-- [ ] \`BASE_URL\` is read from an environment variable, not hard-coded.
-- [ ] Test data lives in JSON files or Faker-generated fixtures, not inline strings.
-- [ ] Created test data is cleaned up via a \`yield\` fixture after each test.
-
-**Score:** 8–10 checked — ready for Part 4. 5–7 — revisit the gaps. Below 5 — rework Part 3 before continuing.`,
+Static fixtures (JSON/CSV/YAML) store predictable test data outside test code — easy to update without touching logic.
+faker generates unique realistic data per run (emails, names) — call once and store the value if reused across steps in the same test.
+Cleanup via API (fast) is preferred over UI (slow, flaky); yield-based fixture teardown guarantees cleanup runs even if the test fails.
+Secrets/credentials are handled differently from ordinary test data — sourced from env vars or a secrets manager, never hardcoded or committed; use os.environ["KEY"] (not .get()) so missing secrets fail loudly.
+Robust rollback for multi-step API-seeded data: track each created resource as you go, wrap setup in try/finally, and delete everything in reverse creation order — protects against partial-setup failures and dependency/foreign-key issues on cleanup.`,
+    chapterNum: 25,
   },
 ];
