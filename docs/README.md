@@ -97,8 +97,10 @@ Each feature has one chapter with five sub-sections: User View, Dev View, Data, 
 
 ## Regenerating
 
+Builtin manual chapter content lives in `src/app/manuals/types/<slug>/part-N/chapter-M.ts` — edit those files directly.
+
 ```bash
-node scripts/generate-hearth-manual.mjs   # rewrite chapter TS from generator (optional)
-node scripts/generate-chapter-index.mjs   # rebuild chapters-manifest.ts
+node scripts/generate-chapter-index.mjs   # after adding/removing chapter files
 npx tsx scripts/check-chapter-independence.ts
+node scripts/generate-hearth-manual.mjs   # optional: rewrite hearth-manual from embedded generator
 ```

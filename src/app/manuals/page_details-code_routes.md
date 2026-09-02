@@ -37,9 +37,13 @@ manuals/
 │   │   ├── chapters-manifest.ts      ← auto-generated paths + chapter imports
 │   │   ├── TestingTypesManual.tsx    ← slug helpers, iframe guide, interactive manual
 │   │   └── part-N/chapter-M.ts       ← one self-contained module per chapter
-│   └── playwright/                   ← same pattern (61 chapters)
+│   ├── playwright/                   ← same pattern (64 chapters)
+│   │   ├── toc.ts
+│   │   ├── roadmapData.ts
+│   │   ├── chapters-manifest.ts
+│   │   └── part-N/chapter-M.ts
+│   └── cypress/                      ← same pattern (32 chapters)
 │       ├── toc.ts
-│       ├── roadmapData.ts
 │       ├── chapters-manifest.ts
 │       └── part-N/chapter-M.ts
 ```
@@ -57,6 +61,8 @@ manuals/
 | Testing Types TOC order / nesting | `types/testing-types/toc.ts` |
 | Playwright chapter **content** | `types/playwright/part-N/chapter-M.ts` |
 | Playwright TOC | `types/playwright/toc.ts` |
+| Cypress chapter **content** | `types/cypress/part-N/chapter-M.ts` |
+| Cypress TOC | `types/cypress/toc.ts` |
 | Regenerate chapter index after adding files | `node scripts/generate-chapter-index.mjs` |
 | Registry (hide/feature/pin/order) | `registry.ts` |
 | User / AI manuals (`localStorage`) | `features/local-storage.ts` |
