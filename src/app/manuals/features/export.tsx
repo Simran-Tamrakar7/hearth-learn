@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { ChevronDown, FileDown, FileText, Printer } from "lucide-react";
 import type { ManualChapter, ManualItem } from "@/app/manuals/types";
 import { groupChaptersIntoParts } from "@/app/manuals/features/reader";
-import { isTestingTypesSlug } from "@/app/manuals/types/testing-types/TestingTypesManual";
 import { useToast } from "@/components/ui/Toast";
 
 function groupTitle(index: number, name: string) {
@@ -19,13 +18,8 @@ export type ExportSection = {
 /** Testing Types chapters already carry full fields from MD frontmatter — pass through. */
 export function prepareManualForExport(
   manual: Pick<ManualItem, "title" | "description" | "chapters">,
-  slug: string
+  _slug = ""
 ): Pick<ManualItem, "title" | "description" | "chapters"> {
-  const testing =
-    slug === "testing-types" ||
-    slug === "testing-types-manual" ||
-    isTestingTypesSlug(slug);
-  if (!testing) return manual;
   return manual;
 }
 
@@ -82,8 +76,12 @@ export function chapterBodyForExport(ch: ManualChapter): string {
   if (ch.limitations?.length) parts.push(`**Limitations**\n\n${ch.limitations.map((l) => `- ${l}`).join("\n")}`);
   if (ch.contentMarkdown?.trim()) parts.push(ch.contentMarkdown.trim());
   if (ch.customSummary?.trim()) parts.push(ch.customSummary.trim());
-  if (ch.aiSummary?.trim() || ch.summaryMarkdown?.trim()) {
-    parts.push((ch.aiSummary || ch.summaryMarkdown || "").trim());
+  if (ch.exercises?.length) {
+    const quiz = ch.exercises
+      .filter((ex) => ex.prompt.trim())
+      .map((ex, i) => `**Activity ${i + 1}:** ${ex.prompt.trim()}${ex.solutionCode.trim() ? `\n*Answer:* ${ex.solutionCode.trim()}` : ""}`)
+      .join("\n\n");
+    if (quiz) parts.push(`**Quiz & Activities**\n\n${quiz}`);
   }
   if (ch.tools?.length) parts.push(`**Tools**\n\n${toolsBlock(ch.tools)}`);
   if (ch.codeSnippet?.trim()) parts.push("```\n" + ch.codeSnippet.trim() + "\n```");

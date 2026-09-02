@@ -19,9 +19,10 @@ import { stripLeadingNumber } from "@/app/manuals/registry";
 import { PinButton, getPinnedItems, PinnedItemMetadata, manualPinId } from "@/components/ui/PinButton";
 import { ManualExportMenu } from "@/app/manuals/features/export";
 import { ChapterContentEditor } from "@/app/manuals/features/edit/ChapterContentEditor";
-import { ToolSwitcher } from "@/app/manuals/features/reader";
+import { ChapterFullContent } from "@/app/manuals/features/ChapterFullContent";
+import { ChapterActivitiesPanel, ChapterSummaryPanel } from "@/app/manuals/features/ChapterReaderPanels";
 import { kebabItems, KebabMenu } from "@/app/manuals/features/catalog";
-import { Highlightable, MarkedText, addHighlight, deleteManualHighlight, fetchManualHighlights, highlightsForField, lastAdded, mergeHighlightStores, parseHighlightStore, postManualHighlight, removeHighlight, wrapHighlightHtml, type HighlightStore } from "@/app/manuals/features/highlights";
+import { Highlightable, addHighlight, deleteManualHighlight, fetchManualHighlights, highlightsForField, lastAdded, mergeHighlightStores, parseHighlightStore, postManualHighlight, removeHighlight, wrapHighlightHtml, type HighlightStore } from "@/app/manuals/features/highlights";
 import { listedCategories, subscribeCategories, TagInput } from "@/app/manuals/features/categorization";
 import { usePermissions, useAppUserId } from "@/lib/useAuthz";
 import { highlightsStoreKey, isScopeReady, progressStoreKey, readScopedRaw, writeScopedRaw } from "@/lib/userScope";
@@ -32,7 +33,6 @@ import {
   readerChaptersFromToc,
   mergeCustomTestingTypesChapters,
   mergeTestingTypesSavedEdits,
-  testingTypesMdSections,
   getBuiltinTocVersion,
   restoreTocCatalog,
   tocCatalogSaveFields,
@@ -61,7 +61,6 @@ import {
   Clock,
   BookOpen,
   ExternalLink,
-  Code,
   Sparkles,
   Check,
   Compass,
@@ -2122,266 +2121,44 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
               <>
               <Highlightable onAdd={applyHighlight} onRemove={(id) => dropHighlight({ id, chapterId: activeChapter.id })}>
               {viewMode === "summary" ? (
-                <motion.div
-                  initial={{ opacity: 0, y: 3 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="p-4 sm:p-5 rounded-2xl bg-[#FAF7F2] border border-[#E7E0D3] space-y-2.5 shadow-2xs"
-                >
-                  <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#D97706]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#D97706]" />
-                    <span>Summary</span>
-                  </div>
-                  <div className="text-xs sm:text-sm leading-relaxed text-[#1C2A26] font-sans font-normal">
-                    {activeChapter.customSummary?.trim() ? (
-                      renderFormattedMarkdown(activeChapter.customSummary)
-                    ) : (
-                      <p className="text-[#8A9B95] font-normal">No summary yet.</p>
-                    )}
-                  </div>
-                </motion.div>
+                <ChapterSummaryPanel
+                  customSummary={activeChapter.customSummary}
+                  renderMarkdown={renderFormattedMarkdown}
+                />
               ) : viewMode === "activities" ? (
-                <motion.div
-                  initial={{ opacity: 0, y: 3 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="p-4 sm:p-5 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-4 shadow-2xs"
-                >
-                  <div className="flex items-center gap-2 text-amber-900 font-serif-display font-bold text-base">
-                    <HelpCircle className="w-4 h-4 text-[#D97706]" />
-                    <span>Quiz &amp; Activities</span>
-                  </div>
-
-                  {(activeChapter.exercises || []).filter((ex) => ex.prompt.trim()).length > 0 ? (
-                    <ol className="space-y-3 list-decimal pl-5 marker:text-[#D97706] marker:font-bold">
-                      {(activeChapter.exercises || [])
-                        .filter((ex) => ex.prompt.trim())
-                        .map((ex, idx) => (
-                          <li key={idx} className="space-y-1">
-                            <p className="text-xs sm:text-sm text-[#1C2A26] font-medium leading-relaxed">{ex.prompt}</p>
-                            {ex.solutionCode.trim() ? (
-                              <p className="text-xs text-[#52635E] pl-3 border-l-2 border-[#D97706]/40">
-                                <span className="font-bold text-[#D97706] mr-1">Answer:</span>
-                                {ex.solutionCode}
-                              </p>
-                            ) : null}
-                          </li>
-                        ))}
-                    </ol>
-                  ) : (
-                    <p className="text-xs text-[#8A9B95]">No activities yet. Edit this chapter to add quiz questions.</p>
-                  )}
-
-                  <div className="pt-2 space-y-2 border-t border-amber-200/80">
-                    <button
-                      type="button"
-                      className="text-[11px] font-bold px-3 py-1.5 rounded-lg border border-[#E7E0D3] bg-white hover:border-[#D97706] disabled:opacity-50"
-                      disabled={quizBusy}
-                      onClick={async () => {
-                        setQuizBusy(true);
-                        setQuizText("");
-                        const content = [
-                          activeChapter.overviewText,
-                          activeChapter.why,
-                          activeChapter.contentMarkdown,
-                          chapterCustomSummary(activeChapter),
-                        ]
-                          .filter(Boolean)
-                          .join("\n");
-                        const res = await fetch("/api/ai/quiz", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ title: activeChapter.title, content: content || activeChapter.title }),
-                        });
-                        const data = await res.json().catch(() => ({}));
-                        setQuizBusy(false);
-                        setQuizText(data.text || data.error || "Could not generate quiz.");
-                      }}
-                    >
-                      {quizBusy ? "Writing quiz…" : "Generate chapter quiz"}
-                    </button>
-                    {quizText ? (
-                      <pre className="text-xs whitespace-pre-wrap p-3 rounded-xl bg-white border border-[#E7E0D3]">{quizText}</pre>
-                    ) : null}
-                  </div>
-                </motion.div>
-              ) : (slug === "testing-types" || slug === "testing-types-manual" || activeChapter.why || activeChapter.practical) ? (
-                <motion.div
-                  initial={{ opacity: 0, y: 3 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="space-y-4"
-                >
-                  {activeChapter.overviewText && (
-                    <p className="text-xs sm:text-sm text-[#52635E] leading-relaxed font-sans">
-                      <MarkedText text={activeChapter.overviewText} highlights={activeFieldHighlights} />
-                    </p>
-                  )}
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                    <div className="p-4 sm:p-5 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] space-y-2 shadow-2xs">
-                      <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#D97706]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#D97706]" />
-                        <span>Why it matters</span>
-                      </div>
-                      <p className="text-xs sm:text-[13px] text-[#52635E] leading-relaxed">
-                        <MarkedText text={activeChapter.why || ""} highlights={activeFieldHighlights} />
-                      </p>
-                    </div>
-
-                    <div className="p-4 sm:p-5 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] space-y-2 shadow-2xs">
-                      <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#D97706]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#D97706]" />
-                        <span>When to use it</span>
-                      </div>
-                      <p className="text-xs sm:text-[13px] text-[#52635E] leading-relaxed">
-                        <MarkedText text={activeChapter.when || ""} highlights={activeFieldHighlights} />
-                      </p>
-                    </div>
-                  </div>
-
-                  {activeChapter.practical && (
-                    <div className="p-4 sm:p-5 rounded-xl border border-[#D0E2FF] bg-[#F4F8FF] space-y-3 shadow-2xs">
-                      <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#0062D2]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#0062D2]" />
-                        <span>Practical Example</span>
-                      </div>
-
-                      <p className="text-xs sm:text-sm text-[#1C2A26] leading-relaxed">
-                        <strong className="font-bold text-[#0F172A]">
-                          <MarkedText text={activeChapter.practical.app || ""} highlights={activeFieldHighlights} />
-                        </strong>{" "}
-                        —{" "}
-                        <MarkedText text={activeChapter.practical.scenario || ""} highlights={activeFieldHighlights} />
-                      </p>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                        {activeChapter.practical.fail ? (
-                        <div className="p-3.5 rounded-xl border border-rose-200 border-t-2 border-t-rose-500 bg-white space-y-1 shadow-2xs">
-                          <span className="block font-mono text-[10px] uppercase tracking-wider font-bold text-rose-700">
-                            {activeChapter.practical.failLabel || "Fail Condition"}
-                          </span>
-                          <p className="text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed">
-                            <MarkedText text={activeChapter.practical.fail} highlights={activeFieldHighlights} />
-                          </p>
-                        </div>
-                        ) : null}
-
-                        {activeChapter.practical.pass ? (
-                        <div className="p-3.5 rounded-xl border border-emerald-200 border-t-2 border-t-emerald-500 bg-white space-y-1 shadow-2xs">
-                          <span className="block font-mono text-[10px] uppercase tracking-wider font-bold text-emerald-700">
-                            {activeChapter.practical.passLabel || "Pass Condition"}
-                          </span>
-                          <p className="text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed">
-                            <MarkedText text={activeChapter.practical.pass} highlights={activeFieldHighlights} />
-                          </p>
-                        </div>
-                        ) : null}
-
-                        {activeChapter.practical.value ? (
-                        <div className="p-3.5 rounded-xl border border-sky-200 border-t-2 border-t-sky-500 bg-white space-y-1 shadow-2xs sm:col-span-2">
-                          <span className="block font-mono text-[10px] uppercase tracking-wider font-bold text-sky-700">
-                            Value delivered
-                          </span>
-                          <p className="text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed">
-                            <MarkedText text={activeChapter.practical.value} highlights={activeFieldHighlights} />
-                          </p>
-                        </div>
-                        ) : null}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* General Level Advantages & Limitations */}
-                  {activeChapter.advantages?.length && activeChapter.limitations?.length && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                      <div className="p-4 sm:p-5 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] space-y-2 shadow-2xs">
-                        <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-emerald-700">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-                          <span>Advantages</span>
-                        </div>
-                        <ul className="space-y-1.5 text-xs sm:text-[13px] text-[#52635E] pl-4 list-disc marker:text-emerald-600/70 leading-relaxed">
-                          {activeChapter.advantages.map((adv, ai) => (
-                            <li key={ai}>
-                              <MarkedText text={adv} highlights={activeFieldHighlights} />
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      <div className="p-4 sm:p-5 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] space-y-2 shadow-2xs">
-                        <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-rose-700">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-600" />
-                          <span>Limitations</span>
-                        </div>
-                        <ul className="space-y-1.5 text-xs sm:text-[13px] text-[#52635E] pl-4 list-disc marker:text-rose-600/70 leading-relaxed">
-                          {activeChapter.limitations.map((lim, li) => (
-                            <li key={li}>
-                              <MarkedText text={lim} highlights={activeFieldHighlights} />
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Interactive Tool Switcher (Exact 8080 Design) */}
-                  {activeChapter.tools?.length ? (
-                    <div className="pt-1">
-                      <ToolSwitcher
-                        tools={activeChapter.tools}
-                        onNavigateChapter={handleNavigateChapter}
-                      />
-                    </div>
-                  ) : null}
-
-                  {(() => {
-                    const mdExtra = isTestingTypesManual
-                      ? testingTypesMdSections(activeChapter, activeChapter.overviewText)
-                      : (activeChapter.contentMarkdown || "").trim();
-                    return mdExtra ? (
-                      <div className="pt-3 border-t border-[#E7E0D3] space-y-3">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-[#8A9B95]">From manual</p>
-                        {renderFormattedMarkdown(mdExtra)}
-                      </div>
-                    ) : null;
-                  })()}
-
-                </motion.div>
+                <ChapterActivitiesPanel
+                  chapter={activeChapter}
+                  quizText={quizText}
+                  quizBusy={quizBusy}
+                  onGenerateQuiz={async () => {
+                    setQuizBusy(true);
+                    setQuizText("");
+                    const content = [
+                      activeChapter.overviewText,
+                      activeChapter.why,
+                      activeChapter.contentMarkdown,
+                      chapterCustomSummary(activeChapter),
+                    ]
+                      .filter(Boolean)
+                      .join("\n");
+                    const res = await fetch("/api/ai/quiz", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ title: activeChapter.title, content: content || activeChapter.title }),
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    setQuizBusy(false);
+                    setQuizText(data.text || data.error || "Could not generate quiz.");
+                  }}
+                />
               ) : (
-                <motion.div
-                  initial={{ opacity: 0, y: 3 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="space-y-3"
-                >
-                  {renderFormattedMarkdown(activeChapter.contentMarkdown)}
-
-                  {/* Structured Sections Cards (Fallback only) */}
-                  {activeChapter.sections && activeChapter.sections.length > 0 && (
-                    <div className="space-y-3 pt-3.5 border-t border-[#E7E0D3]">
-                      {activeChapter.sections.map((sec, sIdx) => (
-                        <div key={sIdx} className="p-3.5 sm:p-4 rounded-xl bg-[#FAF7F2] border border-[#E7E0D3] space-y-1.5">
-                          <h4 className="font-serif-display font-bold text-sm sm:text-base text-[#1C2A26] flex items-center gap-2">
-                            <Layers className="w-3.5 h-3.5 text-[#D97706]" /> {sec.title}
-                          </h4>
-                          <div className="text-xs sm:text-[13px] text-[#52635E] leading-relaxed whitespace-pre-line font-sans">
-                            <MarkedText text={sec.body} highlights={activeFieldHighlights} />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Code Snippet Box (Fallback only) */}
-                  {activeChapter.codeSnippet && (
-                    <div className="space-y-1.5 pt-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#52635E] block flex items-center gap-1.5 font-sans">
-                        <Code className="w-3 h-3 text-[#D97706]" /> CODE EXAMPLE
-                      </span>
-
-                      <div className="p-3.5 sm:p-4 bg-[#1C2A26] text-[#A7F3D0] rounded-xl font-mono text-xs sm:text-[13px] overflow-x-auto leading-relaxed border border-[#2D3F3A] shadow-inner">
-                        <pre>{activeChapter.codeSnippet}</pre>
-                      </div>
-                    </div>
-                  )}
-                </motion.div>
+                <ChapterFullContent
+                  chapter={activeChapter}
+                  highlights={activeFieldHighlights}
+                  renderMarkdown={renderFormattedMarkdown}
+                  isTestingTypesManual={isTestingTypesManual}
+                  onNavigateChapter={handleNavigateChapter}
+                />
               )}
               </Highlightable>
               </>
