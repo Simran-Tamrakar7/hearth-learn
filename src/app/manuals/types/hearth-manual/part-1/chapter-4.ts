@@ -12,8 +12,6 @@ export const chapter = {
   why: "Developers need to know what seed affects vs what is file-based.",
   when: "Run seed when DB is corrupted; never expect seed to reset manual chapter files.",
   practical: {"app":"Empty dashboard trails","scenario":"Dashboard shows no trail progress after experiments.","pass":"npx prisma db seed — reloads 8 trails from prisma/seed.ts.","fail":"You delete src/app/manuals/types/ expecting seed to restore manuals."},
-  advantages: ["Clear separation: Prisma data vs TS manual files vs localStorage"],
-  limitations: ["Seed wipes ALL SQLite data","Vercel /tmp DB is ephemeral"],
   tools: [],
   contentMarkdown: "## SQLite (Prisma)\n\n- **Reset:** `npx prisma db seed` (see prisma/seed.ts)\n- **Schema push:** `npx prisma db push`\n- **8 seeded trails:** slugs like nextjs-server-components — listed in src/app/trails/_content/_registry.ts\n\n## File-based content\n\n- Manual chapters: `src/app/manuals/types/<slug>/part-N/chapter-M.ts`\n- Library books: `src/app/library/_content/_registry.ts`\n- Toolkits: `src/app/toolkits/_content/`\n\n## localStorage (browser)\n\nKeys via src/lib/userScope.ts — manual progress, pins, user-created manuals, library saves. Not cleared by prisma seed.",
   exercises: [],

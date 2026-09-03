@@ -12,8 +12,6 @@ export const chapter = {
   why: "Minimum bar for safe merges.",
   when: "Run before opening PR.",
   practical: {"app":"Manual PR","scenario":"You added 10 chapters.","pass":"All check scripts pass; chapters-manifest regenerated and committed.","fail":"You commit chapters without running generate-chapter-index.mjs."},
-  advantages: ["Actionable checklist","Matches docs/local-dev.md"],
-  limitations: ["No automated CI list in this chapter — ⚠️ verify .github/workflows"],
   tools: [],
   contentMarkdown: "## PR checklist\n\n- [ ] `npm run lint`\n- [ ] `node --experimental-strip-types scripts/check-registry.ts`\n- [ ] If manual chapters: `npx tsx scripts/check-chapter-independence.ts`\n- [ ] If library: `node --experimental-strip-types scripts/check-library.ts`\n- [ ] Regenerated `chapters-manifest.ts` if chapter files added\n- [ ] Updated `docs/` if behavior or conventions changed\n- [ ] No secrets in commit (.env, API keys)\n- [ ] Tested affected routes in `npm run dev`\n\n⚠️ Needs confirmation: exact GitHub Actions workflow names if CI exists.",
   exercises: [],

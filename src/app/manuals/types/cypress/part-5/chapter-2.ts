@@ -12,8 +12,6 @@ export const chapter = {
   why: "Stakeholders need readable history beyond terminal exit codes. Reporting choices affect CI integration and audit trails.",
   when: "Adding PR comments, Slack, or enterprise JUnit consumers.",
   practical: {"app":"CI + QA dashboard","scenario":"Need HTML report artifact + JUnit for Jenkins.","pass":"mochawesome-merge + junit via cypress-multi-reporters.","fail":"Raw mocha JSON dumped unreadably."},
-  advantages: ["Mochawesome HTML","merge parallel JSON","Cloud dashboard","JUnit multi-reporters","module folders","PR status checks"],
-  limitations: ["no built-in HTML","merge step required","Cloud paid hosting","reporter config fragile","large HTML artifacts","flake history limited free"],
   tools: [],
   customSummary: "- no built-in HTML; Mochawesome + merge; Cloud dashboard; JUnit via multi-reporters; organize by product module",
   contentMarkdown: "## No built-in HTML report\n\nCypress uses Mocha under the hood but does not ship a polished HTML report. Community standard:\n\n1. `mochawesome` reporter per run\n2. `mochawesome-merge` when parallel jobs emit multiple JSON files\n3. `marge` to HTML\n\n## Cypress Cloud\n\nHosted run history, videos, and Test Replay — strongest \"batteries included\" reporting if budget allows.\n\n## JUnit / enterprise\n\n`cypress-multi-reporters` + `mocha-junit-reporter` for Jenkins/Azure DevOps consumers.\n\n## Organize by module\n\nMirror product areas in `cypress/e2e/{billing,auth,...}` so reports and `--spec` filters stay human-readable.",

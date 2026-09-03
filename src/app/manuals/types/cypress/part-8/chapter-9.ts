@@ -12,8 +12,6 @@ export const chapter = {
   why: "Extensions speed authoring but can teach bad selectors if unchecked.",
   when: "Writing specs locally with open runner.",
   practical: {"app":"Local authoring","scenario":"Need quicker selector discovery.","pass":"Playground + DevTools + a11y extension review.","fail":"Auto-generated brittle CSS from extension."},
-  advantages: ["DevTools live","Selector Playground","a11y extensions","Redux/Vue devtools","network panel","Lighthouse cues"],
-  limitations: ["brittle suggestions","extension drift","not CI","false a11y confidence","privacy","overlap Trace/Replay"],
   tools: [],
   customSummary: "- Chrome/Firefox DevTools alongside cypress open\n- axe / Accessibility insights extensions for manual checks\n- Prefer data-cy over extension-generated CSS selectors",
   contentMarkdown: "## Tooling\n\nUse native DevTools while `cypress open` runs — Network/Console apply to the app under test. Pair axe browser extensions with automated axe in specs (Ch. 25). Never paste extension CSS as long-term locators.",

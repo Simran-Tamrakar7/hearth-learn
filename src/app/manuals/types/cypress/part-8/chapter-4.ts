@@ -12,8 +12,6 @@ export const chapter = {
   why: "Hearing how teams chose Cypress vs Playwright encodes interview stories.",
   when: "Commute / passive learning blocks.",
   practical: {"app":"Career learning","scenario":"Need architecture intuition.","pass":"Testing + eng podcasts with automation episodes.","fail":"Expect to learn cy.intercept from audio alone."},
-  advantages: ["tradeoff stories","passive learning","eng+QA mix","conference speakers","tool debates","career arcs"],
-  limitations: ["weak for syntax","anecdote bias","outdated episodes","promo guests","no code demos","variable quality"],
   tools: [],
   customSummary: "- Ministry of Testing podcasts / TestGuild for automation interviews\n- General eng podcasts for CI/CD and quality culture\n- Search episodes featuring Cypress.io engineers for roadmap context",
   contentMarkdown: "## Listening\n\nFavor shows that interview practitioners about flake strategy and CI design. Supplement with Cypress conference talks (Ch. 57) when you need visuals.",

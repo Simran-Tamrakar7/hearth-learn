@@ -12,8 +12,6 @@ export const chapter = {
   why: "Real failure writeups teach what docs omit.",
   when: "Tracking new APIs or researching CI patterns.",
   practical: {"app":"Learning plan","scenario":"Need Cloud parallel deep dive.","pass":"Official blog + one scale case study.","fail":"Random SEO tutorial with deprecated API."},
-  advantages: ["official blog","practitioner war stories","scale case studies","changelog context","guest posts","searchable SO"],
-  limitations: ["outdated tutorials","SEO junk","version mismatch","Cloud sales tilt","incomplete examples","copy-paste debt"],
   tools: [],
   customSummary: "- https://www.cypress.io/blog — official releases & patterns\n- https://glebbahmutov.com/blog — deep Cypress practitioner posts\n- Company eng blogs for Cypress-at-scale CI stories",
   contentMarkdown: "## Sources\n\n- [Cypress Blog](https://www.cypress.io/blog)\n- Gleb Bahmutov’s blog — advanced recipes\n- Engineering blogs from teams running large Cypress suites (parallel, flake, CT)",

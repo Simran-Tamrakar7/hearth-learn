@@ -34,8 +34,26 @@ part-N/chapter-M.ts  →  chapters-manifest.ts  →  registry.ts  →  [slug]/pa
 Each `part-N/chapter-M.ts` must:
 
 - Import **only** `import type { ChapterRecord } from "../../../types";`
-- Contain **all** content inline (`overviewText`, `why`, `when`, `practical`, `advantages`, `limitations`, `tools`, `contentMarkdown`, …)
+- Contain **all** content inline (`overviewText`, optional insight fields, `tools`, `contentMarkdown`, …)
 - Never import from other chapters, shared content modules, `.md`/`.json` sources, `toc.ts`, `registry.ts`, or the page
+
+### Insight boxes (content-driven)
+
+`ChapterFullContent` renders **only** insight types present on the chapter — never a fixed Why / When / Practical / Adv / Lim template.
+
+Optional fields on `ChapterRecord` / `ManualChapter`:
+
+| Field | Box | Use when |
+| --- | --- | --- |
+| `why` | WhyItMatters | Genuine framing insight (not a restated intro) |
+| `when` | WhenToUseIt | Real trigger/condition to apply the concept |
+| `practical` | PracticalExample | Fail/pass scenario |
+| `advantages` / `limitations` | AdvantagesLimitations | Real technique trade-offs only (e.g. Testing Types; cy.session) |
+| `comparisons` (+ optional `comparisonHeaders`) | ComparisonTable | Tool mapping (Cypress↔Playwright, etc.) |
+| `keyDifferences` | KeyDifferenceCallout | Single highlighted “no direct equivalent” facts |
+| `codeReferences` / `codeSnippet` | CodeReference | Labeled code (or legacy unlabeled snippet) |
+
+Omit unused fields. Visual consistency comes from shared box styles (`features/insightBoxes.tsx`), not from forcing every chapter through the same set.
 
 Enforced by: `npx tsx scripts/check-chapter-independence.ts` (also `scripts/check-registry.ts`).
 

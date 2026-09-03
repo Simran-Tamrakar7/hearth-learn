@@ -12,8 +12,6 @@ export const chapter = {
   why: "Tool choice and advocacy shape career narratives more than command trivia.",
   when: "Performance reviews, job search positioning, or proposing stack changes.",
   practical: {"app":"Career narrative","scenario":"Explain your automation stack story.","pass":"Dev-collab + pyramid + multi-tool rationale.","fail":"I only know Cypress click commands."},
-  advantages: ["dev-led culture fit","Cloud skill signal","CT in pyramid","multi-tool stack","data-cy shift-left","DX advocacy"],
-  limitations: ["PW market share","Cloud budget politics","mobile needs Appium","title variance SDET","tool wars noise","cert overrated"],
   tools: [],
   customSummary: "- dev-led cultures; Cloud skill; component testing pyramid; Cypress+Playwright+Appium; data-cy shift-left",
   contentMarkdown: "## Positioning\n\n- **Dev-led / JS shops**: Cypress DX and component testing resonate\n- **Cypress Cloud**: parallel + flake analytics are resume-relevant at scale\n- **Pyramid**: CT for components, Cypress E2E for critical journeys, unit elsewhere\n- **Stack**: Cypress + Playwright (WebKit/multi-tab) + Appium (native mobile)\n- **Shift-left**: Champion `data-cy` with developers — collaboration skill, not just test skill",

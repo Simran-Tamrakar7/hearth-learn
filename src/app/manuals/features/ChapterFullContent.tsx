@@ -2,13 +2,25 @@
 
 import type { ReactNode } from "react";
 import { motion } from "framer-motion";
-import { Code, Layers } from "lucide-react";
+import { Layers } from "lucide-react";
 import type { ManualChapter } from "@/app/manuals/types";
 import type { ChapterHighlight } from "@/app/manuals/features/highlights";
 import { MarkedText } from "@/app/manuals/features/highlights";
 import { ToolSwitcher, testingTypesMdSections } from "@/app/manuals/features/reader";
+import {
+  AdvantagesLimitations,
+  CodeReferenceBox,
+  ComparisonTable,
+  KeyDifferenceCallout,
+  PracticalExampleBox,
+  WhenToUseIt,
+  WhyItMatters,
+} from "@/app/manuals/features/insightBoxes";
 
-/** One full-content layout for every manual slug — cards when fields exist, markdown body always. */
+/**
+ * One full-content layout for every manual slug.
+ * Renders only insight boxes present in chapter data — never defaults a box type.
+ */
 export function ChapterFullContent({
   chapter,
   highlights,
@@ -26,10 +38,18 @@ export function ChapterFullContent({
     ? testingTypesMdSections(chapter, chapter.overviewText)
     : (chapter.contentMarkdown || "").trim();
 
-  const showWhy = Boolean(chapter.why?.trim());
-  const showWhen = Boolean(chapter.when?.trim());
-  const showAdv = Boolean(chapter.advantages?.length);
-  const showLim = Boolean(chapter.limitations?.length);
+  const why = chapter.why?.trim() || "";
+  const when = chapter.when?.trim() || "";
+  const showWhy = Boolean(why);
+  const showWhen = Boolean(when);
+  const hasPractical = Boolean(chapter.practical?.scenario?.trim() || chapter.practical?.app?.trim());
+  const hasTradeoffs = Boolean(chapter.advantages?.length || chapter.limitations?.length);
+  const hasComparisons = Boolean(chapter.comparisons?.length);
+  const hasKeyDiffs = Boolean(chapter.keyDifferences?.length);
+  const codeRefs = chapter.codeReferences?.filter((c) => c.code?.trim()) ?? [];
+  const legacyCode = chapter.codeSnippet?.trim() || "";
+  const hasAnyInsight =
+    showWhy || showWhen || hasPractical || hasTradeoffs || hasComparisons || hasKeyDiffs || codeRefs.length > 0;
 
   return (
     <motion.div initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
@@ -41,116 +61,44 @@ export function ChapterFullContent({
 
       {showWhy || showWhen ? (
         <div className={`grid grid-cols-1 gap-3.5 ${showWhy && showWhen ? "md:grid-cols-2" : ""}`}>
-          {showWhy ? (
-            <div className="p-4 sm:p-5 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] space-y-2 shadow-2xs">
-              <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#D97706]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#D97706]" />
-                <span>Why it matters</span>
-              </div>
-              <p className="text-xs sm:text-[13px] text-[#52635E] leading-relaxed">
-                <MarkedText text={chapter.why || ""} highlights={highlights} />
-              </p>
-            </div>
-          ) : null}
-          {showWhen ? (
-            <div className="p-4 sm:p-5 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] space-y-2 shadow-2xs">
-              <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#D97706]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#D97706]" />
-                <span>When to use it</span>
-              </div>
-              <p className="text-xs sm:text-[13px] text-[#52635E] leading-relaxed">
-                <MarkedText text={chapter.when || ""} highlights={highlights} />
-              </p>
-            </div>
-          ) : null}
+          {showWhy ? <WhyItMatters content={why} highlights={highlights} /> : null}
+          {showWhen ? <WhenToUseIt content={when} highlights={highlights} /> : null}
         </div>
       ) : null}
 
-      {chapter.practical?.scenario?.trim() || chapter.practical?.app?.trim() ? (
-        <div className="p-4 sm:p-5 rounded-xl border border-[#D0E2FF] bg-[#F4F8FF] space-y-3 shadow-2xs">
-          <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#0062D2]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#0062D2]" />
-            <span>Practical Example</span>
-          </div>
-          <p className="text-xs sm:text-sm text-[#1C2A26] leading-relaxed">
-            {chapter.practical.app?.trim() ? (
-              <strong className="font-bold text-[#0F172A]">
-                <MarkedText text={chapter.practical.app} highlights={highlights} />
-              </strong>
-            ) : null}
-            {chapter.practical.app?.trim() && chapter.practical.scenario?.trim() ? " — " : null}
-            {chapter.practical.scenario?.trim() ? (
-              <MarkedText text={chapter.practical.scenario} highlights={highlights} />
-            ) : null}
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-            {chapter.practical.fail?.trim() ? (
-              <div className="p-3.5 rounded-xl border border-rose-200 border-t-2 border-t-rose-500 bg-white space-y-1 shadow-2xs">
-                <span className="block font-mono text-[10px] uppercase tracking-wider font-bold text-rose-700">
-                  {chapter.practical.failLabel || "Fail Condition"}
-                </span>
-                <p className="text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed">
-                  <MarkedText text={chapter.practical.fail} highlights={highlights} />
-                </p>
-              </div>
-            ) : null}
-            {chapter.practical.pass?.trim() ? (
-              <div className="p-3.5 rounded-xl border border-emerald-200 border-t-2 border-t-emerald-500 bg-white space-y-1 shadow-2xs">
-                <span className="block font-mono text-[10px] uppercase tracking-wider font-bold text-emerald-700">
-                  {chapter.practical.passLabel || "Pass Condition"}
-                </span>
-                <p className="text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed">
-                  <MarkedText text={chapter.practical.pass} highlights={highlights} />
-                </p>
-              </div>
-            ) : null}
-            {chapter.practical.value?.trim() ? (
-              <div className="p-3.5 rounded-xl border border-sky-200 border-t-2 border-t-sky-500 bg-white space-y-1 shadow-2xs sm:col-span-2">
-                <span className="block font-mono text-[10px] uppercase tracking-wider font-bold text-sky-700">
-                  Value delivered
-                </span>
-                <p className="text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed">
-                  <MarkedText text={chapter.practical.value} highlights={highlights} />
-                </p>
-              </div>
-            ) : null}
-          </div>
-        </div>
+      {hasPractical && chapter.practical ? (
+        <PracticalExampleBox practical={chapter.practical} highlights={highlights} />
       ) : null}
 
-      {showAdv || showLim ? (
-        <div className={`grid grid-cols-1 gap-3.5 ${showAdv && showLim ? "md:grid-cols-2" : ""}`}>
-          {showAdv ? (
-            <div className="p-4 sm:p-5 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] space-y-2 shadow-2xs">
-              <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-emerald-700">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-                <span>Advantages</span>
-              </div>
-              <ul className="space-y-1.5 text-xs sm:text-[13px] text-[#52635E] pl-4 list-disc marker:text-emerald-600/70 leading-relaxed">
-                {chapter.advantages!.map((adv, ai) => (
-                  <li key={ai}>
-                    <MarkedText text={adv} highlights={highlights} />
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-          {showLim ? (
-            <div className="p-4 sm:p-5 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] space-y-2 shadow-2xs">
-              <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-rose-700">
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-600" />
-                <span>Limitations</span>
-              </div>
-              <ul className="space-y-1.5 text-xs sm:text-[13px] text-[#52635E] pl-4 list-disc marker:text-rose-600/70 leading-relaxed">
-                {chapter.limitations!.map((lim, li) => (
-                  <li key={li}>
-                    <MarkedText text={lim} highlights={highlights} />
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-        </div>
+      {hasComparisons ? (
+        <ComparisonTable
+          rows={chapter.comparisons!}
+          highlights={highlights}
+          leverHeader={chapter.comparisonHeaders?.lever || "Cypress lever"}
+          equivalentHeader={chapter.comparisonHeaders?.equivalent || "Playwright equivalent"}
+        />
+      ) : null}
+
+      {hasKeyDiffs
+        ? chapter.keyDifferences!.map((kd, i) => (
+            <KeyDifferenceCallout key={i} content={kd} highlights={highlights} />
+          ))
+        : null}
+
+      {hasTradeoffs ? (
+        <AdvantagesLimitations
+          advantages={chapter.advantages}
+          limitations={chapter.limitations}
+          highlights={highlights}
+        />
+      ) : null}
+
+      {codeRefs.map((item, i) => (
+        <CodeReferenceBox key={`cref-${i}`} item={item} highlights={highlights} />
+      ))}
+
+      {legacyCode && !codeRefs.length ? (
+        <CodeReferenceBox item={{ label: "Code example", code: legacyCode }} highlights={highlights} />
       ) : null}
 
       {chapter.tools?.length ? (
@@ -160,8 +108,8 @@ export function ChapterFullContent({
       ) : null}
 
       {mdBody ? (
-        <div className={showWhy || showWhen || chapter.practical ? "pt-3 border-t border-[#E7E0D3] space-y-3" : "space-y-3"}>
-          {showWhy || showWhen || chapter.practical ? (
+        <div className={hasAnyInsight ? "pt-3 border-t border-[#E7E0D3] space-y-3" : "space-y-3"}>
+          {hasAnyInsight ? (
             <p className="text-[10px] font-bold uppercase tracking-wider text-[#8A9B95]">Lesson content</p>
           ) : null}
           {renderMarkdown(mdBody)}
@@ -180,17 +128,6 @@ export function ChapterFullContent({
               </div>
             </div>
           ))}
-        </div>
-      ) : null}
-
-      {chapter.codeSnippet?.trim() ? (
-        <div className="space-y-1.5 pt-2">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[#52635E] block flex items-center gap-1.5 font-sans">
-            <Code className="w-3 h-3 text-[#D97706]" /> CODE EXAMPLE
-          </span>
-          <div className="p-3.5 sm:p-4 bg-[#1C2A26] text-[#A7F3D0] rounded-xl font-mono text-xs sm:text-[13px] overflow-x-auto leading-relaxed border border-[#2D3F3A] shadow-inner">
-            <pre>{chapter.codeSnippet}</pre>
-          </div>
         </div>
       ) : null}
     </motion.div>

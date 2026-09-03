@@ -234,22 +234,63 @@ export function ChapterContentEditor({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <label className="block space-y-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Advantages (one per line)</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+            Advantages (optional — trade-offs only)
+          </span>
           {linesField(
             chapter.advantages,
             (advantages) => patchField("advantages", { advantages: chapter.advantages }, { advantages }),
-            "One advantage per line"
+            "One advantage per line — leave empty if not a trade-off chapter"
           )}
         </label>
         <label className="block space-y-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700">Limitations (one per line)</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700">
+            Limitations (optional — trade-offs only)
+          </span>
           {linesField(
             chapter.limitations,
             (limitations) => patchField("limitations", { limitations: chapter.limitations }, { limitations }),
-            "One limitation per line"
+            "One limitation per line — leave empty if not a trade-off chapter"
           )}
         </label>
       </div>
+
+      <label className="block space-y-1">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-teal-800">
+          Key differences (one per line — optional)
+        </span>
+        {linesField(
+          chapter.keyDifferences,
+          (keyDifferences) =>
+            patchField("keyDifferences", { keyDifferences: chapter.keyDifferences }, { keyDifferences }),
+          "Cypress-specific facts with no direct equivalent, etc."
+        )}
+      </label>
+
+      <label className="block space-y-1">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-teal-800">
+          Comparison rows (JSON array — optional)
+        </span>
+        <textarea
+          value={JSON.stringify(chapter.comparisons || [], null, 2)}
+          onChange={(e) => {
+            try {
+              const parsed = JSON.parse(e.target.value || "[]");
+              if (!Array.isArray(parsed)) return;
+              patchField(
+                "comparisons",
+                { comparisons: chapter.comparisons },
+                { comparisons: parsed as ManualChapter["comparisons"] }
+              );
+            } catch {
+              /* ignore mid-edit JSON */
+            }
+          }}
+          rows={6}
+          className="w-full p-3 text-xs font-mono bg-[#F0FDFA] border border-teal-200 rounded-xl focus:outline-none focus:border-teal-600"
+          placeholder='[{"lever":"...","equivalent":"...","verdict":"..."}]'
+        />
+      </label>
 
       <label className="block space-y-1">
         <span className="text-[10px] font-bold uppercase tracking-wider text-[#52635E]">Lesson body (markdown)</span>

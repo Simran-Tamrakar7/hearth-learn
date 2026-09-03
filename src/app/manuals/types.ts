@@ -45,6 +45,22 @@ export interface PracticalExample {
   failLabel?: string;
 }
 
+/** Cypress↔Playwright (or similar) mapping row for ComparisonTable insight boxes. */
+export interface ComparisonRow {
+  /** Technique / lever in this tool's world. */
+  lever: string;
+  /** Closest equivalent in the other tool (or "none"). */
+  equivalent: string;
+  /** same impact / different API / Cypress-specific / partial / etc. */
+  verdict: string;
+}
+
+/** Labeled code block — standalone or alongside other insight boxes. */
+export interface CodeReference {
+  label: string;
+  code: string;
+}
+
 /** On-disk chapter module shape (part-N/chapter-M.ts). */
 export interface ChapterRecord {
   id: string;
@@ -55,11 +71,17 @@ export interface ChapterRecord {
   phase?: string;
   partName?: string;
   overviewText?: string;
+  /** Optional insight boxes — omit any type that isn't genuine for this chapter. */
   why?: string;
   when?: string;
   practical?: PracticalExample;
   advantages?: string[];
   limitations?: string[];
+  comparisons?: ComparisonRow[];
+  /** Optional column labels for ComparisonTable (defaults: Cypress lever / Playwright equivalent). */
+  comparisonHeaders?: { lever: string; equivalent: string };
+  keyDifferences?: string[];
+  codeReferences?: CodeReference[];
   tools?: ToolItem[];
   contentMarkdown: string;
   /** User-authored summary — shown in Summary view (testing-types / Playwright pattern). */
@@ -101,6 +123,10 @@ export interface ManualChapter {
   tools?: ToolItem[];
   advantages?: string[];
   limitations?: string[];
+  comparisons?: ComparisonRow[];
+  comparisonHeaders?: { lever: string; equivalent: string };
+  keyDifferences?: string[];
+  codeReferences?: CodeReference[];
   exercises: ManualExercise[];
   resourceLinks: GoDeeperResource[];
 }

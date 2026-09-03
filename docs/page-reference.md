@@ -10,7 +10,7 @@ Key UI: `src/app/manuals/page.tsx` (labeled **PAGE: /manuals**). Other manuals-o
 
 Reader + TOC editor + inline chapter edit (no dialog). Builtin: `findHearthManual`. User: `getUserManual`. Testing Types: overlay + outline. Writes `hearth_manual_custom_data_*` (debounced while editing) and progress keys. **Undo** during edit: stack of snapshots before merge/delete/reorder/content changes; Undo button + ⌘Z/Ctrl+Z; Cancel still reverts the whole session. Highlights: localStorage plus `POST /api/highlights` (userId, chapterId, tabType, text, start). Click an existing mark to remove it. Three tabs: **Full Content**, **Summary** (markdown toolbar in edit), **Quiz & Activities** (chapter exercises + AI quiz generator). Export menu: PDF, DOCX, Print. TOC shows minutes per chapter and scrolls the active row into view. Resume + recently viewed dual-write to account prefs. Related manuals by category/tags at the end.
 
-Key UI: `src/app/manuals/[slug]/page.tsx` plus shared panels in `features/ChapterFullContent.tsx`, `ChapterReaderPanels.tsx`, `features/edit/ChapterContentEditor.tsx`.
+Key UI: `src/app/manuals/[slug]/page.tsx` plus shared panels in `features/ChapterFullContent.tsx`, `features/insightBoxes.tsx`, `ChapterReaderPanels.tsx`, `features/edit/ChapterContentEditor.tsx`.
 
 ## `/library`
 

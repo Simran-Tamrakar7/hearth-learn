@@ -12,8 +12,6 @@ export const chapter = {
   why: "Explains why this hearth-manual exists and how it was produced.",
   when: "Read before re-running documentation generation.",
   practical: {"app":"Onboard developer","scenario":"They ask where docs live.","pass":"Point to /manuals/hearth-manual in app AND docs/README.md in repo.","fail":"You tell them to read only stale architecture.md."},
-  advantages: ["Process is reproducible","Code-first reduces hallucination"],
-  limitations: ["AI pass may miss runtime-only behavior"],
   tools: [],
   contentMarkdown: "## One paragraph\n\nInstead of writing documentation from a template filled with guesses, the generator (human or AI) reads package.json, prisma/schema.prisma, src/app routes, and registries, then writes Parts 1–8 with file-path citations. Uncertain behavior is marked ⚠️ Needs confirmation rather than invented.\n\nThis hearth-manual was generated with that process in Cursor on the hearth-learn repository.",
   exercises: [],

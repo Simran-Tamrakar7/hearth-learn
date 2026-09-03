@@ -258,6 +258,17 @@ function chapterToHearth(ch: Record<string, unknown>, order: number): ManualChap
     tools: Array.isArray(ch.tools) ? (ch.tools as ManualChapter["tools"]) : undefined,
     advantages: Array.isArray(ch.advantages) ? (ch.advantages as string[]) : undefined,
     limitations: Array.isArray(ch.limitations) ? (ch.limitations as string[]) : undefined,
+    comparisons: Array.isArray(ch.comparisons)
+      ? (ch.comparisons as ManualChapter["comparisons"])
+      : undefined,
+    comparisonHeaders:
+      ch.comparisonHeaders && typeof ch.comparisonHeaders === "object"
+        ? (ch.comparisonHeaders as ManualChapter["comparisonHeaders"])
+        : undefined,
+    keyDifferences: Array.isArray(ch.keyDifferences) ? (ch.keyDifferences as string[]) : undefined,
+    codeReferences: Array.isArray(ch.codeReferences)
+      ? (ch.codeReferences as ManualChapter["codeReferences"])
+      : undefined,
     exercises,
     resourceLinks: resourcesFrom(ch as Parameters<typeof resourcesFrom>[0]),
   };
@@ -421,6 +432,10 @@ function mergeSavedChapter(catalog: ManualChapter, saved: ManualChapter): Manual
     tools: saved.tools?.length ? saved.tools : catalog.tools,
     advantages: saved.advantages?.length ? saved.advantages : catalog.advantages,
     limitations: saved.limitations?.length ? saved.limitations : catalog.limitations,
+    comparisons: saved.comparisons?.length ? saved.comparisons : catalog.comparisons,
+    comparisonHeaders: saved.comparisonHeaders || catalog.comparisonHeaders,
+    keyDifferences: saved.keyDifferences?.length ? saved.keyDifferences : catalog.keyDifferences,
+    codeReferences: saved.codeReferences?.length ? saved.codeReferences : catalog.codeReferences,
     contentMarkdown: pickMarkdown(catalog.contentMarkdown, saved.contentMarkdown),
     customSummary: saved.customSummary?.trim() || catalog.customSummary,
     aiSummary: saved.aiSummary?.trim() || catalog.aiSummary,

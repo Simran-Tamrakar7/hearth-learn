@@ -1,6 +1,6 @@
 import type { ChapterRecord } from "../../../types";
 
-/** 26. Authentication & Session Reuse */
+/** 26. Authentication & Session Reuse — cy.session vs storage_state trade-offs. */
 export const chapter = {
   id: "cy-26-auth",
   title: "26. Authentication & Session Reuse",
@@ -8,15 +8,102 @@ export const chapter = {
   level: "advanced",
   phase: "Part 4 · Advanced",
   partName: "Part 4 · Advanced",
-  overviewText: "Comprehensive coverage of Authentication & Session Reuse in Cypress with code examples, Playwright comparisons, and interview-ready depth paired with the Playwright manual.",
-  why: "Mastering Authentication & Session Reuse in Cypress's command-queue model prevents flaky specs and wrong Playwright ports.",
-  when: "Read when implementing or debugging authentication & session reuse in your suite.",
-  practical: { app: "Web application under test", scenario: "Spec fails around authentication & session reuse — need Cypress-native pattern.", pass: "Apply chapter patterns with retry semantics not bare cy.wait(ms).", fail: "Port Playwright await code or fixed delays." },
-  advantages: ["session caches login","validate re-runs setup","setup visit request","unique id per role","clears before setup","faster than UI login"],
-  limitations: ["session Cypress 8+","invalidation easy wrong","OAuth may not fit","origin in SSO setup","over-cache hides login bugs","parallel session strategy"],
+  overviewText:
+    "cy.session caches cookies, localStorage, and sessionStorage by key and restores across specs — similar goal to Playwright storage_state, different mechanism.",
+  when: "Any suite where login is a prerequisite, not the thing under test. Prefer API login inside session setup; reserve UI login for login-flow specs.",
+  comparisons: [
+    {
+      lever: "cy.session(key, setup, { validate })",
+      equivalent: "storage_state / storageState file load",
+      verdict: "Same goal (skip UI login) — Cypress auto-caches by key; Playwright is explicit save/load",
+    },
+    {
+      lever: "Caches cookies + localStorage + sessionStorage",
+      equivalent: "storage_state: cookies + localStorage only",
+      verdict: "Cypress edge when auth lives in sessionStorage",
+    },
+    {
+      lever: "validate() re-runs setup on stale session",
+      equivalent: "No built-in expiry check — build yourself",
+      verdict: "Cypress-specific safety net",
+    },
+    {
+      lever: "Programmatic login via cy.request in setup",
+      equivalent: "API login + save storage_state",
+      verdict: "Same technique",
+    },
+  ],
+  keyDifferences: [
+    "cy.session also caches sessionStorage; Playwright's storage_state explicitly does not — call this out when an app's auth token lives only in sessionStorage.",
+  ],
+  advantages: [
+    "Automatic key-based cache and restore across specs in one run",
+    "sessionStorage included — no extra workaround for sessionStorage-only auth",
+    "validate() catches expired tokens and re-runs setup",
+  ],
+  limitations: [
+    "Cache invalidation and key design are suite-design concerns",
+    "Still Cypress-bound for multi-origin SSO (pair with cy.origin)",
+    "API login skips the real login UI — wrong choice when login itself is under test",
+  ],
+  codeReferences: [
+    {
+      label: "cy.session with validate — login once per role key",
+      code: `Cypress.Commands.add('login', (username, password) => {
+  cy.session([username, password], () => {
+    cy.visit('/login');
+    cy.get('[data-cy=username]').type(username);
+    cy.get('[data-cy=password]').type(password);
+    cy.get('[data-cy=submit]').click();
+    cy.url().should('include', '/dashboard');
+  }, {
+    validate() {
+      cy.getCookie('session_token').should('exist');
+    },
+  });
+});`,
+    },
+  ],
   tools: [],
-  customSummary: "- cy.session([cacheKey], setupFn, { validate }) caches cookies/localStorage/sessionStorage (a real edge over Playwright's storage_state, which only captures cookies+localStorage) — auto-restores across specs by cache key, with optional revalidation.\n- Prefer programmatic (API-based) login for most tests; reserve real UI login for tests specifically about the login flow itself.",
-  contentMarkdown: "## cy.session() — go deeper on the caching mechanism and why it's a genuinely different model from Playwright's storage_state\n\n```javascript\nCypress.Commands.add('login', (username, password) => {\n  cy.session([username, password], () => {\n    cy.visit('/login');\n    cy.get('[data-cy=username]').type(username);\n    cy.get('[data-cy=password]').type(password);\n    cy.get('[data-cy=submit]').click();\n    cy.url().should('include', '/dashboard');\n  });\n});\n\n// in a test:\nbeforeEach(() => {\n  cy.login('testuser', 'testpass');\n  cy.visit('/dashboard');\n});\ncy.session() takes a cache key (here, [username, password] — any serializable value works) and a setup function containing the actual login steps. The first time a given cache key is used within a test run, Cypress executes the setup function fully (a real UI login) and then caches the resulting cookies/localStorage/sessionStorage. Every subsequent call with the same cache key — even across entirely different spec files in the same run — restores that cached state instantly, skipping the setup function entirely, rather than re-running the login UI flow. This is functionally similar in goal to Playwright's storage_state (Part 4, Ch. 20 of your Playwright manual) but structurally different in mechanism: Playwright's approach is \"manually save state to a file once via a fixture, manually load it into new contexts,\" while Cypress's cy.session() handles the caching, key-based lookup, and restoration automatically and transparently behind one command.\nA meaningful advantage worth naming explicitly: cy.session() also caches sessionStorage, unlike Playwright's context.storage_state() which explicitly only captures cookies and localStorage (noted as a limitation in your Playwright manual, Part 4, Ch. 20). If an app's auth relies on sessionStorage specifically, Cypress's built-in session caching handles it without the workaround Playwright would need.\n```\n\n## Validating a cached session is still valid — go deeper on the optional validation function\n\n```javascript\ncy.session([username, password], () => {\n  cy.visit('/login');\n  cy.get('[data-cy=username]').type(username);\n  cy.get('[data-cy=password]').type(password);\n  cy.get('[data-cy=submit]').click();\n}, {\n  validate() {\n    cy.getCookie('session_token').should('exist');\n  },\n});\nThe optional validate() callback runs every time a cached session is restored (not just on first creation) — giving Cypress a chance to confirm the cached session is still actually valid (the cookie/token hasn't expired, for instance) before trusting it. If validation fails, Cypress automatically re-runs the full setup function again rather than proceeding with a stale, broken session — a nice built-in safety net Playwright's more manual storage_state approach doesn't have equivalent to out of the box; you'd need to build that expiry-checking logic yourself.\n```\n\n## Programmatic login vs UI login — go deeper on when each is right, tying back to Part 0/Chapter 24's UI+API pattern\n\n```javascript\nCypress.Commands.add('loginByApi', (username, password) => {\n  cy.session([username, password], () => {\n    cy.request('POST', '/api/auth/login', { username, password }).then((response) => {\n      window.localStorage.setItem('authToken', response.body.token);\n    });\n  });\n});\nA programmatic (API-based) login — using cy.request() to hit the auth endpoint directly and manually set the resulting token, rather than clicking through the actual login form — is dramatically faster and is the right default for the vast majority of tests where login itself isn't what you're testing, only a prerequisite to get to the screen you actually care about. Reserve an actual UI-driven login (clicking through the real form) specifically for the handful of tests whose explicit purpose is verifying the login flow itself works correctly (Chapter 15/16's form-testing patterns) — testing login via the UI in every single spec file across your whole suite is a common, meaningfully wasteful anti-pattern once a suite grows past a trivial size.\n```\n\n## cy.setCookie/localStorage tricks — a few additional worked patterns worth knowing\n\n```javascript\n// Seeding an auth token directly without any request at all, when you already have a valid token\ncy.setCookie('session_token', Cypress.env('testUserToken'));\ncy.visit('/dashboard');\nFor the fastest possible setup — skipping even the API login request — some teams pre-generate a long-lived test-account token once (stored as a Cypress env var, Chapter 9/37) and simply set it directly as a cookie before every test needing authentication. This trades a small amount of realism (you're not exercising the actual login/token-generation code path at all) for maximum speed — a reasonable trade-off specifically for tests where authentication is purely incidental scaffolding, not something under test.\n```",
+  customSummary:
+    "- cy.session([cacheKey], setupFn, { validate }) caches cookies/localStorage/sessionStorage (a real edge over Playwright's storage_state, which only captures cookies+localStorage) — auto-restores across specs by cache key, with optional revalidation.\n- Prefer programmatic (API-based) login for most tests; reserve real UI login for tests specifically about the login flow itself.",
+  contentMarkdown: `## cy.session() — go deeper on the caching mechanism and why it's a genuinely different model from Playwright's storage_state
+
+\`\`\`javascript
+Cypress.Commands.add('login', (username, password) => {
+  cy.session([username, password], () => {
+    cy.visit('/login');
+    cy.get('[data-cy=username]').type(username);
+    cy.get('[data-cy=password]').type(password);
+    cy.get('[data-cy=submit]').click();
+    cy.url().should('include', '/dashboard');
+  });
+});
+
+// in a test:
+beforeEach(() => {
+  cy.login('testuser', 'testpass');
+  cy.visit('/dashboard');
+});
+\`\`\`
+
+cy.session() takes a cache key and a setup function. The first time a key is used, Cypress runs setup and caches cookies/localStorage/sessionStorage. Later calls with the same key restore instantly — even across specs. Same goal as Playwright storage_state; different mechanism (automatic key cache vs explicit save/load).
+
+## Validating a cached session
+
+\`\`\`javascript
+cy.session([username, password], () => { /* login */ }, {
+  validate() {
+    cy.getCookie('session_token').should('exist');
+  },
+});
+\`\`\`
+
+validate() runs on restore; failure re-runs setup.
+
+## Programmatic login vs UI login
+
+Prefer cy.request login inside session setup for speed. Reserve UI login for specs that test the login flow itself.`,
   exercises: [],
   resourceLinks: [],
   steps: [],

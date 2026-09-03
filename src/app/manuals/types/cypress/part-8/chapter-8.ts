@@ -12,8 +12,6 @@ export const chapter = {
   why: "Obscure CI + browser issues often only exist as Discord folklore.",
   when: "Blocked after docs; or watching release chatter.",
   practical: {"app":"Debugging","scenario":"Firefox-only flake.","pass":"SO search + Discord/GitHub discussions.","fail":"Open issue without minimal repro."},
-  advantages: ["fast answers","SO searchable","GitHub discussions","maintainer tips","plugin authors","meetup locals"],
-  limitations: ["noise","outdated Discord","unverified advice","timezone lag","spam","etiquette"],
   tools: [],
   customSummary: "- https://github.com/cypress-io/cypress/discussions — official discussions\n- Stack Overflow tag [cypress]\n- Discord/community slacks listed on cypress.io",
   contentMarkdown: "## Communities\n\n- GitHub Discussions for Cypress\n- Stack Overflow `[cypress]`\n- Community Discord/Slack via cypress.io links\n- Follow core contributors for tip-sized updates",

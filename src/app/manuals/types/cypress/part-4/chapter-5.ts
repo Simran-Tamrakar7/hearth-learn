@@ -1,6 +1,6 @@
 import type { ChapterRecord } from "../../../types";
 
-/** 27. Working Around Cypress's Architectural Limits */
+/** 27. Working Around Cypress's Architectural Limits — comparison + key gaps. */
 export const chapter = {
   id: "cy-27-limits",
   title: "27. Working Around Cypress's Architectural Limits",
@@ -8,15 +8,59 @@ export const chapter = {
   level: "advanced",
   phase: "Part 4 · Advanced",
   partName: "Part 4 · Advanced",
-  overviewText: "Comprehensive coverage of Working Around Cypress's Architectural Limits in Cypress with code examples, Playwright comparisons, and interview-ready depth paired with the Playwright manual.",
-  why: "Mastering Working Around Cypress's Architectural Limits in Cypress's command-queue model prevents flaky specs and wrong Playwright ports.",
-  when: "Read when implementing or debugging working around cypress's architectural limits in your suite.",
-  practical: { app: "Web application under test", scenario: "Spec fails around working around cypress's architectural limits — need Cypress-native pattern.", pass: "Apply chapter patterns with retry semantics not bare cy.wait(ms).", fail: "Port Playwright await code or fixed delays." },
-  advantages: ["cy.origin blocks","multi-tab ceilings","when to pick Playwright","same-origin root cause","origin variable limits","escape vs native"],
-  limitations: ["origin verbose SSO","multi-tab no solution","workaround maintenance","variable serialization","apps fight in-browser","mismatch is org skill"],
+  overviewText:
+    "cy.origin for cross-origin steps, honest multi-tab ceilings, and explicit Shadow DOM piercing — mapped against what Playwright does natively.",
+  comparisons: [
+    {
+      lever: "cy.origin(url, { args }, callback)",
+      equivalent: "Native multi-origin navigation / new page in same context",
+      verdict: "Partial equivalent — Cypress escape hatch with isolated callback + args serialization",
+    },
+    {
+      lever: "Multi-tab (target=_blank / window.open)",
+      equivalent: "context.expect_page() / Page objects for each tab",
+      verdict: "No real Cypress equivalent — verify intent only, or use Playwright",
+    },
+    {
+      lever: ".shadow() or includeShadowDom: true",
+      equivalent: "Open shadow DOM pierced by default",
+      verdict: "Same capability — Cypress needs explicit opt-in",
+    },
+  ],
+  keyDifferences: [
+    "True multi-tab control does not exist in Cypress — stubs and href checks only verify intent. If new-tab content is a critical path, that suite belongs in Playwright.",
+  ],
+  codeReferences: [
+    {
+      label: "cy.origin with args — SSO callback isolation",
+      code: `const ssoCredentials = { username: 'testuser@example.com', password: 'testpass' };
+
+cy.origin('https://sso-provider.example.com', { args: ssoCredentials }, ({ username, password }) => {
+  cy.get('#username').type(username);
+  cy.get('#password').type(password);
+  cy.get('#submit').click();
+});`,
+    },
+  ],
   tools: [],
-  customSummary: "- cy.origin(url, { args }, callback) is the escape hatch for cross-origin steps — callback runs in an isolated context, so outer-scope variables must be passed explicitly via args.\n- True multi-tab control genuinely doesn't exist in Cypress — closest substitutes only verify intent (checking href, stubbing window.open), not actual new-tab content; this is a legitimate \"use Playwright instead\" case.\n- Shadow DOM requires explicit .shadow() or the global includeShadowDom: true config (Playwright pierces automatically by default).",
-  contentMarkdown: "## cy.origin() — go deeper on the syntax and exactly why it's needed\n\n```javascript\ncy.visit('https://app.example.com/login');\ncy.get('[data-cy=sso-login]').click();\n\ncy.origin('https://sso-provider.example.com', () => {\n  cy.get('#username').type('testuser@example.com');\n  cy.get('#password').type('testpass');\n  cy.get('#submit').click();\n});\n\ncy.url().should('include', 'app.example.com/dashboard');\nRecall from Part 0/Chapter 15: Cypress's test code runs inside the browser's JS context, which is bound by same-origin restrictions the same way any page's own JavaScript would be. cy.origin() is Cypress's explicit escape hatch for this — it tells Cypress \"the code inside this callback is going to interact with a genuinely different origin than the one the test started on,\" and Cypress handles the context-switching machinery needed to make that work safely.\nWorth knowing a real, practical constraint of cy.origin(): the callback function you pass runs in a separate, isolated execution context from the rest of your test — meaning you generally cannot directly reference outer-scope variables from inside it (a closure variable defined in your test body isn't automatically available inside the cy.origin() callback the way it would be in a normal JS closure). Passing data in requires an explicit second argument:\njavascript\nconst ssoCredentials = { username: 'testuser@example.com', password: 'testpass' };\n\ncy.origin('https://sso-provider.example.com', { args: ssoCredentials }, ({ username, password }) => {\n  cy.get('#username').type(username);\n  cy.get('#password').type(password);\n  cy.get('#submit').click();\n});\nThis { args: ... } pattern is worth internalizing as a genuine gotcha specifically because it's non-obvious coming from normal JavaScript scoping rules — it's a direct, visible consequence of the underlying context-isolation mechanism cy.origin() has to perform to work around Cypress's same-origin limitation in the first place.\n```\n\n## Multi-tab workarounds — go deeper on what's genuinely NOT possible, and the closest available substitutes\n\nWorth being direct rather than glossing this over: there is no real workaround that gives you true simultaneous multi-tab control in Cypress the way Playwright's context.expect_page() (Part 2, Ch. 9 of your Playwright manual) provides natively. If your application opens a new tab (e.g., target=\"_blank\" links, or window.open() calls), the closest Cypress-native approaches are:\n```javascript\n// Option 1: prevent the new tab from opening at all, and instead verify the link's target URL directly\ncy.get('[data-cy=external-link]').should('have.attr', 'href', 'https://partner.example.com');\n\n// Option 2: intercept window.open and verify it was called correctly, without a real new tab ever opening\ncy.window().then((win) => {\n  cy.stub(win, 'open').as('windowOpen');\n});\ncy.get('[data-cy=external-link]').click();\ncy.get('@windowOpen').should('have.been.calledWith', 'https://partner.example.com');\nBoth of these are verifying the intent to open a new tab, not actually testing what happens inside that new tab. If genuinely testing the new tab's content and behavior is essential to a critical user flow, this is one of the clearest, most concrete cases where the honest answer is \"use Playwright for this specific suite\" rather than forcing a Cypress workaround that doesn't really achieve the same thing — worth stating this plainly in an interview rather than pretending a workaround exists that doesn't.\n```\n\n## Shadow DOM — go deeper on .shadow() and the includeShadowDom config option\n\n```javascript\ncy.get('custom-button').shadow().find('.internal-button').click();\n\n// Or, configure Cypress to pierce shadow DOM automatically for ALL commands, project-wide:\n// cypress.config.js\nmodule.exports = defineConfig({\n  e2e: {\n    includeShadowDom: true,\n  },\n});\nUnlike Playwright, which pierces open shadow DOM automatically by default with zero configuration (Part 3, Ch. 21 of your Playwright manual), Cypress requires either an explicit .shadow() command chained onto the host element to reach into its shadow root, or the global includeShadowDom: true config flag to make all commands shadow-DOM-aware project-wide. Worth deliberately choosing the global config flag early in a project if you know you're working with a shadow-DOM-heavy component library (Web Components, Lit, some design systems), rather than remembering to add .shadow() manually to every single selector chain that needs it — a detail easy to forget inconsistently across a large suite.\n```",
+  customSummary:
+    "- cy.origin(url, { args }, callback) is the escape hatch for cross-origin steps — callback runs in an isolated context, so outer-scope variables must be passed explicitly via args.\n- True multi-tab control genuinely doesn't exist in Cypress — closest substitutes only verify intent (checking href, stubbing window.open), not actual new-tab content; this is a legitimate \"use Playwright instead\" case.\n- Shadow DOM requires explicit .shadow() or the global includeShadowDom: true config (Playwright pierces automatically by default).",
+  contentMarkdown: `## cy.origin()
+
+Cypress test code runs in-browser and is bound by same-origin rules. cy.origin() is the escape hatch for a different origin; the callback runs in an isolated context — pass data via \`{ args }\`.
+
+## Multi-tab
+
+There is no real simultaneous multi-tab control. Closest substitutes: assert \`href\`, or stub \`window.open\`. Neither tests the new tab's content.
+
+## Shadow DOM
+
+\`\`\`javascript
+cy.get('custom-button').shadow().find('.internal-button').click();
+// or includeShadowDom: true in cypress.config.js
+\`\`\`
+
+Playwright pierces open shadow DOM by default; Cypress requires explicit opt-in.`,
   exercises: [],
   resourceLinks: [],
   steps: [],
