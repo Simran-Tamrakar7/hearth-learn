@@ -11,7 +11,9 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toast";
-import { MANUALS_DATA, findHearthManual, chapterCustomSummary, type ManualItem, type ManualChapter } from "@/app/manuals/types";
+import { MANUALS_DATA, findHearthManual, chapterCustomSummary, type ManualItem, type ManualChapter, type BlockType } from "@/app/manuals/types";
+import { AllowedBlockTypesEditor } from "@/app/manuals/features/blocks/BlockEditor";
+import { isBlockType } from "@/app/manuals/features/blocks/types";
 import { getUserManual, saveUserManual, removeCatalogManual } from "@/app/manuals/features/local-storage";
 import { isTestingTypesSlug } from "@/app/manuals/types/testing-types/TestingTypesManual";
 import { PLAYWRIGHT_ROADMAP_PHASES, downloadRoadmapSVG } from "@/app/manuals/types/playwright/roadmapData";
@@ -153,6 +155,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   const [manualTags, setManualTags] = useState<string[]>(initialManual.tags || []);
   const [manualEstimatedTime, setManualEstimatedTime] = useState<string>(initialManual.estimatedTime);
   const [manualCoverImage, setManualCoverImage] = useState<string>(initialManual.coverImage || "");
+  const [allowedBlockTypes, setAllowedBlockTypes] = useState<BlockType[] | null>(initialManual.allowedBlockTypes ?? null);
   const [categoryOptions, setCategoryOptions] = useState<string[]>(() => listedCategories());
 
   const isTestingTypesManual =
@@ -230,14 +233,14 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
 
   const persistTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingSave = useRef<ManualChapter[] | null>(null);
-  const pendingMeta = useRef<{ title: string; description: string; category: string; estimatedTime: string; tags: string[]; coverImage: string } | null>(null);
+  const pendingMeta = useRef<{ title: string; description: string; category: string; estimatedTime: string; tags: string[]; coverImage: string; allowedBlockTypes?: BlockType[] | null } | null>(null);
   const chapterEditSnapshot = useRef<{
     chapters: ManualChapter[];
-    meta: { title: string; description: string; category: string; estimatedTime: string; tags: string[]; coverImage: string };
+    meta: { title: string; description: string; category: string; estimatedTime: string; tags: string[]; coverImage: string; allowedBlockTypes?: BlockType[] | null };
   } | null>(null);
   type EditSnapshot = {
     chapters: ManualChapter[];
-    meta: { title: string; description: string; category: string; estimatedTime: string; tags: string[]; coverImage: string };
+    meta: { title: string; description: string; category: string; estimatedTime: string; tags: string[]; coverImage: string; allowedBlockTypes?: BlockType[] | null };
     activeChapterIndex: number;
     selectedChapterIndices: number[];
     selectedPartIndices: number[];
@@ -285,6 +288,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       setManualTags(initialManual.tags || []);
       setManualEstimatedTime(initialManual.estimatedTime);
       setManualCoverImage(initialManual.coverImage || "");
+      setAllowedBlockTypes(initialManual.allowedBlockTypes ?? null);
     } else if (parsed) {
       if (parsed.title) setManualTitle(String(parsed.title));
       if (parsed.description) setManualDescription(String(parsed.description));
@@ -292,6 +296,12 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       if (Array.isArray(parsed.tags)) setManualTags(parsed.tags.filter((t) => typeof t === "string"));
       if (parsed.estimatedTime) setManualEstimatedTime(String(parsed.estimatedTime));
       if (parsed.coverImage) setManualCoverImage(String(parsed.coverImage));
+      if (Array.isArray(parsed.allowedBlockTypes)) {
+        const types = parsed.allowedBlockTypes.filter((t): t is BlockType => typeof t === "string" && isBlockType(t));
+        setAllowedBlockTypes(types.length ? types : null);
+      } else if (parsed.allowedBlockTypes === null) {
+        setAllowedBlockTypes(null);
+      }
     }
 
     let next = isTestingTypesManual
@@ -391,6 +401,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       estimatedTime: manualEstimatedTime,
       tags: manualTags,
       coverImage: manualCoverImage,
+      allowedBlockTypes,
     },
     activeChapterIndex,
     selectedChapterIndices: [...selectedChapterIndices],
@@ -430,6 +441,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     setManualEstimatedTime(snap.meta.estimatedTime);
     setManualTags(snap.meta.tags || []);
     setManualCoverImage(snap.meta.coverImage || "");
+    setAllowedBlockTypes(snap.meta.allowedBlockTypes ?? null);
     setSelectedChapterIndices(snap.selectedChapterIndices);
     setSelectedPartIndices(snap.selectedPartIndices);
     setActiveChapterIndex(snap.activeChapterIndex);
@@ -441,6 +453,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       estimatedTime: snap.meta.estimatedTime,
       tags: snap.meta.tags,
       coverImage: snap.meta.coverImage,
+      allowedBlockTypes: snap.meta.allowedBlockTypes,
       chapters: snap.chapters,
       ...tocCatalogSaveFields(slug),
     });
@@ -451,6 +464,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       estimatedTime: snap.meta.estimatedTime,
       tags: snap.meta.tags,
       coverImage: snap.meta.coverImage,
+      allowedBlockTypes: snap.meta.allowedBlockTypes,
       chapters: snap.chapters,
     });
     setSaveHint("Undone");
@@ -475,6 +489,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     const estimatedTime = meta?.estimatedTime ?? manualEstimatedTime;
     const tags = meta?.tags ?? manualTags;
     const coverImage = meta?.coverImage ?? manualCoverImage;
+    const allowed = meta?.allowedBlockTypes !== undefined ? meta.allowedBlockTypes : allowedBlockTypes;
     saveCustomDataToStorage({
       title,
       description,
@@ -482,6 +497,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       estimatedTime,
       tags,
       coverImage,
+      allowedBlockTypes: allowed,
       chapters: updated,
       ...tocCatalogSaveFields(slug),
     });
@@ -492,6 +508,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       estimatedTime,
       tags,
       coverImage,
+      allowedBlockTypes: allowed,
       chapters: updated,
     });
     setSaveHint("Saved");
@@ -517,6 +534,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       estimatedTime: manualEstimatedTime,
       tags: manualTags,
       coverImage: manualCoverImage,
+      allowedBlockTypes,
     };
     saveCustomDataToStorage({
       ...m,
@@ -530,6 +548,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
       estimatedTime: m.estimatedTime,
       tags: m.tags,
       coverImage: m.coverImage,
+      allowedBlockTypes: m.allowedBlockTypes,
       chapters: ch,
     });
     setSaveHint("Saved");
@@ -687,14 +706,15 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     category: string,
     estimatedTime: string,
     tags: string[] = manualTags,
-    coverImage: string = manualCoverImage
+    coverImage: string = manualCoverImage,
+    nextAllowedBlockTypes: BlockType[] | null = allowedBlockTypes
   ) => {
     if (!perms.canEdit) return;
     if (chapterEdit && !metaUndoPushed.current) {
       pushEditUndo();
       metaUndoPushed.current = true;
     }
-    pendingMeta.current = { title, description, category, estimatedTime, tags, coverImage };
+    pendingMeta.current = { title, description, category, estimatedTime, tags, coverImage, allowedBlockTypes: nextAllowedBlockTypes };
     setSaveHint("Saving…");
     if (persistTimer.current) clearTimeout(persistTimer.current);
     persistTimer.current = setTimeout(() => {
@@ -733,6 +753,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
         estimatedTime: manualEstimatedTime,
         tags: manualTags,
         coverImage: manualCoverImage,
+        allowedBlockTypes,
       },
     };
     clearEditUndo();
@@ -1466,6 +1487,21 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                   placeholder="Cover image URL"
                   className="w-full h-10 px-3 text-xs bg-white border border-[#E7E0D3] rounded-xl focus:outline-none focus:border-[#D97706]"
                 />
+                <AllowedBlockTypesEditor
+                  value={allowedBlockTypes}
+                  onChange={(next) => {
+                    setAllowedBlockTypes(next);
+                    persistManualMeta(
+                      manualTitle,
+                      manualDescription,
+                      manualCategory,
+                      manualEstimatedTime,
+                      manualTags,
+                      manualCoverImage,
+                      next
+                    );
+                  }}
+                />
               </>
             ) : (
               <>
@@ -2105,6 +2141,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                     viewMode={viewMode}
                     onPatch={patchActiveChapter}
                     renderMarkdown={renderFormattedMarkdown}
+                    allowedBlockTypes={allowedBlockTypes}
                   />
                   <button
                     type="button"

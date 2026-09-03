@@ -37,25 +37,17 @@ Each `part-N/chapter-M.ts` must:
 - Contain **all** content inline (`overviewText`, optional insight fields, `tools`, `contentMarkdown`, …)
 - Never import from other chapters, shared content modules, `.md`/`.json` sources, `toc.ts`, `registry.ts`, or the page
 
-### Insight boxes (content-driven)
+### Insight boxes / content blocks (content-driven)
 
-`ChapterFullContent` renders **only** insight types present on the chapter — never a fixed Why / When / Practical / Adv / Lim template.
+Full Content prefers an ordered `blocks[]` on the chapter when present. Each entry is a typed block (`why`, `comparison`, `bullets`, `tree`, …) with its own input shape. Unused types simply are not in the array — nothing is auto-added.
 
-Optional fields on `ChapterRecord` / `ManualChapter`:
+Editor: **Add Block** menu (grouped Text / Comparison / Reference / Media) appends an empty block. Manual-level `allowedBlockTypes` (manual settings while editing) filters that menu only — it never strips blocks already saved on a chapter.
 
-| Field | Box | Use when |
-| --- | --- | --- |
-| `why` | WhyItMatters | Genuine framing insight (not a restated intro) |
-| `when` | WhenToUseIt | Real trigger/condition to apply the concept |
-| `practical` | PracticalExample | Fail/pass scenario |
-| `advantages` / `limitations` | AdvantagesLimitations | Real technique trade-offs only (e.g. Testing Types; cy.session) |
-| `comparisons` (+ optional `comparisonHeaders`) | ComparisonTable | Tool mapping (Cypress↔Playwright, etc.) |
-| `keyDifferences` | KeyDifferenceCallout | Single highlighted “no direct equivalent” facts |
-| `codeReferences` / `codeSnippet` | CodeReference | Labeled code (or legacy unlabeled snippet) |
+Legacy fields (`why`, `when`, `practical`, `advantages`/`limitations`, `comparisons`, …) still hydrate when `blocks` is unset so existing chapter files keep working.
 
-Omit unused fields. Visual consistency comes from shared box styles (`features/insightBoxes.tsx`), not from forcing every chapter through the same set.
+Shared code: `features/blocks/types.ts`, `BlockViews.tsx`, `BlockEditor.tsx`, `ChapterFullContent.tsx`.
 
-Enforced by: `npx tsx scripts/check-chapter-independence.ts` (also `scripts/check-registry.ts`).
+Enforced by: `npx tsx scripts/check-chapter-independence.ts` (also `scripts/check-registry.ts`). `npx tsx scripts/check-chapter-blocks.ts` guards the block catalog.
 
 - **Export:** manual-wide PDF / .docx / Print from reader header (`ManualExportMenu`)
 - **User-created manuals:** `localStorage`; new disk manuals use `<slug>/toc.ts` + `part-0/chapter-1.ts`

@@ -269,6 +269,7 @@ function chapterToHearth(ch: Record<string, unknown>, order: number): ManualChap
     codeReferences: Array.isArray(ch.codeReferences)
       ? (ch.codeReferences as ManualChapter["codeReferences"])
       : undefined,
+    blocks: Array.isArray(ch.blocks) ? (ch.blocks as ManualChapter["blocks"]) : undefined,
     exercises,
     resourceLinks: resourcesFrom(ch as Parameters<typeof resourcesFrom>[0]),
   };
@@ -436,6 +437,7 @@ function mergeSavedChapter(catalog: ManualChapter, saved: ManualChapter): Manual
     comparisonHeaders: saved.comparisonHeaders || catalog.comparisonHeaders,
     keyDifferences: saved.keyDifferences?.length ? saved.keyDifferences : catalog.keyDifferences,
     codeReferences: saved.codeReferences?.length ? saved.codeReferences : catalog.codeReferences,
+    blocks: Array.isArray(saved.blocks) ? saved.blocks : catalog.blocks,
     contentMarkdown: pickMarkdown(catalog.contentMarkdown, saved.contentMarkdown),
     customSummary: saved.customSummary?.trim() || catalog.customSummary,
     aiSummary: saved.aiSummary?.trim() || catalog.aiSummary,

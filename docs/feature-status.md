@@ -6,7 +6,7 @@ Last verified against `main` — March 2026.
 
 - **Catalog:** add manual with title, category, tags, cover URL; Add button uses active theme color.
 - **Reader (all slugs):** Full Content / Summary / Quiz & Activities tabs; no AI Summary tab.
-- **Full Content insights:** content-driven boxes only (`why` / `when` / `practical` / Adv·Lim / `comparisons` / `keyDifferences` / `codeReferences`) — unused types do not render. Shared components in `features/insightBoxes.tsx`.
+- **Full Content insights:** `blocks[]` content-driven library with **Add Block** (Text / Comparison / Reference / Media). New types include Bullets, Tree, Feature Mapping, Gap notice, Curated Resources, Tier/Cost. Manual `allowedBlockTypes` filters the Add menu only. Legacy why/when/… fields still hydrate when `blocks` is unset.
 - **Edit:** pencil icon on chapter header and catalog cards; markdown toolbar (H1–H3, bold, lists, code) on Summary and Full Content.
 - **TOC edit:** move up/down, merge, delete chapters; delete whole manual while TOC edit is open.
 - **Export:** PDF, DOCX, Print from header on every manual.

@@ -6,6 +6,10 @@
  * Changing this file changes all of those pages at once.
  * ========================================================================== */
 
+import type { BlockType, ChapterBlock } from "@/app/manuals/features/blocks/types";
+
+export type { BlockType, ChapterBlock };
+
 export interface GoDeeperResource {
   title: string;
   url: string;
@@ -82,6 +86,8 @@ export interface ChapterRecord {
   comparisonHeaders?: { lever: string; equivalent: string };
   keyDifferences?: string[];
   codeReferences?: CodeReference[];
+  /** Ordered content blocks — when set, Full Content renders these instead of legacy fields. */
+  blocks?: ChapterBlock[];
   tools?: ToolItem[];
   contentMarkdown: string;
   /** User-authored summary — shown in Summary view (testing-types / Playwright pattern). */
@@ -127,6 +133,8 @@ export interface ManualChapter {
   comparisonHeaders?: { lever: string; equivalent: string };
   keyDifferences?: string[];
   codeReferences?: CodeReference[];
+  /** Ordered content blocks — when set, Full Content renders these instead of legacy fields. */
+  blocks?: ChapterBlock[];
   exercises: ManualExercise[];
   resourceLinks: GoDeeperResource[];
 }
@@ -143,6 +151,11 @@ export interface ManualItem {
   icon: string;
   coverImage: string;
   chapters: ManualChapter[];
+  /**
+   * Manual-level Add Block menu filter. Undefined / null / empty = all types enabled.
+   * Never strips existing chapter blocks — only filters the Add Block menu.
+   */
+  allowedBlockTypes?: BlockType[] | null;
 }
 
 function stripInlineMarkdown(text: string): string {
