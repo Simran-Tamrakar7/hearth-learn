@@ -33,6 +33,35 @@ import { chapter as part_4_chapter_6 } from "./part-4/chapter-6";
 import { chapter as part_4_chapter_7 } from "./part-4/chapter-7";
 import { chapter as part_4_chapter_8 } from "./part-4/chapter-8";
 import { chapter as part_4_chapter_9 } from "./part-4/chapter-9";
+import { chapter as part_4_chapter_10 } from "./part-4/chapter-10";
+import { chapter as part_4_chapter_11 } from "./part-4/chapter-11";
+import { chapter as part_4_chapter_12 } from "./part-4/chapter-12";
+import { chapter as part_4_chapter_13 } from "./part-4/chapter-13";
+import { chapter as part_4_chapter_14 } from "./part-4/chapter-14";
+import { chapter as part_4_chapter_15 } from "./part-4/chapter-15";
+import { chapter as part_4_chapter_16 } from "./part-4/chapter-16";
+import { chapter as part_5_chapter_1 } from "./part-5/chapter-1";
+import { chapter as part_5_chapter_2 } from "./part-5/chapter-2";
+import { chapter as part_5_chapter_3 } from "./part-5/chapter-3";
+import { chapter as part_5_chapter_4 } from "./part-5/chapter-4";
+import { chapter as part_6_chapter_1 } from "./part-6/chapter-1";
+import { chapter as part_6_chapter_2 } from "./part-6/chapter-2";
+import { chapter as part_6_chapter_3 } from "./part-6/chapter-3";
+import { chapter as part_6_chapter_4 } from "./part-6/chapter-4";
+import { chapter as part_7_chapter_1 } from "./part-7/chapter-1";
+import { chapter as part_7_chapter_2 } from "./part-7/chapter-2";
+import { chapter as part_7_chapter_3 } from "./part-7/chapter-3";
+import { chapter as part_7_chapter_4 } from "./part-7/chapter-4";
+import { chapter as part_8_chapter_1 } from "./part-8/chapter-1";
+import { chapter as part_8_chapter_2 } from "./part-8/chapter-2";
+import { chapter as part_8_chapter_3 } from "./part-8/chapter-3";
+import { chapter as part_8_chapter_4 } from "./part-8/chapter-4";
+import { chapter as part_8_chapter_5 } from "./part-8/chapter-5";
+import { chapter as part_8_chapter_6 } from "./part-8/chapter-6";
+import { chapter as part_8_chapter_7 } from "./part-8/chapter-7";
+import { chapter as part_8_chapter_8 } from "./part-8/chapter-8";
+import { chapter as part_8_chapter_9 } from "./part-8/chapter-9";
+import { chapter as part_8_chapter_10 } from "./part-8/chapter-10";
 
 export const chapterPaths: Record<string, string> = {
 
@@ -70,5 +99,34 @@ export const chapters: ChapterRecord[] = [
   part_4_chapter_6,
   part_4_chapter_7,
   part_4_chapter_8,
-  part_4_chapter_9
+  part_4_chapter_9,
+  part_4_chapter_10,
+  part_4_chapter_11,
+  part_4_chapter_12,
+  part_4_chapter_13,
+  part_4_chapter_14,
+  part_4_chapter_15,
+  part_4_chapter_16,
+  part_5_chapter_1,
+  part_5_chapter_2,
+  part_5_chapter_3,
+  part_5_chapter_4,
+  part_6_chapter_1,
+  part_6_chapter_2,
+  part_6_chapter_3,
+  part_6_chapter_4,
+  part_7_chapter_1,
+  part_7_chapter_2,
+  part_7_chapter_3,
+  part_7_chapter_4,
+  part_8_chapter_1,
+  part_8_chapter_2,
+  part_8_chapter_3,
+  part_8_chapter_4,
+  part_8_chapter_5,
+  part_8_chapter_6,
+  part_8_chapter_7,
+  part_8_chapter_8,
+  part_8_chapter_9,
+  part_8_chapter_10
 ];
