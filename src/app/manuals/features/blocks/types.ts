@@ -34,6 +34,44 @@ export type BlockType = (typeof BLOCK_TYPES)[number];
 
 export type BlockCategory = "Text" | "Comparison" | "Reference" | "Media";
 
+/** Box accent — drives header/dot color in reader + editor chrome. */
+export type BlockAccent = "amber" | "rose" | "emerald" | "sky" | "teal" | "neutral";
+
+/** Box body font. */
+export type BlockFont = "sans" | "serif" | "mono";
+
+export const BLOCK_ACCENTS: { id: BlockAccent; label: string; swatch: string }[] = [
+  { id: "amber", label: "Amber", swatch: "#D97706" },
+  { id: "rose", label: "Rose", swatch: "#E11D48" },
+  { id: "emerald", label: "Emerald", swatch: "#059669" },
+  { id: "sky", label: "Sky", swatch: "#0284C7" },
+  { id: "teal", label: "Teal", swatch: "#0F766E" },
+  { id: "neutral", label: "Neutral", swatch: "#78716C" },
+];
+
+export const BLOCK_FONTS: { id: BlockFont; label: string }[] = [
+  { id: "sans", label: "Sans" },
+  { id: "serif", label: "Serif" },
+  { id: "mono", label: "Mono" },
+];
+
+export type ColumnTone = "rose" | "emerald" | "sky" | "amber" | "neutral";
+
+export const COLUMN_TONES: { id: ColumnTone; label: string; border: string; text: string; top: string }[] = [
+  { id: "rose", label: "Rose", border: "border-rose-200", text: "text-rose-700", top: "border-t-rose-500" },
+  { id: "emerald", label: "Emerald", border: "border-emerald-200", text: "text-emerald-700", top: "border-t-emerald-500" },
+  { id: "sky", label: "Sky", border: "border-sky-200", text: "text-sky-700", top: "border-t-sky-500" },
+  { id: "amber", label: "Amber", border: "border-amber-200", text: "text-amber-800", top: "border-t-amber-500" },
+  { id: "neutral", label: "Neutral", border: "border-[#E7E0D3]", text: "text-[#52635E]", top: "border-t-[#8A9B95]" },
+];
+
+export interface PracticalColumn {
+  id: string;
+  label: string;
+  content: string;
+  tone?: ColumnTone;
+}
+
 export interface PracticalExample {
   app: string;
   scenario: string;
@@ -42,6 +80,8 @@ export interface PracticalExample {
   value?: string;
   passLabel?: string;
   failLabel?: string;
+  /** Customizable columns (CRUD). When set, reader prefers these over fail/pass/value. */
+  columns?: PracticalColumn[];
 }
 
 export interface ComparisonRow {
@@ -77,54 +117,60 @@ export interface CuratedResourceItem {
   links: { label: string; url: string }[];
 }
 
-export type ChapterBlock =
-  | { id: string; type: "overview"; content: string }
-  | { id: string; type: "why"; content: string }
-  | { id: string; type: "when"; content: string }
-  | { id: string; type: "practical"; practical: PracticalExample }
-  | { id: string; type: "tradeoffs"; advantages: string[]; limitations: string[] }
+/** Shared chrome on every block — rename / color / font without changing type. */
+export type BlockChrome = {
+  id: string;
+  /** Custom box title (rename). Falls back to catalog label. */
+  heading?: string;
+  accent?: BlockAccent;
+  font?: BlockFont;
+};
+
+export type ChapterBlock = BlockChrome & (
+  | { type: "overview"; content: string }
+  | { type: "why"; content: string }
+  | { type: "when"; content: string }
+  | { type: "practical"; practical: PracticalExample }
+  | { type: "tradeoffs"; advantages: string[]; limitations: string[] }
   | {
-      id: string;
       type: "comparison";
       rows: ComparisonRow[];
       headers?: { lever: string; equivalent: string };
     }
-  | { id: string; type: "keyDifference"; content: string }
-  | { id: string; type: "code"; label: string; code: string }
-  | { id: string; type: "tip"; title?: string; content: string }
-  | { id: string; type: "warning"; title?: string; content: string }
-  | { id: string; type: "steps"; title?: string; items: string[] }
-  | { id: string; type: "definition"; term: string; definition: string }
-  | { id: string; type: "checklist"; title?: string; items: string[] }
-  | { id: string; type: "resources"; items: GoDeeperResource[] }
-  | { id: string; type: "quote"; text: string; attribution?: string }
-  | { id: string; type: "image"; src: string; alt?: string; caption?: string }
+  | { type: "keyDifference"; content: string }
+  | { type: "code"; label: string; code: string }
+  | { type: "tip"; title?: string; content: string }
+  | { type: "warning"; title?: string; content: string }
+  | { type: "steps"; title?: string; items: string[] }
+  | { type: "definition"; term: string; definition: string }
+  | { type: "checklist"; title?: string; items: string[] }
+  | { type: "resources"; items: GoDeeperResource[] }
+  | { type: "quote"; text: string; attribution?: string }
+  | { type: "image"; src: string; alt?: string; caption?: string }
   | {
-      id: string;
       type: "table";
       headers: string[];
       rows: string[][];
       caption?: string;
     }
-  | { id: string; type: "video"; url: string; caption?: string }
-  | { id: string; type: "bullets"; title?: string; items: string[] }
-  | { id: string; type: "tree"; title?: string; nodes: TreeNode[] }
+  | { type: "video"; url: string; caption?: string }
+  | { type: "bullets"; title?: string; items: string[] }
+  | { type: "tree"; title?: string; nodes: TreeNode[] }
   | {
-      id: string;
       type: "featureMapping";
       title?: string;
       sourceHeader?: string;
       targetHeader?: string;
       rows: FeatureMapRow[];
     }
-  | { id: string; type: "gap"; content: string; alternative?: string }
+  | { type: "gap"; content: string; alternative?: string }
   | {
-      id: string;
       type: "curatedResources";
       category: string;
       items: CuratedResourceItem[];
     }
-  | { id: string; type: "tier"; label: string; detail?: string; kind?: "free" | "paid" | "cloud" };
+  | { type: "tier"; label: string; detail?: string; kind?: "free" | "paid" | "cloud" }
+);
 
 export interface BlockTypeMeta {
   type: BlockType;
@@ -210,7 +256,20 @@ export function emptyBlock(type: BlockType): ChapterBlock {
     case "warning":
       return { id, type, title: "", content: "" };
     case "practical":
-      return { id, type, practical: { app: "", scenario: "", pass: "", fail: "" } };
+      return {
+        id,
+        type,
+        practical: {
+          app: "",
+          scenario: "",
+          pass: "",
+          fail: "",
+          columns: [
+            { id: newBlockId("col"), label: "Fail Condition", content: "", tone: "rose" },
+            { id: newBlockId("col"), label: "Pass Condition", content: "", tone: "emerald" },
+          ],
+        },
+      };
     case "tradeoffs":
       return { id, type, advantages: [], limitations: [] };
     case "comparison":
@@ -346,6 +405,67 @@ export function chapterBlocksForEdit(ch: LegacyChapterFields): ChapterBlock[] {
 
 export function isBlockType(v: string): v is BlockType {
   return (BLOCK_TYPES as readonly string[]).includes(v);
+}
+
+/** Prefer custom columns; else synthesize from legacy fail/pass/value. */
+export function resolvePracticalColumns(p: PracticalExample): PracticalColumn[] {
+  if (p.columns?.length) return p.columns;
+  const cols: PracticalColumn[] = [];
+  if (p.fail?.trim()) {
+    cols.push({
+      id: "legacy-fail",
+      label: p.failLabel || "Fail Condition",
+      content: p.fail,
+      tone: "rose",
+    });
+  }
+  if (p.pass?.trim()) {
+    cols.push({
+      id: "legacy-pass",
+      label: p.passLabel || "Pass Condition",
+      content: p.pass,
+      tone: "emerald",
+    });
+  }
+  if (p.value?.trim()) {
+    cols.push({
+      id: "legacy-value",
+      label: "Value delivered",
+      content: p.value,
+      tone: "sky",
+    });
+  }
+  return cols;
+}
+
+export function blockDisplayName(block: ChapterBlock, fallback?: string): string {
+  if (block.heading?.trim()) return block.heading.trim();
+  if (fallback) return fallback;
+  return BLOCK_CATALOG.find((c) => c.type === block.type)?.label || block.type;
+}
+
+export function accentClasses(accent?: BlockAccent): { text: string; dot: string; border: string; bg: string } {
+  switch (accent) {
+    case "rose":
+      return { text: "text-rose-700", dot: "bg-rose-600", border: "border-rose-200", bg: "bg-rose-50/70" };
+    case "emerald":
+      return { text: "text-emerald-700", dot: "bg-emerald-600", border: "border-emerald-200", bg: "bg-emerald-50/70" };
+    case "sky":
+      return { text: "text-sky-800", dot: "bg-sky-600", border: "border-sky-200", bg: "bg-sky-50/70" };
+    case "teal":
+      return { text: "text-teal-800", dot: "bg-teal-700", border: "border-teal-200", bg: "bg-[#F0FDFA]" };
+    case "neutral":
+      return { text: "text-[#78716C]", dot: "bg-[#78716C]", border: "border-[#E7E0D3]", bg: "bg-[#FAF7F2]" };
+    case "amber":
+    default:
+      return { text: "text-[#D97706]", dot: "bg-[#D97706]", border: "border-[#E7E0D3]", bg: "bg-[#FAF7F2]" };
+  }
+}
+
+export function fontClass(font?: BlockFont): string {
+  if (font === "serif") return "font-serif-display";
+  if (font === "mono") return "font-mono";
+  return "font-sans";
 }
 
 /** Menu filter — undefined/empty allowed list means all types. Never strips existing blocks. */

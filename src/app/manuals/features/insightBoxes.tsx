@@ -9,6 +9,7 @@ import type {
   ComparisonRow,
   PracticalExample,
 } from "@/app/manuals/types";
+import { COLUMN_TONES, resolvePracticalColumns } from "@/app/manuals/features/blocks/types";
 
 /** Shared card chrome — keep visual language identical across insight types. */
 function InsightShell({
@@ -43,16 +44,22 @@ function InsightLabel({
 export function WhyItMatters({
   content,
   highlights,
+  heading,
+  accent,
+  fontClassName,
 }: {
   content: string;
   highlights: ChapterHighlight[];
+  heading?: string;
+  accent?: { text: string; dot: string };
+  fontClassName?: string;
 }) {
   return (
     <InsightShell>
-      <InsightLabel colorClass="text-[#D97706]" dotClass="bg-[#D97706]">
-        Why it matters
+      <InsightLabel colorClass={accent?.text || "text-[#D97706]"} dotClass={accent?.dot || "bg-[#D97706]"}>
+        {heading || "Why it matters"}
       </InsightLabel>
-      <p className="text-xs sm:text-[13px] text-[#52635E] leading-relaxed">
+      <p className={`text-xs sm:text-[13px] text-[#52635E] leading-relaxed ${fontClassName || ""}`}>
         <MarkedText text={content} highlights={highlights} />
       </p>
     </InsightShell>
@@ -62,16 +69,22 @@ export function WhyItMatters({
 export function WhenToUseIt({
   content,
   highlights,
+  heading,
+  accent,
+  fontClassName,
 }: {
   content: string;
   highlights: ChapterHighlight[];
+  heading?: string;
+  accent?: { text: string; dot: string };
+  fontClassName?: string;
 }) {
   return (
     <InsightShell>
-      <InsightLabel colorClass="text-[#D97706]" dotClass="bg-[#D97706]">
-        When to use it
+      <InsightLabel colorClass={accent?.text || "text-[#D97706]"} dotClass={accent?.dot || "bg-[#D97706]"}>
+        {heading || "When to use it"}
       </InsightLabel>
-      <p className="text-xs sm:text-[13px] text-[#52635E] leading-relaxed">
+      <p className={`text-xs sm:text-[13px] text-[#52635E] leading-relaxed ${fontClassName || ""}`}>
         <MarkedText text={content} highlights={highlights} />
       </p>
     </InsightShell>
@@ -81,61 +94,63 @@ export function WhenToUseIt({
 export function PracticalExampleBox({
   practical,
   highlights,
+  heading,
+  accentClass,
+  fontClassName,
 }: {
   practical: PracticalExample;
   highlights: ChapterHighlight[];
+  heading?: string;
+  accentClass?: { text: string; dot: string };
+  fontClassName?: string;
 }) {
   const hasApp = Boolean(practical.app?.trim());
   const hasScenario = Boolean(practical.scenario?.trim());
-  if (!hasApp && !hasScenario) return null;
+  const columns = resolvePracticalColumns(practical as import("@/app/manuals/features/blocks/types").PracticalExample);
+  if (!hasApp && !hasScenario && !columns.some((c) => c.content.trim())) return null;
+
+  const labelColor = accentClass?.text || "text-[#0062D2]";
+  const dotColor = accentClass?.dot || "bg-[#0062D2]";
 
   return (
     <InsightShell className="border-[#D0E2FF] bg-[#F4F8FF] space-y-3">
-      <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#0062D2]">
-        <span className="w-1.5 h-1.5 rounded-full bg-[#0062D2]" />
-        <span>Practical Example</span>
+      <div className={`flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider ${labelColor}`}>
+        <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+        <span>{heading || "Practical Example"}</span>
       </div>
-      <p className="text-xs sm:text-sm text-[#1C2A26] leading-relaxed">
-        {hasApp ? (
-          <strong className="font-bold text-[#0F172A]">
-            <MarkedText text={practical.app} highlights={highlights} />
-          </strong>
-        ) : null}
-        {hasApp && hasScenario ? " — " : null}
-        {hasScenario ? <MarkedText text={practical.scenario} highlights={highlights} /> : null}
-      </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-        {practical.fail?.trim() ? (
-          <div className="p-3.5 rounded-xl border border-rose-200 border-t-2 border-t-rose-500 bg-white space-y-1 shadow-2xs">
-            <span className="block font-mono text-[10px] uppercase tracking-wider font-bold text-rose-700">
-              {practical.failLabel || "Fail Condition"}
-            </span>
-            <p className="text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed">
-              <MarkedText text={practical.fail} highlights={highlights} />
-            </p>
-          </div>
-        ) : null}
-        {practical.pass?.trim() ? (
-          <div className="p-3.5 rounded-xl border border-emerald-200 border-t-2 border-t-emerald-500 bg-white space-y-1 shadow-2xs">
-            <span className="block font-mono text-[10px] uppercase tracking-wider font-bold text-emerald-700">
-              {practical.passLabel || "Pass Condition"}
-            </span>
-            <p className="text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed">
-              <MarkedText text={practical.pass} highlights={highlights} />
-            </p>
-          </div>
-        ) : null}
-        {practical.value?.trim() ? (
-          <div className="p-3.5 rounded-xl border border-sky-200 border-t-2 border-t-sky-500 bg-white space-y-1 shadow-2xs sm:col-span-2">
-            <span className="block font-mono text-[10px] uppercase tracking-wider font-bold text-sky-700">
-              Value delivered
-            </span>
-            <p className="text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed">
-              <MarkedText text={practical.value} highlights={highlights} />
-            </p>
-          </div>
-        ) : null}
-      </div>
+      {hasApp || hasScenario ? (
+        <p className={`text-xs sm:text-sm text-[#1C2A26] leading-relaxed ${fontClassName || ""}`}>
+          {hasApp ? (
+            <strong className="font-bold text-[#0F172A]">
+              <MarkedText text={practical.app} highlights={highlights} />
+            </strong>
+          ) : null}
+          {hasApp && hasScenario ? " — " : null}
+          {hasScenario ? <MarkedText text={practical.scenario} highlights={highlights} /> : null}
+        </p>
+      ) : null}
+      {columns.length ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          {columns
+            .filter((c) => c.content.trim() || c.label.trim())
+            .map((col) => {
+              const tone = COLUMN_TONES.find((t) => t.id === (col.tone || "neutral")) || COLUMN_TONES[4];
+              return (
+                <div
+                  key={col.id}
+                  className={`p-3.5 rounded-xl border border-t-2 bg-white space-y-1 shadow-2xs ${tone.border} ${tone.top}`}
+                >
+                  <span className={`block font-mono text-[10px] uppercase tracking-wider font-bold ${tone.text}`}>
+                    {col.label || "Column"}
+                  </span>
+                  <p className={`text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed ${fontClassName || ""}`}>
+                    <MarkedText text={col.content} highlights={highlights} />
+                  </p>
+                </div>
+              );
+            })}
+        </div>
+      ) : null}
     </InsightShell>
   );
 }
@@ -241,9 +256,11 @@ export function ComparisonTable({
 export function KeyDifferenceCallout({
   content,
   highlights,
+  heading,
 }: {
   content: string;
   highlights: ChapterHighlight[];
+  heading?: string;
 }) {
   if (!content.trim()) return null;
 
@@ -251,7 +268,7 @@ export function KeyDifferenceCallout({
     <InsightShell className="border-amber-300/80 bg-amber-50/80 space-y-2">
       <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-amber-800">
         <AlertTriangle className="w-3.5 h-3.5" />
-        <span>Key difference</span>
+        <span>{heading || "Key difference"}</span>
       </div>
       <p className="text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed">
         <MarkedText text={content} highlights={highlights} />

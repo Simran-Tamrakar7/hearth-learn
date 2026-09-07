@@ -32,6 +32,12 @@ import {
   WhyItMatters,
 } from "@/app/manuals/features/insightBoxes";
 import type { ChapterBlock, TreeNode } from "@/app/manuals/features/blocks/types";
+import {
+  accentClasses,
+  blockDisplayName,
+  fontClass,
+} from "@/app/manuals/features/blocks/types";
+import { BLOCK_CATALOG } from "@/app/manuals/features/blocks/types";
 
 function Shell({
   children,
@@ -91,20 +97,37 @@ export function ChapterBlockView({
   block: ChapterBlock;
   highlights: ChapterHighlight[];
 }) {
+  const catalog = BLOCK_CATALOG.find((c) => c.type === block.type)?.label;
+  const title = blockDisplayName(block, catalog);
+  const accent = accentClasses(block.accent);
+  const bodyFont = fontClass(block.font);
+
   switch (block.type) {
     case "overview":
       if (!block.content.trim()) return null;
       return (
-        <p className="text-xs sm:text-sm text-[#52635E] leading-relaxed font-sans">
+        <p className={`text-xs sm:text-sm text-[#52635E] leading-relaxed ${bodyFont}`}>
           <MarkedText text={block.content} highlights={highlights} />
         </p>
       );
     case "why":
-      return block.content.trim() ? <WhyItMatters content={block.content} highlights={highlights} /> : null;
+      return block.content.trim() ? (
+        <WhyItMatters content={block.content} highlights={highlights} heading={title} accent={accent} fontClassName={bodyFont} />
+      ) : null;
     case "when":
-      return block.content.trim() ? <WhenToUseIt content={block.content} highlights={highlights} /> : null;
+      return block.content.trim() ? (
+        <WhenToUseIt content={block.content} highlights={highlights} heading={title} accent={accent} fontClassName={bodyFont} />
+      ) : null;
     case "practical":
-      return <PracticalExampleBox practical={block.practical} highlights={highlights} />;
+      return (
+        <PracticalExampleBox
+          practical={block.practical}
+          highlights={highlights}
+          heading={title}
+          accentClass={accent}
+          fontClassName={bodyFont}
+        />
+      );
     case "tradeoffs":
       return (
         <AdvantagesLimitations
@@ -124,18 +147,18 @@ export function ChapterBlockView({
       );
     case "keyDifference":
       return block.content.trim() ? (
-        <KeyDifferenceCallout content={block.content} highlights={highlights} />
+        <KeyDifferenceCallout content={block.content} highlights={highlights} heading={title} />
       ) : null;
     case "code":
       return <CodeReferenceBox item={{ label: block.label, code: block.code }} highlights={highlights} />;
     case "tip":
       if (!block.content.trim()) return null;
       return (
-        <Shell className="border-sky-200 bg-sky-50/80 space-y-2">
-          <Label colorClass="text-sky-800" icon={<Sparkles className="w-3.5 h-3.5" />}>
-            {block.title?.trim() || "Tip"}
+        <Shell className={`${accent.border} ${accent.bg} space-y-2`}>
+          <Label colorClass={accent.text} icon={<Sparkles className="w-3.5 h-3.5" />}>
+            {block.heading || block.title?.trim() || "Tip"}
           </Label>
-          <p className="text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed">
+          <p className={`text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed ${bodyFont}`}>
             <MarkedText text={block.content} highlights={highlights} />
           </p>
         </Shell>
@@ -145,9 +168,9 @@ export function ChapterBlockView({
       return (
         <Shell className="border-rose-200 bg-rose-50/70 space-y-2">
           <Label colorClass="text-rose-800" icon={<AlertTriangle className="w-3.5 h-3.5" />}>
-            {block.title?.trim() || "Warning"}
+            {block.heading || block.title?.trim() || "Warning"}
           </Label>
-          <p className="text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed">
+          <p className={`text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed ${bodyFont}`}>
             <MarkedText text={block.content} highlights={highlights} />
           </p>
         </Shell>

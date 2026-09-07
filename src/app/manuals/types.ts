@@ -6,9 +6,9 @@
  * Changing this file changes all of those pages at once.
  * ========================================================================== */
 
-import type { BlockType, ChapterBlock } from "@/app/manuals/features/blocks/types";
+import type { BlockType, ChapterBlock, PracticalColumn, ColumnTone } from "@/app/manuals/features/blocks/types";
 
-export type { BlockType, ChapterBlock };
+export type { BlockType, ChapterBlock, PracticalColumn, ColumnTone };
 
 export interface GoDeeperResource {
   title: string;
@@ -47,6 +47,7 @@ export interface PracticalExample {
   value?: string;
   passLabel?: string;
   failLabel?: string;
+  columns?: PracticalColumn[];
 }
 
 /** Cypress↔Playwright (or similar) mapping row for ComparisonTable insight boxes. */

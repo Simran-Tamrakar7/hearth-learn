@@ -3,17 +3,33 @@
 import { useState } from "react";
 import {
   ChevronDown,
+  Copy,
   GripVertical,
   Plus,
   Trash2,
 } from "lucide-react";
-import type { ChapterBlock, BlockType, TreeNode } from "@/app/manuals/features/blocks/types";
+import type {
+  ChapterBlock,
+  BlockType,
+  TreeNode,
+  PracticalColumn,
+  ColumnTone,
+  BlockAccent,
+  BlockFont,
+} from "@/app/manuals/features/blocks/types";
 import {
+  BLOCK_ACCENTS,
   BLOCK_CATEGORIES,
   BLOCK_CATALOG,
+  BLOCK_FONTS,
+  COLUMN_TONES,
+  blockDisplayName,
   blockTypesForMenu,
   emptyBlock,
+  newBlockId,
+  resolvePracticalColumns,
 } from "@/app/manuals/features/blocks/types";
+import { FormattedField } from "@/app/manuals/features/blocks/FormattedField";
 
 function linesToList(text: string): string[] {
   return text
@@ -123,6 +139,123 @@ export function AddBlockMenu({
   );
 }
 
+function PracticalColumnsEditor({
+  block,
+  onChange,
+  inputClass,
+}: {
+  block: Extract<ChapterBlock, { type: "practical" }>;
+  onChange: (next: ChapterBlock) => void;
+  inputClass: string;
+}) {
+  const p = block.practical;
+  const columns = resolvePracticalColumns(p);
+
+  const setPractical = (next: typeof p) => onChange({ ...block, practical: next });
+  const setColumns = (cols: PracticalColumn[]) =>
+    setPractical({
+      ...p,
+      columns: cols,
+      // keep legacy mirrors in sync for first rose/emerald if present
+      fail: cols.find((c) => c.tone === "rose")?.content ?? p.fail,
+      pass: cols.find((c) => c.tone === "emerald")?.content ?? p.pass,
+    });
+
+  return (
+    <div className="space-y-3">
+      <input
+        value={p.app}
+        onChange={(e) => setPractical({ ...p, app: e.target.value })}
+        placeholder="App / context"
+        className={inputClass}
+      />
+      <FormattedField
+        value={p.scenario}
+        onChange={(scenario) => setPractical({ ...p, scenario })}
+        rows={2}
+        placeholder="Scenario"
+      />
+
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-[#0062D2]">Columns</p>
+        <button
+          type="button"
+          onClick={() =>
+            setColumns([
+              ...columns,
+              {
+                id: newBlockId("col"),
+                label: `Column ${columns.length + 1}`,
+                content: "",
+                tone: "neutral",
+              },
+            ])
+          }
+          className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border border-[#D0E2FF] bg-white text-[#0062D2]"
+        >
+          <Plus className="w-3 h-3" /> Add column
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {columns.map((col, idx) => {
+          const tone = COLUMN_TONES.find((t) => t.id === (col.tone || "neutral")) || COLUMN_TONES[4];
+          return (
+            <div key={col.id} className={`p-2.5 rounded-xl border bg-white space-y-2 ${tone.border} border-t-2 ${tone.top}`}>
+              <div className="flex gap-1.5 items-center">
+                <input
+                  value={col.label}
+                  onChange={(e) => {
+                    const next = [...columns];
+                    next[idx] = { ...col, label: e.target.value };
+                    setColumns(next);
+                  }}
+                  placeholder="Column name"
+                  className={`flex-1 p-1.5 text-[11px] font-mono font-bold uppercase tracking-wider rounded-md border ${tone.border} ${tone.text}`}
+                />
+                <select
+                  value={col.tone || "neutral"}
+                  onChange={(e) => {
+                    const next = [...columns];
+                    next[idx] = { ...col, tone: e.target.value as ColumnTone };
+                    setColumns(next);
+                  }}
+                  className="text-[10px] font-bold border border-[#E7E0D3] rounded-md px-1.5 py-1 bg-white"
+                  title="Column color"
+                >
+                  {COLUMN_TONES.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  title="Delete column"
+                  onClick={() => setColumns(columns.filter((_, i) => i !== idx))}
+                  className="p-1.5 rounded-md border border-rose-200 text-rose-700"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
+              <FormattedField
+                value={col.content}
+                onChange={(content) => {
+                  const next = [...columns];
+                  next[idx] = { ...col, content };
+                  setColumns(next);
+                }}
+                rows={3}
+                placeholder="Column content"
+              />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function BlockEditorFields({
   block,
   onChange,
@@ -139,11 +272,10 @@ function BlockEditorFields({
     case "when":
     case "keyDifference":
       return (
-        <textarea
+        <FormattedField
           value={block.content}
-          onChange={(e) => onChange({ ...block, content: e.target.value })}
+          onChange={(content) => onChange({ ...block, content })}
           rows={4}
-          className={area}
         />
       );
     case "tip":
@@ -156,50 +288,15 @@ function BlockEditorFields({
             placeholder="Optional title"
             className={input}
           />
-          <textarea
+          <FormattedField
             value={block.content}
-            onChange={(e) => onChange({ ...block, content: e.target.value })}
+            onChange={(content) => onChange({ ...block, content })}
             rows={3}
-            className={area}
           />
         </div>
       );
     case "practical":
-      return (
-        <div className="space-y-2">
-          <input
-            value={block.practical.app}
-            onChange={(e) => onChange({ ...block, practical: { ...block.practical, app: e.target.value } })}
-            placeholder="App / context"
-            className={input}
-          />
-          <textarea
-            value={block.practical.scenario}
-            onChange={(e) =>
-              onChange({ ...block, practical: { ...block.practical, scenario: e.target.value } })
-            }
-            placeholder="Scenario"
-            rows={2}
-            className={area}
-          />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <textarea
-              value={block.practical.fail}
-              onChange={(e) => onChange({ ...block, practical: { ...block.practical, fail: e.target.value } })}
-              placeholder="Fail condition"
-              rows={3}
-              className={`${area} border-rose-200`}
-            />
-            <textarea
-              value={block.practical.pass}
-              onChange={(e) => onChange({ ...block, practical: { ...block.practical, pass: e.target.value } })}
-              placeholder="Pass condition"
-              rows={3}
-              className={`${area} border-emerald-200`}
-            />
-          </div>
-        </div>
-      );
+      return <PracticalColumnsEditor block={block} onChange={onChange} inputClass={input} />;
     case "tradeoffs":
       return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -545,6 +642,12 @@ export function ChapterBlocksEditor({
 }) {
   const meta = (type: BlockType) => BLOCK_CATALOG.find((c) => c.type === type);
 
+  const patchAt = (idx: number, nextBlock: ChapterBlock) => {
+    const next = [...blocks];
+    next[idx] = nextBlock;
+    onChange(next);
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -557,59 +660,117 @@ export function ChapterBlocksEditor({
 
       {blocks.length === 0 ? (
         <p className="text-xs text-[#8A9B95] border border-dashed border-[#E7E0D3] rounded-xl p-4">
-          No blocks yet. Use <strong>Add Block</strong> to compose this chapter — unused types stay out.
+          No blocks yet. Use <strong>Add Block</strong> to create one — then rename, recolor, or add columns.
         </p>
       ) : null}
 
-      {blocks.map((block, idx) => (
-        <fieldset key={block.id} className="p-3 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] space-y-2">
-          <legend className="px-1 text-[10px] font-bold uppercase tracking-wider text-[#D97706] flex items-center gap-1">
-            <GripVertical className="w-3 h-3 text-[#C4B8A8]" />
-            {meta(block.type)?.label || block.type}
-          </legend>
-          <div className="flex justify-end gap-1">
-            <button
-              type="button"
-              disabled={idx === 0}
-              onClick={() => {
-                const next = [...blocks];
-                [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
-                onChange(next);
-              }}
-              className="text-[10px] font-bold px-2 py-1 rounded-lg border border-[#E7E0D3] disabled:opacity-40"
-            >
-              Up
-            </button>
-            <button
-              type="button"
-              disabled={idx === blocks.length - 1}
-              onClick={() => {
-                const next = [...blocks];
-                [next[idx + 1], next[idx]] = [next[idx], next[idx + 1]];
-                onChange(next);
-              }}
-              className="text-[10px] font-bold px-2 py-1 rounded-lg border border-[#E7E0D3] disabled:opacity-40"
-            >
-              Down
-            </button>
-            <button
-              type="button"
-              onClick={() => onChange(blocks.filter((_, i) => i !== idx))}
-              className="text-[10px] font-bold px-2 py-1 rounded-lg border border-rose-200 text-rose-700 inline-flex items-center gap-1"
-            >
-              <Trash2 className="w-3 h-3" /> Remove
-            </button>
-          </div>
-          <BlockEditorFields
-            block={block}
-            onChange={(nextBlock) => {
-              const next = [...blocks];
-              next[idx] = nextBlock;
-              onChange(next);
-            }}
-          />
-        </fieldset>
-      ))}
+      {blocks.map((block, idx) => {
+        const catalogLabel = meta(block.type)?.label || block.type;
+        return (
+          <fieldset key={block.id} className="p-3 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] space-y-2">
+            <legend className="px-1 text-[10px] font-bold uppercase tracking-wider text-[#D97706] flex items-center gap-1">
+              <GripVertical className="w-3 h-3 text-[#C4B8A8]" />
+              {blockDisplayName(block, catalogLabel)}
+              <span className="font-normal normal-case tracking-normal text-[#8A9B95]">({catalogLabel})</span>
+            </legend>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <label className="block space-y-0.5 sm:col-span-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#8A9B95]">Rename</span>
+                <input
+                  value={block.heading || ""}
+                  onChange={(e) => patchAt(idx, { ...block, heading: e.target.value })}
+                  placeholder={catalogLabel}
+                  className="w-full p-2 text-sm bg-white border border-[#E7E0D3] rounded-lg"
+                />
+              </label>
+              <label className="block space-y-0.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#8A9B95]">Color</span>
+                <div className="flex flex-wrap gap-1 p-1.5 bg-white border border-[#E7E0D3] rounded-lg">
+                  {BLOCK_ACCENTS.map((a) => (
+                    <button
+                      key={a.id}
+                      type="button"
+                      title={a.label}
+                      onClick={() => patchAt(idx, { ...block, accent: a.id as BlockAccent })}
+                      className={`w-6 h-6 rounded-full border-2 ${
+                        (block.accent || "amber") === a.id ? "border-[#1C2A26]" : "border-transparent"
+                      }`}
+                      style={{ backgroundColor: a.swatch }}
+                    />
+                  ))}
+                </div>
+              </label>
+              <label className="block space-y-0.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#8A9B95]">Font</span>
+                <select
+                  value={block.font || "sans"}
+                  onChange={(e) => patchAt(idx, { ...block, font: e.target.value as BlockFont })}
+                  className="w-full p-2 text-sm bg-white border border-[#E7E0D3] rounded-lg"
+                >
+                  {BLOCK_FONTS.map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="flex flex-wrap justify-end gap-1">
+              <button
+                type="button"
+                disabled={idx === 0}
+                onClick={() => {
+                  const next = [...blocks];
+                  [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+                  onChange(next);
+                }}
+                className="text-[10px] font-bold px-2 py-1 rounded-lg border border-[#E7E0D3] disabled:opacity-40"
+              >
+                Up
+              </button>
+              <button
+                type="button"
+                disabled={idx === blocks.length - 1}
+                onClick={() => {
+                  const next = [...blocks];
+                  [next[idx + 1], next[idx]] = [next[idx], next[idx + 1]];
+                  onChange(next);
+                }}
+                className="text-[10px] font-bold px-2 py-1 rounded-lg border border-[#E7E0D3] disabled:opacity-40"
+              >
+                Down
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const copy: ChapterBlock = {
+                    ...structuredClone(block),
+                    id: newBlockId(block.type),
+                    heading: `${blockDisplayName(block, catalogLabel)} (copy)`,
+                  };
+                  const next = [...blocks];
+                  next.splice(idx + 1, 0, copy);
+                  onChange(next);
+                }}
+                className="text-[10px] font-bold px-2 py-1 rounded-lg border border-[#E7E0D3] inline-flex items-center gap-1"
+              >
+                <Copy className="w-3 h-3" /> Duplicate
+              </button>
+              <button
+                type="button"
+                onClick={() => onChange(blocks.filter((_, i) => i !== idx))}
+                className="text-[10px] font-bold px-2 py-1 rounded-lg border border-rose-200 text-rose-700 inline-flex items-center gap-1"
+              >
+                <Trash2 className="w-3 h-3" /> Delete
+              </button>
+            </div>
+
+            <BlockEditorFields block={block} onChange={(nextBlock) => patchAt(idx, nextBlock)} />
+          </fieldset>
+        );
+      })}
     </div>
   );
 }

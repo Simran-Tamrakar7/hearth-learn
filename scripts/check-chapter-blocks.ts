@@ -53,4 +53,11 @@ for (const t of required) {
   assert.ok(BLOCK_TYPES.includes(t as (typeof BLOCK_TYPES)[number]), `missing ${t}`);
 }
 
+assert.ok(BLOCK_TYPES.includes("practical" as (typeof BLOCK_TYPES)[number]));
+const practical = emptyBlock("practical");
+assert.equal(practical.type, "practical");
+if (practical.type === "practical") {
+  assert.ok((practical.practical.columns?.length || 0) >= 2, "practical starts with fail/pass columns");
+}
+
 console.log("check-chapter-blocks: ok");
