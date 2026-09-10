@@ -49,6 +49,7 @@ node --experimental-strip-types src/app/manuals/_lib/testing-types-reader.check.
 node --experimental-strip-types src/app/manuals/_lib/userManuals.check.ts
 node --experimental-strip-types src/app/manuals/_lib/highlights.check.ts
 node --experimental-strip-types src/app/manuals/features/edit/lessonFormat.check.ts
+npx tsx scripts/check-chapter-blocks.ts
 node --experimental-strip-types scripts/check-library.ts
 node --experimental-strip-types scripts/check-pathwise-manuals.ts
 node --experimental-strip-types src/lib/passwordReset.check.ts

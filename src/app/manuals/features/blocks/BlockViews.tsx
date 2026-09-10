@@ -31,10 +31,11 @@ import {
   WhenToUseIt,
   WhyItMatters,
 } from "@/app/manuals/features/insightBoxes";
-import type { ChapterBlock, TreeNode } from "@/app/manuals/features/blocks/types";
+import type { ChapterBlock, PracticalColumn, TreeNode } from "@/app/manuals/features/blocks/types";
 import {
   accentClasses,
   blockDisplayName,
+  COLUMN_TONES,
   fontClass,
 } from "@/app/manuals/features/blocks/types";
 import { BLOCK_CATALOG } from "@/app/manuals/features/blocks/types";
@@ -90,6 +91,39 @@ function videoEmbedSrc(url: string): string | null {
   return u;
 }
 
+function ColumnGrid({
+  columns,
+  highlights,
+  fontClassName,
+}: {
+  columns: PracticalColumn[];
+  highlights: ChapterHighlight[];
+  fontClassName?: string;
+}) {
+  const shown = columns.filter((c) => c.content.trim() || c.label.trim());
+  if (!shown.length) return null;
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+      {shown.map((col) => {
+        const tone = COLUMN_TONES.find((t) => t.id === (col.tone || "neutral")) || COLUMN_TONES[4];
+        return (
+          <div
+            key={col.id}
+            className={`p-3.5 rounded-xl border border-t-2 bg-white space-y-1 shadow-2xs ${tone.border} ${tone.top}`}
+          >
+            <span className={`block font-mono text-[10px] uppercase tracking-wider font-bold ${tone.text}`}>
+              {col.label || "Column"}
+            </span>
+            <p className={`text-xs sm:text-[13px] text-[#1C2A26] leading-relaxed ${fontClassName || ""}`}>
+              <MarkedText text={col.content} highlights={highlights} />
+            </p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function ChapterBlockView({
   block,
   highlights,
@@ -129,6 +163,14 @@ export function ChapterBlockView({
         />
       );
     case "tradeoffs":
+      if (block.columns?.some((c) => c.content.trim() || c.label.trim())) {
+        return (
+          <Shell className={`${accent.border} ${accent.bg} space-y-2`}>
+            <Label colorClass={accent.text}>{title}</Label>
+            <ColumnGrid columns={block.columns} highlights={highlights} fontClassName={bodyFont} />
+          </Shell>
+        );
+      }
       return (
         <AdvantagesLimitations
           advantages={block.advantages}
@@ -137,6 +179,14 @@ export function ChapterBlockView({
         />
       );
     case "comparison":
+      if (block.columns?.some((c) => c.content.trim() || c.label.trim())) {
+        return (
+          <Shell className={`${accent.border} ${accent.bg} space-y-2`}>
+            <Label colorClass={accent.text}>{title}</Label>
+            <ColumnGrid columns={block.columns} highlights={highlights} fontClassName={bodyFont} />
+          </Shell>
+        );
+      }
       return (
         <ComparisonTable
           rows={block.rows}
@@ -146,6 +196,14 @@ export function ChapterBlockView({
         />
       );
     case "keyDifference":
+      if (block.columns?.some((c) => c.content.trim())) {
+        return (
+          <Shell className={`${accent.border} ${accent.bg} space-y-2`}>
+            <Label colorClass={accent.text}>{title}</Label>
+            <ColumnGrid columns={block.columns} highlights={highlights} fontClassName={bodyFont} />
+          </Shell>
+        );
+      }
       return block.content.trim() ? (
         <KeyDifferenceCallout content={block.content} highlights={highlights} heading={title} />
       ) : null;
@@ -176,6 +234,16 @@ export function ChapterBlockView({
         </Shell>
       );
     case "steps":
+      if (block.columns?.some((c) => c.content.trim() || c.label.trim())) {
+        return (
+          <Shell className={`${accent.border} ${accent.bg} space-y-2`}>
+            <Label colorClass={accent.text} icon={<ListOrdered className="w-3.5 h-3.5" />}>
+              {block.title?.trim() || title}
+            </Label>
+            <ColumnGrid columns={block.columns} highlights={highlights} fontClassName={bodyFont} />
+          </Shell>
+        );
+      }
       if (!block.items.some((i) => i.trim())) return null;
       return (
         <Shell>
@@ -367,6 +435,16 @@ export function ChapterBlockView({
         </Shell>
       );
     case "featureMapping":
+      if (block.columns?.some((c) => c.content.trim() || c.label.trim())) {
+        return (
+          <Shell className={`${accent.border} ${accent.bg} space-y-3`}>
+            <Label colorClass={accent.text} icon={<GitCompare className="w-3.5 h-3.5" />}>
+              {block.title?.trim() || title}
+            </Label>
+            <ColumnGrid columns={block.columns} highlights={highlights} fontClassName={bodyFont} />
+          </Shell>
+        );
+      }
       if (!block.rows.some((r) => r.source.trim() || r.target.trim())) return null;
       return (
         <Shell className="border-teal-200 bg-[#F0FDFA] space-y-3">

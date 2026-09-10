@@ -41,13 +41,13 @@ Each `part-N/chapter-M.ts` must:
 
 Full Content prefers an ordered `blocks[]` on the chapter when present. Each entry is a typed block (`why`, `comparison`, `bullets`, `tree`, …) with its own input shape. Unused types simply are not in the array — nothing is auto-added.
 
-Editor: **Add Block** menu (grouped Text / Comparison / Reference / Media) appends an empty block. Each block supports **CRUD chrome**: rename (`heading`), accent color, font (sans/serif/mono), duplicate, delete, reorder. Text fields use a bold/italic/underline toolbar. Practical Example columns are fully customizable (add / rename / recolor / delete), not fixed Fail/Pass only.
+Editor: **Add Block** menu (grouped Text / Comparison / Reference / Media) appends an empty block. Chrome lives in one `<BlockShell>` (rename, accent, font, collapse, Up/Down, duplicate, delete, drag handle). Type-specific UI is a registry `Body`. Comparison types (Practical Example, Advantages/Limitations, Comparison Table, Feature Mapping, Key Difference, Steps) share `<ColumnsEditor>` (add/delete/recolor columns; delete hidden at min 2). Drag-and-drop reorder uses `@dnd-kit`; Up/Down remain for keyboard. Text fields use a bold/italic/underline toolbar.
 
-Manual-level `allowedBlockTypes` (manual settings while editing) filters that menu only — it never strips blocks already saved on a chapter.
+Manual-level `allowedBlockTypes` (manual settings while editing, grouped by category) filters that menu only — it never strips blocks already saved on a chapter. Incomplete blocks save as drafts; publish-style validation (`chapterPublishIssues`) flags empty required fields without blocking autosave.
+
+Shared code: `features/blocks/{types,registry,BlockShell,ColumnsEditor,BlockBodies,BlockEditor,BlockViews}.tsx`, `ChapterFullContent.tsx`.
 
 Legacy fields (`why`, `when`, `practical`, `advantages`/`limitations`, `comparisons`, …) still hydrate when `blocks` is unset so existing chapter files keep working.
-
-Shared code: `features/blocks/types.ts`, `BlockViews.tsx`, `BlockEditor.tsx`, `ChapterFullContent.tsx`.
 
 Enforced by: `npx tsx scripts/check-chapter-independence.ts` (also `scripts/check-registry.ts`). `npx tsx scripts/check-chapter-blocks.ts` guards the block catalog.
 

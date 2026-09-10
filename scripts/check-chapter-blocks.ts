@@ -10,6 +10,9 @@ import {
   emptyBlock,
   blockTypesForMenu,
   legacyFieldsToBlocks,
+  withOrder,
+  duplicateBlock,
+  chapterPublishIssues,
 } from "../src/app/manuals/features/blocks/types";
 
 assert.equal(BLOCK_TYPES.length, BLOCK_CATALOG.length, "catalog must list every type");
@@ -59,5 +62,28 @@ assert.equal(practical.type, "practical");
 if (practical.type === "practical") {
   assert.ok((practical.practical.columns?.length || 0) >= 2, "practical starts with fail/pass columns");
 }
+
+const tradeoffs = emptyBlock("tradeoffs");
+assert.equal(tradeoffs.type, "tradeoffs");
+if (tradeoffs.type === "tradeoffs") {
+  assert.ok((tradeoffs.columns?.length || 0) >= 2, "tradeoffs starts with two columns");
+}
+
+const ordered = [emptyBlock("tip"), emptyBlock("quote")];
+ordered[0].order = 9;
+const renumbered = withOrder(ordered);
+assert.equal(renumbered[0].order, 0);
+assert.equal(renumbered[1].order, 1);
+
+const original = emptyBlock("tip");
+const copy = duplicateBlock(original);
+assert.notEqual(copy.id, original.id);
+
+const incomplete = chapterPublishIssues([emptyBlock("practical")]);
+assert.ok(incomplete.length >= 1, "empty column block fails publish validation");
+
+const filtered = blockTypesForMenu(["tip", "quote"]);
+assert.equal(filtered.length, 2);
+assert.ok(filtered.every((m) => m.type === "tip" || m.type === "quote"));
 
 console.log("check-chapter-blocks: ok");

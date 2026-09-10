@@ -120,6 +120,9 @@ export interface CuratedResourceItem {
 /** Shared chrome on every block — rename / color / font without changing type. */
 export type BlockChrome = {
   id: string;
+  /** Position in the chapter list. Recomputed on add/delete/reorder. */
+  order?: number;
+  collapsed?: boolean;
   /** Custom box title (rename). Falls back to catalog label. */
   heading?: string;
   accent?: BlockAccent;
@@ -131,17 +134,18 @@ export type ChapterBlock = BlockChrome & (
   | { type: "why"; content: string }
   | { type: "when"; content: string }
   | { type: "practical"; practical: PracticalExample }
-  | { type: "tradeoffs"; advantages: string[]; limitations: string[] }
+  | { type: "tradeoffs"; advantages: string[]; limitations: string[]; columns?: PracticalColumn[] }
   | {
       type: "comparison";
       rows: ComparisonRow[];
       headers?: { lever: string; equivalent: string };
+      columns?: PracticalColumn[];
     }
-  | { type: "keyDifference"; content: string }
+  | { type: "keyDifference"; content: string; columns?: PracticalColumn[] }
   | { type: "code"; label: string; code: string }
   | { type: "tip"; title?: string; content: string }
   | { type: "warning"; title?: string; content: string }
-  | { type: "steps"; title?: string; items: string[] }
+  | { type: "steps"; title?: string; items: string[]; columns?: PracticalColumn[] }
   | { type: "definition"; term: string; definition: string }
   | { type: "checklist"; title?: string; items: string[] }
   | { type: "resources"; items: GoDeeperResource[] }
@@ -162,6 +166,7 @@ export type ChapterBlock = BlockChrome & (
       sourceHeader?: string;
       targetHeader?: string;
       rows: FeatureMapRow[];
+      columns?: PracticalColumn[];
     }
   | { type: "gap"; content: string; alternative?: string }
   | {
@@ -220,7 +225,7 @@ export const BLOCK_CATALOG: BlockTypeMeta[] = [
     category: "Comparison",
     description: "Highlighted difference fact",
   },
-  { type: "steps", label: "Steps", category: "Reference", description: "Ordered procedure" },
+  { type: "steps", label: "Steps", category: "Comparison", description: "Ordered procedure as columns" },
   { type: "checklist", label: "Checklist", category: "Reference", description: "Checkbox-style list" },
   { type: "code", label: "Code Reference", category: "Reference", description: "Labeled code block" },
   { type: "resources", label: "Resource Links", category: "Reference", description: "Flat link list" },
@@ -241,8 +246,253 @@ export const BLOCK_CATEGORIES: BlockCategory[] = ["Text", "Comparison", "Referen
 let blockSeq = 0;
 export function newBlockId(prefix = "blk"): string {
   blockSeq += 1;
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
   return `${prefix}-${Date.now().toString(36)}-${blockSeq}`;
 }
+
+export const COLUMN_BLOCK_TYPES = [
+  "practical",
+  "tradeoffs",
+  "comparison",
+  "featureMapping",
+  "keyDifference",
+  "steps",
+] as const;
+
+export type ColumnBlockType = (typeof COLUMN_BLOCK_TYPES)[number];
+
+export function isColumnBlockType(type: string): type is ColumnBlockType {
+  return (COLUMN_BLOCK_TYPES as readonly string[]).includes(type);
+}
+
+function lineItems(text: string): string[] {
+  return text
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+}
+
+export function defaultColumnsFor(type: ColumnBlockType): PracticalColumn[] {
+  const col = (label: string, tone: ColumnTone): PracticalColumn => ({
+    id: newBlockId("col"),
+    label,
+    content: "",
+    tone,
+  });
+  switch (type) {
+    case "practical":
+      return [col("Fail Condition", "rose"), col("Pass Condition", "emerald")];
+    case "tradeoffs":
+      return [col("Advantages", "emerald"), col("Limitations", "rose")];
+    case "comparison":
+      return [col("Lever", "sky"), col("Equivalent", "amber")];
+    case "featureMapping":
+      return [col("Source", "sky"), col("Maps to", "emerald")];
+    case "keyDifference":
+      return [col("This tool", "sky"), col("The other", "amber")];
+    case "steps":
+      return [col("Step 1", "sky"), col("Step 2", "emerald")];
+  }
+}
+
+/** Stable column view for the editor — never allocates ids on each call when columns exist. */
+export function editorColumns(block: ChapterBlock): PracticalColumn[] {
+  if (block.type === "practical") {
+    const cols = resolvePracticalColumns(block.practical);
+    return cols.length ? cols : defaultColumnsFor("practical");
+  }
+  if ("columns" in block && Array.isArray(block.columns) && block.columns.length) {
+    return block.columns;
+  }
+  const sid = (n: number) => `${block.id}-col-${n}`;
+  if (block.type === "tradeoffs") {
+    return [
+      { id: sid(0), label: "Advantages", content: block.advantages.join("\n"), tone: "emerald" },
+      { id: sid(1), label: "Limitations", content: block.limitations.join("\n"), tone: "rose" },
+    ];
+  }
+  if (block.type === "keyDifference") {
+    return [
+      { id: sid(0), label: "Difference", content: block.content, tone: "amber" },
+      { id: sid(1), label: "Notes", content: "", tone: "neutral" },
+    ];
+  }
+  if (block.type === "steps") {
+    const items = block.items.filter((i) => i.trim());
+    if (items.length >= 2) {
+      return items.map((item, i) => ({
+        id: sid(i),
+        label: `Step ${i + 1}`,
+        content: item,
+        tone: (["sky", "amber", "emerald", "rose", "neutral"] as ColumnTone[])[i % 5],
+      }));
+    }
+    return defaultColumnsFor("steps");
+  }
+  if (block.type === "featureMapping") {
+    if (block.rows.some((r) => r.source.trim() || r.target.trim())) {
+      return [
+        {
+          id: sid(0),
+          label: block.sourceHeader || "Source",
+          content: block.rows.map((r) => r.source).join("\n"),
+          tone: "sky",
+        },
+        {
+          id: sid(1),
+          label: block.targetHeader || "Maps to",
+          content: block.rows.map((r) => r.target).join("\n"),
+          tone: "emerald",
+        },
+      ];
+    }
+    return defaultColumnsFor("featureMapping");
+  }
+  if (block.type === "comparison") {
+    if (block.rows.some((r) => r.lever.trim() || r.equivalent.trim() || r.verdict.trim())) {
+      return [
+        {
+          id: sid(0),
+          label: block.headers?.lever || "Lever",
+          content: block.rows.map((r) => r.lever).join("\n"),
+          tone: "sky",
+        },
+        {
+          id: sid(1),
+          label: block.headers?.equivalent || "Equivalent",
+          content: block.rows.map((r) => r.equivalent).join("\n"),
+          tone: "emerald",
+        },
+        { id: sid(2), label: "Verdict", content: block.rows.map((r) => r.verdict).join("\n"), tone: "amber" },
+      ];
+    }
+    return defaultColumnsFor("comparison");
+  }
+  return [];
+}
+
+export function applyColumns(block: ChapterBlock, columns: PracticalColumn[]): ChapterBlock {
+  switch (block.type) {
+    case "practical":
+      return {
+        ...block,
+        practical: {
+          ...block.practical,
+          columns,
+          fail: columns.find((c) => c.tone === "rose")?.content ?? block.practical.fail,
+          pass: columns.find((c) => c.tone === "emerald")?.content ?? block.practical.pass,
+        },
+      };
+    case "tradeoffs":
+      return {
+        ...block,
+        columns,
+        advantages: lineItems(columns[0]?.content || ""),
+        limitations: lineItems(columns[1]?.content || ""),
+      };
+    case "comparison":
+      return { ...block, columns };
+    case "featureMapping":
+      return { ...block, columns };
+    case "keyDifference":
+      return {
+        ...block,
+        columns,
+        content: columns.map((c) => c.content).filter((t) => t.trim()).join("\n\n"),
+      };
+    case "steps":
+      return {
+        ...block,
+        columns,
+        items: columns.map((c) => [c.label, c.content].filter((t) => t.trim()).join(": ")),
+      };
+    default:
+      return block;
+  }
+}
+
+export function withOrder(blocks: ChapterBlock[]): ChapterBlock[] {
+  return blocks.map((b, i) => (b.order === i ? b : { ...b, order: i }));
+}
+
+function retagColumns(cols: PracticalColumn[] | undefined): PracticalColumn[] | undefined {
+  if (!cols?.length) return cols;
+  return cols.map((c) => ({ ...c, id: newBlockId("col") }));
+}
+
+export function duplicateBlock(block: ChapterBlock): ChapterBlock {
+  const copy = structuredClone(block) as ChapterBlock;
+  copy.id = newBlockId(block.type);
+  copy.heading = `${blockDisplayName(block)} (copy)`;
+  if (copy.type === "practical") {
+    copy.practical = {
+      ...copy.practical,
+      columns: retagColumns(copy.practical.columns) || copy.practical.columns,
+    };
+  } else if ("columns" in copy && copy.columns?.length) {
+    copy.columns = retagColumns(copy.columns);
+  }
+  return copy;
+}
+
+/** Empty required fields — drafts still save; use before treating a chapter as complete. */
+export function blockPublishIssue(block: ChapterBlock): string | null {
+  if (isColumnBlockType(block.type)) {
+    const filled = editorColumns(block).filter((c) => c.content.trim()).length;
+    if (filled < 2) return "Need at least 2 columns with content";
+    return null;
+  }
+  switch (block.type) {
+    case "overview":
+    case "why":
+    case "when":
+      return block.content.trim() ? null : "Body is empty";
+    case "tip":
+    case "warning":
+    case "gap":
+      return block.content.trim() ? null : "Body is empty";
+    case "quote":
+      return block.text.trim() ? null : "Quote is empty";
+    case "definition":
+      return block.term.trim() && block.definition.trim() ? null : "Term and definition required";
+    case "bullets":
+    case "checklist":
+      return block.items.some((i) => i.trim()) ? null : "Add at least one item";
+    case "code":
+      return block.code.trim() ? null : "Code is empty";
+    case "resources":
+      return block.items.some((r) => r.url.trim() || r.title.trim()) ? null : "Add at least one link";
+    case "curatedResources":
+      return block.items.some((it) => it.name.trim()) ? null : "Add at least one resource";
+    case "image":
+      return block.src.trim() ? null : "Image URL required";
+    case "video":
+      return block.url.trim() ? null : "Video URL required";
+    case "table":
+      return block.headers.some((h) => h.trim()) || block.rows.some((r) => r.some((c) => c.trim()))
+        ? null
+        : "Table is empty";
+    case "tree":
+      return block.nodes.some((n) => n.label.trim()) ? null : "Add at least one node";
+    case "tier":
+      return block.label.trim() ? null : "Label required";
+    default:
+      return null;
+  }
+}
+
+export function chapterPublishIssues(blocks: ChapterBlock[]): { id: string; message: string }[] {
+  return blocks
+    .map((b) => {
+      const message = blockPublishIssue(b);
+      return message ? { id: b.id, message } : null;
+    })
+    .filter((x): x is { id: string; message: string } => Boolean(x));
+}
+
+const CHROME = { accent: "amber" as BlockAccent, font: "sans" as BlockFont, order: 0 };
 
 export function emptyBlock(type: BlockType): ChapterBlock {
   const id = newBlockId(type);
@@ -250,75 +500,80 @@ export function emptyBlock(type: BlockType): ChapterBlock {
     case "overview":
     case "why":
     case "when":
+      return { id, ...CHROME, type, content: "" };
     case "keyDifference":
-      return { id, type, content: "" };
+      return { id, ...CHROME, type, content: "", columns: defaultColumnsFor("keyDifference") };
     case "tip":
     case "warning":
-      return { id, type, title: "", content: "" };
+      return { id, ...CHROME, type, title: "", content: "" };
     case "practical":
       return {
         id,
+        ...CHROME,
         type,
         practical: {
           app: "",
           scenario: "",
           pass: "",
           fail: "",
-          columns: [
-            { id: newBlockId("col"), label: "Fail Condition", content: "", tone: "rose" },
-            { id: newBlockId("col"), label: "Pass Condition", content: "", tone: "emerald" },
-          ],
+          columns: defaultColumnsFor("practical"),
         },
       };
     case "tradeoffs":
-      return { id, type, advantages: [], limitations: [] };
+      return { id, ...CHROME, type, advantages: [], limitations: [], columns: defaultColumnsFor("tradeoffs") };
     case "comparison":
       return {
         id,
+        ...CHROME,
         type,
         rows: [{ lever: "", equivalent: "", verdict: "" }],
         headers: { lever: "Lever", equivalent: "Equivalent" },
+        columns: defaultColumnsFor("comparison"),
       };
     case "code":
-      return { id, type, label: "Code example", code: "" };
+      return { id, ...CHROME, type, label: "Code example", code: "" };
     case "steps":
+      return { id, ...CHROME, type, title: "", items: [""], columns: defaultColumnsFor("steps") };
     case "checklist":
     case "bullets":
-      return { id, type, title: "", items: [""] };
+      return { id, ...CHROME, type, title: "", items: [""] };
     case "definition":
-      return { id, type, term: "", definition: "" };
+      return { id, ...CHROME, type, term: "", definition: "" };
     case "resources":
-      return { id, type, items: [{ title: "", url: "", description: "" }] };
+      return { id, ...CHROME, type, items: [{ title: "", url: "", description: "" }] };
     case "quote":
-      return { id, type, text: "", attribution: "" };
+      return { id, ...CHROME, type, text: "", attribution: "" };
     case "image":
-      return { id, type, src: "", alt: "", caption: "" };
+      return { id, ...CHROME, type, src: "", alt: "", caption: "" };
     case "table":
-      return { id, type, headers: ["Column A", "Column B"], rows: [["", ""]], caption: "" };
+      return { id, ...CHROME, type, headers: ["Column A", "Column B"], rows: [["", ""]], caption: "" };
     case "video":
-      return { id, type, url: "", caption: "" };
+      return { id, ...CHROME, type, url: "", caption: "" };
     case "tree":
-      return { id, type, title: "", nodes: [{ label: "", children: [] }] };
+      return { id, ...CHROME, type, title: "", nodes: [{ label: "", children: [] }] };
     case "featureMapping":
       return {
         id,
+        ...CHROME,
         type,
         title: "",
         sourceHeader: "Source",
         targetHeader: "Maps to",
         rows: [{ source: "", target: "" }],
+        columns: defaultColumnsFor("featureMapping"),
       };
     case "gap":
-      return { id, type, content: "", alternative: "" };
+      return { id, ...CHROME, type, content: "", alternative: "" };
     case "curatedResources":
       return {
         id,
+        ...CHROME,
         type,
         category: "",
         items: [{ name: "", description: "", links: [{ label: "", url: "" }] }],
       };
     case "tier":
-      return { id, type, label: "Free tier", detail: "", kind: "free" };
+      return { id, ...CHROME, type, label: "Free tier", detail: "", kind: "free" };
     default: {
       const _exhaustive: never = type;
       return _exhaustive;
@@ -388,7 +643,7 @@ export function legacyFieldsToBlocks(ch: LegacyChapterFields): ChapterBlock[] {
   if (ch.resourceLinks?.length) {
     out.push({ id: newBlockId("resources"), type: "resources", items: ch.resourceLinks });
   }
-  return out;
+  return withOrder(out);
 }
 
 /** Blocks to render: explicit `blocks` if set (even empty), else legacy synthesis. */
@@ -399,7 +654,7 @@ export function chapterBlocksForRender(ch: LegacyChapterFields): ChapterBlock[] 
 
 /** Blocks for the editor — hydrate from legacy once so Add Block can append. */
 export function chapterBlocksForEdit(ch: LegacyChapterFields): ChapterBlock[] {
-  if (Array.isArray(ch.blocks)) return ch.blocks;
+  if (Array.isArray(ch.blocks)) return withOrder(ch.blocks);
   return legacyFieldsToBlocks(ch);
 }
 
