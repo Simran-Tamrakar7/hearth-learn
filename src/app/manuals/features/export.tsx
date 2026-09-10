@@ -3,6 +3,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ChevronDown, FileDown, FileText, Printer } from "lucide-react";
 import type { ManualChapter, ManualItem } from "@/app/manuals/types";
+import { blockDisplayName, editorColumns, isColumnBlockType } from "@/app/manuals/features/blocks/types";
+import type { ChapterBlock } from "@/app/manuals/features/blocks/types";
 import { groupChaptersIntoParts } from "@/app/manuals/features/reader";
 import { useToast } from "@/components/ui/Toast";
 
@@ -65,15 +67,80 @@ function toolsBlock(tools: NonNullable<ManualChapter["tools"]>) {
     .join("\n\n---\n\n");
 }
 
+function blockToExport(block: ChapterBlock): string {
+  const title = blockDisplayName(block);
+  if (isColumnBlockType(block.type)) {
+    const lines: string[] = [`**${title}**`];
+    if (block.type === "practical" && (block.practical.app || block.practical.scenario)) {
+      lines.push(`**${block.practical.app}** — ${block.practical.scenario}`.trim());
+    }
+    for (const col of editorColumns(block)) {
+      if (col.content.trim()) lines.push(`**${col.label}:** ${col.content.trim()}`);
+    }
+    return lines.join("\n\n");
+  }
+  switch (block.type) {
+    case "overview":
+    case "why":
+    case "when":
+    case "gap":
+      return block.content.trim() ? `**${title}**\n\n${block.content.trim()}` : "";
+    case "tip":
+    case "warning":
+      return block.content.trim() ? `**${title}**\n\n${block.content.trim()}` : "";
+    case "quote":
+      return block.text.trim()
+        ? `**${title}**\n\n> ${block.text.trim()}${block.attribution ? `\n\n— ${block.attribution}` : ""}`
+        : "";
+    case "definition":
+      return block.term.trim() ? `**${block.term}**\n\n${block.definition}` : "";
+    case "bullets":
+    case "checklist":
+      return block.items.some((i) => i.trim())
+        ? `**${title}**\n\n${block.items.filter((i) => i.trim()).map((i) => `- ${i}`).join("\n")}`
+        : "";
+    case "code":
+      return block.code.trim() ? `**${block.label || title}**\n\n\`\`\`\n${block.code.trim()}\n\`\`\`` : "";
+    case "resources":
+      return block.items
+        .filter((r) => r.title.trim() || r.url.trim())
+        .map((r) => `- [${r.title || r.url}](${r.url}) ${r.description || ""}`.trim())
+        .join("\n");
+    case "image":
+      return block.src.trim() ? `**${title}**\n\n${block.src}` : "";
+    case "video":
+      return block.url.trim() ? `**${title}**\n\n${block.url}` : "";
+    case "table":
+      return block.headers.length ? `**${title}**\n\n${block.headers.join(" | ")}` : "";
+    case "tree":
+      return `**${title}**`;
+    case "curatedResources":
+      return block.items.some((it) => it.name.trim())
+        ? `**${title}**\n\n${block.items.map((it) => `- ${it.name}`).join("\n")}`
+        : "";
+    case "tier":
+      return block.label.trim() ? `**${block.label}**${block.detail ? ` — ${block.detail}` : ""}` : "";
+    default:
+      return "";
+  }
+}
+
 /** Plain-text export body for one chapter — MD frontmatter fields + markdown body. */
 export function chapterBodyForExport(ch: ManualChapter): string {
   const parts: string[] = [];
-  if (ch.overviewText?.trim()) parts.push(ch.overviewText.trim());
-  if (ch.why?.trim()) parts.push(`**Why it matters**\n\n${ch.why.trim()}`);
-  if (ch.when?.trim()) parts.push(`**When to use it**\n\n${ch.when.trim()}`);
-  if (ch.practical) parts.push(`**Practical example**\n\n${practicalBlock(ch.practical)}`);
-  if (ch.advantages?.length) parts.push(`**Advantages**\n\n${ch.advantages.map((a) => `- ${a}`).join("\n")}`);
-  if (ch.limitations?.length) parts.push(`**Limitations**\n\n${ch.limitations.map((l) => `- ${l}`).join("\n")}`);
+  if (Array.isArray(ch.blocks) && ch.blocks.length) {
+    for (const b of ch.blocks) {
+      const text = blockToExport(b);
+      if (text) parts.push(text);
+    }
+  } else {
+    if (ch.overviewText?.trim()) parts.push(ch.overviewText.trim());
+    if (ch.why?.trim()) parts.push(`**Why it matters**\n\n${ch.why.trim()}`);
+    if (ch.when?.trim()) parts.push(`**When to use it**\n\n${ch.when.trim()}`);
+    if (ch.practical) parts.push(`**Practical example**\n\n${practicalBlock(ch.practical)}`);
+    if (ch.advantages?.length) parts.push(`**Advantages**\n\n${ch.advantages.map((a) => `- ${a}`).join("\n")}`);
+    if (ch.limitations?.length) parts.push(`**Limitations**\n\n${ch.limitations.map((l) => `- ${l}`).join("\n")}`);
+  }
   if (ch.contentMarkdown?.trim()) parts.push(ch.contentMarkdown.trim());
   if (ch.customSummary?.trim()) parts.push(ch.customSummary.trim());
   if (ch.exercises?.length) {

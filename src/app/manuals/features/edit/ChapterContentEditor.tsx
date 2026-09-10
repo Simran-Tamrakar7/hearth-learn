@@ -7,7 +7,7 @@ import type { BlockType, ManualChapter, ManualExercise } from "@/app/manuals/typ
 import { LessonContentEditor } from "@/app/manuals/features/edit/LessonContentEditor";
 import { useChapterEditHistory } from "@/app/manuals/features/edit/editHistory";
 import { ChapterBlocksEditor } from "@/app/manuals/features/blocks/BlockEditor";
-import { chapterBlocksForEdit } from "@/app/manuals/features/blocks/types";
+import { chapterBlocksForEdit, chapterPublishIssues } from "@/app/manuals/features/blocks/types";
 
 const emptyExercise = (): ManualExercise => ({ prompt: "", solutionCode: "" });
 
@@ -130,6 +130,7 @@ export function ChapterContentEditor({
   }
 
   const blocks = chapterBlocksForEdit(chapter);
+  const publishIssues = chapterPublishIssues(blocks);
 
   return (
     <div className="space-y-3">
@@ -143,10 +144,18 @@ export function ChapterContentEditor({
         </button>
       ) : null}
 
+      {publishIssues.length ? (
+        <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          {publishIssues.length} incomplete block{publishIssues.length === 1 ? "" : "s"} — drafts still save. Fill required fields before treating this chapter as complete.
+        </p>
+      ) : null}
+
       <ChapterBlocksEditor
         blocks={blocks}
         allowedBlockTypes={allowedBlockTypes}
-        onChange={(next) => patchField("blocks", { blocks: chapter.blocks }, { blocks: next })}
+        onChange={(next, kind = "edit") =>
+          patchField("blocks", { blocks: chapter.blocks }, { blocks: next }, kind)
+        }
       />
 
       <label className="block space-y-1">

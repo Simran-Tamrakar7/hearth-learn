@@ -23,7 +23,8 @@ manuals/
 │   ├── categorization.tsx        ← categories, tags, CategoryManager, TagInput
 │   ├── export.tsx                ← PDF/DOCX export + ManualExportMenu
 │   ├── highlights.tsx            ← highlight store + Highlightable UI
-│   ├── local-storage.ts          ← user manuals in localStorage
+    │   ├── blocks/                   ← BlockShell + registry + ColumnsEditor + dnd list
+    │   ├── local-storage.ts          ← user manuals in localStorage
 │   └── edit/
 │       ├── ChapterContentEditor.tsx  ← field editor + in-session undo
 │       ├── LessonContentEditor.tsx   ← markdown toolbar (Add) vs typing (Edit)
@@ -57,6 +58,7 @@ manuals/
 | Tool tabs inside a chapter (JUnit/PyTest/Jest) | `features/reader.tsx` (`ToolSwitcher`) — data in chapter `tools[]` |
 | Inline chapter editor (write/preview toolbar) | `features/edit/LessonContentEditor.tsx` |
 | Chapter field editor shell + undo | `features/edit/ChapterContentEditor.tsx` |
+| Content blocks (shell, registry, columns, dnd) | `features/blocks/` |
 | Testing Types chapter **content** | `types/testing-types/part-N/chapter-M.ts` |
 | Testing Types TOC order / nesting | `types/testing-types/toc.ts` |
 | Playwright chapter **content** | `types/playwright/part-N/chapter-M.ts` |
@@ -82,7 +84,7 @@ manuals/
 | **API** | `POST /api/manuals/chapter` with `{ slug, sourceFile, chapter }` — writes only that `.ts` file; never touches siblings or `toc.ts` |
 | **When save runs** | Debounced chapter edit in `[slug]/page.tsx` → `commitPending()` → `saveChapterToDisk()` for builtin slugs (`testing-types`, `playwright`) |
 | **Rebuild needed?** | No MD compile step. After adding new chapter files, run `node scripts/generate-chapter-index.mjs` to refresh `chapters-manifest.ts` |
-| **Undo state** | `features/edit/editHistory.ts` — in-memory stack inside `ChapterContentEditor` (max 50 steps). Toolbar inserts in `LessonContentEditor` use `onAdd` (kind `"add"`); field typing uses kind `"edit"`. Lost on reload. Page-level TOC undo remains separate in `[slug]/page.tsx`. |
+| **Undo state** | `features/edit/editHistory.ts` — in-memory stack inside `ChapterContentEditor` (max 50 steps). Block add/delete/duplicate/reorder use kind `"add"`; typing uses `"edit"`. Toolbar inserts in `LessonContentEditor` use `onAdd`. Lost on reload. Page-level TOC undo remains separate in `[slug]/page.tsx`. |
 
 ## New manual convention
 
