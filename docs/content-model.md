@@ -16,7 +16,7 @@ Set **only in that type’s `_registry.ts`** (library: optional `status` on the 
 
 Structured lessons with chapters. **Builtin manuals:** `playwright`, `cypress`, `testing-types`, and `hearth-manual` (repository docs). Cypress is 108 chapters (Parts 0–14 + Appendices); rebuild from `scripts/cypress-manual-data/` via `node scripts/rebuild-cypress-manual.mjs`, then regenerate the index. Do not rewrite Playwright / Testing Types / Hearth chapter files when changing Cypress.
 
-- **Listing:** `src/app/manuals/registry.ts`
+- **Listing:** `src/app/manuals/registry.ts` (`KEPT_BUILTIN_SLUGS`). Those four always show on `/manuals`; localStorage hide is only for user-added manuals.
 - **Chapter source of truth:** `src/app/manuals/types/<slug>/part-N/chapter-M.ts` (each file owns all content inline)
 - **Chapter index (auto-generated):** `src/app/manuals/types/<slug>/chapters-manifest.ts` — run `node scripts/generate-chapter-index.mjs`
 - **TOC ordering:** `src/app/manuals/types/<slug>/toc.ts` (structure only — no chapter content)

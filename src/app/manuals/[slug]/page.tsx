@@ -1654,7 +1654,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                       >
                         Done
                       </button>
-                      {perms.canDelete ? (
+                      {perms.canDelete && !(KEPT_BUILTIN_SLUGS as readonly string[]).includes(slug) ? (
                         <button
                           type="button"
                           onClick={() => {
