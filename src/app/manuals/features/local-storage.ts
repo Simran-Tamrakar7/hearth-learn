@@ -6,7 +6,7 @@
  * Changing this file changes all of those pages at once.
  * ========================================================================== */
 
-import { KEPT_BUILTIN_SLUGS } from "@/app/manuals/registry";
+import { isKeptBuiltinSlug, KEPT_BUILTIN_SLUGS } from "@/app/manuals/registry";
 import type { ManualChapter, ManualItem } from "@/app/manuals/types";
 import { pinsStoreKey, progressStoreKey, readScopedRaw, removeScopedRaw, writeScopedRaw } from "../../../lib/userScope.ts";
 
@@ -316,7 +316,8 @@ export function purgeRemovedManualCatalog() {
   if (typeof window === "undefined") return;
   const keptIds = KEPT_BUILTIN_SLUGS.map((s) => `manual-${s}`);
   localStorage.setItem(STORE, JSON.stringify([]));
-  const hidden = [...hiddenManualSlugs()].filter((s) => KEPT_BUILTIN_SLUGS.includes(s as (typeof KEPT_BUILTIN_SLUGS)[number]));
+  // ponytail: kept builtins always belong on /manuals. "Delete manual" used to persist them in HIDDEN forever.
+  const hidden = [...hiddenManualSlugs()].filter((s) => !isKeptBuiltinSlug(s));
   localStorage.setItem(HIDDEN, JSON.stringify(hidden));
   try {
     const raw = readScopedRaw(pinsStoreKey());
@@ -349,6 +350,7 @@ export function purgeRemovedManualCatalog() {
 
 export function hideManual(slug: string): boolean {
   if (typeof window === "undefined") return false;
+  if (isKeptBuiltinSlug(slug)) return false;
   const next = mergeHiddenSlug([...hiddenManualSlugs()], slug);
   localStorage.setItem(HIDDEN, JSON.stringify(next));
   unpinSlug(slug);

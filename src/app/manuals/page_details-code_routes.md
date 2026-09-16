@@ -68,7 +68,7 @@ manuals/
 | Rebuild Cypress catalog from JSON | `scripts/cypress-manual-data/pNN.json` then `node scripts/rebuild-cypress-manual.mjs` |
 | Regenerate chapter index after adding files | `node scripts/generate-chapter-index.mjs` |
 | Registry (hide/feature/pin/order) | `registry.ts` |
-| User / AI manuals (`localStorage`) | `features/local-storage.ts` |
+| User / AI manuals (`localStorage`) | `features/local-storage.ts` — `hearth_hidden_manual_slugs` never hides `KEPT_BUILTIN_SLUGS` (playwright, testing-types, cypress, hearth-manual) |
 | Add blank manual (`+` on `/manuals` and `/library`) | `features/catalog.tsx` |
 | AI notes → manual formatting | `/api/manuals/generate` |
 | Playwright roadmap download | `playwright/roadmapData.ts` |
