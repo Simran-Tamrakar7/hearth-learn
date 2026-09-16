@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { ChevronDown, FileDown, FileText, Printer } from "lucide-react";
 import type { ManualChapter, ManualItem } from "@/app/manuals/types";
 import { blockDisplayName, editorColumns, isColumnBlockType } from "@/app/manuals/features/blocks/types";
-import { blocksInLayoutOrder } from "@/app/manuals/features/blocks/layout";
+import { blocksInLayoutOrder } from "@/app/manuals/features/blocks/blockLayout";
 import type { ChapterBlock } from "@/app/manuals/features/blocks/types";
 import { groupChaptersIntoParts } from "@/app/manuals/features/reader";
 import { useToast } from "@/components/ui/Toast";

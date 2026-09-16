@@ -10,7 +10,7 @@ import { ToolSwitcher, testingTypesMdSections } from "@/app/manuals/features/rea
 import { ChapterBlockView } from "@/app/manuals/features/blocks/BlockViews";
 import { chapterBlocksForRender, legacyFieldsToBlocks } from "@/app/manuals/features/blocks/types";
 import type { BlockLayout, ChapterBlock } from "@/app/manuals/features/blocks/types";
-import { rowGridClass, sanitizeLayout } from "@/app/manuals/features/blocks/layout";
+import { rowGridClass, sanitizeLayout } from "@/app/manuals/features/blocks/blockLayout";
 import {
   AdvantagesLimitations,
   CodeReferenceBox,

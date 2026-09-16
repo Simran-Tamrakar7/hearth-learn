@@ -22,7 +22,7 @@ import { PLAYWRIGHT_TOC_VERSION } from "@/app/manuals/types/playwright/toc";
 import { CYPRESS_TOC_VERSION } from "@/app/manuals/types/cypress/toc";
 import { HEARTH_MANUAL_TOC_VERSION } from "@/app/manuals/types/hearth-manual/toc";
 import { isTestingTypesSlug } from "@/app/manuals/types/testing-types/TestingTypesManual";
-import { parseBlockLayout } from "@/app/manuals/features/blocks/layout";
+import { parseBlockLayout } from "@/app/manuals/features/blocks/blockLayout";
 
 export {
   TESTING_TYPES_TOC,

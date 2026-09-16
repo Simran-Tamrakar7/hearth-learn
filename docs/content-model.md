@@ -47,7 +47,7 @@ Optional `blockLayout` stores first-class rows (`columns: 1|2|3` + `blockIds`). 
 
 Editor: **Add Block** (filtered by settings) and **Add Row** (1/2/3 columns). Each row has a Layout `[1][2][3]` control. Chrome lives in one `<BlockShell>` (rename, accent, font, collapse, Left/Right/Up/Down, duplicate, delete, drag handle). Drag-and-drop (`@dnd-kit`) moves blocks between rows and columns. Comparison types share `<ColumnsEditor>`. Text fields use a bold/italic/underline toolbar.
 
-Shared code: `features/blocks/{types,layout,registry,BlockShell,ColumnsEditor,BlockBodies,BlockEditor,BlockViews}.tsx`, `ChapterFullContent.tsx`. Incomplete blocks save as drafts; `chapterPublishIssues` flags empty required fields without blocking autosave.
+Shared code: `features/blocks/{types,blockLayout,registry,BlockShell,ColumnsEditor,BlockBodies,BlockEditor,BlockViews}.tsx`, `ChapterFullContent.tsx`. Incomplete blocks save as drafts; `chapterPublishIssues` flags empty required fields without blocking autosave.
 
 Legacy fields (`why`, `when`, `practical`, `advantages`/`limitations`, `comparisons`, …) still hydrate when `blocks` is unset so existing chapter files keep working.
 

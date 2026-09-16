@@ -22,7 +22,7 @@ import {
   sanitizeLayout,
   setRowColumns,
   stackedLayout,
-} from "../src/app/manuals/features/blocks/layout";
+} from "../src/app/manuals/features/blocks/blockLayout";
 
 assert.equal(BLOCK_TYPES.length, BLOCK_CATALOG.length, "catalog must list every type");
 

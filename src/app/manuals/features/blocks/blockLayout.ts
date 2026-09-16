@@ -85,8 +85,13 @@ export function persistableLayout(
   return next;
 }
 
-export function rowGridClass(columns: RowColumns): string {
-  if (columns === 3) return "grid grid-cols-1 lg:grid-cols-3 gap-3";
+export function rowGridClass(columns: RowColumns, collapseOnMobile = true): string {
+  if (!collapseOnMobile) {
+    if (columns === 3) return "grid grid-cols-3 gap-3";
+    if (columns === 2) return "grid grid-cols-2 gap-3";
+    return "grid grid-cols-1 gap-3";
+  }
+  if (columns === 3) return "grid grid-cols-1 md:grid-cols-3 gap-3";
   if (columns === 2) return "grid grid-cols-1 md:grid-cols-2 gap-3";
   return "grid grid-cols-1 gap-3";
 }
