@@ -117,6 +117,19 @@ export interface CuratedResourceItem {
   links: { label: string; url: string }[];
 }
 
+/** First-class row containers — not CSS-only. Each row is 1, 2, or 3 columns. */
+export type RowColumns = 1 | 2 | 3;
+
+export type BlockRow = {
+  id: string;
+  columns: RowColumns;
+  blockIds: string[];
+};
+
+export type BlockLayout = {
+  rows: BlockRow[];
+};
+
 /** Shared chrome on every block — rename / color / font without changing type. */
 export type BlockChrome = {
   id: string;
@@ -596,6 +609,7 @@ export type LegacyChapterFields = {
   codeSnippet?: string;
   resourceLinks?: GoDeeperResource[];
   blocks?: ChapterBlock[];
+  blockLayout?: BlockLayout;
 };
 
 /** Synthesize blocks from legacy chapter fields when `blocks` is unset. */

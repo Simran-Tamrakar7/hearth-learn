@@ -152,9 +152,15 @@ export function ChapterContentEditor({
 
       <ChapterBlocksEditor
         blocks={blocks}
+        layout={chapter.blockLayout}
         allowedBlockTypes={allowedBlockTypes}
         onChange={(next, kind = "edit") =>
-          patchField("blocks", { blocks: chapter.blocks }, { blocks: next }, kind)
+          patchField(
+            "blocks",
+            { blocks: chapter.blocks, blockLayout: chapter.blockLayout },
+            { blocks: next.blocks, blockLayout: next.blockLayout },
+            kind
+          )
         }
       />
 

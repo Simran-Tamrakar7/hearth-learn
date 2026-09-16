@@ -22,6 +22,7 @@ import { PLAYWRIGHT_TOC_VERSION } from "@/app/manuals/types/playwright/toc";
 import { CYPRESS_TOC_VERSION } from "@/app/manuals/types/cypress/toc";
 import { HEARTH_MANUAL_TOC_VERSION } from "@/app/manuals/types/hearth-manual/toc";
 import { isTestingTypesSlug } from "@/app/manuals/types/testing-types/TestingTypesManual";
+import { parseBlockLayout } from "@/app/manuals/features/blocks/layout";
 
 export {
   TESTING_TYPES_TOC,
@@ -270,6 +271,7 @@ function chapterToHearth(ch: Record<string, unknown>, order: number): ManualChap
       ? (ch.codeReferences as ManualChapter["codeReferences"])
       : undefined,
     blocks: Array.isArray(ch.blocks) ? (ch.blocks as ManualChapter["blocks"]) : undefined,
+    blockLayout: parseBlockLayout(ch.blockLayout),
     exercises,
     resourceLinks: resourcesFrom(ch as Parameters<typeof resourcesFrom>[0]),
   };
@@ -438,6 +440,7 @@ function mergeSavedChapter(catalog: ManualChapter, saved: ManualChapter): Manual
     keyDifferences: saved.keyDifferences?.length ? saved.keyDifferences : catalog.keyDifferences,
     codeReferences: saved.codeReferences?.length ? saved.codeReferences : catalog.codeReferences,
     blocks: Array.isArray(saved.blocks) ? saved.blocks : catalog.blocks,
+    blockLayout: Array.isArray(saved.blocks) ? saved.blockLayout : catalog.blockLayout,
     contentMarkdown: pickMarkdown(catalog.contentMarkdown, saved.contentMarkdown),
     customSummary: saved.customSummary?.trim() || catalog.customSummary,
     aiSummary: saved.aiSummary?.trim() || catalog.aiSummary,

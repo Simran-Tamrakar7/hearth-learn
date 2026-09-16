@@ -18,9 +18,8 @@ type DragHandle = {
 export function BlockShell({
   block,
   catalogLabel,
-  index,
-  total,
   dragHandle,
+  canMove,
   onChange,
   onMove,
   onDuplicate,
@@ -29,11 +28,10 @@ export function BlockShell({
 }: {
   block: ChapterBlock;
   catalogLabel: string;
-  index: number;
-  total: number;
   dragHandle?: DragHandle;
+  canMove: { up: boolean; down: boolean; left: boolean; right: boolean };
   onChange: (next: ChapterBlock) => void;
-  onMove: (dir: -1 | 1) => void;
+  onMove: (dir: "up" | "down" | "left" | "right") => void;
   onDuplicate: () => void;
   onDelete: () => void;
   children: ReactNode;
@@ -42,12 +40,12 @@ export function BlockShell({
   const collapsed = Boolean(block.collapsed);
 
   return (
-    <fieldset id={`block-${block.id}`} className="p-3 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] space-y-2">
+    <fieldset id={`block-${block.id}`} className="p-3 rounded-xl border border-[#E7E0D3] bg-[#FAF7F2] space-y-2 h-full">
       <legend className="px-1 text-[10px] font-bold uppercase tracking-wider text-[#D97706] flex items-center gap-1">
         <button
           type="button"
           className="cursor-grab active:cursor-grabbing p-0.5 rounded text-[#C4B8A8] hover:text-[#52635E] touch-none"
-          title="Drag to reorder"
+          title="Drag between rows and columns"
           aria-label="Drag to reorder"
           {...(dragHandle?.attributes as ButtonHTMLAttributes<HTMLButtonElement>)}
           {...(dragHandle?.listeners as ButtonHTMLAttributes<HTMLButtonElement> | undefined)}
@@ -118,16 +116,32 @@ export function BlockShell({
         </button>
         <button
           type="button"
-          disabled={index === 0}
-          onClick={() => onMove(-1)}
+          disabled={!canMove.left}
+          onClick={() => onMove("left")}
+          className="text-[10px] font-bold px-2 py-1 rounded-lg border border-[#E7E0D3] disabled:opacity-40"
+        >
+          Left
+        </button>
+        <button
+          type="button"
+          disabled={!canMove.right}
+          onClick={() => onMove("right")}
+          className="text-[10px] font-bold px-2 py-1 rounded-lg border border-[#E7E0D3] disabled:opacity-40"
+        >
+          Right
+        </button>
+        <button
+          type="button"
+          disabled={!canMove.up}
+          onClick={() => onMove("up")}
           className="text-[10px] font-bold px-2 py-1 rounded-lg border border-[#E7E0D3] disabled:opacity-40"
         >
           Up
         </button>
         <button
           type="button"
-          disabled={index === total - 1}
-          onClick={() => onMove(1)}
+          disabled={!canMove.down}
+          onClick={() => onMove("down")}
           className="text-[10px] font-bold px-2 py-1 rounded-lg border border-[#E7E0D3] disabled:opacity-40"
         >
           Down
