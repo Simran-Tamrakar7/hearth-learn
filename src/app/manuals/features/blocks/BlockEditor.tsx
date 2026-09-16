@@ -48,7 +48,7 @@ import {
   sanitizeLayout,
   setRowColumns,
   moveBlockStep,
-} from "@/app/manuals/features/blocks/layout";
+} from "@/app/manuals/features/blocks/blockLayout";
 
 export type BlockChangeKind = "edit" | "add";
 
@@ -358,7 +358,7 @@ export function ChapterBlocksEditor({
                     ) : null}
                   </div>
                 </div>
-                <RowDroppable rowId={row.id} className={rowGridClass(row.columns)}>
+                <RowDroppable rowId={row.id} className={rowGridClass(row.columns, false)}>
                   <SortableContext
                     items={row.blockIds}
                     strategy={row.columns === 1 ? verticalListSortingStrategy : rectSortingStrategy}
