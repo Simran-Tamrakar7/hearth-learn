@@ -1,19 +1,33 @@
 import type { ChapterRecord } from "../../../types";
 
-/** 21. Cookies & Local Storage */
+/** 3.7 File Uploads */
 export const chapter = {
-  id: "cy-21-cookies",
-  title: "21. Cookies & Local Storage",
-  minutes: 28,
-  level: "intermediate",
-  phase: "Part 3 · Actions",
-  partName: "Part 3 · Actions",
-  overviewText: "Comprehensive coverage of Cookies & Local Storage in Cypress with code examples, Playwright comparisons, and interview-ready depth paired with the Playwright manual.",
-  tools: [],
-  customSummary: "- Built-in cookie commands (cy.setCookie, getCookie, clearCookie(s)) — no plugin needed; cookies auto-clear before each test by default (testIsolation).\n- localStorage commands (cy.setLocalStorage, etc.) are newer (12+); the cy.window().then(win => win.localStorage...) escape hatch is the older, still-useful general pattern.\n- These are the literal building blocks under cy.session() (Ch. 26).",
-  contentMarkdown: "## Cookies — go deeper on Cypress's built-in commands and the cross-test-isolation behavior\n\n```javascript\ncy.setCookie('session_token', 'abc123');\ncy.getCookie('session_token').should('have.property', 'value', 'abc123');\ncy.getCookies();          // all cookies for the current domain\ncy.clearCookie('session_token');\ncy.clearCookies();        // clears all\nCypress has built-in first-class cookie commands (cy.setCookie, cy.getCookie, cy.clearCookie, and their plural forms) — no plugin needed, similar in convenience to Playwright's context.add_cookies()/context.cookies(). Worth knowing the default isolation behavior: by default, Cypress automatically clears cookies before each test (configurable via testIsolation in newer Cypress versions), giving you test-to-test isolation similar in spirit to Playwright's fresh-BrowserContext-per-test default (Part 1, Ch. 3 of your Playwright manual) — just achieved through explicit cookie-clearing rather than Playwright's fuller context-level isolation (which also isolates localStorage, cache, and permissions, not just cookies).\n```\n\n## Local storage — go deeper on the historical gap and current built-in commands\n\nWorth knowing the history briefly: Cypress didn't have built-in localStorage commands for a long time, and directly manipulating window.localStorage via cy.window() was the standard workaround for years. Recent Cypress versions (12+) added first-class commands:\n```javascript\ncy.window().then((win) => {\n  win.localStorage.setItem('theme', 'dark');\n});\n\n// Newer built-in commands (Cypress 12+)\ncy.setLocalStorage('theme', 'dark');\ncy.getLocalStorage('theme').should('eq', 'dark');\ncy.clearLocalStorage();\nThe cy.window().then((win) => { win.localStorage... }) pattern is worth understanding even if you use the newer built-in commands going forward, since it's the more general escape hatch pattern (directly touching the real browser window object) that you'll reach for constantly elsewhere too — it's the same underlying technique used for the prompt() stubbing in Chapter 20 and for reading/writing anything else on window that Cypress doesn't have a dedicated command for.\n```\n\n## Tying forward to session reuse — brief preview of Chapter 26\n\nCookies and localStorage manipulation are the literal building blocks underneath Cypress's higher-level cy.session() command (Chapter 26) — cy.session() is essentially a smart wrapper that caches and restores exactly this kind of cookie/localStorage state between tests, similar in purpose to Playwright's storage_state (Part 4, Ch. 20 of your Playwright manual), so understanding the raw commands here directly sets up why cy.session() works the way it does later.",
-  exercises: [],
-  resourceLinks: [],
-  steps: [],
-  learn: [],
+  "id": "cy-3-7-file-uploads",
+  "title": "3.7 File Uploads",
+  "minutes": 24,
+  "level": "intermediate",
+  "phase": "Part 3 · Interacting with Elements",
+  "partName": "Part 3 · Interacting with Elements",
+  "overviewText": ".selectFile() is a core Cypress command since 9.3 — you do not need cypress-file-upload for new work. Pass a fixture path, an array of files, or an in-memory contents object. { action: 'drag-drop' } fires drop events for drop-zone UIs; the default action sets the hidden <input type=file>.",
+  "why": "Older Stack Overflow answers still prescribe cypress-file-upload's .attachFile(). Interviewers notice whether you know the built-in command and the version floor. Drop-zones that only listen for drop will ignore a default selectFile.",
+  "when": "Resume upload, expense receipts, bulk employee CSV import. Revisit when a drop-zone ignores the file or when a tutorial tells you to install cypress-file-upload on Cypress 13.",
+  "practical": {
+    "app": "Bizlevate HRM — onboarding resume + TADA receipt drop-zone",
+    "scenario": "Attach resume.pdf via a hidden file input, then drop a receipt PNG onto a drag-and-drop zone.",
+    "pass": "You .selectFile('cypress/fixtures/resume.pdf') on the input and .selectFile(..., { action: 'drag-drop' }) on the zone. You assert the filename chip / upload success, not only that the command queued.",
+    "fail": "You add cypress-file-upload on a 9.3+ project as if it were required, or you default-selectFile a drop-zone that only handles drop events."
+  },
+  "tools": [],
+  "customSummary": "- .selectFile() is built-in since Cypress 9.3; cypress-file-upload is legacy.\n- Paths are relative to the project root (typically cypress/fixtures/...).\n- { action: 'drag-drop' } for drop zones; default action for <input type=file>.\n- contents + fileName + mimeType for in-memory files without a fixture on disk.\n- Assert the UI result (chip, preview, POST via intercept) after the select.",
+  "contentMarkdown": "## `.selectFile()` since 9.3\n\nFor years Cypress had no upload command; `cypress-file-upload` (`.attachFile()`) was universal. **Cypress 9.3 added `.selectFile()` to core.** New tests should use the built-in. Recognize `.attachFile` in old code; do not add the plugin on a modern Cypress just because a blog post says so.\n\n```js\ncy.get('[data-cy=resume-upload]').selectFile('cypress/fixtures/resume.pdf');\n\ncy.get('[data-cy=attachments]').selectFile([\n  'cypress/fixtures/id-front.png',\n  'cypress/fixtures/id-back.png',\n]);\n```\n\nPaths are from the project root (where `cypress.config` lives), not from the spec file.\n\n## Drop-zones vs file inputs\n\nDefault action: set files on an `<input type=\"file\">` (including `display:none` inputs — this is a legitimate `{ force: true }` / hidden-input case; `.selectFile` can target the input directly).\n\nIf the UI is a big \"drop files here\" surface whose JS listens for `drop` and **does not** wire a hidden input, the default action never runs the app code:\n\n```js\ncy.get('[data-cy=receipt-dropzone]').selectFile(\n  'cypress/fixtures/taxi-receipt.png',\n  { action: 'drag-drop' },\n);\n```\n\n`action: 'select'` (default) vs `'drag-drop'` is the difference between setting `input.files` and dispatching drag events. Match the widget.\n\n## In-memory files\n\n```js\ncy.get('[data-cy=csv-import]').selectFile({\n  contents: Cypress.Buffer.from('employeeId,name\\n1,Simran Tamrakar\\n'),\n  fileName: 'employees.csv',\n  mimeType: 'text/csv',\n});\n```\n\nUseful when you do not want a fixture on disk, or when the file must include today's date. `Cypress.Buffer` is the bundled buffer helper.\n\n## What to assert\n\nSelecting a file is not a complete test. Assert the filename chip, a preview thumbnail, disabled Submit until upload finishes, or:\n\n```js\ncy.intercept('POST', '/api/employees/*/resume').as('resumeUpload');\ncy.get('[data-cy=resume-upload]').selectFile('cypress/fixtures/resume.pdf');\ncy.wait('@resumeUpload').its('response.statusCode').should('eq', 201);\n```\n\n## vs Playwright\n\nPlaywright `locator.set_input_files()` is the analogue. Cypress's `{ action: 'drag-drop' }` is the extra knob for drop-zones. Both should use fixtures, not production PII files.",
+  "advantages": [
+    "3.7 File Uploads — Older Stack Overflow answers still prescribe cypress-file-upload's."
+  ],
+  "limitations": [
+    "3.7 File Uploads is this Part's slice only; later chapters go deeper rather than repeating this one."
+  ],
+  "exercises": [],
+  "resourceLinks": [],
+  "steps": [],
+  "learn": []
 } as ChapterRecord;
