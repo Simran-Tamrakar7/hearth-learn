@@ -41,11 +41,13 @@ Each `part-N/chapter-M.ts` must:
 
 Full Content prefers an ordered `blocks[]` on the chapter when present. Each entry is a typed block (`why`, `comparison`, `bullets`, `tree`, …) with its own input shape. Unused types simply are not in the array — nothing is auto-added.
 
-Editor: **Add Block** menu (grouped Text / Comparison / Reference / Media) appends an empty block. Chrome lives in one `<BlockShell>` (rename, accent, font, collapse, Up/Down, duplicate, delete, drag handle). Type-specific UI is a registry `Body`. Comparison types (Practical Example, Advantages/Limitations, Comparison Table, Feature Mapping, Key Difference, Steps) share `<ColumnsEditor>` (add/delete/recolor columns; delete hidden at min 2). Drag-and-drop reorder uses `@dnd-kit`; Up/Down remain for keyboard. Text fields use a bold/italic/underline toolbar.
+Optional `blockLayout` stores first-class rows (`columns: 1|2|3` + `blockIds`). Omitted layout hydrates as one block per row. Different rows can have different column counts. Changing 3→2 overflows extras into new 1-col rows; dropping a fourth block into a full row does the same. Existing chapter files are not rewritten until the author actually uses a non-stacked layout.
 
-Manual-level `allowedBlockTypes` (manual settings while editing, grouped by category) filters that menu only — it never strips blocks already saved on a chapter. Incomplete blocks save as drafts; publish-style validation (`chapterPublishIssues`) flags empty required fields without blocking autosave.
+**Manual settings** (`allowedBlockTypes` on the manual): enable/disable catalog types for the Add Block menu only. Disabled types stay on chapters that already use them. The chapter editor does not create, edit, or delete block *types* — only instances (add, arrange, duplicate, delete, edit content). The same type can appear many times; instances are independent.
 
-Shared code: `features/blocks/{types,registry,BlockShell,ColumnsEditor,BlockBodies,BlockEditor,BlockViews}.tsx`, `ChapterFullContent.tsx`.
+Editor: **Add Block** (filtered by settings) and **Add Row** (1/2/3 columns). Each row has a Layout `[1][2][3]` control. Chrome lives in one `<BlockShell>` (rename, accent, font, collapse, Left/Right/Up/Down, duplicate, delete, drag handle). Drag-and-drop (`@dnd-kit`) moves blocks between rows and columns. Comparison types share `<ColumnsEditor>`. Text fields use a bold/italic/underline toolbar.
+
+Shared code: `features/blocks/{types,layout,registry,BlockShell,ColumnsEditor,BlockBodies,BlockEditor,BlockViews}.tsx`, `ChapterFullContent.tsx`. Incomplete blocks save as drafts; `chapterPublishIssues` flags empty required fields without blocking autosave.
 
 Legacy fields (`why`, `when`, `practical`, `advantages`/`limitations`, `comparisons`, …) still hydrate when `blocks` is unset so existing chapter files keep working.
 

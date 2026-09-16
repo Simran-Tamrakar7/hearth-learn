@@ -6,7 +6,7 @@ Last verified against `main` — September 2026.
 
 - **Catalog:** add manual with title, category, tags, cover URL; Add button uses active theme color.
 - **Reader (all slugs):** Full Content / Summary / Quiz & Activities tabs; no AI Summary tab.
-- **Full Content insights:** `blocks[]` via a `<BlockShell>` + registry (new types = Body + catalog entry). Drag-and-drop reorder (`@dnd-kit`) with Up/Down fallback. Comparison types share a columns editor. Manual `allowedBlockTypes` filters the Add menu only. Incomplete blocks save as drafts. Legacy why/when/… fields still hydrate when `blocks` is unset.
+- **Full Content insights:** `blocks[]` via a `<BlockShell>` + registry (new types = Body + catalog entry). Per-row 1/2/3-column `blockLayout` with drag between rows/columns (`@dnd-kit`). Manual settings `allowedBlockTypes` filters the Add menu only. Incomplete blocks save as drafts. Legacy why/when/… fields still hydrate when `blocks` is unset.
 - **Edit:** pencil icon on chapter header and catalog cards; markdown toolbar (H1–H3, bold, lists, code) on Summary and Full Content.
 - **TOC edit:** move up/down, merge, delete chapters; delete whole manual while TOC edit is open.
 - **Export:** PDF, DOCX, Print from header on every manual.

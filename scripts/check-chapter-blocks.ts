@@ -14,6 +14,15 @@ import {
   duplicateBlock,
   chapterPublishIssues,
 } from "../src/app/manuals/features/blocks/types";
+import {
+  applyDrop,
+  isDefaultStacked,
+  moveBlockToRow,
+  persistableLayout,
+  sanitizeLayout,
+  setRowColumns,
+  stackedLayout,
+} from "../src/app/manuals/features/blocks/layout";
 
 assert.equal(BLOCK_TYPES.length, BLOCK_CATALOG.length, "catalog must list every type");
 
@@ -85,5 +94,55 @@ assert.ok(incomplete.length >= 1, "empty column block fails publish validation")
 const filtered = blockTypesForMenu(["tip", "quote"]);
 assert.equal(filtered.length, 2);
 assert.ok(filtered.every((m) => m.type === "tip" || m.type === "quote"));
+
+const stacked = stackedLayout(["a", "b", "c"]);
+assert.ok(isDefaultStacked(stacked, ["a", "b", "c"]));
+assert.equal(persistableLayout(undefined, stacked, ["a", "b", "c"]), undefined);
+
+const twoCol = setRowColumns(stacked, stacked.rows[0].id, 2);
+assert.equal(twoCol.rows[0].columns, 2);
+assert.ok(persistableLayout(undefined, twoCol, ["a", "b", "c"]));
+
+const withC = moveBlockToRow(
+  {
+    rows: [
+      { id: "r1", columns: 2, blockIds: ["a", "b"] },
+      { id: "r2", columns: 1, blockIds: ["c"] },
+    ],
+  },
+  "c",
+  "r1",
+  2
+);
+assert.equal(withC.rows.find((r) => r.id === "r1")?.columns, 3);
+assert.deepEqual(withC.rows.find((r) => r.id === "r1")?.blockIds, ["a", "b", "c"]);
+
+const overflow = moveBlockToRow(
+  { rows: [{ id: "r", columns: 3, blockIds: ["a", "b", "c"] }] },
+  "d",
+  "r",
+  3
+);
+assert.equal(overflow.rows[0].blockIds.length, 3);
+assert.equal(overflow.rows[1].blockIds[0], "d");
+
+const shrunk = setRowColumns(
+  { rows: [{ id: "r", columns: 3, blockIds: ["a", "b", "c"] }] },
+  "r",
+  2
+);
+assert.deepEqual(shrunk.rows[0].blockIds, ["a", "b"]);
+assert.deepEqual(shrunk.rows[1].blockIds, ["c"]);
+
+const reordered = applyDrop(
+  { rows: [{ id: "r", columns: 3, blockIds: ["a", "b", "c"] }] },
+  "c",
+  "a"
+);
+assert.deepEqual(reordered.rows[0].blockIds, ["c", "a", "b"]);
+
+const orphans = sanitizeLayout({ rows: [{ id: "r", columns: 1, blockIds: ["gone"] }] }, ["keep"]);
+assert.ok(orphans.rows.some((r) => r.blockIds.includes("keep")));
+assert.ok(!orphans.rows.some((r) => r.blockIds.includes("gone")));
 
 console.log("check-chapter-blocks: ok");

@@ -6,9 +6,9 @@
  * Changing this file changes all of those pages at once.
  * ========================================================================== */
 
-import type { BlockType, ChapterBlock, PracticalColumn, ColumnTone } from "@/app/manuals/features/blocks/types";
+import type { BlockType, ChapterBlock, PracticalColumn, ColumnTone, BlockLayout } from "@/app/manuals/features/blocks/types";
 
-export type { BlockType, ChapterBlock, PracticalColumn, ColumnTone };
+export type { BlockType, ChapterBlock, PracticalColumn, ColumnTone, BlockLayout };
 
 export interface GoDeeperResource {
   title: string;
@@ -89,6 +89,8 @@ export interface ChapterRecord {
   codeReferences?: CodeReference[];
   /** Ordered content blocks — when set, Full Content renders these instead of legacy fields. */
   blocks?: ChapterBlock[];
+  /** Per-row 1/2/3-column placement of `blocks`. Omitted = one block per row. */
+  blockLayout?: BlockLayout;
   tools?: ToolItem[];
   contentMarkdown: string;
   /** User-authored summary — shown in Summary view (testing-types / Playwright pattern). */
@@ -136,6 +138,8 @@ export interface ManualChapter {
   codeReferences?: CodeReference[];
   /** Ordered content blocks — when set, Full Content renders these instead of legacy fields. */
   blocks?: ChapterBlock[];
+  /** Per-row 1/2/3-column placement of `blocks`. Omitted = one block per row. */
+  blockLayout?: BlockLayout;
   exercises: ManualExercise[];
   resourceLinks: GoDeeperResource[];
 }

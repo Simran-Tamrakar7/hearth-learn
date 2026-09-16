@@ -9,6 +9,8 @@ import { MarkedText } from "@/app/manuals/features/highlights";
 import { ToolSwitcher, testingTypesMdSections } from "@/app/manuals/features/reader";
 import { ChapterBlockView } from "@/app/manuals/features/blocks/BlockViews";
 import { chapterBlocksForRender, legacyFieldsToBlocks } from "@/app/manuals/features/blocks/types";
+import type { BlockLayout, ChapterBlock } from "@/app/manuals/features/blocks/types";
+import { rowGridClass, sanitizeLayout } from "@/app/manuals/features/blocks/layout";
 import {
   AdvantagesLimitations,
   CodeReferenceBox,
@@ -59,11 +61,7 @@ export function ChapterFullContent({
       ) : null}
 
       {hasBlocks ? (
-        <div className="space-y-3.5">
-          {blocks.map((block) => (
-            <ChapterBlockView key={block.id} block={block} highlights={highlights} />
-          ))}
-        </div>
+        <ChapterBlocksLayout blocks={blocks} layout={chapter.blockLayout} highlights={highlights} />
       ) : !usingBlocks ? (
         <LegacyInsightFields chapter={chapter} highlights={highlights} />
       ) : null}
@@ -98,6 +96,34 @@ export function ChapterFullContent({
         </div>
       ) : null}
     </motion.div>
+  );
+}
+
+function ChapterBlocksLayout({
+  blocks,
+  layout,
+  highlights,
+}: {
+  blocks: ChapterBlock[];
+  layout?: BlockLayout;
+  highlights: ChapterHighlight[];
+}) {
+  const rows = sanitizeLayout(layout, blocks.map((b) => b.id)).rows;
+  const byId = new Map(blocks.map((b) => [b.id, b]));
+  return (
+    <div className="space-y-3.5">
+      {rows.map((row) => {
+        if (!row.blockIds.length) return null;
+        return (
+          <div key={row.id} className={rowGridClass(row.columns)}>
+            {row.blockIds.map((id) => {
+              const block = byId.get(id);
+              return block ? <ChapterBlockView key={block.id} block={block} highlights={highlights} /> : null;
+            })}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 

@@ -18,6 +18,7 @@ export function manualChapterToRecord(ch: ManualChapter): ChapterRecord {
     keyDifferences: ch.keyDifferences,
     codeReferences: ch.codeReferences,
     blocks: ch.blocks,
+    blockLayout: ch.blockLayout,
     tools: ch.tools,
     contentMarkdown: ch.contentMarkdown || "",
     customSummary: ch.customSummary,

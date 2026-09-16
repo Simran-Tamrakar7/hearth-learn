@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { ChevronDown, FileDown, FileText, Printer } from "lucide-react";
 import type { ManualChapter, ManualItem } from "@/app/manuals/types";
 import { blockDisplayName, editorColumns, isColumnBlockType } from "@/app/manuals/features/blocks/types";
+import { blocksInLayoutOrder } from "@/app/manuals/features/blocks/layout";
 import type { ChapterBlock } from "@/app/manuals/features/blocks/types";
 import { groupChaptersIntoParts } from "@/app/manuals/features/reader";
 import { useToast } from "@/components/ui/Toast";
@@ -129,7 +130,7 @@ function blockToExport(block: ChapterBlock): string {
 export function chapterBodyForExport(ch: ManualChapter): string {
   const parts: string[] = [];
   if (Array.isArray(ch.blocks) && ch.blocks.length) {
-    for (const b of ch.blocks) {
+    for (const b of blocksInLayoutOrder(ch.blocks, ch.blockLayout)) {
       const text = blockToExport(b);
       if (text) parts.push(text);
     }
