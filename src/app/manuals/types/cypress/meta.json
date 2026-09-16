@@ -9,6 +9,6 @@
     "Write specs with cy.visit, cy.get, intercepts, and cy.session",
     "Know when Cypress fits — and when to reach for Playwright instead"
   ],
-  "duration": "6–10 weeks",
+  "duration": "10–16 weeks",
   "levelSpan": "Beginner → Advanced"
 }

@@ -6,16 +6,26 @@ import { chapter as part_0_chapter_2 } from "./part-0/chapter-2";
 import { chapter as part_0_chapter_3 } from "./part-0/chapter-3";
 import { chapter as part_0_chapter_4 } from "./part-0/chapter-4";
 import { chapter as part_0_chapter_5 } from "./part-0/chapter-5";
+import { chapter as part_0_chapter_6 } from "./part-0/chapter-6";
+import { chapter as part_0_chapter_7 } from "./part-0/chapter-7";
+import { chapter as part_0_chapter_8 } from "./part-0/chapter-8";
 import { chapter as part_1_chapter_1 } from "./part-1/chapter-1";
 import { chapter as part_1_chapter_2 } from "./part-1/chapter-2";
 import { chapter as part_1_chapter_3 } from "./part-1/chapter-3";
 import { chapter as part_1_chapter_4 } from "./part-1/chapter-4";
 import { chapter as part_1_chapter_5 } from "./part-1/chapter-5";
+import { chapter as part_1_chapter_6 } from "./part-1/chapter-6";
+import { chapter as part_1_chapter_7 } from "./part-1/chapter-7";
+import { chapter as part_1_chapter_8 } from "./part-1/chapter-8";
+import { chapter as part_1_chapter_9 } from "./part-1/chapter-9";
+import { chapter as part_1_chapter_10 } from "./part-1/chapter-10";
 import { chapter as part_2_chapter_1 } from "./part-2/chapter-1";
 import { chapter as part_2_chapter_2 } from "./part-2/chapter-2";
 import { chapter as part_2_chapter_3 } from "./part-2/chapter-3";
 import { chapter as part_2_chapter_4 } from "./part-2/chapter-4";
 import { chapter as part_2_chapter_5 } from "./part-2/chapter-5";
+import { chapter as part_2_chapter_6 } from "./part-2/chapter-6";
+import { chapter as part_2_chapter_7 } from "./part-2/chapter-7";
 import { chapter as part_3_chapter_1 } from "./part-3/chapter-1";
 import { chapter as part_3_chapter_2 } from "./part-3/chapter-2";
 import { chapter as part_3_chapter_3 } from "./part-3/chapter-3";
@@ -24,30 +34,22 @@ import { chapter as part_3_chapter_5 } from "./part-3/chapter-5";
 import { chapter as part_3_chapter_6 } from "./part-3/chapter-6";
 import { chapter as part_3_chapter_7 } from "./part-3/chapter-7";
 import { chapter as part_3_chapter_8 } from "./part-3/chapter-8";
+import { chapter as part_3_chapter_9 } from "./part-3/chapter-9";
+import { chapter as part_3_chapter_10 } from "./part-3/chapter-10";
+import { chapter as part_3_chapter_11 } from "./part-3/chapter-11";
+import { chapter as part_3_chapter_12 } from "./part-3/chapter-12";
+import { chapter as part_3_chapter_13 } from "./part-3/chapter-13";
+import { chapter as part_3_chapter_14 } from "./part-3/chapter-14";
 import { chapter as part_4_chapter_1 } from "./part-4/chapter-1";
 import { chapter as part_4_chapter_2 } from "./part-4/chapter-2";
 import { chapter as part_4_chapter_3 } from "./part-4/chapter-3";
 import { chapter as part_4_chapter_4 } from "./part-4/chapter-4";
-import { chapter as part_4_chapter_5 } from "./part-4/chapter-5";
-import { chapter as part_4_chapter_6 } from "./part-4/chapter-6";
-import { chapter as part_4_chapter_7 } from "./part-4/chapter-7";
-import { chapter as part_4_chapter_8 } from "./part-4/chapter-8";
-import { chapter as part_4_chapter_9 } from "./part-4/chapter-9";
-import { chapter as part_4_chapter_10 } from "./part-4/chapter-10";
-import { chapter as part_4_chapter_11 } from "./part-4/chapter-11";
-import { chapter as part_4_chapter_12 } from "./part-4/chapter-12";
-import { chapter as part_4_chapter_13 } from "./part-4/chapter-13";
-import { chapter as part_4_chapter_14 } from "./part-4/chapter-14";
-import { chapter as part_4_chapter_15 } from "./part-4/chapter-15";
-import { chapter as part_4_chapter_16 } from "./part-4/chapter-16";
 import { chapter as part_5_chapter_1 } from "./part-5/chapter-1";
 import { chapter as part_5_chapter_2 } from "./part-5/chapter-2";
 import { chapter as part_5_chapter_3 } from "./part-5/chapter-3";
-import { chapter as part_5_chapter_4 } from "./part-5/chapter-4";
 import { chapter as part_6_chapter_1 } from "./part-6/chapter-1";
 import { chapter as part_6_chapter_2 } from "./part-6/chapter-2";
 import { chapter as part_6_chapter_3 } from "./part-6/chapter-3";
-import { chapter as part_6_chapter_4 } from "./part-6/chapter-4";
 import { chapter as part_7_chapter_1 } from "./part-7/chapter-1";
 import { chapter as part_7_chapter_2 } from "./part-7/chapter-2";
 import { chapter as part_7_chapter_3 } from "./part-7/chapter-3";
@@ -56,15 +58,167 @@ import { chapter as part_8_chapter_1 } from "./part-8/chapter-1";
 import { chapter as part_8_chapter_2 } from "./part-8/chapter-2";
 import { chapter as part_8_chapter_3 } from "./part-8/chapter-3";
 import { chapter as part_8_chapter_4 } from "./part-8/chapter-4";
-import { chapter as part_8_chapter_5 } from "./part-8/chapter-5";
-import { chapter as part_8_chapter_6 } from "./part-8/chapter-6";
-import { chapter as part_8_chapter_7 } from "./part-8/chapter-7";
-import { chapter as part_8_chapter_8 } from "./part-8/chapter-8";
-import { chapter as part_8_chapter_9 } from "./part-8/chapter-9";
-import { chapter as part_8_chapter_10 } from "./part-8/chapter-10";
+import { chapter as part_9_chapter_1 } from "./part-9/chapter-1";
+import { chapter as part_9_chapter_2 } from "./part-9/chapter-2";
+import { chapter as part_9_chapter_3 } from "./part-9/chapter-3";
+import { chapter as part_9_chapter_4 } from "./part-9/chapter-4";
+import { chapter as part_9_chapter_5 } from "./part-9/chapter-5";
+import { chapter as part_9_chapter_6 } from "./part-9/chapter-6";
+import { chapter as part_9_chapter_7 } from "./part-9/chapter-7";
+import { chapter as part_9_chapter_8 } from "./part-9/chapter-8";
+import { chapter as part_9_chapter_9 } from "./part-9/chapter-9";
+import { chapter as part_9_chapter_10 } from "./part-9/chapter-10";
+import { chapter as part_9_chapter_11 } from "./part-9/chapter-11";
+import { chapter as part_9_chapter_12 } from "./part-9/chapter-12";
+import { chapter as part_9_chapter_13 } from "./part-9/chapter-13";
+import { chapter as part_9_chapter_14 } from "./part-9/chapter-14";
+import { chapter as part_9_chapter_15 } from "./part-9/chapter-15";
+import { chapter as part_9_chapter_16 } from "./part-9/chapter-16";
+import { chapter as part_9_chapter_17 } from "./part-9/chapter-17";
+import { chapter as part_10_chapter_1 } from "./part-10/chapter-1";
+import { chapter as part_10_chapter_2 } from "./part-10/chapter-2";
+import { chapter as part_10_chapter_3 } from "./part-10/chapter-3";
+import { chapter as part_10_chapter_4 } from "./part-10/chapter-4";
+import { chapter as part_11_chapter_1 } from "./part-11/chapter-1";
+import { chapter as part_11_chapter_2 } from "./part-11/chapter-2";
+import { chapter as part_11_chapter_3 } from "./part-11/chapter-3";
+import { chapter as part_11_chapter_4 } from "./part-11/chapter-4";
+import { chapter as part_11_chapter_5 } from "./part-11/chapter-5";
+import { chapter as part_11_chapter_6 } from "./part-11/chapter-6";
+import { chapter as part_11_chapter_7 } from "./part-11/chapter-7";
+import { chapter as part_11_chapter_8 } from "./part-11/chapter-8";
+import { chapter as part_12_chapter_1 } from "./part-12/chapter-1";
+import { chapter as part_12_chapter_2 } from "./part-12/chapter-2";
+import { chapter as part_12_chapter_3 } from "./part-12/chapter-3";
+import { chapter as part_12_chapter_4 } from "./part-12/chapter-4";
+import { chapter as part_13_chapter_1 } from "./part-13/chapter-1";
+import { chapter as part_13_chapter_2 } from "./part-13/chapter-2";
+import { chapter as part_13_chapter_3 } from "./part-13/chapter-3";
+import { chapter as part_13_chapter_4 } from "./part-13/chapter-4";
+import { chapter as part_14_chapter_1 } from "./part-14/chapter-1";
+import { chapter as part_14_chapter_2 } from "./part-14/chapter-2";
+import { chapter as part_14_chapter_3 } from "./part-14/chapter-3";
+import { chapter as part_14_chapter_4 } from "./part-14/chapter-4";
+import { chapter as part_14_chapter_5 } from "./part-14/chapter-5";
+import { chapter as part_14_chapter_6 } from "./part-14/chapter-6";
+import { chapter as part_14_chapter_7 } from "./part-14/chapter-7";
+import { chapter as part_14_chapter_8 } from "./part-14/chapter-8";
+import { chapter as part_14_chapter_9 } from "./part-14/chapter-9";
+import { chapter as part_14_chapter_10 } from "./part-14/chapter-10";
+import { chapter as part_15_chapter_1 } from "./part-15/chapter-1";
+import { chapter as part_15_chapter_2 } from "./part-15/chapter-2";
+import { chapter as part_15_chapter_3 } from "./part-15/chapter-3";
+import { chapter as part_15_chapter_4 } from "./part-15/chapter-4";
 
 export const chapterPaths: Record<string, string> = {
-
+  "cy-0-1-what-is-cypress-really": "part-0/chapter-1.ts",
+  "cy-0-2-where-cypress-is-used": "part-0/chapter-2.ts",
+  "cy-0-3-what-cypress-can-do": "part-0/chapter-3.ts",
+  "cy-0-4-why-companies-choose-cypress-over-alternatives": "part-0/chapter-4.ts",
+  "cy-0-5-architecture-runs-inside-the-browser": "part-0/chapter-5.ts",
+  "cy-0-6-supported-browsers-core-limitations": "part-0/chapter-6.ts",
+  "cy-0-7-cypress-test-runner-cypress-app-overview": "part-0/chapter-7.ts",
+  "cy-0-8-what-this-manual-will-not-cover": "part-0/chapter-8.ts",
+  "cy-1-1-introduction-to-cypress": "part-1/chapter-1.ts",
+  "cy-1-2-installation-environment-setup": "part-1/chapter-2.ts",
+  "cy-1-3-folder-structure": "part-1/chapter-3.ts",
+  "cy-1-4-first-test": "part-1/chapter-4.ts",
+  "cy-1-5-cypress-config-js-ts": "part-1/chapter-5.ts",
+  "cy-1-6-cypress-env-json-config-overrides": "part-1/chapter-6.ts",
+  "cy-1-7-opening-the-app-cypress-open-vs-cypress-run": "part-1/chapter-7.ts",
+  "cy-1-8-typescript-setup": "part-1/chapter-8.ts",
+  "cy-1-9-node-event-setup-setupnodeevents-plugins": "part-1/chapter-9.ts",
+  "cy-1-10-quick-steps": "part-1/chapter-10.ts",
+  "cy-2-1-test-structure-syntax": "part-2/chapter-1.ts",
+  "cy-2-2-cy-visit-cy-get-cy-contains-cy-find": "part-2/chapter-2.ts",
+  "cy-2-3-chaining-the-command-queue": "part-2/chapter-3.ts",
+  "cy-2-4-retry-ability": "part-2/chapter-4.ts",
+  "cy-2-5-aliases": "part-2/chapter-5.ts",
+  "cy-2-6-assertions-implicit-vs-explicit": "part-2/chapter-6.ts",
+  "cy-2-7-cy-wrap": "part-2/chapter-7.ts",
+  "cy-3-1-clicks-typing-clearing-checkboxes-radios-selects": "part-3/chapter-1.ts",
+  "cy-3-2-forms-inputs": "part-3/chapter-2.ts",
+  "cy-3-3-dropdowns": "part-3/chapter-3.ts",
+  "cy-3-4-hover-drag-and-drop-scrolling": "part-3/chapter-4.ts",
+  "cy-3-5-tables-lists-dynamic-content": "part-3/chapter-5.ts",
+  "cy-3-6-handling-iframes": "part-3/chapter-6.ts",
+  "cy-3-7-file-uploads": "part-3/chapter-7.ts",
+  "cy-3-8-file-downloads-verification": "part-3/chapter-8.ts",
+  "cy-3-9-handling-alert-confirm-prompt": "part-3/chapter-9.ts",
+  "cy-3-10-cookies-local-session-storage": "part-3/chapter-10.ts",
+  "cy-3-11-waiting-strategies": "part-3/chapter-11.ts",
+  "cy-3-12-mocking-dates-timers": "part-3/chapter-12.ts",
+  "cy-3-13-spies-stubs": "part-3/chapter-13.ts",
+  "cy-3-14-event-handling-cypress-on-cy-on": "part-3/chapter-14.ts",
+  "cy-4-1-selector-strategies": "part-4/chapter-1.ts",
+  "cy-4-2-cy-contains-vs-cy-get": "part-4/chapter-2.ts",
+  "cy-4-3-dom-traversal": "part-4/chapter-3.ts",
+  "cy-4-4-custom-selectors-testing-library-plugin": "part-4/chapter-4.ts",
+  "cy-5-1-network-interception-mocking": "part-5/chapter-1.ts",
+  "cy-5-2-fixtures": "part-5/chapter-2.ts",
+  "cy-5-3-aliases-for-elements-requests-and-data": "part-5/chapter-3.ts",
+  "cy-6-1-cy-request-deep-dive": "part-6/chapter-1.ts",
+  "cy-6-2-schema-validation": "part-6/chapter-2.ts",
+  "cy-6-3-combining-ui-api-tests": "part-6/chapter-3.ts",
+  "cy-7-1-cookies-local-storage-session-storage": "part-7/chapter-1.ts",
+  "cy-7-2-cy-session-for-login-caching": "part-7/chapter-2.ts",
+  "cy-7-3-test-isolation-reset-per-test-behavior": "part-7/chapter-3.ts",
+  "cy-7-4-handling-authentication": "part-7/chapter-4.ts",
+  "cy-8-1-writing-custom-commands": "part-8/chapter-1.ts",
+  "cy-8-2-overwriting-existing-commands": "part-8/chapter-2.ts",
+  "cy-8-3-support-files": "part-8/chapter-3.ts",
+  "cy-8-4-page-object-model-vs-app-actions": "part-8/chapter-4.ts",
+  "cy-9-1-cross-origin-testing-cy-origin": "part-9/chapter-1.ts",
+  "cy-9-2-working-around-cypress-s-architectural-limits": "part-9/chapter-2.ts",
+  "cy-9-3-multi-tab-new-window-limitations-workarounds": "part-9/chapter-3.ts",
+  "cy-9-4-shadow-dom-support": "part-9/chapter-4.ts",
+  "cy-9-5-component-testing-cypress-ct": "part-9/chapter-5.ts",
+  "cy-9-6-visual-regression-testing": "part-9/chapter-6.ts",
+  "cy-9-7-accessibility-testing-cypress-axe": "part-9/chapter-7.ts",
+  "cy-9-8-parallelization-sharding": "part-9/chapter-8.ts",
+  "cy-9-9-cross-browser-cross-device-testing": "part-9/chapter-9.ts",
+  "cy-9-10-localization-i18n-testing": "part-9/chapter-10.ts",
+  "cy-9-11-ui-mode": "part-9/chapter-11.ts",
+  "cy-9-12-trace-viewer-post-mortem-debugging": "part-9/chapter-12.ts",
+  "cy-9-13-flaky-test-management": "part-9/chapter-13.ts",
+  "cy-9-14-data-driven-looped-tests": "part-9/chapter-14.ts",
+  "cy-9-15-cy-screenshot-api": "part-9/chapter-15.ts",
+  "cy-9-16-migrating-from-protractor-selenium-to-cypress": "part-9/chapter-16.ts",
+  "cy-9-17-mobile-testing-real-limitations": "part-9/chapter-17.ts",
+  "cy-10-1-tags-grep-plugin-conditional-test-running": "part-10/chapter-1.ts",
+  "cy-10-2-environment-variables-multiple-environments": "part-10/chapter-2.ts",
+  "cy-10-3-retries": "part-10/chapter-3.ts",
+  "cy-10-4-headless-vs-headed-runs-viewport-device-testing": "part-10/chapter-4.ts",
+  "cy-11-1-running-cypress-in-github-actions-gitlab-ci-jenk": "part-11/chapter-1.ts",
+  "cy-11-2-docker-images-for-cypress": "part-11/chapter-2.ts",
+  "cy-11-3-cypress-cloud-recorded-runs-dashboards-analytics": "part-11/chapter-3.ts",
+  "cy-11-4-cypress-cloud-ai-features": "part-11/chapter-4.ts",
+  "cy-11-5-cypress-cloud-alternatives": "part-11/chapter-5.ts",
+  "cy-11-6-test-reporting": "part-11/chapter-6.ts",
+  "cy-11-7-logging-error-handling": "part-11/chapter-7.ts",
+  "cy-11-8-artifacts-screenshots-videos-on-failure": "part-11/chapter-8.ts",
+  "cy-12-1-debugging-tools": "part-12/chapter-1.ts",
+  "cy-12-2-common-anti-patterns": "part-12/chapter-2.ts",
+  "cy-12-3-flaky-test-root-causes-fixes": "part-12/chapter-3.ts",
+  "cy-12-4-performance-speeding-up-suites": "part-12/chapter-4.ts",
+  "cy-13-1-real-world-capstone-project": "part-13/chapter-1.ts",
+  "cy-13-2-portfolio-building": "part-13/chapter-2.ts",
+  "cy-13-3-interview-prep": "part-13/chapter-3.ts",
+  "cy-13-4-career-positioning": "part-13/chapter-4.ts",
+  "cy-14-1-books-long-form-reading": "part-14/chapter-1.ts",
+  "cy-14-2-blogs-written-tutorials": "part-14/chapter-2.ts",
+  "cy-14-3-newsletters": "part-14/chapter-3.ts",
+  "cy-14-4-podcasts": "part-14/chapter-4.ts",
+  "cy-14-5-courses-structured-learning-platforms": "part-14/chapter-5.ts",
+  "cy-14-6-certifications": "part-14/chapter-6.ts",
+  "cy-14-7-conferences-talks": "part-14/chapter-7.ts",
+  "cy-14-8-social-real-time-communities": "part-14/chapter-8.ts",
+  "cy-14-9-browser-extensions-developer-tools": "part-14/chapter-9.ts",
+  "cy-14-10-sample-data-practice-sites": "part-14/chapter-10.ts",
+  "cy-15-1-cypress-vs-playwright-vs-selenium-comparison-tab": "part-15/chapter-1.ts",
+  "cy-15-2-useful-plugins": "part-15/chapter-2.ts",
+  "cy-15-3-cheat-sheet-of-commands": "part-15/chapter-3.ts",
+  "cy-15-4-common-error-messages-fixes": "part-15/chapter-4.ts",
 };
 
 export const chapters: ChapterRecord[] = [
@@ -73,16 +227,26 @@ export const chapters: ChapterRecord[] = [
   part_0_chapter_3,
   part_0_chapter_4,
   part_0_chapter_5,
+  part_0_chapter_6,
+  part_0_chapter_7,
+  part_0_chapter_8,
   part_1_chapter_1,
   part_1_chapter_2,
   part_1_chapter_3,
   part_1_chapter_4,
   part_1_chapter_5,
+  part_1_chapter_6,
+  part_1_chapter_7,
+  part_1_chapter_8,
+  part_1_chapter_9,
+  part_1_chapter_10,
   part_2_chapter_1,
   part_2_chapter_2,
   part_2_chapter_3,
   part_2_chapter_4,
   part_2_chapter_5,
+  part_2_chapter_6,
+  part_2_chapter_7,
   part_3_chapter_1,
   part_3_chapter_2,
   part_3_chapter_3,
@@ -91,30 +255,22 @@ export const chapters: ChapterRecord[] = [
   part_3_chapter_6,
   part_3_chapter_7,
   part_3_chapter_8,
+  part_3_chapter_9,
+  part_3_chapter_10,
+  part_3_chapter_11,
+  part_3_chapter_12,
+  part_3_chapter_13,
+  part_3_chapter_14,
   part_4_chapter_1,
   part_4_chapter_2,
   part_4_chapter_3,
   part_4_chapter_4,
-  part_4_chapter_5,
-  part_4_chapter_6,
-  part_4_chapter_7,
-  part_4_chapter_8,
-  part_4_chapter_9,
-  part_4_chapter_10,
-  part_4_chapter_11,
-  part_4_chapter_12,
-  part_4_chapter_13,
-  part_4_chapter_14,
-  part_4_chapter_15,
-  part_4_chapter_16,
   part_5_chapter_1,
   part_5_chapter_2,
   part_5_chapter_3,
-  part_5_chapter_4,
   part_6_chapter_1,
   part_6_chapter_2,
   part_6_chapter_3,
-  part_6_chapter_4,
   part_7_chapter_1,
   part_7_chapter_2,
   part_7_chapter_3,
@@ -123,10 +279,55 @@ export const chapters: ChapterRecord[] = [
   part_8_chapter_2,
   part_8_chapter_3,
   part_8_chapter_4,
-  part_8_chapter_5,
-  part_8_chapter_6,
-  part_8_chapter_7,
-  part_8_chapter_8,
-  part_8_chapter_9,
-  part_8_chapter_10
+  part_9_chapter_1,
+  part_9_chapter_2,
+  part_9_chapter_3,
+  part_9_chapter_4,
+  part_9_chapter_5,
+  part_9_chapter_6,
+  part_9_chapter_7,
+  part_9_chapter_8,
+  part_9_chapter_9,
+  part_9_chapter_10,
+  part_9_chapter_11,
+  part_9_chapter_12,
+  part_9_chapter_13,
+  part_9_chapter_14,
+  part_9_chapter_15,
+  part_9_chapter_16,
+  part_9_chapter_17,
+  part_10_chapter_1,
+  part_10_chapter_2,
+  part_10_chapter_3,
+  part_10_chapter_4,
+  part_11_chapter_1,
+  part_11_chapter_2,
+  part_11_chapter_3,
+  part_11_chapter_4,
+  part_11_chapter_5,
+  part_11_chapter_6,
+  part_11_chapter_7,
+  part_11_chapter_8,
+  part_12_chapter_1,
+  part_12_chapter_2,
+  part_12_chapter_3,
+  part_12_chapter_4,
+  part_13_chapter_1,
+  part_13_chapter_2,
+  part_13_chapter_3,
+  part_13_chapter_4,
+  part_14_chapter_1,
+  part_14_chapter_2,
+  part_14_chapter_3,
+  part_14_chapter_4,
+  part_14_chapter_5,
+  part_14_chapter_6,
+  part_14_chapter_7,
+  part_14_chapter_8,
+  part_14_chapter_9,
+  part_14_chapter_10,
+  part_15_chapter_1,
+  part_15_chapter_2,
+  part_15_chapter_3,
+  part_15_chapter_4
 ];

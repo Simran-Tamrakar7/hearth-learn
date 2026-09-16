@@ -43,10 +43,10 @@ manuals/
 │   │   ├── roadmapData.ts
 │   │   ├── chapters-manifest.ts
 │   │   └── part-N/chapter-M.ts
-│   └── cypress/                      ← same pattern (32 chapters)
-│       ├── toc.ts
+│   └── cypress/                      ← same pattern (108 chapters, Parts 0–14 + Appendices)
+│       ├── toc.ts                    ← CYPRESS_TOC_VERSION — bump when catalog changes
 │       ├── chapters-manifest.ts
-│       └── part-N/chapter-M.ts
+│       └── part-N/chapter-M.ts       ← rebuild from scripts/cypress-manual-data via rebuild-cypress-manual.mjs
 ```
 
 ## What to edit for X
@@ -64,7 +64,8 @@ manuals/
 | Playwright chapter **content** | `types/playwright/part-N/chapter-M.ts` |
 | Playwright TOC | `types/playwright/toc.ts` |
 | Cypress chapter **content** | `types/cypress/part-N/chapter-M.ts` |
-| Cypress TOC | `types/cypress/toc.ts` |
+| Cypress TOC | `types/cypress/toc.ts` (bump `CYPRESS_TOC_VERSION`) |
+| Rebuild Cypress catalog from JSON | `scripts/cypress-manual-data/pNN.json` then `node scripts/rebuild-cypress-manual.mjs` |
 | Regenerate chapter index after adding files | `node scripts/generate-chapter-index.mjs` |
 | Registry (hide/feature/pin/order) | `registry.ts` |
 | User / AI manuals (`localStorage`) | `features/local-storage.ts` |

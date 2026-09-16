@@ -1,19 +1,33 @@
 import type { ChapterRecord } from "../../../types";
 
-/** 16. Forms & Inputs */
+/** 3.2 Forms & Inputs */
 export const chapter = {
-  id: "cy-16-forms",
-  title: "16. Forms & Inputs",
-  minutes: 28,
-  level: "intermediate",
-  phase: "Part 3 · Actions",
-  partName: "Part 3 · Actions",
-  overviewText: "Comprehensive coverage of Forms & Inputs in Cypress with code examples, Playwright comparisons, and interview-ready depth paired with the Playwright manual.",
-  tools: [],
-  customSummary: "- Good form tests assert the actual post-submit outcome, not just \"click didn't error.\"\n- Every form needs both a happy-path test and a validation-failure test.\n- 'have.value' (input's current value) vs 'have.text'/'contain' (rendered text) — common early mix-up.",
-  contentMarkdown: "## A representative full-form test — worth walking through end to end rather than isolated snippets\n\n```javascript\ndescribe('Employee Onboarding Form', () => {\n  it('submits successfully with valid data', () => {\n    cy.visit('/onboarding/new');\n\n    cy.get('[data-cy=first-name]').type('Simran');\n    cy.get('[data-cy=last-name]').type('Tamrakar');\n    cy.get('[data-cy=email]').type('simran@bizlevate.com');\n    cy.get('[data-cy=department]').select('Quality Assurance');\n    cy.get('[data-cy=start-date]').type('2026-09-01');\n    cy.get('[data-cy=remote-checkbox]').check();\n    cy.get('[data-cy=submit]').click();\n\n    cy.get('[data-cy=success-banner]').should('be.visible')\n      .and('contain', 'Employee onboarded successfully');\n  });\n});\nWorth calling out what makes this a good form test versus a shallow one: it asserts on the actual post-submit outcome (a visible success banner with specific text), not merely that the click didn't throw an error. A form test that only checks \"the submit button was clickable\" gives false confidence — the meaningful assertion is always about what happened as a result of the submission.\n```\n\n## Validation error states — a second, equally important test shape for any form\n\n```javascript\nit('shows validation errors when required fields are empty', () => {\n  cy.visit('/onboarding/new');\n  cy.get('[data-cy=submit]').click();\n\n  cy.get('[data-cy=first-name-error]').should('contain', 'First name is required');\n  cy.get('[data-cy=email-error]').should('contain', 'Email is required');\n});\nEvery form worth testing at all deserves at least one happy-path test and at least one validation-failure test — a form module (Leave requests, Onboarding, Appraisal forms in an HRM context) that only has happy-path coverage is a common, real gap worth deliberately avoiding.\n```\n\n## Reading back a form's current values — useful for testing pre-filled/edit forms\n\n```javascript\ncy.get('[data-cy=email]').should('have.value', 'simran@bizlevate.com');\n'have.value' (a Chai-jQuery assertion, Chapter 14) is specifically for form input values — distinct from 'have.text' or 'contain', which check rendered text content, not an input's current value attribute. Mixing these up (asserting 'contain' on an <input>, expecting it to check the typed value) is a common early mistake, since <input> elements don't render their value as visible child text content the way a <div> does.\n```",
-  exercises: [],
-  resourceLinks: [],
-  steps: [],
-  learn: [],
+  "id": "cy-3-2-forms-inputs",
+  "title": "3.2 Forms & Inputs",
+  "minutes": 26,
+  "level": "intermediate",
+  "phase": "Part 3 · Interacting with Elements",
+  "partName": "Part 3 · Interacting with Elements",
+  "overviewText": "A form test is only as good as its post-submit assertion. Happy-path plus validation-failure is the minimum pair. Use 'have.value' for inputs (they have no child text), fire real events so controlled React/Vue fields update, and prefer submitting the way the user does — click or {enter} — not form.submit() unless you are deliberately skipping UI.",
+  "why": "Shallow form tests ('the button was clickable') pass while onboarding, leave, and payroll forms silently drop fields. Interviewers look for the value-vs-text distinction, controlled-input event awareness, and a validation-error spec sitting next to the happy path.",
+  "when": "Any create/edit form: onboarding, leave request, payroll run, profile. Revisit when a .type() 'succeeds' but the app submits empty because the framework never saw input events.",
+  "practical": {
+    "app": "Bizlevate HRM — employee onboarding form",
+    "scenario": "Onboard Simran Tamrakar with department, start date, and remote flag; then prove required-field errors when submitting empty.",
+    "pass": "You type/select/check, click submit, assert a success banner *and* a separate spec that empty submit shows first-name and email errors. You use have.value on the email input.",
+    "fail": "You only assert the submit button is enabled, or you use contain/have.text on an <input> expecting the typed value."
+  },
+  "tools": [],
+  "customSummary": "- Assert the post-submit outcome (banner, row, URL), not merely that click did not throw.\n- Every form needs a happy-path spec and a validation-failure spec.\n- 'have.value' for input values; 'have.text'/'contain' for rendered text — <input> has no child text.\n- .type()/.check()/.select() fire real events so controlled React/Vue state updates; .invoke('val') alone may not.\n- Date/number/file inputs have extra constraints; native date often wants yyyy-mm-dd.",
+  "contentMarkdown": "## A full-form test, not isolated snippets\n\n```js\ndescribe('Employee Onboarding Form', () => {\n  it('submits successfully with valid data', () => {\n    cy.visit('/onboarding/new');\n\n    cy.get('[data-cy=first-name]').type('Simran');\n    cy.get('[data-cy=last-name]').type('Tamrakar');\n    cy.get('[data-cy=email]').type('simran@bizlevate.com');\n    cy.get('[data-cy=department]').select('Quality Assurance');\n    cy.get('[data-cy=start-date]').type('2026-09-01');\n    cy.get('[data-cy=remote-checkbox]').check();\n    cy.get('[data-cy=submit]').click();\n\n    cy.get('[data-cy=success-banner]')\n      .should('be.visible')\n      .and('contain', 'Employee onboarded successfully');\n    cy.url().should('include', '/onboarding/');\n  });\n});\n```\n\nWhat makes this a *form* test rather than a click test: it asserts the actual post-submit outcome. A spec that only checks \"submit was clickable\" gives false confidence.\n\n## Validation is a second, required shape\n\n```js\nit('shows validation errors when required fields are empty', () => {\n  cy.visit('/onboarding/new');\n  cy.get('[data-cy=submit]').click();\n\n  cy.get('[data-cy=first-name-error]').should('contain', 'First name is required');\n  cy.get('[data-cy=email-error]').should('contain', 'Email is required');\n});\n```\n\nLeave, onboarding, and appraisal modules that only have happy-path coverage are a common real gap. Invalid email format, end-date before start-date, and duplicate employee ID are the next cases — still UI assertions on the error the user sees, not just HTTP 400.\n\n## Reading values: `have.value` vs `have.text`\n\n```js\ncy.get('[data-cy=email]').should('have.value', 'simran@bizlevate.com');\ncy.get('[data-cy=success-banner]').should('contain', 'onboarded');\n```\n\n`<input>` and `<textarea>` do not render their value as child text. `.should('contain', ...)` / `'have.text'` look at text nodes and will fail (or pass accidentally on a label). `'have.value'` is the Chai-jQuery assertion for the current control value — essential for edit/pre-filled forms (\"open existing employee, email is already simran@...\").\n\n## Controlled inputs and events\n\nReact/Vue/Angular typically bind `onChange`/`v-model`. `.type()` and `.check()` fire the events those bindings listen for. Directly setting the DOM with `.invoke('val', 'x')` **without** `.trigger('input')` / `'change'` often leaves framework state empty, so submit sends blanks even though the field *looks* filled in the snapshot.\n\n```js\ncy.get('[data-cy=notes]').focus().type('Approved with comments').blur();\n```\n\n`.focus()` / `.blur()` matter when the app validates on blur. Submitting with `{enter}` on the last field vs clicking Submit can exercise two handlers — cover the one users actually use, then add the other if both exist.\n\n## Input-type specifics\n\n- **date:** many browsers' native date inputs want `yyyy-mm-dd` regardless of display locale. Custom date pickers are not `<input type=\"date\">` — treat them as custom dropdowns (3.3).\n- **number:** `.type('50000')` is safer than setting value; some masks reject paste.\n- **disabled / readonly:** actionability will refuse `.type()`; that is a feature. Assert `'be.disabled'` on computed salary fields instead of forcing them.\n- **hidden file inputs:** 3.7 (`.selectFile`).\n\n## vs Playwright\n\nPlaywright `locator.fill()` sets the value and fires input events in one step; Cypress makes the append/clear split explicit. Playwright `get_by_label` pairs naturally with forms; Cypress typically uses `data-cy` plus optional Testing Library (4.4). Same rule in both tools: assert the outcome of submit, not the click.",
+  "advantages": [
+    "3.2 Forms & Inputs — Shallow form tests ('the button was clickable') pass while onboarding, leave, and payroll forms silently drop fields."
+  ],
+  "limitations": [
+    "3.2 Forms & Inputs is this Part's slice only; later chapters go deeper rather than repeating this one."
+  ],
+  "exercises": [],
+  "resourceLinks": [],
+  "steps": [],
+  "learn": []
 } as ChapterRecord;

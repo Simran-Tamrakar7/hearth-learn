@@ -1,0 +1,156 @@
+{
+  "partNo": 14,
+  "name": "Resources, Citations & Reference Library",
+  "chapters": [
+    {
+      "title": "14.1 Books & Long-Form Reading",
+      "minutes": 18,
+      "overviewText": "Cypress print books age faster than the runner. Primary long-form is the official Cypress docs (Guides, API, migration notes). Pair with lasting testing strategy books (Agile Testing, Explore It!, Working Effectively with Legacy Code for testability) and Gleb Bahmutov's long essays. Playwright and Selenium books do not teach cy.origin \u2014 they teach the other architectures you must compare.",
+      "why": "Strategy outlasts `cy.intercept` syntax. Interview depth often comes from testing literature, not a 2020 Cypress cookbook that still uses `cy.server()`.",
+      "when": "When you want depth beyond API lookup, and when a book still uses deprecated Cypress 9 syntax \u2014 discard the snippets, keep the ideas.",
+      "practical": {
+        "app": "Bizlevate HRM",
+        "scenario": "You want a reading list for a six-month HRM automation rotation.",
+        "pass": "You put docs.cypress.io first, one strategy book, Gleb's blog as long-form, and you treat cookbooks as historical.",
+        "fail": "You buy only a Selenium 2 era print book and assume the APIs match Cypress."
+      },
+      "customSummary": "- Official Cypress Guides/API/changelog \u2014 source of truth.\n- Strategy: Agile Testing, Explore It!, testability/legacy-code ideas.\n- Gleb Bahmutov essays for advanced Cypress.\n- Playwright docs for Trace/WebKit contrast; Appium docs for native.\n- Skip stale cookbooks that still show cy.server / wait(n) as style.",
+      "contentMarkdown": "## Start here (canonical)\n\n- [Cypress documentation](https://docs.cypress.io) \u2014 Guides (core concepts, retry-ability, origin, CT, CI) then API. This is the book.\n- [Cypress changelog / migration guides](https://docs.cypress.io/guides/references/changelog) \u2014 video default, origin, session: these break tutorials.\n- [Cypress GitHub](https://github.com/cypress-io/cypress) \u2014 issues are often more honest than marketing about WebKit and tabs.\n\nPrint \"Cypress\" cookbooks lag the runner. If the table of contents still shows `cy.server()` / `cy.route()`, keep the *ideas* (page objects vs app actions) and throw away the snippets.\n\n## Strategy books that still pay rent\n\n- *Agile Testing* (Gregory/Crispin) \u2014 whole-team quality; explains why CT+E2E coexist (9.5).\n- *Explore It!* (Hendrickson) \u2014 charters; your `@smoke` vs deep regression (10.1).\n- *Working Effectively with Legacy Code* (Feathers) \u2014 seams; why `data-cy` and testable components matter.\n- *Continuous Delivery* (Humble/Farley) \u2014 why CI artifacts and fast smoke exist (Part 11).\n- *xUnit Test Patterns* (Meszaros) \u2014 fixture smell; maps to Cypress isolation + `cy.session`.\n\nNone of these are Cypress manuals. That is the point: judgment outlives API churn.\n\n## Cypress-shaped long-form (not always a book)\n\nGleb Bahmutov's essays are the unofficial advanced book: grep plugin, `cy.task`, flake, CT, parallel. Read dated-recent posts, not a 2018 Packt chapter copied onto a blog.\n\nOfficial Cypress blog long-reads on Component Testing and Cloud are fine if you remember Cloud is paid orchestration (11.3), not extra commands.\n\n## Comparison long-form\n\n- Playwright docs: Trace Viewer, webkit, locators, `toHaveScreenshot` \u2014 required contrast for 9.6, 9.9, 9.12.\n- Selenium WebDriver docs: window handles, Grid \u2014 required contrast for 9.3, 9.8, 9.16.\n- Appium docs: native vs mobile web \u2014 9.17.\n\nA library that only contains Cypress will make you lose the \"when not Cypress\" interview.\n\nInterview line: \"I treat Cypress docs + changelog as the book. Strategy texts for judgment. Playwright/Selenium/Appium docs for the comparison table.\""
+    },
+    {
+      "title": "14.2 Blogs & Written Tutorials",
+      "minutes": 16,
+      "overviewText": "Official Cypress blog for releases; Gleb Bahmutov for deep recipes (grep, tasks, flake); Filip Hric and other practitioners for DX. Company engineering blogs for 'Cypress at scale' CI stories. Always check the Cypress major \u2014 cy.server, cy.route, and implicit video=true posts are fossils. Playwright/Selenium blogs are useful for contrast, not copy-paste.",
+      "why": "Most Google results are Cypress 9. You will re-introduce flake if you follow a sleep-heavy tutorial into a Cypress 13+ suite.",
+      "when": "When a new API ships (origin, session, CT) and when debugging a CI pattern someone else already solved.",
+      "practical": {
+        "app": "Bizlevate HRM",
+        "scenario": "You need a trustworthy post on cy.origin args and one on GitHub Action wait-on.",
+        "pass": "You use official docs + a dated-recent Gleb or Cypress blog post, and you verify against your installed version.",
+        "fail": "You copy the first SEO tutorial that uses cy.wait(5000) and cy.server()."
+      },
+      "customSummary": "- cypress.io/blog + docs first.\n- glebbahmutov.com for advanced, version-aware recipes.\n- Engineering blogs for Cloud/parallel war stories.\n- Check version; reject cy.server/route-era posts for new work.\n- Playwright blog for Trace/UI Mode contrast.",
+      "contentMarkdown": "## A short allow-list\n\n- [Cypress blog](https://www.cypress.io/blog) \u2014 release notes in prose, CT, Cloud.\n- [Official recipes](https://docs.cypress.io/app/references/recipes) \u2014 origin, logging in, downloading files.\n- [Gleb Bahmutov](https://glebbahmutov.com/blog) \u2014 grep, `cy.task`, flake, plugins; assume high signal.\n- [Filip Hric](https://filiphric.com) \u2014 approachable Cypress DX, Studio caveats.\n- Company engineering blogs (search \"Cypress GitHub Actions flake\") \u2014 scale stories you will not find in getting-started posts.\n\n## How to read a random tutorial\n\nLook for: Cypress version, `cy.session`, intercept instead of `cy.route`, no `cy.wait(10000)`, `cy.origin` for SSO, GitHub `cypress-io/github-action`. If SSO is solved with `chromeWebSecurity: false` alone, close the tab. If they `await cy.get`, they mixed Playwright syntax into Cypress.\n\n## Contrast reading\n\nPlaywright's blog on Trace Viewer and UI Mode (9.11\u20139.12) will stop you from using those words wrongly in Cypress interviews. SeleniumHQ / Sauce Labs posts on Grid help you explain 9.8 without mixing \"workers\" and \"machines.\" Appium blog posts remind you viewport \u2260 native.\n\n## Anti-allow-list\n\nSEO listicles titled \"Cypress vs Selenium 2019\" that claim Cypress cannot do cross-origin *at all* (pre-`cy.origin`). Visual-testing posts that call `cy.screenshot()` a matcher (9.6, 9.15).\n\nInterview line: \"I follow official + Gleb, version-check tutorials, and I read Playwright/Selenium posts for contrast \u2014 not for copy-paste into a Cypress spec.\""
+    },
+    {
+      "title": "14.3 Newsletters",
+      "minutes": 12,
+      "overviewText": "There is no required paid Cypress newsletter. Practical subscriptions: Cypress changelog/blog RSS, Gleb's posts via RSS, Ministry of Testing, and a general JS testing digest. Newsletters that promise 'AI writes all your Cypress tests' are marketing (11.4). Playwright and Selenium also ship release notes \u2014 subscribe if you position as multi-tool (13.4).",
+      "why": "Release notes tell you video defaults flipped (Cypress 13) before CI silently stops uploading MP4s.",
+      "when": "Once, when setting up RSS; revisit when a major Cypress version lands.",
+      "practical": {
+        "app": "Bizlevate HRM",
+        "scenario": "You want to hear about breaking Cypress defaults without living on Twitter.",
+        "pass": "You subscribe to Cypress changelog/blog RSS and one testing community newsletter (MoT or similar).",
+        "fail": "You rely on random LinkedIn carousels for API changes."
+      },
+      "customSummary": "- Changelog/blog RSS is the Cypress newsletter that matters.\n- Ministry of Testing / quality-engineering newsletters for process.\n- Skip AI-automation spam.\n- Playwright release notes if you keep that stack.\n- Appium/browser driver notes if you do native or Safari clouds.",
+      "contentMarkdown": "## What to subscribe to\n\n- Cypress docs changelog + [Cypress blog](https://www.cypress.io/blog) via RSS or GitHub releases. This is how you learn `video` defaulted to `false` in Cypress 13 (11.8) before CI silently stops uploading MP4s.\n- [Ministry of Testing](https://www.ministryoftesting.com) \u2014 community, not vendor-locked; useful for flake culture (9.13) and career (13.4).\n- Optional: Gleb Bahmutov RSS; a general JS digest if you also own unit/CT culture.\n- Playwright release notes RSS if you keep that stack (traces, webkit).\n- Selenium / Appium release notes if you sit near Grid or native.\n\nThere is no required paid \"Cypress newsletter.\"\n\n## What to ignore\n\nDaily \"50 Cypress interview questions\" and \"AI writes all your tests\" funnels (11.4). They still say Cypress cannot do cross-origin, or that it includes visual testing natively, or that it has a Trace Viewer.\n\n## How newsletters differ by tool\n\n| Tool | What the mailing list is actually for |\n|---|---|\n| Cypress | Defaults and Cloud product; OSS APIs change slowly but *defaults* bite CI |\n| Playwright | Frequent runner/trace features \u2014 OSS changelog is the product |\n| Selenium | Driver/W3C spec drift; Grid/vendor noise |\n\nInterview line: \"I watch the Cypress changelog, not a hype newsletter. I also watch Playwright/Selenium notes so I don't invent features Cypress doesn't have.\""
+    },
+    {
+      "title": "14.4 Podcasts",
+      "minutes": 12,
+      "overviewText": "Podcasts will not teach cy.origin args. Use them for war stories: flake culture, CI, tool choice. Test Guild, Ministry of Testing, and occasional Cypress.io appearances are enough. Prefer episodes with practitioners who admit Playwright/Appium boundaries over vendor podcasts that never say 'no Trace Viewer.'",
+      "why": "Commutes are for judgment, not API trivia. A good episode on flake (9.13) is worth more than a command recap.",
+      "when": "When you already write tests and need other teams' process stories.",
+      "practical": {
+        "app": "Bizlevate HRM",
+        "scenario": "You want one listening list that will not teach deprecated APIs as current.",
+        "pass": "You pick practitioner podcasts and you verify any command you hear against current docs.",
+        "fail": "You implement something you only heard, like 'Cypress Trace Viewer' or 'just use WebKit.'"
+      },
+      "customSummary": "- Test Guild / MoT-style podcasts for process.\n- Official Cypress interviews for roadmap context (Cloud vs OSS).\n- Verify commands in docs \u2014 audio lags majors.\n- Playwright/Appium episodes for contrast.\n- Not a substitute for the capstone (13.1).",
+      "contentMarkdown": "## How to listen like an engineer\n\nWhen a guest says \"we parallelize Cypress,\" pause and ask: machines or browsers (9.8)? When they say \"dashboard,\" Cloud or Sorry Cypress (11.5)? When they say \"mobile,\" viewport or Appium (9.17)? When they say \"trace,\" do they mean Playwright `trace.zip` (Cypress does not have one \u2014 9.12)?\n\nIf they cannot answer, the episode is entertainment.\n\n## A short list\n\n- Test Guild (Joe Colantonio) \u2014 tool-agnostic practitioner interviews; Cypress, Playwright, Selenium, Appium guests.\n- Ministry of Testing podcast / Talks \u2014 quality process, not API trivia.\n- Occasional Cypress.io conference recordings (14.7) \u2014 treat as roadmap, separate OSS vs Cloud.\n- JS-focused shows (JS Party, Syntax) when they cover testing \u2014 fact-check Cypress claims.\n\nPodcasts will not teach `cy.origin` `{ args }` serialization. Use them for war stories: flake culture, CI politics, tool choice.\n\n## Pairing with other tools\n\nA Playwright episode on Trace Viewer plus this manual's 9.12 makes you bilingual in post-mortem debugging. A Selenium Grid episode makes 9.8's \"machines not browsers\" sentence sharper. An Appium episode keeps 9.17 honest.\n\nInterview line: \"Podcasts for process. Docs for APIs. I fact-check anything that sounds like a feature we don't have \u2014 Trace Viewer, WebKit, tabs, native.\""
+    },
+    {
+      "title": "14.5 Courses & Structured Learning Platforms",
+      "minutes": 16,
+      "overviewText": "Official Cypress docs + this manual + a capstone beat most video courses. If you buy a course, demand Cypress 12+ (session, origin, CT), GitHub Actions, and architecture limits. TestingJavaScript, Test Automation University, Frontend Masters, and Udemy vary wildly in freshness. Playwright courses are complementary, not redundant.",
+      "why": "A 2019 Udemy course will teach cy.server and ruin your instincts. Version is the buying criterion.",
+      "when": "When you want a second voice after this manual, or when your employer pays for a platform.",
+      "practical": {
+        "app": "Bizlevate HRM",
+        "scenario": "Your manager offers a stipend for a Cypress course.",
+        "pass": "You choose a course updated for origin/session/CT/CI, and you still build the HRM capstone yourself.",
+        "fail": "You complete a Cypress 8 course and skip writing a repo."
+      },
+      "customSummary": "- Prefer docs + capstone; courses are optional.\n- Minimum bar: cy.session, cy.origin, intercept (not cy.route), CT, CI.\n- TAU / official lessons / well-dated video.\n- A Playwright course adds WebKit/trace \u2014 useful breadth.\n- Certificate of completion \u2260 job-ready (14.6, 13.2).",
+      "contentMarkdown": "## A buying checklist\n\nDoes the syllabus include: command queue, `cy.intercept` (not `cy.route`), `cy.session`, `cy.origin` + args, CT vs E2E, GitHub Action, flake, and *limitations* (tabs, WebKit, visual plugin-only, no Trace Viewer)? If not, skip. A 2019 Udemy course will teach `cy.server` and ruin your instincts.\n\n## Platforms (non-exhaustive)\n\n- Official Cypress Real World App / example recipes \u2014 free, versioned with the product.\n- Test Automation University \u2014 free modules; **check dates**.\n- TestingJavaScript (Kent C. Dodds) \u2014 JS testing culture; CT sits next to Jest/RTL, not instead of Cypress E2E.\n- Frontend Masters / egghead \u2014 filter for Cypress 12+.\n- Employer LinkedIn Learning / Udemy \u2014 last-update date is the only filter that matters.\n\nPlaywright's official course/docs are worth taking *in addition* if you need WebKit and traces (13.4). Selenium Academy / TestNG courses help only if you are migrating (9.16) or joining a JVM shop. Appium courses are the native track (9.17).\n\n## After the course\n\nDelete the course project. Build 13.1 against HRM. Courses share locators; hiring managers share Google. A certificate of completion is not a portfolio (14.6).\n\nInterview line: \"I used docs and a domain capstone. If I took a course, it had origin, session, CT, and CI \u2014 not Cypress 8 video. I did not skip Playwright/Selenium/Appium literacy.\""
+    },
+    {
+      "title": "14.6 Certifications",
+      "minutes": 14,
+      "overviewText": "There is no industry-standard Cypress certificate that substitutes for a repo. Cypress has offered vendor training/certification at times; ISTQB is process, not Cypress. Hiring for Bizlevate-like roles looks at GitHub, CI, and architecture answers (13.3). Do not wait on a cert to apply. Playwright and Appium similarly care more about evidence than badges.",
+      "why": "Candidates hide behind badges when they cannot explain cy.origin args. Interviewers know.",
+      "when": "When a bootcamp sells a 'certified Cypress engineer' package, and when HR screening filters on ISTQB.",
+      "practical": {
+        "app": "Bizlevate HRM",
+        "scenario": "A recruiter asks if you are Cypress-certified.",
+        "pass": "You say you have a CI-gated HRM suite and can whiteboard origin vs Playwright, and that vendor certs are optional.",
+        "fail": "You delay the job search until a vendor exam, or you claim ISTQB proves Cypress multi-tab skill."
+      },
+      "customSummary": "- No must-have Cypress cert; portfolio > badge.\n- ISTQB \u2260 Cypress architecture.\n- Vendor certs optional if employer-paid.\n- Same for Playwright/Appium \u2014 evidence first.\n- Do not fake certs.",
+      "contentMarkdown": "## How to answer the recruiter\n\n\"I'm not blocked on a Cypress certificate. Here's a GitHub repo with GitHub Actions, `cy.origin`, component tests, and a README that lists what Cypress cannot do. Happy to walk through it.\"\n\nIf they require ISTQB Foundation, take it as a **process** exam \u2014 it will not mention `includeShadowDom`, grep plugins, or Mochawesome two-part reports.\n\n## What exists\n\n- Cypress.io has offered vendor training/certification at times. Useful if a consultancy needs a badge to staff a project. Still keep the capstone; the client lead will code-review you on Monday.\n- ISTQB / similar: methodology, not Cypress.\n- Playwright does not have a universally respected paid cert either; Microsoft Learn modules exist \u2014 same rule: evidence > badge.\n- Selenium: old \"Selenium certification\" mills are a red flag.\n- Appium: vendor/device-farm certs \u2014 optional.\n\n## When a cert hurts\n\nWaiting six weeks to apply. Faking a badge. Claiming ISTQB proves you can do Cypress multi-tab (you cannot \u2014 9.3) or native iOS (Appium \u2014 9.17).\n\nInterview line: \"Certification is optional. I demonstrate Cypress with a real suite and honest limits. Playwright, Selenium, and Appium are the same: repos beat PDFs.\""
+    },
+    {
+      "title": "14.7 Conferences & Talks",
+      "minutes": 14,
+      "overviewText": "Watch talks for architecture stories (flake, CT, CI), not live-coding of cy.get. Cypress Conf (when held), TestJS Summit, SeleniumConf, STAR, and Ministry of Testing events. Talks from 2019 about 'Cypress cannot do cross-origin' are historical \u2014 we have cy.origin now. Prefer talks that admit Playwright/Appium.",
+      "why": "A 20-minute talk on why a bank self-hosted Sorry Cypress (11.5) is more useful than a keynote about AI (11.4).",
+      "when": "When a conference playlist is available, and when you need stories for interviews.",
+      "practical": {
+        "app": "Bizlevate HRM",
+        "scenario": "You have a weekend to watch two talks that will improve Bizlevate's suite design.",
+        "pass": "You pick a recent talk on Cypress CI/flake/CT and one Playwright trace/WebKit talk for contrast.",
+        "fail": "You watch only vendor keynotes that claim one tool covers native, Safari, and tabs."
+      },
+      "customSummary": "- Prefer practitioner talks on flake, CT, CI, origin.\n- Date-check: pre-origin talks are incomplete.\n- SeleniumConf/Appium talks for the limits Cypress will not cover.\n- Recorded > FOMO travel unless your employer sends you.\n- Steal stories, not deprecated APIs.",
+      "contentMarkdown": "## What to extract from a talk\n\nWrite three bullets: problem, Cypress-shaped solution, remaining gap (tabs / WebKit / native / no Trace Viewer). That becomes interview gold (13.3).\n\n## Where to look\n\n- Cypress Conf (when held) and Cypress meetup recordings \u2014 CT, origin, Cloud vs OSS.\n- TestJS Summit \u2014 JS testing including Cypress and Playwright.\n- SeleniumConf / AppiumConf \u2014 Grid, drivers, native; use them to stay honest about 9.8 and 9.17.\n- STAR / Ministry of Testing / QCon quality tracks \u2014 flake and CI culture, tool-agnostic.\n\nTalks from 2019 about \"Cypress cannot do cross-origin\" are historical \u2014 we have `cy.origin` now. Talks that never mention Playwright or Selenium are usually vendor keynotes.\n\n## Search terms that work\n\n\"Cypress component testing\", \"cy.origin SSO\", \"Cypress GitHub Actions\", \"Sorry Cypress\", \"Cypress flake\". Avoid \"Cypress vs Selenium 2018\". Prefer 2023+ for session/origin/CT.\n\nRecorded > FOMO travel unless your employer sends you. Steal stories, not deprecated APIs.\n\nInterview line: \"I watch dated-recent practitioner talks for CI and flake. I ignore anything that says Cypress can drive native iOS or includes a Trace Viewer. I use SeleniumConf/Appium talks for the gaps.\""
+    },
+    {
+      "title": "14.8 Social & Real-Time Communities",
+      "minutes": 14,
+      "overviewText": "Official Cypress Discord/GitHub discussions, Stack Overflow (tag cypress), and a few practitioner Discords. Twitter/X and Reddit are noisy. Paste minimal repros: Cypress version, browser, whether origin/iframe/shadow is involved. Do not paste payroll PII or record keys. Playwright Discord is the right place for WebKit questions \u2014 not Cypress Discord.",
+      "why": "You will get stuck on origin serialization or a GitHub Action cache. Communities save hours if you ask with versions.",
+      "when": "When docs and this manual do not match a weird error (Appendix D), and when a plugin (grep, axe) breaks on a new Cypress major.",
+      "practical": {
+        "app": "Bizlevate HRM",
+        "scenario": "cy.origin callback cannot see a custom command. You need a known-good answer.",
+        "pass": "You post Cypress version, a 15-line spec, and ask about Cypress.require / args. You do not dump the whole HRM repo.",
+        "fail": "You ask 'why is Cypress flaky?' with no spec, or you paste CYPRESS_RECORD_KEY."
+      },
+      "customSummary": "- Cypress Discord/GitHub + Stack Overflow.\n- Minimal repro + version + browser.\n- Secrets stay out of pastes.\n- WebKit/native questions go to Playwright/Appium communities.\n- Be kind; search first.",
+      "contentMarkdown": "## A good question\n\n\"Cypress 13.7, Chrome, `cy.origin('https://login.example', { args: { user } }, ...)` \u2014 `user` is missing if I close over it without args. I passed args; the callback still does not see `user`. Here's a 15-line spec.\"\n\nThat is answerable. \"SSO doesn't work\" is not. \"Why is Cypress flaky?\" with no spec is not.\n\n## Where to ask\n\n- Official Cypress Discord / GitHub Discussions \u2014 runner, origin, CT.\n- Stack Overflow tag `cypress` \u2014 durable answers; search first.\n- Plugin repos (`@cypress/grep`, `cypress-axe`) issues \u2014 version peerDependency problems.\n- Playwright Discord / Stack Overflow `playwright` \u2014 WebKit, traces, popups (not Cypress Discord).\n- Selenium / Appium Slack or GitHub \u2014 Grid, SafariDriver, native.\n\nReddit r/QualityAssurance and Twitter/X are noisy. Tool wars belong in 9.2's table, not in a comment thread.\n\n## Hygiene\n\nPaste Cypress version, browser, whether origin/iframe/shadow is involved. Do not paste payroll PII, `CYPRESS_RECORD_KEY`, or `cypress.env.json`. Minimize the spec.\n\nInterview line: \"I ask versioned minimal repros in Cypress communities. I take WebKit/trace questions to Playwright, and native questions to Appium/Selenium communities.\""
+    },
+    {
+      "title": "14.9 Browser Extensions & Developer Tools",
+      "minutes": 16,
+      "overviewText": "Chrome DevTools is still the debugger: accessibility tree, event listeners, network. Cypress Selector Playground and time-travel complement it. axe DevTools / WAVE help you interpret cypress-axe failures (9.7). React/Vue DevTools help CT. None of these replace data-cy. Playwright has a pick-locator in UI Mode; Selenium IDE is not the same as Cypress App.",
+      "why": "You will spend more time in DevTools than in any plugin. Knowing which panel answers 'why isn't this clickable' is the job.",
+      "when": "When a click times out, when axe reports a node you cannot see, and when choosing a locator.",
+      "practical": {
+        "app": "Bizlevate HRM",
+        "scenario": "checkA11y fails on a contrast issue in the leave modal. You need to see the computed color.",
+        "pass": "You time-travel to the check, inspect the element in DevTools, confirm contrast, then fix CSS or disable the rule with a ticket \u2014 not by deleting axe.",
+        "fail": "You only use Selector Playground CSS and ignore the a11y tree."
+      },
+      "customSummary": "- DevTools + Cypress time-travel together.\n- Selector Playground is a suggestion; prefer data-cy.\n- axe DevTools/WAVE complement cypress-axe.\n- Framework DevTools for CT (9.5).\n- Playwright locator picker / Selenium IDE are different products.",
+      "contentMarkdown": "## The pairing\n\nCypress restores a historical DOM; Chrome DevTools inspects that restored DOM (Part 0.7, 9.11). Use **Elements** (coverage, `pointer-events`), **Console** (app errors \u2014 11.7), **Network** (compare to `cy.intercept`). The Accessibility pane: name, role, contrast \u2014 same issues `cypress-axe` fails on (9.7).\n\nSelector Playground is a suggestion with a live match count. Prefer `data-cy`. Treating Playground CSS as strategy is how HRM suites rot.\n\n## Extensions worth installing\n\n- axe DevTools / WAVE \u2014 interactive a11y, complement CI `cy.checkA11y`.\n- React / Vue / Angular DevTools \u2014 props that CT should `cy.mount` (9.5).\n- Do not rely on recorder extensions as your framework (Studio / Selenium IDE class tools).\n\n## Versus Playwright and Selenium\n\nPlaywright UI Mode pick-locator is excellent; still verify in DevTools. Playwright Trace Viewer is a **file** you open after CI (9.12) \u2014 not an extension. Selenium IDE recorders produce the same brittle CSS Cypress Studio does. For native, the inspector is Appium Inspector, not Chrome DevTools.\n\nInterview line: \"I inspect the time-traveled DOM in Chrome DevTools. Playground selectors are guesses. axe extensions complement `cypress-axe`. Playwright's locator picker and Selenium IDE are different products.\""
+    },
+    {
+      "title": "14.10 Sample Data & Practice Sites",
+      "minutes": 16,
+      "overviewText": "Practice on: Cypress Kitchen Sink / Real World App, the-internet.herokuapp.com (auth, frames, new windows \u2014 to feel the limits), JSONPlaceholder/Reqres for cy.request, and a Bizlevate-like HRM when you can. New-window pages exist to teach you 9.3 workarounds, not switchToTab. Do not run destructive tests against production payroll. Appium practice apps are a separate track.",
+      "why": "You need safe places to fail. Production HRM is not that place. Kitchen sink does not teach domain judgment \u2014 you still need 13.1.",
+      "when": "When learning a command, when demonstrating origin/tabs, and when you cannot use Bizlevate locally.",
+      "practical": {
+        "app": "Bizlevate HRM",
+        "scenario": "You want to rehearse cy.origin and a download without touching prod.",
+        "pass": "You use Kitchen Sink / RWA plus the-internet for windows/frames, and fixtures for HRM-shaped data. You never point default baseUrl at production.",
+        "fail": "You practice by clicking production payroll and committing real employee CSVs."
+      },
+      "customSummary": "- Kitchen Sink + Real World App for Cypress idioms.\n- the-internet for frames/windows/auth (and Cypress limits).\n- JSON APIs for cy.request; fixtures for HRM shapes.\n- Capstone app for portfolio (13.1).\n- Native: Appium sample apps, not Cypress.",
+      "contentMarkdown": "## A practice map\n\n| Goal | Site / data |\n|---|---|\n| Commands, retry-ability | [example.cypress.io](https://example.cypress.io) Kitchen Sink |\n| Realistic Cypress app + CI patterns | Cypress Real World App (RWA) on GitHub |\n| `target=_blank`, frames, basic auth | [the-internet.herokuapp.com](https://the-internet.herokuapp.com) |\n| Forms / commerce happy paths | Sauce Demo, automationexercise.com (treat as toys) |\n| API-only | jsonplaceholder.typicode.com, reqres.in |\n| Domain | Bizlevate HRM local / staging with test users (10.2) |\n| a11y | your CT modal + axe |\n| Native | ApiDemos / TheApp \u2014 **Appium**, not Cypress |\n\n## Data\n\nHand-roll `cypress/fixtures/employees.json` with fake names. Do not export real staff. Deterministic seeds beat Faker-in-the-assert if you need stable text.\n\n## the-internet and tabs\n\nWhen a practice site opens a new window, do the 9.3 substitutes (href, `cy.request`, stub `window.open`). If the exercise is \"control two windows,\" switch to **Playwright** for that hour \u2014 that is the lesson. Selenium's window handles are the other contrast lab.\n\nKitchen Sink will not teach payroll. You still need the capstone (13.1). Never point default `baseUrl` at production.\n\nInterview line: \"I practice on RWA/Kitchen Sink and domain fixtures. I don't use production data. New-window labs prove Cypress has no switchToTab; Playwright and Selenium are how you actually drive two windows.\""
+    }
+  ]
+}
