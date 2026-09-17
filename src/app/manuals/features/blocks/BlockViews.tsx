@@ -151,10 +151,10 @@ export function ChapterBlockView({
         );
         if (block.heading?.trim()) {
           return (
-            <div className="space-y-2">
-              <h3 className="font-serif-display font-bold text-sm sm:text-base text-[#1C2A26]">{block.heading.trim()}</h3>
+            <Shell className={`${accent.border} ${accent.bg}`}>
+              <Label colorClass={accent.text}>{block.heading.trim()}</Label>
               {body}
-            </div>
+            </Shell>
           );
         }
         return body;

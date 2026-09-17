@@ -614,6 +614,10 @@ export type LegacyChapterFields = {
 
 /** Synthesize blocks from legacy chapter fields when `blocks` is unset. */
 export function legacyFieldsToBlocks(ch: LegacyChapterFields): ChapterBlock[] {
+  const topics = markdownSectionBlocks(ch.contentMarkdown);
+  // ponytail: authored ## / ### topics replace the default Why/When/Practical template
+  if (topics.length) return withOrder(topics);
+
   const out: ChapterBlock[] = [];
   if (ch.overviewText?.trim()) {
     out.push({ id: newBlockId("overview"), type: "overview", content: ch.overviewText });
@@ -657,19 +661,18 @@ export function legacyFieldsToBlocks(ch: LegacyChapterFields): ChapterBlock[] {
   if (ch.resourceLinks?.length) {
     out.push({ id: newBlockId("resources"), type: "resources", items: ch.resourceLinks });
   }
-  for (const md of markdownSectionBlocks(ch.contentMarkdown)) out.push(md);
   return withOrder(out);
 }
 
-/** One overview block per `##` heading so lesson text lives in the block list, not a footer. */
+/** One block per ## / ### heading. Lead text with no heading is a single untitled overview. */
 function markdownSectionBlocks(md?: string): ChapterBlock[] {
   const text = String(md || "").trim();
-  if (!text) return [];
-  const chunks = text.split(/^##\s+/m);
+  if (!text || !/^#{2,3}\s+/m.test(text)) return [];
+  const chunks = text.split(/^#{2,3}\s+/m);
   const out: ChapterBlock[] = [];
   const lead = chunks[0].trim();
   if (lead) {
-    out.push({ id: newBlockId("md"), type: "overview", heading: "Lesson content", content: lead });
+    out.push({ id: newBlockId("md"), type: "overview", content: lead });
   }
   for (const chunk of chunks.slice(1)) {
     const nl = chunk.indexOf("\n");
@@ -679,7 +682,7 @@ function markdownSectionBlocks(md?: string): ChapterBlock[] {
     out.push({
       id: newBlockId("md"),
       type: "overview",
-      heading: heading || "Lesson content",
+      heading: heading || undefined,
       content: content || heading,
     });
   }
