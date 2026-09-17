@@ -20,6 +20,29 @@ export const chapter = {
   "tools": [],
   "customSummary": "- Cypress Discord/GitHub + Stack Overflow.\n- Minimal repro + version + browser.\n- Secrets stay out of pastes.\n- WebKit/native questions go to Playwright/Appium communities.\n- Be kind; search first.",
   "contentMarkdown": "## A good question\n\n\"Cypress 13.7, Chrome, `cy.origin('https://login.example', { args: { user } }, ...)` — `user` is missing if I close over it without args. I passed args; the callback still does not see `user`. Here's a 15-line spec.\"\n\nThat is answerable. \"SSO doesn't work\" is not. \"Why is Cypress flaky?\" with no spec is not.\n\n## Where to ask\n\n- Official Cypress Discord / GitHub Discussions — runner, origin, CT.\n- Stack Overflow tag `cypress` — durable answers; search first.\n- Plugin repos (`@cypress/grep`, `cypress-axe`) issues — version peerDependency problems.\n- Playwright Discord / Stack Overflow `playwright` — WebKit, traces, popups (not Cypress Discord).\n- Selenium / Appium Slack or GitHub — Grid, SafariDriver, native.\n\nReddit r/QualityAssurance and Twitter/X are noisy. Tool wars belong in 9.2's table, not in a comment thread.\n\n## Hygiene\n\nPaste Cypress version, browser, whether origin/iframe/shadow is involved. Do not paste payroll PII, `CYPRESS_RECORD_KEY`, or `cypress.env.json`. Minimize the spec.\n\nInterview line: \"I ask versioned minimal repros in Cypress communities. I take WebKit/trace questions to Playwright, and native questions to Appium/Selenium communities.\"",
+  "blocks": [
+    {
+      "id": "cy-14-8-md-0",
+      "type": "overview",
+      "heading": "A good question",
+      "content": "\"Cypress 13.7, Chrome, `cy.origin('https://login.example', { args: { user } }, ...)` — `user` is missing if I close over it without args. I passed args; the callback still does not see `user`. Here's a 15-line spec.\"\n\nThat is answerable. \"SSO doesn't work\" is not. \"Why is Cypress flaky?\" with no spec is not.",
+      "order": 0
+    },
+    {
+      "id": "cy-14-8-md-1",
+      "type": "overview",
+      "heading": "Where to ask",
+      "content": "- Official Cypress Discord / GitHub Discussions — runner, origin, CT.\n- Stack Overflow tag `cypress` — durable answers; search first.\n- Plugin repos (`@cypress/grep`, `cypress-axe`) issues — version peerDependency problems.\n- Playwright Discord / Stack Overflow `playwright` — WebKit, traces, popups (not Cypress Discord).\n- Selenium / Appium Slack or GitHub — Grid, SafariDriver, native.\n\nReddit r/QualityAssurance and Twitter/X are noisy. Tool wars belong in 9.2's table, not in a comment thread.",
+      "order": 1
+    },
+    {
+      "id": "cy-14-8-md-2",
+      "type": "overview",
+      "heading": "Hygiene",
+      "content": "Paste Cypress version, browser, whether origin/iframe/shadow is involved. Do not paste payroll PII, `CYPRESS_RECORD_KEY`, or `cypress.env.json`. Minimize the spec.\n\nInterview line: \"I ask versioned minimal repros in Cypress communities. I take WebKit/trace questions to Playwright, and native questions to Appium/Selenium communities.\"",
+      "order": 2
+    }
+  ],
   "advantages": [
     "14.8 Social & Real-Time Communities — You will get stuck on origin serialization or a GitHub Action cache."
   ],

@@ -20,6 +20,36 @@ export const chapter = {
   "tools": [],
   "customSummary": "- Generate it() from a synchronous array/require(fixture), not a for-loop of commands inside one test.\n- Each row = one test name, one retry, one screenshot.\n- cy.fixture is async — too late to register tests if you call it inside it().\n- Playwright: loop calling test(); Selenium: TestNG DataProvider / pytest parametrize.\n- Keep combinatorial explosion in CT (9.5) when it is prop-level, not full E2E.",
   "contentMarkdown": "## The anti-pattern\n\n```js\nit('validates leave types', () => {\n  cy.fixture('leave-types.json').then((rows) => {\n    rows.forEach((row) => {\n      cy.get('[data-cy=leave-type]').select(row.label); // one test, six behaviors\n    });\n  });\n});\n```\n\nOne failure, useless title, one screenshot, retries repeat *all* rows.\n\n## The pattern\n\nTests are registered when the spec file evaluates. Use synchronous data:\n\n```js\nconst rows = require('../fixtures/leave-types.json');\n\ndescribe('leave type dropdown', () => {\n  rows.forEach(({ code, label }) => {\n    it(`shows ${code} as ${label}`, () => {\n      cy.visit('/leave/new');\n      cy.get('[data-cy=leave-type]').select(label);\n      cy.get('[data-cy=leave-type]').should('have.value', code);\n    });\n  });\n});\n```\n\nOr `import rows from '../fixtures/leave-types.json'` with the right TS resolveJsonModule. If you insist on `cy.fixture`, import/require instead, or use a plugin — do not discover rows after the test started.\n\n## Roles × journeys\n\n```js\n['employee', 'manager', 'payroll-admin'].forEach((role) => {\n  it(`hides approve button for ${role} when not permitted`, () => {\n    cy.loginAs(role);\n    cy.visit('/leave/123');\n    // ...\n  });\n});\n```\n\nPrefer `cy.session` inside `loginAs` so you are not paying full UI login per row (Part 7).\n\n## Versus Playwright and Selenium\n\nPlaywright: `for (const role of roles) { test(`${role} cannot approve`, async ({ page }) => { ... }) }`. pytest: `@pytest.mark.parametrize`. TestNG: `@DataProvider`. Same rule: **the runner must see N tests**, not N loops inside one test.\n\nInterview line: \"I parametrize by generating `it()` from JSON at load time. I do not for-loop Cypress commands inside one test and call it data-driven.\"",
+  "blocks": [
+    {
+      "id": "cy-9-14-md-0",
+      "type": "overview",
+      "heading": "The anti-pattern",
+      "content": "```js\nit('validates leave types', () => {\n  cy.fixture('leave-types.json').then((rows) => {\n    rows.forEach((row) => {\n      cy.get('[data-cy=leave-type]').select(row.label); // one test, six behaviors\n    });\n  });\n});\n```\n\nOne failure, useless title, one screenshot, retries repeat *all* rows.",
+      "order": 0
+    },
+    {
+      "id": "cy-9-14-md-1",
+      "type": "overview",
+      "heading": "The pattern",
+      "content": "Tests are registered when the spec file evaluates. Use synchronous data:\n\n```js\nconst rows = require('../fixtures/leave-types.json');\n\ndescribe('leave type dropdown', () => {\n  rows.forEach(({ code, label }) => {\n    it(`shows ${code} as ${label}`, () => {\n      cy.visit('/leave/new');\n      cy.get('[data-cy=leave-type]').select(label);\n      cy.get('[data-cy=leave-type]').should('have.value', code);\n    });\n  });\n});\n```\n\nOr `import rows from '../fixtures/leave-types.json'` with the right TS resolveJsonModule. If you insist on `cy.fixture`, import/require instead, or use a plugin — do not discover rows after the test started.",
+      "order": 1
+    },
+    {
+      "id": "cy-9-14-md-2",
+      "type": "overview",
+      "heading": "Roles × journeys",
+      "content": "```js\n['employee', 'manager', 'payroll-admin'].forEach((role) => {\n  it(`hides approve button for ${role} when not permitted`, () => {\n    cy.loginAs(role);\n    cy.visit('/leave/123');\n    // ...\n  });\n});\n```\n\nPrefer `cy.session` inside `loginAs` so you are not paying full UI login per row (Part 7).",
+      "order": 2
+    },
+    {
+      "id": "cy-9-14-md-3",
+      "type": "overview",
+      "heading": "Versus Playwright and Selenium",
+      "content": "Playwright: `for (const role of roles) { test(`${role} cannot approve`, async ({ page }) => { ... }) }`. pytest: `@pytest.mark.parametrize`. TestNG: `@DataProvider`. Same rule: **the runner must see N tests**, not N loops inside one test.\n\nInterview line: \"I parametrize by generating `it()` from JSON at load time. I do not for-loop Cypress commands inside one test and call it data-driven.\"",
+      "order": 3
+    }
+  ],
   "advantages": [
     "9.14 Data-Driven / Looped Tests — Leave types, roles, and payroll countries explode combinatorially."
   ],

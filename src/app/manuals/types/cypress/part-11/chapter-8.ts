@@ -20,6 +20,36 @@ export const chapter = {
   "tools": [],
   "customSummary": "- Screenshots on failure: on by default; folder cypress/screenshots.\n- Videos: set video: true explicitly after Cypress 13; watch disk/CPU (12.4).\n- Upload as GitHub/GitLab artifacts; not a Trace Viewer zip (9.12).\n- Blackout payroll PII; restrict artifact access.\n- Playwright: screenshot/video/trace are separate retain-on-failure flags — Cypress video is cruder.",
   "contentMarkdown": "## Config\n\n```js\nexport default defineConfig({\n  screenshotOnRunFailure: true,\n  screenshotsFolder: 'cypress/screenshots',\n  video: true,\n  videoCompression: 32,\n  videosFolder: 'cypress/videos',\n});\n```\n\n**Cypress 13:** `video` default became `false`. Tutorials that say \"CI always has video\" are stale. Set it if you want it.\n\nIf your version supports retaining videos only on failure, prefer that. Otherwise delete `cypress/videos` for passing specs in a CI step, or accept the storage bill.\n\n## GitHub upload\n\n```yaml\n- uses: actions/upload-artifact@v4\n  if: failure()\n  with:\n    name: cypress-artifacts\n    path: |\n      cypress/screenshots\n      cypress/videos\n```\n\n`if: failure()` still uploads when the Cypress step failed *if* you place this step correctly (often `if: always()` after the test step so you get artifacts even when the job is red — use `always()` + a small retention).\n\n## Not traces\n\nA video is a camera pointed at the browser. You cannot click a command to restore DOM. Cloud Replay (11.3) is closer. Playwright `trace.zip` is closer still (9.12).\n\n## Versus Playwright and Selenium\n\nPlaywright: `screenshot: 'only-on-failure'`, `video: 'retain-on-failure'`, `trace: 'retain-on-failure'` — three knobs. Selenium vendors: session video. Cypress: screenshot + optional video, plugin for visual diff (9.6).\n\nInterview line: \"I upload screenshots always-on-failure. I turn videos on explicitly because Cypress 13 defaulted them off. There is no trace.zip.\"",
+  "blocks": [
+    {
+      "id": "cy-11-8-md-0",
+      "type": "overview",
+      "heading": "Config",
+      "content": "```js\nexport default defineConfig({\n  screenshotOnRunFailure: true,\n  screenshotsFolder: 'cypress/screenshots',\n  video: true,\n  videoCompression: 32,\n  videosFolder: 'cypress/videos',\n});\n```\n\n**Cypress 13:** `video` default became `false`. Tutorials that say \"CI always has video\" are stale. Set it if you want it.\n\nIf your version supports retaining videos only on failure, prefer that. Otherwise delete `cypress/videos` for passing specs in a CI step, or accept the storage bill.",
+      "order": 0
+    },
+    {
+      "id": "cy-11-8-md-1",
+      "type": "overview",
+      "heading": "GitHub upload",
+      "content": "```yaml\n- uses: actions/upload-artifact@v4\n  if: failure()\n  with:\n    name: cypress-artifacts\n    path: |\n      cypress/screenshots\n      cypress/videos\n```\n\n`if: failure()` still uploads when the Cypress step failed *if* you place this step correctly (often `if: always()` after the test step so you get artifacts even when the job is red — use `always()` + a small retention).",
+      "order": 1
+    },
+    {
+      "id": "cy-11-8-md-2",
+      "type": "overview",
+      "heading": "Not traces",
+      "content": "A video is a camera pointed at the browser. You cannot click a command to restore DOM. Cloud Replay (11.3) is closer. Playwright `trace.zip` is closer still (9.12).",
+      "order": 2
+    },
+    {
+      "id": "cy-11-8-md-3",
+      "type": "overview",
+      "heading": "Versus Playwright and Selenium",
+      "content": "Playwright: `screenshot: 'only-on-failure'`, `video: 'retain-on-failure'`, `trace: 'retain-on-failure'` — three knobs. Selenium vendors: session video. Cypress: screenshot + optional video, plugin for visual diff (9.6).\n\nInterview line: \"I upload screenshots always-on-failure. I turn videos on explicitly because Cypress 13 defaulted them off. There is no trace.zip.\"",
+      "order": 3
+    }
+  ],
   "advantages": [
     "11.8 Artifacts: Screenshots & Videos on Failure — Without artifacts, a CI-only failure is a stack trace."
   ],

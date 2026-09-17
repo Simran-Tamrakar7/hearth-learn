@@ -20,6 +20,134 @@ export const chapter = {
   "tools": [],
   "customSummary": "- Install with npm i -D cypress (or pnpm add -D / yarn add -D). Never --save. Never -g.\n- npm package ≠ the ~250MB Electron cache (macOS ~/Library/Caches/Cypress, Linux ~/.cache/Cypress).\n- First launch downloads the binary; npx cypress verify is the CI-friendly check that the binary is present.\n- Pin Cypress in package.json; add \"cypress:open\" and \"cypress:run\" scripts that use the local binary via npx.\n- Cypress 10+ first open scaffolds cypress.config.js and e2e/ — not cypress.json.\n- Cache ~/.cache/Cypress (or equivalent) in CI keyed by Cypress version + lockfile.\n- Node LTS compatible with your Cypress major; browsers: Electron bundled, Chrome/Edge/Firefox detected locally.",
   "contentMarkdown": "## Prerequisites\n\nYou need:\n\n1. **Node.js** in the range Cypress documents for your major (Cypress 13/14 expect a current Node LTS). Use the same Node as the HRM app if possible (`.nvmrc` / Volta / `engines` in package.json).\n2. **npm, pnpm, or yarn** — this manual uses npm. The flags differ; the rule does not: Cypress is a **devDependency**.\n3. **A writable cache directory** for the binary. Corporate laptops that lock `~/Library/Caches` will fail in confusing ways; `CYPRESS_CACHE_FOLDER` relocates the cache.\n4. **Display / XVFB** only for headed Linux CI. `cypress run` headless on Electron/Chrome does not need a desktop. `cypress open` does.\n\nYou do **not** need ChromeDriver, GeckoDriver, or Java. That is the Selenium-shaped expectation you should drop.\n\n## The correct install command\n\nFrom the **application repository root** (the HRM package that already has `package.json`):\n\n```bash\ncd /path/to/hearth   # or the HRM app package in a monorepo\nnpm install cypress --save-dev\n```\n\nEquivalent package-manager spellings:\n\n```bash\nnpm i -D cypress\npnpm add -D cypress\nyarn add -D cypress\n```\n\nConfirm `package.json` shows Cypress under `devDependencies`, not `dependencies`:\n\n```json\n{\n  \"devDependencies\": {\n    \"cypress\": \"13.17.0\"\n  }\n}\n```\n\nPin a **specific version** (or a narrow range you have tested). Cypress majors have breaking config defaults (`video`, `testIsolation`). \"Latest\" on a Friday afternoon is how CI goes red for a default change you did not opt into.\n\n### Forbidden flags (memorize)\n\n```bash\n# WRONG — production dependency\nnpm install cypress --save\nnpm install cypress   # older npm defaulted to dependencies\n\n# WRONG — global CLI, version not tied to the repo\nnpm install -g cypress\nyarn global add cypress\n```\n\n**Why `-g` hurts:** Developer A has Cypress 12 globally; the repo lockfile says 13. `cypress open` in a random terminal may invoke 12. Custom `setupNodeEvents`, `testIsolation`, and `video` defaults then disagree with CI, which runs `npx cypress` from `node_modules`. Always `npx cypress ...` or an npm script so PATH resolves to **this project's** binary.\n\n**Why `--save` hurts:** Production install (`npm ci --omit=dev`) should not download Cypress. Your production image should not contain a test runner and should not need the 250MB cache.\n\n## What happens on first run\n\n```bash\nnpx cypress verify\n```\n\n`verify` downloads the binary for the installed Cypress version if missing, then confirms it starts. This is the command CI should run in an **install/cache** phase, not hidden inside the first test job.\n\n```bash\nnpx cypress open     # GUI; also downloads if needed\nnpx cypress run      # headless; also downloads if needed\n```\n\nDisk layout after a successful verify (macOS example):\n\n```text\n~/Library/Caches/Cypress/\n  13.17.0/\n    Cypress.app/     # Electron\n```\n\n`node_modules/cypress` still exists; it is not a substitute for that cache. Deleting `node_modules` without deleting the cache is fast to reinstall. Deleting the cache without changing Cypress version forces a re-download.\n\nLinux: `~/.cache/Cypress`. Windows: `%LOCALAPPDATA%\\Cypress\\Cache`. Override:\n\n```bash\nexport CYPRESS_CACHE_FOLDER=/opt/cypress-cache\nnpx cypress verify\n```\n\n## npm scripts you should add immediately\n\n```json\n{\n  \"scripts\": {\n    \"cypress:open\": \"cypress open\",\n    \"cypress:run\": \"cypress run\",\n    \"cypress:verify\": \"cypress verify\",\n    \"cypress:info\": \"cypress info\"\n  }\n}\n```\n\n`npm run cypress:open` uses the **local** binary (npm prepends `node_modules/.bin`). Prefer this over a global `cypress` on PATH.\n\n`npx cypress info` prints detected browsers, versions, and cache path — useful when HRM CI cannot find Chrome.\n\n## First open scaffolds Cypress 10+ files\n\nIf the project has **no** `cypress.config.js` / `cypress.config.ts`, `npx cypress open` launches the **launchpad**:\n\n1. Choose **E2E Testing** (this manual) or Component Testing.\n2. Cypress writes `cypress.config.js` (or `.ts` if you opt in later).\n3. It creates `cypress/e2e/`, `cypress/fixtures/`, `cypress/support/`.\n4. Example specs may be included; you can delete them.\n\nYou will **not** get `cypress.json` or `cypress/integration/` on a current Cypress. If a blog post tells you to create `cypress.json`, it is pre-v10. The breaking change in v10 was exactly that: **`cypress.json` → `cypress.config.js`**, **`integration` → `e2e`**, **`plugins/index.js` → `setupNodeEvents`**.\n\n## Browsers on the machine\n\n| Browser | How Cypress gets it |\n|---|---|\n| Electron | Bundled in the Cypress binary (~the 250MB cache). Zero extra install. Default for many tutorials. |\n| Chrome / Chromium / Edge | Detected from a local install. `npx cypress run --browser chrome` |\n| Firefox | Detected from a local install. Added later than Chrome; works but less common in CI images. |\n| WebKit / Safari | **Not** first-class. Playwright wins if Safari/iOS web-view is a hard requirement. |\n\nCI images often include Google Chrome. Electron needs no extra browser package. Pick one primary browser for HRM smoke tests (Chrome or Electron); add Firefox as a second CI job, not as \"one Cypress process, two browsers at once\" (Part 0: parallel means **multiple machines / invocations**).\n\n## CI install pattern (preview of Part 11)\n\n```bash\nnpm ci\nnpx cypress verify\nnpx cypress run\n```\n\nCache:\n\n- `node_modules` or the package-manager store (keyed by lockfile)\n- `CYPRESS_CACHE_FOLDER` or the default OS cache (keyed by **Cypress version**)\n\nIf you skip cache, every pipeline re-downloads ~250MB. If you cache `node_modules` but not the Cypress cache, you still re-download Electron.\n\nGitHub Actions example shape (not a full workflow):\n\n```yaml\n- uses: actions/cache@v4\n  with:\n    path: ~/.cache/Cypress\n    key: cypress-${{ runner.os }}-${{ hashFiles('package-lock.json') }}\n```\n\n(On macOS runners the path is `~/Library/Caches/Cypress`.)\n\n## Proxy, corporate SSL, and air-gapped installs\n\nIf `cypress verify` hangs or TLS-fails:\n\n- Set `HTTP_PROXY` / `HTTPS_PROXY` as Cypress documents.\n- `CYPRESS_INSTALL_BINARY=0` skips download (only if you vendor the binary yourself — rare).\n- `CYPRESS_DOWNLOAD_MIRROR` for internal mirrors.\n\nDo not \"fix\" SSL errors by disabling verification in production app code. That is unrelated to Cypress's binary CDN.\n\n## Playwright / Selenium comparison (install interview)\n\n- **Playwright:** `npm i -D @playwright/test` then `npx playwright install` (or `install --with-deps` on Linux). Browsers land in a Playwright cache, not Electron. Still a **devDependency**. Still never `-g` for app work.\n- **Selenium:** `pip install selenium` or Maven coords + **browser drivers**. Selenium Manager improved this, but \"which chromedriver matches Chrome 128\" is the historical pain Cypress and Playwright exist to avoid.\n- **Cypress:** one `npm i -D cypress` + one binary cache. No WebKit. No Python.\n\n## Checklist before you leave this chapter\n\n1. `cypress` is in `devDependencies`.\n2. You can run `npm run cypress:verify` successfully.\n3. You know where the ~250MB cache lives and that it is **not** committed to git.\n4. You will not install with `--save` or `-g`.\n5. First `cypress open` is allowed to scaffold **config.js + e2e/**, not json + integration.\n\nNext: the folders that scaffold created, what belongs in git, and the `.cy.` infix.\n## Worked local session (copy this)\n\n```bash\ncd /Users/macminim2/Projects/hearth\nnode -v                    # LTS in Cypress's supported range\nnpm install cypress --save-dev\ngrep -A2 '\"cypress\"' package.json   # must sit under devDependencies\nnpx cypress verify\nnpx cypress info           # cache path + detected browsers\n```\n\nIf `verify` prints a path under `~/Library/Caches/Cypress/<version>`, the ~250MB download landed. If it hangs on a corporate proxy, set `HTTPS_PROXY` / `CYPRESS_DOWNLOAD_MIRROR` as documented — do not disable TLS in the HRM app to \"make Cypress install.\"\n\n## Monorepo note\n\nIf HRM is a package inside a workspace, install Cypress **in the package that owns the UI** (or a dedicated `e2e` package that depends on that UI). Running `npx cypress` from the wrong workspace root is how people get \"can't find cypress.config.js.\"\n\n```json\n{\n  \"name\": \"@bizlevate/hrm\",\n  \"devDependencies\": { \"cypress\": \"13.17.0\" }\n}\n```\n\n## Version bumps\n\nRead the changelog before jumping majors. Cypress 12 isolation and Cypress 13 video defaults have broken teams who `npm update` on Monday. Pin the version. Re-run `cypress verify` after a bump — a new version means a **new** ~250MB cache folder; CI must cache by version key.\n\n```bash\nnpm i -D cypress@13.17.0\nnpx cypress verify\n```\n\nNever `npm i -g cypress@latest` to \"try it.\" That global binary will not match the lockfile.\n\n## Docker / CI image sketch\n\n```dockerfile\n# CI image, not production\nFROM node:20-bookworm\nRUN apt-get update && apt-get install -y libgtk-3-0 libgbm1 libnotify4 libnss3 libxss1 libasound2 xvfb\n```\n\nThen `npm ci && npx cypress verify && npx cypress run --browser chrome`. Production Dockerfile should **not** `COPY` `cypress/` or `devDependencies`.\n\nPlaywright's Docker story is official images (`mcr.microsoft.com/playwright`). Cypress has `cypress/included` images too — useful, not required. The principle is the same: **test image ≠ prod image**.\n\n## Failure catalog\n\n| Symptom | Likely cause |\n|---|---|\n| `cypress: command not found` | Global not on PATH, or you forgot `npx` / npm script |\n| Verify fails SSL | Proxy / intercepting antivirus |\n| Verify every CI run downloads 250MB | Cache path not saved (`~/.cache/Cypress` vs macOS Library path) |\n| \"Cypress failed to start\" after bump | Cache for old version; new version not verified |\n| App Docker build includes Cypress | `--save` / `dependencies` instead of `-D` |\n\n## Interview drill\n\n\"Walk me through adding Cypress to a greenfield Node app.\" Answer: Node LTS → `npm i -D cypress` → `cypress verify` → `cypress open --e2e` → commit `cypress.config.*` and `cypress/e2e|support|fixtures` → gitignore artifacts and `cypress.env.json` → never `-g`, never `--save`.\n## pnpm and Yarn gotchas\n\npnpm's strict node_modules layout still works with `pnpm add -D cypress` then `pnpm exec cypress verify`. Yarn Berry (PnP) sometimes needs `nodeLinker: node-modules` for Cypress's binary resolution — if `verify` cannot find the executable, that is the first knob. npm remains the path this manual shows in snippets.\n\n```bash\npnpm add -D cypress\npnpm exec cypress verify\nyarn add -D cypress\nyarn cypress verify\n```\n\nAlways the **workspace package** that contains `cypress.config.*`, never a random parent folder without a config file.\n",
+  "blocks": [
+    {
+      "id": "cy-1-2-md-0",
+      "type": "overview",
+      "heading": "Prerequisites",
+      "content": "You need:\n\n1. **Node.js** in the range Cypress documents for your major (Cypress 13/14 expect a current Node LTS). Use the same Node as the HRM app if possible (`.nvmrc` / Volta / `engines` in package.json).\n2. **npm, pnpm, or yarn** — this manual uses npm. The flags differ; the rule does not: Cypress is a **devDependency**.\n3. **A writable cache directory** for the binary. Corporate laptops that lock `~/Library/Caches` will fail in confusing ways; `CYPRESS_CACHE_FOLDER` relocates the cache.\n4. **Display / XVFB** only for headed Linux CI. `cypress run` headless on Electron/Chrome does not need a desktop. `cypress open` does.\n\nYou do **not** need ChromeDriver, GeckoDriver, or Java. That is the Selenium-shaped expectation you should drop.",
+      "order": 0
+    },
+    {
+      "id": "cy-1-2-md-1",
+      "type": "overview",
+      "heading": "The correct install command",
+      "content": "From the **application repository root** (the HRM package that already has `package.json`):\n\n```bash\ncd /path/to/hearth   # or the HRM app package in a monorepo\nnpm install cypress --save-dev\n```\n\nEquivalent package-manager spellings:\n\n```bash\nnpm i -D cypress\npnpm add -D cypress\nyarn add -D cypress\n```\n\nConfirm `package.json` shows Cypress under `devDependencies`, not `dependencies`:\n\n```json\n{\n  \"devDependencies\": {\n    \"cypress\": \"13.17.0\"\n  }\n}\n```\n\nPin a **specific version** (or a narrow range you have tested). Cypress majors have breaking config defaults (`video`, `testIsolation`). \"Latest\" on a Friday afternoon is how CI goes red for a default change you did not opt into.",
+      "order": 1
+    },
+    {
+      "id": "cy-1-2-md-2",
+      "type": "overview",
+      "heading": "Forbidden flags (memorize)",
+      "content": "```bash\n# WRONG — production dependency\nnpm install cypress --save\nnpm install cypress   # older npm defaulted to dependencies\n\n# WRONG — global CLI, version not tied to the repo\nnpm install -g cypress\nyarn global add cypress\n```\n\n**Why `-g` hurts:** Developer A has Cypress 12 globally; the repo lockfile says 13. `cypress open` in a random terminal may invoke 12. Custom `setupNodeEvents`, `testIsolation`, and `video` defaults then disagree with CI, which runs `npx cypress` from `node_modules`. Always `npx cypress ...` or an npm script so PATH resolves to **this project's** binary.\n\n**Why `--save` hurts:** Production install (`npm ci --omit=dev`) should not download Cypress. Your production image should not contain a test runner and should not need the 250MB cache.",
+      "order": 2
+    },
+    {
+      "id": "cy-1-2-md-3",
+      "type": "overview",
+      "heading": "What happens on first run",
+      "content": "```bash\nnpx cypress verify\n```\n\n`verify` downloads the binary for the installed Cypress version if missing, then confirms it starts. This is the command CI should run in an **install/cache** phase, not hidden inside the first test job.\n\n```bash\nnpx cypress open     # GUI; also downloads if needed\nnpx cypress run      # headless; also downloads if needed\n```\n\nDisk layout after a successful verify (macOS example):\n\n```text\n~/Library/Caches/Cypress/\n  13.17.0/\n    Cypress.app/     # Electron\n```\n\n`node_modules/cypress` still exists; it is not a substitute for that cache. Deleting `node_modules` without deleting the cache is fast to reinstall. Deleting the cache without changing Cypress version forces a re-download.\n\nLinux: `~/.cache/Cypress`. Windows: `%LOCALAPPDATA%\\Cypress\\Cache`. Override:\n\n```bash\nexport CYPRESS_CACHE_FOLDER=/opt/cypress-cache\nnpx cypress verify\n```",
+      "order": 3
+    },
+    {
+      "id": "cy-1-2-md-4",
+      "type": "overview",
+      "heading": "npm scripts you should add immediately",
+      "content": "```json\n{\n  \"scripts\": {\n    \"cypress:open\": \"cypress open\",\n    \"cypress:run\": \"cypress run\",\n    \"cypress:verify\": \"cypress verify\",\n    \"cypress:info\": \"cypress info\"\n  }\n}\n```\n\n`npm run cypress:open` uses the **local** binary (npm prepends `node_modules/.bin`). Prefer this over a global `cypress` on PATH.\n\n`npx cypress info` prints detected browsers, versions, and cache path — useful when HRM CI cannot find Chrome.",
+      "order": 4
+    },
+    {
+      "id": "cy-1-2-md-5",
+      "type": "overview",
+      "heading": "First open scaffolds Cypress 10+ files",
+      "content": "If the project has **no** `cypress.config.js` / `cypress.config.ts`, `npx cypress open` launches the **launchpad**:\n\n1. Choose **E2E Testing** (this manual) or Component Testing.\n2. Cypress writes `cypress.config.js` (or `.ts` if you opt in later).\n3. It creates `cypress/e2e/`, `cypress/fixtures/`, `cypress/support/`.\n4. Example specs may be included; you can delete them.\n\nYou will **not** get `cypress.json` or `cypress/integration/` on a current Cypress. If a blog post tells you to create `cypress.json`, it is pre-v10. The breaking change in v10 was exactly that: **`cypress.json` → `cypress.config.js`**, **`integration` → `e2e`**, **`plugins/index.js` → `setupNodeEvents`**.",
+      "order": 5
+    },
+    {
+      "id": "cy-1-2-md-6",
+      "type": "overview",
+      "heading": "Browsers on the machine",
+      "content": "| Browser | How Cypress gets it |\n|---|---|\n| Electron | Bundled in the Cypress binary (~the 250MB cache). Zero extra install. Default for many tutorials. |\n| Chrome / Chromium / Edge | Detected from a local install. `npx cypress run --browser chrome` |\n| Firefox | Detected from a local install. Added later than Chrome; works but less common in CI images. |\n| WebKit / Safari | **Not** first-class. Playwright wins if Safari/iOS web-view is a hard requirement. |\n\nCI images often include Google Chrome. Electron needs no extra browser package. Pick one primary browser for HRM smoke tests (Chrome or Electron); add Firefox as a second CI job, not as \"one Cypress process, two browsers at once\" (Part 0: parallel means **multiple machines / invocations**).",
+      "order": 6
+    },
+    {
+      "id": "cy-1-2-md-7",
+      "type": "overview",
+      "heading": "CI install pattern (preview of Part 11)",
+      "content": "```bash\nnpm ci\nnpx cypress verify\nnpx cypress run\n```\n\nCache:\n\n- `node_modules` or the package-manager store (keyed by lockfile)\n- `CYPRESS_CACHE_FOLDER` or the default OS cache (keyed by **Cypress version**)\n\nIf you skip cache, every pipeline re-downloads ~250MB. If you cache `node_modules` but not the Cypress cache, you still re-download Electron.\n\nGitHub Actions example shape (not a full workflow):\n\n```yaml\n- uses: actions/cache@v4\n  with:\n    path: ~/.cache/Cypress\n    key: cypress-${{ runner.os }}-${{ hashFiles('package-lock.json') }}\n```\n\n(On macOS runners the path is `~/Library/Caches/Cypress`.)",
+      "order": 7
+    },
+    {
+      "id": "cy-1-2-md-8",
+      "type": "overview",
+      "heading": "Proxy, corporate SSL, and air-gapped installs",
+      "content": "If `cypress verify` hangs or TLS-fails:\n\n- Set `HTTP_PROXY` / `HTTPS_PROXY` as Cypress documents.\n- `CYPRESS_INSTALL_BINARY=0` skips download (only if you vendor the binary yourself — rare).\n- `CYPRESS_DOWNLOAD_MIRROR` for internal mirrors.\n\nDo not \"fix\" SSL errors by disabling verification in production app code. That is unrelated to Cypress's binary CDN.",
+      "order": 8
+    },
+    {
+      "id": "cy-1-2-md-9",
+      "type": "overview",
+      "heading": "Playwright / Selenium comparison (install interview)",
+      "content": "- **Playwright:** `npm i -D @playwright/test` then `npx playwright install` (or `install --with-deps` on Linux). Browsers land in a Playwright cache, not Electron. Still a **devDependency**. Still never `-g` for app work.\n- **Selenium:** `pip install selenium` or Maven coords + **browser drivers**. Selenium Manager improved this, but \"which chromedriver matches Chrome 128\" is the historical pain Cypress and Playwright exist to avoid.\n- **Cypress:** one `npm i -D cypress` + one binary cache. No WebKit. No Python.",
+      "order": 9
+    },
+    {
+      "id": "cy-1-2-md-10",
+      "type": "overview",
+      "heading": "Checklist before you leave this chapter",
+      "content": "1. `cypress` is in `devDependencies`.\n2. You can run `npm run cypress:verify` successfully.\n3. You know where the ~250MB cache lives and that it is **not** committed to git.\n4. You will not install with `--save` or `-g`.\n5. First `cypress open` is allowed to scaffold **config.js + e2e/**, not json + integration.\n\nNext: the folders that scaffold created, what belongs in git, and the `.cy.` infix.",
+      "order": 10
+    },
+    {
+      "id": "cy-1-2-md-11",
+      "type": "overview",
+      "heading": "Worked local session (copy this)",
+      "content": "```bash\ncd /Users/macminim2/Projects/hearth\nnode -v                    # LTS in Cypress's supported range\nnpm install cypress --save-dev\ngrep -A2 '\"cypress\"' package.json   # must sit under devDependencies\nnpx cypress verify\nnpx cypress info           # cache path + detected browsers\n```\n\nIf `verify` prints a path under `~/Library/Caches/Cypress/<version>`, the ~250MB download landed. If it hangs on a corporate proxy, set `HTTPS_PROXY` / `CYPRESS_DOWNLOAD_MIRROR` as documented — do not disable TLS in the HRM app to \"make Cypress install.\"",
+      "order": 11
+    },
+    {
+      "id": "cy-1-2-md-12",
+      "type": "overview",
+      "heading": "Monorepo note",
+      "content": "If HRM is a package inside a workspace, install Cypress **in the package that owns the UI** (or a dedicated `e2e` package that depends on that UI). Running `npx cypress` from the wrong workspace root is how people get \"can't find cypress.config.js.\"\n\n```json\n{\n  \"name\": \"@bizlevate/hrm\",\n  \"devDependencies\": { \"cypress\": \"13.17.0\" }\n}\n```",
+      "order": 12
+    },
+    {
+      "id": "cy-1-2-md-13",
+      "type": "overview",
+      "heading": "Version bumps",
+      "content": "Read the changelog before jumping majors. Cypress 12 isolation and Cypress 13 video defaults have broken teams who `npm update` on Monday. Pin the version. Re-run `cypress verify` after a bump — a new version means a **new** ~250MB cache folder; CI must cache by version key.\n\n```bash\nnpm i -D cypress@13.17.0\nnpx cypress verify\n```\n\nNever `npm i -g cypress@latest` to \"try it.\" That global binary will not match the lockfile.",
+      "order": 13
+    },
+    {
+      "id": "cy-1-2-md-14",
+      "type": "overview",
+      "heading": "Docker / CI image sketch",
+      "content": "```dockerfile\n# CI image, not production\nFROM node:20-bookworm\nRUN apt-get update && apt-get install -y libgtk-3-0 libgbm1 libnotify4 libnss3 libxss1 libasound2 xvfb\n```\n\nThen `npm ci && npx cypress verify && npx cypress run --browser chrome`. Production Dockerfile should **not** `COPY` `cypress/` or `devDependencies`.\n\nPlaywright's Docker story is official images (`mcr.microsoft.com/playwright`). Cypress has `cypress/included` images too — useful, not required. The principle is the same: **test image ≠ prod image**.",
+      "order": 14
+    },
+    {
+      "id": "cy-1-2-md-15",
+      "type": "overview",
+      "heading": "Failure catalog",
+      "content": "| Symptom | Likely cause |\n|---|---|\n| `cypress: command not found` | Global not on PATH, or you forgot `npx` / npm script |\n| Verify fails SSL | Proxy / intercepting antivirus |\n| Verify every CI run downloads 250MB | Cache path not saved (`~/.cache/Cypress` vs macOS Library path) |\n| \"Cypress failed to start\" after bump | Cache for old version; new version not verified |\n| App Docker build includes Cypress | `--save` / `dependencies` instead of `-D` |",
+      "order": 15
+    },
+    {
+      "id": "cy-1-2-md-16",
+      "type": "overview",
+      "heading": "Interview drill",
+      "content": "\"Walk me through adding Cypress to a greenfield Node app.\" Answer: Node LTS → `npm i -D cypress` → `cypress verify` → `cypress open --e2e` → commit `cypress.config.*` and `cypress/e2e|support|fixtures` → gitignore artifacts and `cypress.env.json` → never `-g`, never `--save`.",
+      "order": 16
+    },
+    {
+      "id": "cy-1-2-md-17",
+      "type": "overview",
+      "heading": "pnpm and Yarn gotchas",
+      "content": "pnpm's strict node_modules layout still works with `pnpm add -D cypress` then `pnpm exec cypress verify`. Yarn Berry (PnP) sometimes needs `nodeLinker: node-modules` for Cypress's binary resolution — if `verify` cannot find the executable, that is the first knob. npm remains the path this manual shows in snippets.\n\n```bash\npnpm add -D cypress\npnpm exec cypress verify\nyarn add -D cypress\nyarn cypress verify\n```\n\nAlways the **workspace package** that contains `cypress.config.*`, never a random parent folder without a config file.",
+      "order": 17
+    }
+  ],
   "advantages": [
     "1.2 Installation & Environment Setup — Wrong install flags are the most expensive first-week mistake: global Cypress drifts from the lockfile; a production dependency bloats deploy artifacts; skipping verify in CI means the binary downloads during the test job and flakes on network."
   ],

@@ -20,6 +20,29 @@ export const chapter = {
   "tools": [],
   "customSummary": "- DevTools + Cypress time-travel together.\n- Selector Playground is a suggestion; prefer data-cy.\n- axe DevTools/WAVE complement cypress-axe.\n- Framework DevTools for CT (9.5).\n- Playwright locator picker / Selenium IDE are different products.",
   "contentMarkdown": "## The pairing\n\nCypress restores a historical DOM; Chrome DevTools inspects that restored DOM (Part 0.7, 9.11). Use **Elements** (coverage, `pointer-events`), **Console** (app errors — 11.7), **Network** (compare to `cy.intercept`). The Accessibility pane: name, role, contrast — same issues `cypress-axe` fails on (9.7).\n\nSelector Playground is a suggestion with a live match count. Prefer `data-cy`. Treating Playground CSS as strategy is how HRM suites rot.\n\n## Extensions worth installing\n\n- axe DevTools / WAVE — interactive a11y, complement CI `cy.checkA11y`.\n- React / Vue / Angular DevTools — props that CT should `cy.mount` (9.5).\n- Do not rely on recorder extensions as your framework (Studio / Selenium IDE class tools).\n\n## Versus Playwright and Selenium\n\nPlaywright UI Mode pick-locator is excellent; still verify in DevTools. Playwright Trace Viewer is a **file** you open after CI (9.12) — not an extension. Selenium IDE recorders produce the same brittle CSS Cypress Studio does. For native, the inspector is Appium Inspector, not Chrome DevTools.\n\nInterview line: \"I inspect the time-traveled DOM in Chrome DevTools. Playground selectors are guesses. axe extensions complement `cypress-axe`. Playwright's locator picker and Selenium IDE are different products.\"",
+  "blocks": [
+    {
+      "id": "cy-14-9-md-0",
+      "type": "overview",
+      "heading": "The pairing",
+      "content": "Cypress restores a historical DOM; Chrome DevTools inspects that restored DOM (Part 0.7, 9.11). Use **Elements** (coverage, `pointer-events`), **Console** (app errors — 11.7), **Network** (compare to `cy.intercept`). The Accessibility pane: name, role, contrast — same issues `cypress-axe` fails on (9.7).\n\nSelector Playground is a suggestion with a live match count. Prefer `data-cy`. Treating Playground CSS as strategy is how HRM suites rot.",
+      "order": 0
+    },
+    {
+      "id": "cy-14-9-md-1",
+      "type": "overview",
+      "heading": "Extensions worth installing",
+      "content": "- axe DevTools / WAVE — interactive a11y, complement CI `cy.checkA11y`.\n- React / Vue / Angular DevTools — props that CT should `cy.mount` (9.5).\n- Do not rely on recorder extensions as your framework (Studio / Selenium IDE class tools).",
+      "order": 1
+    },
+    {
+      "id": "cy-14-9-md-2",
+      "type": "overview",
+      "heading": "Versus Playwright and Selenium",
+      "content": "Playwright UI Mode pick-locator is excellent; still verify in DevTools. Playwright Trace Viewer is a **file** you open after CI (9.12) — not an extension. Selenium IDE recorders produce the same brittle CSS Cypress Studio does. For native, the inspector is Appium Inspector, not Chrome DevTools.\n\nInterview line: \"I inspect the time-traveled DOM in Chrome DevTools. Playground selectors are guesses. axe extensions complement `cypress-axe`. Playwright's locator picker and Selenium IDE are different products.\"",
+      "order": 2
+    }
+  ],
   "advantages": [
     "14.9 Browser Extensions & Developer Tools — You will spend more time in DevTools than in any plugin."
   ],

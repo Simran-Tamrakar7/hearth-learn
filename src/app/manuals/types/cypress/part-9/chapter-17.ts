@@ -20,6 +20,36 @@ export const chapter = {
   "tools": [],
   "customSummary": "- Cypress = web in a browser you launched. Viewport ≠ iPhone.\n- No first-class WebKit ⇒ weak iOS Safari story (9.9).\n- Native store apps: Appium (or platform-native frameworks), not Cypress.\n- Playwright: better iOS-web via WebKit, still not native Appium.\n- Real devices: vendor labs (BrowserStack/Sauce) or Appium grid.",
   "contentMarkdown": "## Three different products people collapse into \"mobile\"\n\n1. **Responsive web** — CSS at 390px. Cypress: `cy.viewport('iphone-x')`. Valid, cheap, Chromium/Firefox only.\n2. **Mobile web on real iOS Safari** — WebKit + iOS chrome + real touch. Cypress: not first-class. Playwright WebKit or Sauce Safari.\n3. **Native app** — `Bizlevate.app` / Play Store APK. **Appium** (or Espresso/XCUITest). Cypress has no WebView to live inside unless you wrap a web app in a browser.\n\nIf Bizlevate ships (3), Cypress skill does not transfer as \"the same tests.\" You write new native tests. Web CT/E2E still protect the web.\n\n## What Cypress *can* do for (1)\n\n```js\ndescribe('leave form on mobile width', () => {\n  beforeEach(() => {\n    cy.viewport('iphone-x');\n    cy.visit('/leave/new');\n  });\n  it('does not clip the submit bar', () => {\n    cy.get('[data-cy=submit]').should('be.visible');\n  });\n});\n```\n\nOptional: `cypress-real-events` for `realTouch`-ish behavior — still not iOS.\n\n## Appium is the native answer\n\nAppium drives UIAutomator2 / XCUITest over WebDriver. That is the same *external driver* philosophy as Selenium, which is why native mobile never fit Cypress's in-page model (Part 0.8). A complete automation résumé for Bizlevate is often **Cypress (web) + Appium (native)**, or Playwright web + Appium.\n\n## Versus Playwright and Selenium\n\n| Need | Cypress | Playwright | Selenium/Appium |\n|---|---|---|---|\n| Responsive web | Viewport | Viewport + devices | Chrome options |\n| iOS Safari engine | No first-class WebKit | WebKit yes | SafariDriver / cloud |\n| Native iOS/Android | No — use **Appium** | No — use **Appium** | **Appium** |\n\nInterview line: \"Cypress does not test native apps. Viewport is responsive web. Real iOS web needs WebKit elsewhere. Native is Appium.\"",
+  "blocks": [
+    {
+      "id": "cy-9-17-md-0",
+      "type": "overview",
+      "heading": "Three different products people collapse into \"mobile\"",
+      "content": "1. **Responsive web** — CSS at 390px. Cypress: `cy.viewport('iphone-x')`. Valid, cheap, Chromium/Firefox only.\n2. **Mobile web on real iOS Safari** — WebKit + iOS chrome + real touch. Cypress: not first-class. Playwright WebKit or Sauce Safari.\n3. **Native app** — `Bizlevate.app` / Play Store APK. **Appium** (or Espresso/XCUITest). Cypress has no WebView to live inside unless you wrap a web app in a browser.\n\nIf Bizlevate ships (3), Cypress skill does not transfer as \"the same tests.\" You write new native tests. Web CT/E2E still protect the web.",
+      "order": 0
+    },
+    {
+      "id": "cy-9-17-md-1",
+      "type": "overview",
+      "heading": "What Cypress *can* do for (1)",
+      "content": "```js\ndescribe('leave form on mobile width', () => {\n  beforeEach(() => {\n    cy.viewport('iphone-x');\n    cy.visit('/leave/new');\n  });\n  it('does not clip the submit bar', () => {\n    cy.get('[data-cy=submit]').should('be.visible');\n  });\n});\n```\n\nOptional: `cypress-real-events` for `realTouch`-ish behavior — still not iOS.",
+      "order": 1
+    },
+    {
+      "id": "cy-9-17-md-2",
+      "type": "overview",
+      "heading": "Appium is the native answer",
+      "content": "Appium drives UIAutomator2 / XCUITest over WebDriver. That is the same *external driver* philosophy as Selenium, which is why native mobile never fit Cypress's in-page model (Part 0.8). A complete automation résumé for Bizlevate is often **Cypress (web) + Appium (native)**, or Playwright web + Appium.",
+      "order": 2
+    },
+    {
+      "id": "cy-9-17-md-3",
+      "type": "overview",
+      "heading": "Versus Playwright and Selenium",
+      "content": "| Need | Cypress | Playwright | Selenium/Appium |\n|---|---|---|---|\n| Responsive web | Viewport | Viewport + devices | Chrome options |\n| iOS Safari engine | No first-class WebKit | WebKit yes | SafariDriver / cloud |\n| Native iOS/Android | No — use **Appium** | No — use **Appium** | **Appium** |\n\nInterview line: \"Cypress does not test native apps. Viewport is responsive web. Real iOS web needs WebKit elsewhere. Native is Appium.\"",
+      "order": 3
+    }
+  ],
   "advantages": [
     "9.17 Mobile Testing — Real Limitations — Product will ask why the native app has no Cypress tests after a successful web rollout."
   ],

@@ -20,6 +20,43 @@ export const chapter = {
   "tools": [],
   "customSummary": "- Best: data-cy (Cypress docs) or data-testid (Testing Library / Playwright) — team picks one.\n- Then: role/label/placeholder, stable id/name, unique attributes.\n- Avoid: CSS classes, tag soup, nth-child, text that will be translated.\n- Selector Playground suggests a selector + match count — unique ≠ stable.\n- data-cy='submit-leave' beats data-cy='button' — namespacing matters.",
   "contentMarkdown": "## The stability ladder\n\nFrom most to least stable for Cypress E2E:\n\n1. **`data-cy` / `data-testid` / `data-test`** — attributes that exist *for tests*. Decoupled from styling and copy.\n2. **Accessible queries** — `name`, `role`, `<label for>`, placeholder when they are unique and product-owned.\n3. **Stable semantic ids** — `id=\"employee-email\"` if developers will not hash them.\n4. **CSS classes / `nth-child` / deep combinators** — last resort; they describe implementation.\n\n```js\ncy.get('[data-cy=submit-leave]').click();\ncy.get('[data-testid=submit-leave]').click(); // also fine if that is the team standard\ncy.get('#employee-email').type('simran@bizlevate.com');\ncy.get('.btn-primary.mt-2:nth-child(3)').click(); // do not\n```\n\n## `data-cy` vs `data-testid`\n\nCypress documentation and the Selector Playground historically push **`data-cy`**. Testing Library, Playwright (`get_by_test_id`), and many React codebases standardize on **`data-testid`**.\n\nThey are the same *idea*: a contract between app and tests. Differences that matter in a mixed shop:\n\n- **`data-cy`** signals \"this hook was added for Cypress.\" Frontend engineers grepping `data-cy` find Cypress-only markup.\n- **`data-testid`** is tool-agnostic — the same attribute feeds Cypress, Playwright, and Testing Library component tests.\n- Cypress `cy.get('[data-cy=...]')` vs Testing Library `findByTestId` (4.4) — `findByTestId` looks at `data-testid` by default, **not** `data-cy`, unless you configure `testIdAttribute`.\n\nPick **one** primary attribute in the project README. Dual-tagging every button is noise. If the org already has Playwright specs on `data-testid`, Cypress should join that convention rather than invent `data-cy` in parallel.\n\nValues should be **unique and intention-revealing**: `submit-leave`, `approve-row`, `employee-search`. `data-cy=\"button\"` on twelve buttons is as bad as `.btn`.\n\n## Text and CSS\n\n`cy.contains('Submit')` is readable and fails when marketing changes the label or locale switches (Part 9.10). Use text for assertions *on* copy (`should('contain', 'Employee onboarded')`), not as the primary locator for the control you must click in every locale.\n\nCSS modules and Tailwind generate unstable class names. Even BEM `.leave-form__submit` dies in a redesign. Classes are for styling; tests should not rent them.\n\n## Selector Playground\n\nThe Playground (Part 0.7) clicks an element and proposes a selector with a live match count. \"1 matched\" means unique *today*, not stable *next sprint*. Prefer rewriting Playground output to `data-cy`. Use the match count to catch accidental lists (`cy.get('.item')` → 47).\n\n## vs Playwright\n\nPlaywright's published ladder is get_by_role → label → placeholder → text → test id → CSS. Cypress culture historically inverted that (test id first) because `cy.get` is CSS-native and role queries needed a plugin (4.4). A hybrid team can still prefer roles for a11y (4.4) while keeping `data-cy` for icon-only buttons with no accessible name yet — then file a product bug for the missing name.",
+  "blocks": [
+    {
+      "id": "cy-4-1-md-0",
+      "type": "overview",
+      "heading": "The stability ladder",
+      "content": "From most to least stable for Cypress E2E:\n\n1. **`data-cy` / `data-testid` / `data-test`** — attributes that exist *for tests*. Decoupled from styling and copy.\n2. **Accessible queries** — `name`, `role`, `<label for>`, placeholder when they are unique and product-owned.\n3. **Stable semantic ids** — `id=\"employee-email\"` if developers will not hash them.\n4. **CSS classes / `nth-child` / deep combinators** — last resort; they describe implementation.\n\n```js\ncy.get('[data-cy=submit-leave]').click();\ncy.get('[data-testid=submit-leave]').click(); // also fine if that is the team standard\ncy.get('#employee-email').type('simran@bizlevate.com');\ncy.get('.btn-primary.mt-2:nth-child(3)').click(); // do not\n```",
+      "order": 0
+    },
+    {
+      "id": "cy-4-1-md-1",
+      "type": "overview",
+      "heading": "`data-cy` vs `data-testid`",
+      "content": "Cypress documentation and the Selector Playground historically push **`data-cy`**. Testing Library, Playwright (`get_by_test_id`), and many React codebases standardize on **`data-testid`**.\n\nThey are the same *idea*: a contract between app and tests. Differences that matter in a mixed shop:\n\n- **`data-cy`** signals \"this hook was added for Cypress.\" Frontend engineers grepping `data-cy` find Cypress-only markup.\n- **`data-testid`** is tool-agnostic — the same attribute feeds Cypress, Playwright, and Testing Library component tests.\n- Cypress `cy.get('[data-cy=...]')` vs Testing Library `findByTestId` (4.4) — `findByTestId` looks at `data-testid` by default, **not** `data-cy`, unless you configure `testIdAttribute`.\n\nPick **one** primary attribute in the project README. Dual-tagging every button is noise. If the org already has Playwright specs on `data-testid`, Cypress should join that convention rather than invent `data-cy` in parallel.\n\nValues should be **unique and intention-revealing**: `submit-leave`, `approve-row`, `employee-search`. `data-cy=\"button\"` on twelve buttons is as bad as `.btn`.",
+      "order": 1
+    },
+    {
+      "id": "cy-4-1-md-2",
+      "type": "overview",
+      "heading": "Text and CSS",
+      "content": "`cy.contains('Submit')` is readable and fails when marketing changes the label or locale switches (Part 9.10). Use text for assertions *on* copy (`should('contain', 'Employee onboarded')`), not as the primary locator for the control you must click in every locale.\n\nCSS modules and Tailwind generate unstable class names. Even BEM `.leave-form__submit` dies in a redesign. Classes are for styling; tests should not rent them.",
+      "order": 2
+    },
+    {
+      "id": "cy-4-1-md-3",
+      "type": "overview",
+      "heading": "Selector Playground",
+      "content": "The Playground (Part 0.7) clicks an element and proposes a selector with a live match count. \"1 matched\" means unique *today*, not stable *next sprint*. Prefer rewriting Playground output to `data-cy`. Use the match count to catch accidental lists (`cy.get('.item')` → 47).",
+      "order": 3
+    },
+    {
+      "id": "cy-4-1-md-4",
+      "type": "overview",
+      "heading": "vs Playwright",
+      "content": "Playwright's published ladder is get_by_role → label → placeholder → text → test id → CSS. Cypress culture historically inverted that (test id first) because `cy.get` is CSS-native and role queries needed a plugin (4.4). A hybrid team can still prefer roles for a11y (4.4) while keeping `data-cy` for icon-only buttons with no accessible name yet — then file a product bug for the missing name.",
+      "order": 4
+    }
+  ],
   "advantages": [
     "4.1 Selector Strategies — Locator policy is how suites survive redesigns."
   ],

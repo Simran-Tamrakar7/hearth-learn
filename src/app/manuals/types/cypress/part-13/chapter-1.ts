@@ -20,6 +20,29 @@ export const chapter = {
   "tools": [],
   "customSummary": "- Domain suite (leave/payroll/roles), not only example.cypress.io.\n- Must show: session, intercept or request, CT vs E2E, grep smoke, GHA action, artifacts.\n- Must show judgment: cy.origin args, no switchToTab, no built-in visual, no Trace Viewer, Appium for native.\n- README = the interview script.\n- Playwright/Selenium capstones can coexist — say why Cypress was the right tool for this app.",
   "contentMarkdown": "## Scope a capstone that fits a week, not a quarter\n\n**In:**\n\n- App: Bizlevate HRM demo or your clone (employees, leave, a manager queue). If you cannot use the real app, use a public HRM-like demo **plus** a README that maps features.\n- E2E: login via `cy.session`, employee submits leave, manager approves, list reflects status (intercept or real API — say which).\n- Cross-origin: either a real IdP in `cy.origin('https://...', { args }, cb)` or a documented fake IdP origin. Show `args` and a yielded value once.\n- CT: `LeaveRequestForm` zero-balance + submit disabled (9.5).\n- a11y: `cypress-axe` on the leave modal (9.7).\n- Org: `@smoke` / `@regression` with grep plugin (10.1).\n- CI: `cypress-io/github-action`, Chrome, wait-on, screenshots on failure (11.1, 11.8).\n\n**Out (and say so in README):**\n\n- Native iOS app — Appium.\n- Safari/WebKit first-class — Playwright if needed.\n- Two live tabs — href/`cy.request` only.\n- Visual AI — plugin or skip, do not pretend `cy.screenshot` diffs.\n\n## Suggested spec map\n\n| Spec | Tags | Notes |\n|---|---|---|\n| `login.cy.ts` | `@smoke` | session only after first |\n| `leave-submit.cy.ts` | `@smoke @leave` | intercept balance |\n| `leave-approve.cy.ts` | `@leave` | two sessions (employee, manager) |\n| `sso.cy.ts` | `@okta @nightly` | `cy.origin` + args |\n| `payslip-link.cy.ts` | `@payroll` | href + `cy.request` PDF |\n| `LeaveRequestForm.cy.tsx` | CT | props matrix |\n\n## Definition of done\n\n- `npx cypress run --browser chrome --env grepTags=@smoke` < 6 minutes locally.\n- GHA badge green on main.\n- No `cy.wait(n)` without a comment that you are ashamed of.\n- One paragraph in README: Cypress vs Playwright vs Selenium *for this product*.\n\nInterview line: \"My capstone is an HRM journey suite: session, origin with args, CT for the form, smoke in GitHub Actions. I did not fake tabs or native mobile.\"",
+  "blocks": [
+    {
+      "id": "cy-13-1-md-0",
+      "type": "overview",
+      "heading": "Scope a capstone that fits a week, not a quarter",
+      "content": "**In:**\n\n- App: Bizlevate HRM demo or your clone (employees, leave, a manager queue). If you cannot use the real app, use a public HRM-like demo **plus** a README that maps features.\n- E2E: login via `cy.session`, employee submits leave, manager approves, list reflects status (intercept or real API — say which).\n- Cross-origin: either a real IdP in `cy.origin('https://...', { args }, cb)` or a documented fake IdP origin. Show `args` and a yielded value once.\n- CT: `LeaveRequestForm` zero-balance + submit disabled (9.5).\n- a11y: `cypress-axe` on the leave modal (9.7).\n- Org: `@smoke` / `@regression` with grep plugin (10.1).\n- CI: `cypress-io/github-action`, Chrome, wait-on, screenshots on failure (11.1, 11.8).\n\n**Out (and say so in README):**\n\n- Native iOS app — Appium.\n- Safari/WebKit first-class — Playwright if needed.\n- Two live tabs — href/`cy.request` only.\n- Visual AI — plugin or skip, do not pretend `cy.screenshot` diffs.",
+      "order": 0
+    },
+    {
+      "id": "cy-13-1-md-1",
+      "type": "overview",
+      "heading": "Suggested spec map",
+      "content": "| Spec | Tags | Notes |\n|---|---|---|\n| `login.cy.ts` | `@smoke` | session only after first |\n| `leave-submit.cy.ts` | `@smoke @leave` | intercept balance |\n| `leave-approve.cy.ts` | `@leave` | two sessions (employee, manager) |\n| `sso.cy.ts` | `@okta @nightly` | `cy.origin` + args |\n| `payslip-link.cy.ts` | `@payroll` | href + `cy.request` PDF |\n| `LeaveRequestForm.cy.tsx` | CT | props matrix |",
+      "order": 1
+    },
+    {
+      "id": "cy-13-1-md-2",
+      "type": "overview",
+      "heading": "Definition of done",
+      "content": "- `npx cypress run --browser chrome --env grepTags=@smoke` < 6 minutes locally.\n- GHA badge green on main.\n- No `cy.wait(n)` without a comment that you are ashamed of.\n- One paragraph in README: Cypress vs Playwright vs Selenium *for this product*.\n\nInterview line: \"My capstone is an HRM journey suite: session, origin with args, CT for the form, smoke in GitHub Actions. I did not fake tabs or native mobile.\"",
+      "order": 2
+    }
+  ],
   "advantages": [
     "13.1 Real-World Capstone Project — Employers hire evidence."
   ],

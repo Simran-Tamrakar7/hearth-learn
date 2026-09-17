@@ -424,7 +424,19 @@ export function testingTypesMdSections(ch: ManualChapter, overview?: string): st
   return md;
 }
 
+function isDefaultInsightBlocks(blocks: unknown): boolean {
+  if (!Array.isArray(blocks) || !blocks.length) return false;
+  const defaults = new Set(["why", "when", "practical", "tradeoffs"]);
+  return blocks.every((b) => {
+    if (!b || typeof b !== "object") return false;
+    const type = String((b as { type?: string }).type || "");
+    const heading = String((b as { heading?: string }).heading || "").trim();
+    return defaults.has(type) || (type === "overview" && !heading);
+  });
+}
+
 function mergeSavedChapter(catalog: ManualChapter, saved: ManualChapter): ManualChapter {
+  const keepSavedBlocks = Array.isArray(saved.blocks) && !isDefaultInsightBlocks(saved.blocks);
   return {
     ...catalog,
     title: saved.title?.trim() || catalog.title,
@@ -440,8 +452,8 @@ function mergeSavedChapter(catalog: ManualChapter, saved: ManualChapter): Manual
     comparisonHeaders: saved.comparisonHeaders || catalog.comparisonHeaders,
     keyDifferences: saved.keyDifferences?.length ? saved.keyDifferences : catalog.keyDifferences,
     codeReferences: saved.codeReferences?.length ? saved.codeReferences : catalog.codeReferences,
-    blocks: Array.isArray(saved.blocks) ? saved.blocks : catalog.blocks,
-    blockLayout: Array.isArray(saved.blocks) ? saved.blockLayout : catalog.blockLayout,
+    blocks: keepSavedBlocks ? saved.blocks : catalog.blocks,
+    blockLayout: keepSavedBlocks ? saved.blockLayout : catalog.blockLayout,
     contentMarkdown: pickMarkdown(catalog.contentMarkdown, saved.contentMarkdown),
     customSummary: saved.customSummary?.trim() || catalog.customSummary,
     aiSummary: saved.aiSummary?.trim() || catalog.aiSummary,

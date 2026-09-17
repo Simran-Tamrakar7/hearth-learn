@@ -20,6 +20,36 @@ export const chapter = {
   "tools": [],
   "customSummary": "- cy.screenshot() writes PNG artifacts; it does not diff.\n- Capture modes: fullPage, viewport, runner, or element via cy.get().screenshot().\n- blackout hides secrets; overwrite avoids timestamp clutter.\n- Failure screenshots: screenshotOnRunFailure (distinct from calling the command).\n- Playwright: screenshot vs toHaveScreenshot are different APIs — Cypress only ships the first.",
   "contentMarkdown": "## Command vs config\n\n```js\ncy.screenshot('payroll-confirm'); // cypress/screenshots/<spec>/payroll-confirm.png\n\ncy.get('[data-cy=pay-run-card]').screenshot('pay-run-card', {\n  padding: 16,\n  blackout: ['[data-cy=iban]', '[data-cy=ssn]'],\n  overwrite: true,\n});\n```\n\n```js\n// cypress.config.ts\nexport default defineConfig({\n  screenshotOnRunFailure: true, // default true\n  screenshotsFolder: 'cypress/screenshots',\n  e2e: {\n    setupNodeEvents(on) {\n      on('after:screenshot', (details) => details);\n    },\n  },\n});\n```\n\nAutomatic failure shots do not need a command in the spec. Explicit `cy.screenshot()` is for checkpoints and documentation.\n\n## Useful options\n\n| Option | Why |\n|---|---|\n| `capture: 'fullPage' \\| 'viewport' \\| 'runner'` | `runner` includes the Command Log — rarely what you want in a product bug ticket |\n| `blackout` | CSS selectors covered before capture — payroll PII |\n| `overwrite` | stable filename for docs |\n| `onAfterScreenshot` | copy/resize in Node via task if you must |\n\n## Not visual testing\n\nThere is no threshold, no baseline, no fail-on-diff. Pair with 9.6 if you need comparison. Pair with 11.8 if you need the PNG as a CI artifact.\n\n## Versus Playwright and Selenium\n\nPlaywright: `page.screenshot({ path })` ≈ this chapter; `expect(page).toHaveScreenshot()` ≈ 9.6. Selenium: `getScreenshotAs`. All three can leak PII in CI artifacts — blackout is an HRM-specific discipline, not a Cypress novelty.\n\nInterview line: \"`cy.screenshot()` is capture. Visual regression is a plugin. I blackout IBAN on payroll shots so artifacts are safe to store.\"",
+  "blocks": [
+    {
+      "id": "cy-9-15-md-0",
+      "type": "overview",
+      "heading": "Command vs config",
+      "content": "```js\ncy.screenshot('payroll-confirm'); // cypress/screenshots/<spec>/payroll-confirm.png\n\ncy.get('[data-cy=pay-run-card]').screenshot('pay-run-card', {\n  padding: 16,\n  blackout: ['[data-cy=iban]', '[data-cy=ssn]'],\n  overwrite: true,\n});\n```\n\n```js\n// cypress.config.ts\nexport default defineConfig({\n  screenshotOnRunFailure: true, // default true\n  screenshotsFolder: 'cypress/screenshots',\n  e2e: {\n    setupNodeEvents(on) {\n      on('after:screenshot', (details) => details);\n    },\n  },\n});\n```\n\nAutomatic failure shots do not need a command in the spec. Explicit `cy.screenshot()` is for checkpoints and documentation.",
+      "order": 0
+    },
+    {
+      "id": "cy-9-15-md-1",
+      "type": "overview",
+      "heading": "Useful options",
+      "content": "| Option | Why |\n|---|---|\n| `capture: 'fullPage' \\| 'viewport' \\| 'runner'` | `runner` includes the Command Log — rarely what you want in a product bug ticket |\n| `blackout` | CSS selectors covered before capture — payroll PII |\n| `overwrite` | stable filename for docs |\n| `onAfterScreenshot` | copy/resize in Node via task if you must |",
+      "order": 1
+    },
+    {
+      "id": "cy-9-15-md-2",
+      "type": "overview",
+      "heading": "Not visual testing",
+      "content": "There is no threshold, no baseline, no fail-on-diff. Pair with 9.6 if you need comparison. Pair with 11.8 if you need the PNG as a CI artifact.",
+      "order": 2
+    },
+    {
+      "id": "cy-9-15-md-3",
+      "type": "overview",
+      "heading": "Versus Playwright and Selenium",
+      "content": "Playwright: `page.screenshot({ path })` ≈ this chapter; `expect(page).toHaveScreenshot()` ≈ 9.6. Selenium: `getScreenshotAs`. All three can leak PII in CI artifacts — blackout is an HRM-specific discipline, not a Cypress novelty.\n\nInterview line: \"`cy.screenshot()` is capture. Visual regression is a plugin. I blackout IBAN on payroll shots so artifacts are safe to store.\"",
+      "order": 3
+    }
+  ],
   "advantages": [
     "9.15 cy.screenshot() API — You will use this in CI artifacts, in docs, and when blacking out PII on payroll screens before a PNG leaves the runner."
   ],

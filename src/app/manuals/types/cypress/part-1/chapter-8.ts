@@ -20,6 +20,218 @@ export const chapter = {
   "tools": [],
   "customSummary": "- Put tsconfig.json *inside cypress/* so Cypress files type-check independently of Next.js.\n- compilerOptions.types: [\"cypress\"] (and node if you need it in support); noTypes from the app that fight Cypress.\n- include: [\"**/*.ts\", \"../cypress.config.ts\"] as needed; specs remain *.cy.ts.\n- cypress.config.ts runs in Node — keep it compatible with Cypress's bundling (defineConfig import).\n- Custom commands: Cypress.Commands.add plus namespace Cypress { interface Chainable { login(...): void } }.\n- JS still works; TS is optional. Playwright's @playwright/test types similarly live next to tests.",
   "contentMarkdown": "## Why a *nested* `tsconfig.json`\n\nBizlevate HRM (and most Next.js apps) already has a root `tsconfig.json` with `\"jsx\": \"preserve\"`, path aliases, and `\"types\"` that may omit Cypress. If the root config **excludes** `cypress/`, the IDE will not apply Cypress types to `login.cy.ts`. If the root config **includes** everything, Cypress files may inherit DOM + Next types that collide (`describe` from Jest vs Mocha, `expect` from Jest vs Chai).\n\nCypress's documented pattern: **a `tsconfig.json` inside `cypress/`**.\n\n```text\ncypress/\n  tsconfig.json\n  e2e/\n    login.cy.ts\n  support/\n    e2e.ts\n    commands.ts\n    index.d.ts\ncypress.config.ts\n```\n\n## The `cypress/tsconfig.json` you actually want\n\n```json\n{\n  \"compilerOptions\": {\n    \"target\": \"ES2022\",\n    \"lib\": [\"ES2022\", \"DOM\"],\n    \"types\": [\"cypress\"],\n    \"allowJs\": true,\n    \"noEmit\": true,\n    \"strict\": true,\n    \"moduleResolution\": \"bundler\",\n    \"isolatedModules\": true,\n    \"skipLibCheck\": true\n  },\n  \"include\": [\n    \"**/*.ts\",\n    \"**/*.d.ts\"\n  ]\n}\n```\n\n**`types: [\"cypress\"]`** is the important line. It pulls `@types` from the `cypress` package (Cypress ships its own types; you do not `npm i @types/cypress`). `describe`, `it`, `cy`, `Cypress`, `expect` (Chai) become known.\n\nIf support files use `process.env` or Node types:\n\n```json\n\"types\": [\"cypress\", \"node\"]\n```\n\nYou need `@types/node` in that case (often already a dependency of the app).\n\nDo **not** list `\"jest\"` here. Jest's `describe` / `expect` will fight Cypress.\n\n## Spec files stay `*.cy.ts`\n\n```ts\n// cypress/e2e/login.cy.ts\ndescribe('HRM login page', () => {\n  it('shows the sign-in heading', () => {\n    cy.visit('/login');\n    cy.contains('Sign in').should('be.visible');\n  });\n});\n```\n\nThe `.cy.` infix is still required by default `specPattern`. TypeScript does not change that.\n\nTriple-slash is a fallback if the nested tsconfig is missing:\n\n```ts\n/// <reference types=\"cypress\" />\n```\n\nPrefer the `cypress/tsconfig.json` so every file gets types without copy-paste.\n\n## `cypress.config.ts` is Node, not the AUT\n\n`cypress.config.ts` sits at the **repo root**. Cypress compiles/loads it with its own pipeline. Typical content:\n\n```ts\nimport { defineConfig } from 'cypress';\n\nexport default defineConfig({\n  e2e: {\n    baseUrl: 'http://localhost:3000',\n    setupNodeEvents(on, config) {\n      return config;\n    },\n  },\n});\n```\n\nIf the root Next `tsconfig` complains about this file (`module` / `moduleResolution`), you can:\n\n- Exclude `cypress.config.ts` from the app tsconfig, or\n- Give it a tiny adjacent config, or\n- Keep **`cypress.config.js`** in CommonJS and only use TS for specs.\n\nAll three are valid. HRM should not block on config TS if `.js` is simpler (`ponytail:` use `cypress.config.ts` when the rest of the repo is TS and it loads; otherwise `.js` is fine).\n\n## Typing custom commands\n\n`Cypress.Commands.add` without types makes `cy.login()` an error in strict TS.\n\n`cypress/support/index.d.ts` (or `commands.ts` with a `declare global` block):\n\n```ts\ndeclare namespace Cypress {\n  interface Chainable {\n    /**\n     * Log in to Bizlevate HRM via the UI (or later: cy.session).\n     */\n    login(email: string, password?: string): Chainable<void>;\n  }\n}\n```\n\n`cypress/support/commands.ts`:\n\n```ts\nCypress.Commands.add('login', (email: string, password?: string) => {\n  const pwd = password ?? Cypress.env('adminPassword');\n  cy.visit('/login');\n  cy.get('#email').type(email);\n  cy.get('#password').type(pwd, { log: false });\n  cy.contains('button', 'Sign in').click();\n});\n```\n\n`support/e2e.ts`:\n\n```ts\nimport './commands';\n```\n\n`include` in `cypress/tsconfig.json` must cover the `.d.ts` file. Then `cy.login('ada@bizlevate.test')` type-checks.\n\nFor commands that **yield** a subject, type the generic: `Chainable<JQuery<HTMLElement>>`.\n\n## Path aliases\n\nIf specs want `@/components` from the Next app, you must **repeat** `paths` in `cypress/tsconfig.json` and ensure Cypress's bundler (webpack/vite preprocessor, depending on version) resolves them. That is extra machinery. Prefer **not** importing app source into E2E specs. Fixtures + `data-cy` keep E2E independent. Component tests may import components; E2E should not need to.\n\n## Playwright comparison\n\nPlaywright: `tsconfig` under `tests/` or root with `\"types\": [\"@playwright/test\"]`. Same idea: isolate test types from Jest. Playwright's `test` and `expect` are a different API; do not mix them in a Cypress file.\n\nSelenium Java: types are the language. TS setup is a Cypress/Playwright/JS-runner topic.\n\n## Verify the setup\n\n1. Open `login.cy.ts` in the editor. `cy.` autocomplete lists `visit`, `get`, `contains`.\n2. `npx cypress open` runs the `.cy.ts` spec (Cypress transpiles TS; you do not `tsc` emit).\n3. `npx tsc -p cypress/tsconfig.json` (optional) type-checks in CI without emitting.\n\nCypress **transpiles** specs itself. `noEmit: true` is correct. You are type-checking, not building a `dist/`.\n\n## JS vs TS\n\nNothing in Cypress **requires** TypeScript. `login.cy.js` is valid. This chapter exists because HRM is a TS codebase and specs should match. If a teammate is blocked on types, **rename to `.cy.js` and ship the test** — then add types.\n\nNext: Node-side plugins — `setupNodeEvents`, `cy.task`, and why the task return value must be serializable.\n## VS Code / Cursor `tsconfig` pickup\n\nThe editor uses the **nearest** `tsconfig.json`. Opening `cypress/e2e/login.cy.ts` should attach `cypress/tsconfig.json`. If `cy` is `any` or unknown, you are on the root Next config.\n\n`// @ts-check` in a `.cy.js` file is a lighter option than full TS.\n\n## Example `commands.ts` + `index.d.ts` together\n\n```ts\n// cypress/support/index.d.ts\ndeclare namespace Cypress {\n  interface Chainable {\n    login(email: string, password?: string): Chainable<void>;\n    getByCy(id: string): Chainable<JQuery<HTMLElement>>;\n  }\n}\n```\n\n```ts\n// cypress/support/commands.ts\nCypress.Commands.add('getByCy', (id: string) => {\n  return cy.get(`[data-cy=\"${id}\"]`);\n});\n```\n\n```ts\ncy.getByCy('leave-submit').click();\n```\n\nIf `add` types error, ensure `index.d.ts` is in `include`. Restart the TS server after adding `Chainable` methods.\n\n## `cypress.config.ts` and `moduleResolution`\n\nCypress 13+ often wants `\"moduleResolution\": \"node\"` or `\"bundler\"` depending on how the config is loaded. If `defineConfig` import fails, switch the config to `cypress.config.cjs` / `.js` and keep specs in TS. Specs and config **do not** have to share one language.\n\n## Jest collision checklist\n\nRoot `types: [\"jest\", \"node\"]` plus Cypress files included in the app tsconfig → `expect` is Jest's. Symptoms: `toBeVisible` does not exist, or Chai `to.eq` errors. **Exclude `cypress` from the app tsconfig** and keep Cypress types local.\n\n```json\n{\n  \"exclude\": [\"cypress\", \"cypress.config.ts\"]\n}\n```\n\n(in the **Next** tsconfig, not the Cypress one).\n\n## CI typecheck\n\n```json\n{\n  \"scripts\": {\n    \"cypress:types\": \"tsc -p cypress/tsconfig.json --noEmit\"\n  }\n}\n```\n\nCypress still transpiles at runtime; this script only catches `cy.login` arity bugs.\n\n## Interview drill\n\nWhere does `tsconfig.json` live and why? How do you type `cy.login`? Why might Jest `expect` appear in a spec?\n## `/// <reference types=\"cypress\" />` vs tsconfig\n\nTriple-slash works in a single file when the nested tsconfig is missing. It does **not** type custom commands unless those `.d.ts` files are part of the project. Prefer `cypress/tsconfig.json` so every spec shares one world.\n\n## Strictness\n\n`\"strict\": true` in `cypress/tsconfig.json` will flag implicit `any` in `then(($el) => ...)`. Type as `JQuery<HTMLElement>` or use `.should` and avoid the callback. Do not turn strict off only for Cypress if the app is strict — same quality bar.\n\n## Importing the app's `paths`\n\n```json\n{\n  \"compilerOptions\": {\n    \"baseUrl\": \"..\",\n    \"paths\": { \"@/*\": [\"src/*\"] }\n  }\n}\n```\n\nTS is happy; Cypress's bundler may still fail at runtime. E2E should not import React components. If you need a shared `formatDate` helper, put a **copy** under `cypress/support/util.ts` or a tiny `packages/test-utils` that does not pull in Next.\n\n## `cypress.config.ts` `ts-node` errors\n\nIf open fails parsing the config (\"Cannot use import statement\"), use `cypress.config.js` or ensure Cypress's supported TS loader is in play. Debugging config load is a Node problem, not an AUT problem. Specs can remain `.cy.ts` either way.\n\n## Custom command overloads\n\n```ts\ninterface Chainable {\n  login(email: string, password?: string): Chainable<void>;\n  login(user: { email: string; password?: string }): Chainable<void>;\n}\n```\n\nKeep one signature until you must overload. Cypress `Commands.add` implementation must match.\n\n## Checklist\n\n- [ ] `cypress/tsconfig.json` exists with `types: [\"cypress\"]`\n- [ ] App tsconfig **excludes** `cypress/`\n- [ ] `cy.` autocomplete works in `login.cy.ts`\n- [ ] `Chainable` declares `login` / `getByCy`\n- [ ] `tsc -p cypress/tsconfig.json --noEmit` is green\n## `allowJs` for mixed specs\n\nDuring migration some files stay `.cy.js`. `\"allowJs\": true` in `cypress/tsconfig.json` lets the editor check JS with `// @ts-check`. Do not convert every spec in one PR unless you want a types-only firefight.\n\n## Types for `cy.fixture`\n\n```ts\ntype Employee = { email: string; role: 'employee' | 'manager' };\n\ncy.fixture<Employee[]>('employees.json').then((employees) => {\n  cy.wrap(employees[0].role).should('eq', 'employee');\n});\n```\n\nGeneric `fixture<T>` beats `any`. Keep fixture types next to the JSON or in `cypress/support/types.ts`.\n\n## `esModuleInterop`\n\nIf `import { defineConfig } from 'cypress'` errors in config, set `\"esModuleInterop\": true` on whichever tsconfig covers the config file, or use `cypress.config.js`. Specs do not need to import `cypress` at all — `cy` is global via `types`.\n## `strictNullChecks` and `.then`\n\n```ts\ncy.get('h1').invoke('text').then((text: string) => {\n  expect(text.toLowerCase()).to.include('sign');\n});\n```\n\nIf `invoke('text')` is typed `string | number | ...`, narrow with `String(text)` or a `.should('match', /sign/i)` and skip the callback. Fighting the type is slower than using an implicit assertion.\n\n## Global `cy` without import\n\nYou should **not** `import cy from 'cypress'`. Specs rely on globals from the `cypress` types package. Importing the `cypress` module in a spec is a config-file pattern (`defineConfig`), not a spec pattern.\n\n## `jsx` in Cypress tsconfig\n\nIf a spec uses `.cy.tsx` (mounting is CT), set `\"jsx\": \"react-jsx\"`. Pure E2E `.cy.ts` files do not need jsx. Keep E2E as `.ts` unless you mount components there (you should not).\n## `skipLibCheck`\n\nKeep `\"skipLibCheck\": true` in `cypress/tsconfig.json`. Cypress's bundled types plus the app's `@types` can otherwise conflict inside `node_modules`. You still type-check **your** specs.\n\n## IDE restart\n\nAfter adding `cypress/tsconfig.json`, run \"TypeScript: Restart TS Server\". Stale roots are why `cy` stays unknown after you did everything right.\n## `cypress` in `types` array must be alone with optional `node`\n\nIf you also list `\"jest\"`, `expect` becomes Jest's and `.should('be.visible')` still works (that is Cypress) but `expect(el).to.have.text` (Chai-jQuery) may break. Cypress + node only.\n",
+  "blocks": [
+    {
+      "id": "cy-1-8-md-0",
+      "type": "overview",
+      "heading": "Why a *nested* `tsconfig.json`",
+      "content": "Bizlevate HRM (and most Next.js apps) already has a root `tsconfig.json` with `\"jsx\": \"preserve\"`, path aliases, and `\"types\"` that may omit Cypress. If the root config **excludes** `cypress/`, the IDE will not apply Cypress types to `login.cy.ts`. If the root config **includes** everything, Cypress files may inherit DOM + Next types that collide (`describe` from Jest vs Mocha, `expect` from Jest vs Chai).\n\nCypress's documented pattern: **a `tsconfig.json` inside `cypress/`**.\n\n```text\ncypress/\n  tsconfig.json\n  e2e/\n    login.cy.ts\n  support/\n    e2e.ts\n    commands.ts\n    index.d.ts\ncypress.config.ts\n```",
+      "order": 0
+    },
+    {
+      "id": "cy-1-8-md-1",
+      "type": "overview",
+      "heading": "The `cypress/tsconfig.json` you actually want",
+      "content": "```json\n{\n  \"compilerOptions\": {\n    \"target\": \"ES2022\",\n    \"lib\": [\"ES2022\", \"DOM\"],\n    \"types\": [\"cypress\"],\n    \"allowJs\": true,\n    \"noEmit\": true,\n    \"strict\": true,\n    \"moduleResolution\": \"bundler\",\n    \"isolatedModules\": true,\n    \"skipLibCheck\": true\n  },\n  \"include\": [\n    \"**/*.ts\",\n    \"**/*.d.ts\"\n  ]\n}\n```\n\n**`types: [\"cypress\"]`** is the important line. It pulls `@types` from the `cypress` package (Cypress ships its own types; you do not `npm i @types/cypress`). `describe`, `it`, `cy`, `Cypress`, `expect` (Chai) become known.\n\nIf support files use `process.env` or Node types:\n\n```json\n\"types\": [\"cypress\", \"node\"]\n```\n\nYou need `@types/node` in that case (often already a dependency of the app).\n\nDo **not** list `\"jest\"` here. Jest's `describe` / `expect` will fight Cypress.",
+      "order": 1
+    },
+    {
+      "id": "cy-1-8-md-2",
+      "type": "overview",
+      "heading": "Spec files stay `*.cy.ts`",
+      "content": "```ts\n// cypress/e2e/login.cy.ts\ndescribe('HRM login page', () => {\n  it('shows the sign-in heading', () => {\n    cy.visit('/login');\n    cy.contains('Sign in').should('be.visible');\n  });\n});\n```\n\nThe `.cy.` infix is still required by default `specPattern`. TypeScript does not change that.\n\nTriple-slash is a fallback if the nested tsconfig is missing:\n\n```ts\n/// <reference types=\"cypress\" />\n```\n\nPrefer the `cypress/tsconfig.json` so every file gets types without copy-paste.",
+      "order": 2
+    },
+    {
+      "id": "cy-1-8-md-3",
+      "type": "overview",
+      "heading": "`cypress.config.ts` is Node, not the AUT",
+      "content": "`cypress.config.ts` sits at the **repo root**. Cypress compiles/loads it with its own pipeline. Typical content:\n\n```ts\nimport { defineConfig } from 'cypress';\n\nexport default defineConfig({\n  e2e: {\n    baseUrl: 'http://localhost:3000',\n    setupNodeEvents(on, config) {\n      return config;\n    },\n  },\n});\n```\n\nIf the root Next `tsconfig` complains about this file (`module` / `moduleResolution`), you can:\n\n- Exclude `cypress.config.ts` from the app tsconfig, or\n- Give it a tiny adjacent config, or\n- Keep **`cypress.config.js`** in CommonJS and only use TS for specs.\n\nAll three are valid. HRM should not block on config TS if `.js` is simpler (`ponytail:` use `cypress.config.ts` when the rest of the repo is TS and it loads; otherwise `.js` is fine).",
+      "order": 3
+    },
+    {
+      "id": "cy-1-8-md-4",
+      "type": "overview",
+      "heading": "Typing custom commands",
+      "content": "`Cypress.Commands.add` without types makes `cy.login()` an error in strict TS.\n\n`cypress/support/index.d.ts` (or `commands.ts` with a `declare global` block):\n\n```ts\ndeclare namespace Cypress {\n  interface Chainable {\n    /**\n     * Log in to Bizlevate HRM via the UI (or later: cy.session).\n     */\n    login(email: string, password?: string): Chainable<void>;\n  }\n}\n```\n\n`cypress/support/commands.ts`:\n\n```ts\nCypress.Commands.add('login', (email: string, password?: string) => {\n  const pwd = password ?? Cypress.env('adminPassword');\n  cy.visit('/login');\n  cy.get('#email').type(email);\n  cy.get('#password').type(pwd, { log: false });\n  cy.contains('button', 'Sign in').click();\n});\n```\n\n`support/e2e.ts`:\n\n```ts\nimport './commands';\n```\n\n`include` in `cypress/tsconfig.json` must cover the `.d.ts` file. Then `cy.login('ada@bizlevate.test')` type-checks.\n\nFor commands that **yield** a subject, type the generic: `Chainable<JQuery<HTMLElement>>`.",
+      "order": 4
+    },
+    {
+      "id": "cy-1-8-md-5",
+      "type": "overview",
+      "heading": "Path aliases",
+      "content": "If specs want `@/components` from the Next app, you must **repeat** `paths` in `cypress/tsconfig.json` and ensure Cypress's bundler (webpack/vite preprocessor, depending on version) resolves them. That is extra machinery. Prefer **not** importing app source into E2E specs. Fixtures + `data-cy` keep E2E independent. Component tests may import components; E2E should not need to.",
+      "order": 5
+    },
+    {
+      "id": "cy-1-8-md-6",
+      "type": "overview",
+      "heading": "Playwright comparison",
+      "content": "Playwright: `tsconfig` under `tests/` or root with `\"types\": [\"@playwright/test\"]`. Same idea: isolate test types from Jest. Playwright's `test` and `expect` are a different API; do not mix them in a Cypress file.\n\nSelenium Java: types are the language. TS setup is a Cypress/Playwright/JS-runner topic.",
+      "order": 6
+    },
+    {
+      "id": "cy-1-8-md-7",
+      "type": "overview",
+      "heading": "Verify the setup",
+      "content": "1. Open `login.cy.ts` in the editor. `cy.` autocomplete lists `visit`, `get`, `contains`.\n2. `npx cypress open` runs the `.cy.ts` spec (Cypress transpiles TS; you do not `tsc` emit).\n3. `npx tsc -p cypress/tsconfig.json` (optional) type-checks in CI without emitting.\n\nCypress **transpiles** specs itself. `noEmit: true` is correct. You are type-checking, not building a `dist/`.",
+      "order": 7
+    },
+    {
+      "id": "cy-1-8-md-8",
+      "type": "overview",
+      "heading": "JS vs TS",
+      "content": "Nothing in Cypress **requires** TypeScript. `login.cy.js` is valid. This chapter exists because HRM is a TS codebase and specs should match. If a teammate is blocked on types, **rename to `.cy.js` and ship the test** — then add types.\n\nNext: Node-side plugins — `setupNodeEvents`, `cy.task`, and why the task return value must be serializable.",
+      "order": 8
+    },
+    {
+      "id": "cy-1-8-md-9",
+      "type": "overview",
+      "heading": "VS Code / Cursor `tsconfig` pickup",
+      "content": "The editor uses the **nearest** `tsconfig.json`. Opening `cypress/e2e/login.cy.ts` should attach `cypress/tsconfig.json`. If `cy` is `any` or unknown, you are on the root Next config.\n\n`// @ts-check` in a `.cy.js` file is a lighter option than full TS.",
+      "order": 9
+    },
+    {
+      "id": "cy-1-8-md-10",
+      "type": "overview",
+      "heading": "Example `commands.ts` + `index.d.ts` together",
+      "content": "```ts\n// cypress/support/index.d.ts\ndeclare namespace Cypress {\n  interface Chainable {\n    login(email: string, password?: string): Chainable<void>;\n    getByCy(id: string): Chainable<JQuery<HTMLElement>>;\n  }\n}\n```\n\n```ts\n// cypress/support/commands.ts\nCypress.Commands.add('getByCy', (id: string) => {\n  return cy.get(`[data-cy=\"${id}\"]`);\n});\n```\n\n```ts\ncy.getByCy('leave-submit').click();\n```\n\nIf `add` types error, ensure `index.d.ts` is in `include`. Restart the TS server after adding `Chainable` methods.",
+      "order": 10
+    },
+    {
+      "id": "cy-1-8-md-11",
+      "type": "overview",
+      "heading": "`cypress.config.ts` and `moduleResolution`",
+      "content": "Cypress 13+ often wants `\"moduleResolution\": \"node\"` or `\"bundler\"` depending on how the config is loaded. If `defineConfig` import fails, switch the config to `cypress.config.cjs` / `.js` and keep specs in TS. Specs and config **do not** have to share one language.",
+      "order": 11
+    },
+    {
+      "id": "cy-1-8-md-12",
+      "type": "overview",
+      "heading": "Jest collision checklist",
+      "content": "Root `types: [\"jest\", \"node\"]` plus Cypress files included in the app tsconfig → `expect` is Jest's. Symptoms: `toBeVisible` does not exist, or Chai `to.eq` errors. **Exclude `cypress` from the app tsconfig** and keep Cypress types local.\n\n```json\n{\n  \"exclude\": [\"cypress\", \"cypress.config.ts\"]\n}\n```\n\n(in the **Next** tsconfig, not the Cypress one).",
+      "order": 12
+    },
+    {
+      "id": "cy-1-8-md-13",
+      "type": "overview",
+      "heading": "CI typecheck",
+      "content": "```json\n{\n  \"scripts\": {\n    \"cypress:types\": \"tsc -p cypress/tsconfig.json --noEmit\"\n  }\n}\n```\n\nCypress still transpiles at runtime; this script only catches `cy.login` arity bugs.",
+      "order": 13
+    },
+    {
+      "id": "cy-1-8-md-14",
+      "type": "overview",
+      "heading": "Interview drill",
+      "content": "Where does `tsconfig.json` live and why? How do you type `cy.login`? Why might Jest `expect` appear in a spec?",
+      "order": 14
+    },
+    {
+      "id": "cy-1-8-md-15",
+      "type": "overview",
+      "heading": "`/// <reference types=\"cypress\" />` vs tsconfig",
+      "content": "Triple-slash works in a single file when the nested tsconfig is missing. It does **not** type custom commands unless those `.d.ts` files are part of the project. Prefer `cypress/tsconfig.json` so every spec shares one world.",
+      "order": 15
+    },
+    {
+      "id": "cy-1-8-md-16",
+      "type": "overview",
+      "heading": "Strictness",
+      "content": "`\"strict\": true` in `cypress/tsconfig.json` will flag implicit `any` in `then(($el) => ...)`. Type as `JQuery<HTMLElement>` or use `.should` and avoid the callback. Do not turn strict off only for Cypress if the app is strict — same quality bar.",
+      "order": 16
+    },
+    {
+      "id": "cy-1-8-md-17",
+      "type": "overview",
+      "heading": "Importing the app's `paths`",
+      "content": "```json\n{\n  \"compilerOptions\": {\n    \"baseUrl\": \"..\",\n    \"paths\": { \"@/*\": [\"src/*\"] }\n  }\n}\n```\n\nTS is happy; Cypress's bundler may still fail at runtime. E2E should not import React components. If you need a shared `formatDate` helper, put a **copy** under `cypress/support/util.ts` or a tiny `packages/test-utils` that does not pull in Next.",
+      "order": 17
+    },
+    {
+      "id": "cy-1-8-md-18",
+      "type": "overview",
+      "heading": "`cypress.config.ts` `ts-node` errors",
+      "content": "If open fails parsing the config (\"Cannot use import statement\"), use `cypress.config.js` or ensure Cypress's supported TS loader is in play. Debugging config load is a Node problem, not an AUT problem. Specs can remain `.cy.ts` either way.",
+      "order": 18
+    },
+    {
+      "id": "cy-1-8-md-19",
+      "type": "overview",
+      "heading": "Custom command overloads",
+      "content": "```ts\ninterface Chainable {\n  login(email: string, password?: string): Chainable<void>;\n  login(user: { email: string; password?: string }): Chainable<void>;\n}\n```\n\nKeep one signature until you must overload. Cypress `Commands.add` implementation must match.",
+      "order": 19
+    },
+    {
+      "id": "cy-1-8-md-20",
+      "type": "overview",
+      "heading": "Checklist",
+      "content": "- [ ] `cypress/tsconfig.json` exists with `types: [\"cypress\"]`\n- [ ] App tsconfig **excludes** `cypress/`\n- [ ] `cy.` autocomplete works in `login.cy.ts`\n- [ ] `Chainable` declares `login` / `getByCy`\n- [ ] `tsc -p cypress/tsconfig.json --noEmit` is green",
+      "order": 20
+    },
+    {
+      "id": "cy-1-8-md-21",
+      "type": "overview",
+      "heading": "`allowJs` for mixed specs",
+      "content": "During migration some files stay `.cy.js`. `\"allowJs\": true` in `cypress/tsconfig.json` lets the editor check JS with `// @ts-check`. Do not convert every spec in one PR unless you want a types-only firefight.",
+      "order": 21
+    },
+    {
+      "id": "cy-1-8-md-22",
+      "type": "overview",
+      "heading": "Types for `cy.fixture`",
+      "content": "```ts\ntype Employee = { email: string; role: 'employee' | 'manager' };\n\ncy.fixture<Employee[]>('employees.json').then((employees) => {\n  cy.wrap(employees[0].role).should('eq', 'employee');\n});\n```\n\nGeneric `fixture<T>` beats `any`. Keep fixture types next to the JSON or in `cypress/support/types.ts`.",
+      "order": 22
+    },
+    {
+      "id": "cy-1-8-md-23",
+      "type": "overview",
+      "heading": "`esModuleInterop`",
+      "content": "If `import { defineConfig } from 'cypress'` errors in config, set `\"esModuleInterop\": true` on whichever tsconfig covers the config file, or use `cypress.config.js`. Specs do not need to import `cypress` at all — `cy` is global via `types`.",
+      "order": 23
+    },
+    {
+      "id": "cy-1-8-md-24",
+      "type": "overview",
+      "heading": "`strictNullChecks` and `.then`",
+      "content": "```ts\ncy.get('h1').invoke('text').then((text: string) => {\n  expect(text.toLowerCase()).to.include('sign');\n});\n```\n\nIf `invoke('text')` is typed `string | number | ...`, narrow with `String(text)` or a `.should('match', /sign/i)` and skip the callback. Fighting the type is slower than using an implicit assertion.",
+      "order": 24
+    },
+    {
+      "id": "cy-1-8-md-25",
+      "type": "overview",
+      "heading": "Global `cy` without import",
+      "content": "You should **not** `import cy from 'cypress'`. Specs rely on globals from the `cypress` types package. Importing the `cypress` module in a spec is a config-file pattern (`defineConfig`), not a spec pattern.",
+      "order": 25
+    },
+    {
+      "id": "cy-1-8-md-26",
+      "type": "overview",
+      "heading": "`jsx` in Cypress tsconfig",
+      "content": "If a spec uses `.cy.tsx` (mounting is CT), set `\"jsx\": \"react-jsx\"`. Pure E2E `.cy.ts` files do not need jsx. Keep E2E as `.ts` unless you mount components there (you should not).",
+      "order": 26
+    },
+    {
+      "id": "cy-1-8-md-27",
+      "type": "overview",
+      "heading": "`skipLibCheck`",
+      "content": "Keep `\"skipLibCheck\": true` in `cypress/tsconfig.json`. Cypress's bundled types plus the app's `@types` can otherwise conflict inside `node_modules`. You still type-check **your** specs.",
+      "order": 27
+    },
+    {
+      "id": "cy-1-8-md-28",
+      "type": "overview",
+      "heading": "IDE restart",
+      "content": "After adding `cypress/tsconfig.json`, run \"TypeScript: Restart TS Server\". Stale roots are why `cy` stays unknown after you did everything right.",
+      "order": 28
+    },
+    {
+      "id": "cy-1-8-md-29",
+      "type": "overview",
+      "heading": "`cypress` in `types` array must be alone with optional `node`",
+      "content": "If you also list `\"jest\"`, `expect` becomes Jest's and `.should('be.visible')` still works (that is Cypress) but `expect(el).to.have.text` (Chai-jQuery) may break. Cypress + node only.",
+      "order": 29
+    }
+  ],
   "advantages": [
     "1.8 TypeScript Setup — Root tsconfig that excludes cypress/, missing types, and custom commands that are any are the three TS pain points."
   ],

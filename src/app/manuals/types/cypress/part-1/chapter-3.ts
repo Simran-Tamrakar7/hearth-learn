@@ -20,6 +20,176 @@ export const chapter = {
   "tools": [],
   "customSummary": "- Cypress 10+: cypress/e2e (specs), fixtures, support; config at repo cypress.config.js/ts — not cypress.json, not integration/.\n- Default specPattern expects the .cy. infix: leave-request.cy.ts, not only leave-request.spec.ts (unless you change specPattern).\n- support/e2e.js|ts runs before every spec; put cy.login helpers in support/commands.js|ts.\n- downloads/, screenshots/, videos/ are generated artifacts — gitignore them.\n- gitignore cypress.env.json (secrets). Track fixtures and support source.\n- plugins/index.js is gone; Node hooks live in setupNodeEvents (chapter 1.9).",
   "contentMarkdown": "## Canonical tree (Cypress 10+)\n\nAfter the launchpad (or after you create files by hand), a typical HRM repo looks like this:\n\n```text\nhearth/                          # application repo\n  cypress.config.ts              # or .js — project root, next to package.json\n  cypress.env.json               # optional, gitignored secrets\n  package.json\n  cypress/\n    e2e/\n      leave-request.cy.ts\n      payroll/\n        run-payroll.cy.ts\n    fixtures/\n      employees.json\n      leave-types.json\n    support/\n      e2e.ts                     # imported automatically before every E2E spec\n      commands.ts                # imported from e2e.ts\n    downloads/                   # generated — gitignore\n    screenshots/                 # generated — gitignore\n    videos/                      # generated — gitignore\n```\n\nComponent testing (if you enable it later) adds `cypress/component/` and a `component` key in config. This part of the manual is E2E-first.\n\n## What each directory is for\n\n### `cypress/e2e/` — specs (the tests)\n\nEvery file matching `specPattern` is a spec Cypress can run. Default in Cypress 10+:\n\n```js\nspecPattern: 'cypress/e2e/**/*.cy.{js,jsx,ts,tsx}'\n```\n\n**The `.cy.` infix is not decoration.** `leave-request.ts` will **not** run unless you change `specPattern`. `leave-request.spec.ts` will **not** run with the default either. The convention exists so Cypress does not pick up every `*.ts` file under `cypress/` (support files, helpers, page objects).\n\nGood HRM names:\n\n```text\ncypress/e2e/auth/login.cy.ts\ncypress/e2e/leave/submit-request.cy.ts\ncypress/e2e/leave/manager-approve.cy.ts\ncypress/e2e/payroll/run-payroll.cy.ts\n```\n\nNested folders are fine. The Test Runner groups them. One spec file can contain many `describe`/`it` blocks; prefer **grouping by user journey**, not one giant `hrm.cy.ts`.\n\n### `cypress/fixtures/` — static files loaded in tests\n\nJSON, images, CSVs that tests read with `cy.fixture('employees.json')`. These **are** source: commit them. They are not secrets. Example:\n\n```json\n[\n  { \"email\": \"ada@bizlevate.test\", \"role\": \"employee\" },\n  { \"email\": \"grace@bizlevate.test\", \"role\": \"manager\" }\n]\n```\n\nUse fixtures for **shape**, not for production passwords. Passwords belong in env (next chapters).\n\n### `cypress/support/` — global before-spec code\n\n`supportFile` defaults to `cypress/support/e2e.js` (or `.ts`). Cypress **imports it before every spec**. Put:\n\n- `import './commands'`\n- global `beforeEach` that should apply to the whole suite (use sparingly)\n- uncaught-exception filters you have explicitly accepted\n- `Cypress.Commands.add('login', ...)`\n\nDo **not** put one-off test logic here. Do **not** `cy.visit` the whole HRM in support unless every spec truly needs it (almost none do — `testIsolation` plus `cy.session` in `beforeEach` is the later pattern).\n\n`commands.ts` is a normal module. It only runs because `e2e.ts` imports it.\n\n### `cypress/downloads/`, `screenshots/`, `videos/` — artifacts\n\n| Folder | Who writes it | Git? |\n|---|---|---|\n| `downloads/` | Browser download behavior in tests | Ignore |\n| `screenshots/` | Failure (and `cy.screenshot()`) | Ignore |\n| `videos/` | `cypress run` when `video: true` | Ignore |\n\n**Cypress 13+ defaults `video` to `false`**, so `videos/` may stay empty until you opt in. Screenshots on failure remain the usual local/CI artifact.\n\nThese directories may be auto-created. They can contain large binaries. They are not your test source.\n\n## `.gitignore` (copy this intent)\n\n```gitignore\n# Cypress artifacts\ncypress/screenshots\ncypress/videos\ncypress/downloads\n\n# Secrets — never commit\ncypress.env.json\n```\n\nAlso ignore OS/editor noise as the repo already does. **Do not** ignore `cypress/e2e`, `cypress/fixtures`, or `cypress/support`. **Do not** commit the Electron cache (`~/Library/Caches/Cypress`).\n\nIf a teammate needs a sample env file, commit `cypress.env.json.example` with **fake** keys:\n\n```json\n{\n  \"adminEmail\": \"admin@bizlevate.test\",\n  \"adminPassword\": \"replace-me\"\n}\n```\n\n## Cypress 9 → 10 folder rename (the breaking change)\n\n| Before (v9) | After (v10+) |\n|---|---|\n| `cypress.json` | `cypress.config.js` / `.ts` at **repo root** |\n| `cypress/integration/**` | `cypress/e2e/**` |\n| `cypress/plugins/index.js` | `setupNodeEvents` inside the config file |\n| often `*.spec.js` | default `*.cy.js` / `*.cy.ts` |\n\nIf you clone an old tutorial and create `cypress/integration/login.spec.js` in Cypress 13, the Test Runner will show **zero specs**. Move the file to `cypress/e2e/login.cy.js` or widen `specPattern` (not recommended — keep the infix).\n\n`plugins/index.js` exporting a function is the old Node hook. In v10 that function's job moved to `setupNodeEvents(on, config)` (chapter 1.9). Leaving an unused `plugins/` folder only confuses readers.\n\n## Config file lives *outside* `cypress/`\n\n`cypress.config.js` sits next to `package.json`, not inside `cypress/`. That is easy to get wrong if you think \"everything Cypress is under cypress/\". The config **points at** `cypress/` via `e2e.specPattern`, `fixturesFolder`, `supportFile`, `screenshotsFolder`, `videosFolder`, `downloadsFolder`. You can relocate those; defaults are fine for HRM.\n\n## Playwright / Selenium folder comparison\n\nPlaywright's default is `tests/` or `e2e/` at repo root with `playwright.config.ts` — similar \"config at root, specs in a folder\" idea, different names. Playwright does not require a `.cy.` infix; it uses `*.spec.ts` commonly.\n\nSelenium has **no** standard folder. Java projects use `src/test/java`; Python uses `tests/`. Cypress is opinionated; that opinion is the tree above.\n\n## Support file vs spec file vs fixture — decision table\n\n| Need | Where |\n|---|---|\n| \"Submit leave as employee Ada\" journey | `cypress/e2e/leave/submit-request.cy.ts` |\n| Shared `cy.loginAs('manager')` | `cypress/support/commands.ts` |\n| 20 rows of dummy employees | `cypress/fixtures/employees.json` |\n| Admin password | `cypress.env.json` (gitignored) or `CYPRESS_adminPassword` |\n| Screenshot of a failed payroll click | auto `cypress/screenshots/` (ignored) |\n| Read a PDF the app downloaded | `cypress/downloads/` (ignored; assert then throw away) |\n\n## Common mistakes\n\n1. **Specs named `login.ts`** — silent skip. Rename to `login.cy.ts`.\n2. **Tests under `src/`** — Cypress will not see them with default `specPattern`.\n3. **Committed videos** — repo obesity and noisy diffs.\n4. **Committed `cypress.env.json`** — leaked HR admin credentials. Rotate immediately.\n5. **Logic in `support/e2e.ts` that visits `/`** — every spec pays the cost; isolation still wipes state between tests, so you visit twice for no reason.\n\n## HRM starter files (minimal)\n\n`cypress/support/e2e.ts`:\n\n```ts\nimport './commands';\n```\n\n`cypress/support/commands.ts`:\n\n```ts\n// Cypress.Commands.add('login', ...) lands here in later parts\n```\n\n`cypress/e2e/smoke.cy.ts`:\n\n```ts\ndescribe('HRM smoke', () => {\n  it('loads the login page', () => {\n    cy.visit('/login');\n    cy.contains('Sign in').should('be.visible');\n  });\n});\n```\n\n(Requires `baseUrl` — chapter 1.5.)\n\nYou now know where files go. Next chapter writes the first real spec and confronts the command queue vs `await`.\n## Spec naming that scales for HRM\n\n```text\ncypress/e2e/\n  smoke.cy.ts\n  auth/\n    login.cy.ts\n    session-expiry.cy.ts\n  leave/\n    submit-request.cy.ts\n    manager-approve.cy.ts\n    balance-rules.cy.ts\n  payroll/\n    run-payroll.cy.ts\n    payslip-download.cy.ts\n```\n\nOne journey per file beats `all-hrm.cy.ts`. Cypress parallelization (later) splits **files**, not `it` blocks. Tiny files also keep `cypress run --spec` useful.\n\n`payslip-download.cy.ts` will use `cypress/downloads/` — still gitignored. Assert the file, then let CI wipe the workspace.\n\n## `support/e2e.ts` versus `e2e.ts` vs `index.js`\n\nOlder docs say `cypress/support/index.js`. Cypress 10 E2E default is **`e2e.js` / `e2e.ts`**. If you name it `index.ts` and do not set `supportFile`, Cypress will not load your commands. Set `supportFile` explicitly if you diverge.\n\nComponent testing uses `cypress/support/component.ts`. Do not import E2E `cy.visit` helpers into CT by accident.\n\n## Fixtures vs env vs intercept fixtures\n\n| | Fixture file | `cypress.env.json` | `cy.intercept` fixture |\n|---|---|---|---|\n| Employee names | Yes | No | Optional static body |\n| Admin password | No | Yes (gitignored) | No |\n| Mock GET /api/leave | Can be the JSON body | No | `cy.intercept(..., { fixture: 'leave.json' })` |\n\nPart 5 will hook intercepts to fixtures. The file still lives under `cypress/fixtures/`.\n\n## Migrating a Cypress 9 repo — mechanical steps\n\n```bash\n# 1. Upgrade to Cypress 10+ (then to your current major)\nnpm i -D cypress@13\nnpx cypress open   # migration helper may offer to convert cypress.json\n# 2. Move specs\nmkdir -p cypress/e2e\ngit mv cypress/integration/* cypress/e2e/\n# 3. Rename to .cy.\n# 4. Paste plugins/index.js body into setupNodeEvents\n# 5. Delete cypress.json and plugins/index.js\n```\n\nIf `specPattern` still says `integration/**/*.spec.js`, either move files or you will run **zero** tests and think Cypress is broken.\n\n## What reviewers should reject\n\n- `cypress/videos/*.mp4` in the PR\n- Real passwords in `cypress/fixtures/users.json`\n- `cypress/integration/login.spec.js` on Cypress 13\n- `support/e2e.ts` that `cy.visit('/')` globally\n- Checking in `~/Library/Caches/Cypress` (should never appear)\n\n## Interview drill\n\n\"Where do tests live and what is the `.cy.` infix?\" — Default `specPattern` is `cypress/e2e/**/*.cy.{js,jsx,ts,tsx}`. `login.ts` is invisible. v10 renamed `integration` → `e2e`. Artifacts and `cypress.env.json` are gitignored; source folders are not.\n## Default folder keys (if you ever relocate)\n\n```ts\ne2e: {\n  specPattern: 'cypress/e2e/**/*.cy.{js,jsx,ts,tsx}',\n  supportFile: 'cypress/support/e2e.ts',\n  fixturesFolder: 'cypress/fixtures',\n},\nscreenshotsFolder: 'cypress/screenshots',\nvideosFolder: 'cypress/videos',\ndownloadsFolder: 'cypress/downloads',\n```\n\nRelocating specs to `tests/e2e/` is allowed if you change `specPattern` **and** keep a unique infix or suffix so helpers are not picked up as specs. Default layout is less surprising for the next HRM hire.\n\n`fixturesFolder: false` disables fixtures if you truly never use them — not recommended; HRM will want JSON seeds.\n\n## Example fixture + spec pairing\n\n`cypress/fixtures/leave-types.json`:\n\n```json\n[\n  { \"id\": \"annual\", \"label\": \"Annual leave\" },\n  { \"id\": \"sick\", \"label\": \"Sick leave\" }\n]\n```\n\n```ts\ncy.fixture('leave-types.json').then((types) => {\n  cy.get('[data-cy=leave-type]').select(types[0].label);\n});\n```\n\nThe fixture is source-controlled. The downloaded payslip PDF is not.\n\n## `downloads` assertions (preview)\n\n```ts\ncy.readFile('cypress/downloads/payslip.pdf', { timeout: 15000 }).should('exist');\n```\n\n`readFile` is a Cypress command (Node-side). It does not belong in git. CI workspaces vanish; that is fine.\n\n## Dual support files\n\nIf you enable component testing later, you will have `support/e2e.ts` and `support/component.ts`. Shared `commands.ts` can be imported by both. Do not put `cy.visit(baseUrl)` in a shared file — CT has no `baseUrl` page.\n## `supportFile: false`\n\nYou may disable the support file in a throwaway repo. Do not do that for HRM — you will want `cy.login` within a week. If Cypress says it cannot find `cypress/support/e2e.js`, either create the file or set `supportFile` to the `.ts` path you actually use.\n",
+  "blocks": [
+    {
+      "id": "cy-1-3-md-0",
+      "type": "overview",
+      "heading": "Canonical tree (Cypress 10+)",
+      "content": "After the launchpad (or after you create files by hand), a typical HRM repo looks like this:\n\n```text\nhearth/                          # application repo\n  cypress.config.ts              # or .js — project root, next to package.json\n  cypress.env.json               # optional, gitignored secrets\n  package.json\n  cypress/\n    e2e/\n      leave-request.cy.ts\n      payroll/\n        run-payroll.cy.ts\n    fixtures/\n      employees.json\n      leave-types.json\n    support/\n      e2e.ts                     # imported automatically before every E2E spec\n      commands.ts                # imported from e2e.ts\n    downloads/                   # generated — gitignore\n    screenshots/                 # generated — gitignore\n    videos/                      # generated — gitignore\n```\n\nComponent testing (if you enable it later) adds `cypress/component/` and a `component` key in config. This part of the manual is E2E-first.",
+      "order": 0
+    },
+    {
+      "id": "cy-1-3-md-1",
+      "type": "overview",
+      "heading": "What each directory is for",
+      "content": "What each directory is for",
+      "order": 1
+    },
+    {
+      "id": "cy-1-3-md-2",
+      "type": "overview",
+      "heading": "`cypress/e2e/` — specs (the tests)",
+      "content": "Every file matching `specPattern` is a spec Cypress can run. Default in Cypress 10+:\n\n```js\nspecPattern: 'cypress/e2e/**/*.cy.{js,jsx,ts,tsx}'\n```\n\n**The `.cy.` infix is not decoration.** `leave-request.ts` will **not** run unless you change `specPattern`. `leave-request.spec.ts` will **not** run with the default either. The convention exists so Cypress does not pick up every `*.ts` file under `cypress/` (support files, helpers, page objects).\n\nGood HRM names:\n\n```text\ncypress/e2e/auth/login.cy.ts\ncypress/e2e/leave/submit-request.cy.ts\ncypress/e2e/leave/manager-approve.cy.ts\ncypress/e2e/payroll/run-payroll.cy.ts\n```\n\nNested folders are fine. The Test Runner groups them. One spec file can contain many `describe`/`it` blocks; prefer **grouping by user journey**, not one giant `hrm.cy.ts`.",
+      "order": 2
+    },
+    {
+      "id": "cy-1-3-md-3",
+      "type": "overview",
+      "heading": "`cypress/fixtures/` — static files loaded in tests",
+      "content": "JSON, images, CSVs that tests read with `cy.fixture('employees.json')`. These **are** source: commit them. They are not secrets. Example:\n\n```json\n[\n  { \"email\": \"ada@bizlevate.test\", \"role\": \"employee\" },\n  { \"email\": \"grace@bizlevate.test\", \"role\": \"manager\" }\n]\n```\n\nUse fixtures for **shape**, not for production passwords. Passwords belong in env (next chapters).",
+      "order": 3
+    },
+    {
+      "id": "cy-1-3-md-4",
+      "type": "overview",
+      "heading": "`cypress/support/` — global before-spec code",
+      "content": "`supportFile` defaults to `cypress/support/e2e.js` (or `.ts`). Cypress **imports it before every spec**. Put:\n\n- `import './commands'`\n- global `beforeEach` that should apply to the whole suite (use sparingly)\n- uncaught-exception filters you have explicitly accepted\n- `Cypress.Commands.add('login', ...)`\n\nDo **not** put one-off test logic here. Do **not** `cy.visit` the whole HRM in support unless every spec truly needs it (almost none do — `testIsolation` plus `cy.session` in `beforeEach` is the later pattern).\n\n`commands.ts` is a normal module. It only runs because `e2e.ts` imports it.",
+      "order": 4
+    },
+    {
+      "id": "cy-1-3-md-5",
+      "type": "overview",
+      "heading": "`cypress/downloads/`, `screenshots/`, `videos/` — artifacts",
+      "content": "| Folder | Who writes it | Git? |\n|---|---|---|\n| `downloads/` | Browser download behavior in tests | Ignore |\n| `screenshots/` | Failure (and `cy.screenshot()`) | Ignore |\n| `videos/` | `cypress run` when `video: true` | Ignore |\n\n**Cypress 13+ defaults `video` to `false`**, so `videos/` may stay empty until you opt in. Screenshots on failure remain the usual local/CI artifact.\n\nThese directories may be auto-created. They can contain large binaries. They are not your test source.",
+      "order": 5
+    },
+    {
+      "id": "cy-1-3-md-6",
+      "type": "overview",
+      "heading": "`.gitignore` (copy this intent)",
+      "content": "```gitignore\n# Cypress artifacts\ncypress/screenshots\ncypress/videos\ncypress/downloads\n\n# Secrets — never commit\ncypress.env.json\n```\n\nAlso ignore OS/editor noise as the repo already does. **Do not** ignore `cypress/e2e`, `cypress/fixtures`, or `cypress/support`. **Do not** commit the Electron cache (`~/Library/Caches/Cypress`).\n\nIf a teammate needs a sample env file, commit `cypress.env.json.example` with **fake** keys:\n\n```json\n{\n  \"adminEmail\": \"admin@bizlevate.test\",\n  \"adminPassword\": \"replace-me\"\n}\n```",
+      "order": 6
+    },
+    {
+      "id": "cy-1-3-md-7",
+      "type": "overview",
+      "heading": "Cypress 9 → 10 folder rename (the breaking change)",
+      "content": "| Before (v9) | After (v10+) |\n|---|---|\n| `cypress.json` | `cypress.config.js` / `.ts` at **repo root** |\n| `cypress/integration/**` | `cypress/e2e/**` |\n| `cypress/plugins/index.js` | `setupNodeEvents` inside the config file |\n| often `*.spec.js` | default `*.cy.js` / `*.cy.ts` |\n\nIf you clone an old tutorial and create `cypress/integration/login.spec.js` in Cypress 13, the Test Runner will show **zero specs**. Move the file to `cypress/e2e/login.cy.js` or widen `specPattern` (not recommended — keep the infix).\n\n`plugins/index.js` exporting a function is the old Node hook. In v10 that function's job moved to `setupNodeEvents(on, config)` (chapter 1.9). Leaving an unused `plugins/` folder only confuses readers.",
+      "order": 7
+    },
+    {
+      "id": "cy-1-3-md-8",
+      "type": "overview",
+      "heading": "Config file lives *outside* `cypress/`",
+      "content": "`cypress.config.js` sits next to `package.json`, not inside `cypress/`. That is easy to get wrong if you think \"everything Cypress is under cypress/\". The config **points at** `cypress/` via `e2e.specPattern`, `fixturesFolder`, `supportFile`, `screenshotsFolder`, `videosFolder`, `downloadsFolder`. You can relocate those; defaults are fine for HRM.",
+      "order": 8
+    },
+    {
+      "id": "cy-1-3-md-9",
+      "type": "overview",
+      "heading": "Playwright / Selenium folder comparison",
+      "content": "Playwright's default is `tests/` or `e2e/` at repo root with `playwright.config.ts` — similar \"config at root, specs in a folder\" idea, different names. Playwright does not require a `.cy.` infix; it uses `*.spec.ts` commonly.\n\nSelenium has **no** standard folder. Java projects use `src/test/java`; Python uses `tests/`. Cypress is opinionated; that opinion is the tree above.",
+      "order": 9
+    },
+    {
+      "id": "cy-1-3-md-10",
+      "type": "overview",
+      "heading": "Support file vs spec file vs fixture — decision table",
+      "content": "| Need | Where |\n|---|---|\n| \"Submit leave as employee Ada\" journey | `cypress/e2e/leave/submit-request.cy.ts` |\n| Shared `cy.loginAs('manager')` | `cypress/support/commands.ts` |\n| 20 rows of dummy employees | `cypress/fixtures/employees.json` |\n| Admin password | `cypress.env.json` (gitignored) or `CYPRESS_adminPassword` |\n| Screenshot of a failed payroll click | auto `cypress/screenshots/` (ignored) |\n| Read a PDF the app downloaded | `cypress/downloads/` (ignored; assert then throw away) |",
+      "order": 10
+    },
+    {
+      "id": "cy-1-3-md-11",
+      "type": "overview",
+      "heading": "Common mistakes",
+      "content": "1. **Specs named `login.ts`** — silent skip. Rename to `login.cy.ts`.\n2. **Tests under `src/`** — Cypress will not see them with default `specPattern`.\n3. **Committed videos** — repo obesity and noisy diffs.\n4. **Committed `cypress.env.json`** — leaked HR admin credentials. Rotate immediately.\n5. **Logic in `support/e2e.ts` that visits `/`** — every spec pays the cost; isolation still wipes state between tests, so you visit twice for no reason.",
+      "order": 11
+    },
+    {
+      "id": "cy-1-3-md-12",
+      "type": "overview",
+      "heading": "HRM starter files (minimal)",
+      "content": "`cypress/support/e2e.ts`:\n\n```ts\nimport './commands';\n```\n\n`cypress/support/commands.ts`:\n\n```ts\n// Cypress.Commands.add('login', ...) lands here in later parts\n```\n\n`cypress/e2e/smoke.cy.ts`:\n\n```ts\ndescribe('HRM smoke', () => {\n  it('loads the login page', () => {\n    cy.visit('/login');\n    cy.contains('Sign in').should('be.visible');\n  });\n});\n```\n\n(Requires `baseUrl` — chapter 1.5.)\n\nYou now know where files go. Next chapter writes the first real spec and confronts the command queue vs `await`.",
+      "order": 12
+    },
+    {
+      "id": "cy-1-3-md-13",
+      "type": "overview",
+      "heading": "Spec naming that scales for HRM",
+      "content": "```text\ncypress/e2e/\n  smoke.cy.ts\n  auth/\n    login.cy.ts\n    session-expiry.cy.ts\n  leave/\n    submit-request.cy.ts\n    manager-approve.cy.ts\n    balance-rules.cy.ts\n  payroll/\n    run-payroll.cy.ts\n    payslip-download.cy.ts\n```\n\nOne journey per file beats `all-hrm.cy.ts`. Cypress parallelization (later) splits **files**, not `it` blocks. Tiny files also keep `cypress run --spec` useful.\n\n`payslip-download.cy.ts` will use `cypress/downloads/` — still gitignored. Assert the file, then let CI wipe the workspace.",
+      "order": 13
+    },
+    {
+      "id": "cy-1-3-md-14",
+      "type": "overview",
+      "heading": "`support/e2e.ts` versus `e2e.ts` vs `index.js`",
+      "content": "Older docs say `cypress/support/index.js`. Cypress 10 E2E default is **`e2e.js` / `e2e.ts`**. If you name it `index.ts` and do not set `supportFile`, Cypress will not load your commands. Set `supportFile` explicitly if you diverge.\n\nComponent testing uses `cypress/support/component.ts`. Do not import E2E `cy.visit` helpers into CT by accident.",
+      "order": 14
+    },
+    {
+      "id": "cy-1-3-md-15",
+      "type": "overview",
+      "heading": "Fixtures vs env vs intercept fixtures",
+      "content": "| | Fixture file | `cypress.env.json` | `cy.intercept` fixture |\n|---|---|---|---|\n| Employee names | Yes | No | Optional static body |\n| Admin password | No | Yes (gitignored) | No |\n| Mock GET /api/leave | Can be the JSON body | No | `cy.intercept(..., { fixture: 'leave.json' })` |\n\nPart 5 will hook intercepts to fixtures. The file still lives under `cypress/fixtures/`.",
+      "order": 15
+    },
+    {
+      "id": "cy-1-3-md-16",
+      "type": "overview",
+      "heading": "Migrating a Cypress 9 repo — mechanical steps",
+      "content": "```bash\n# 1. Upgrade to Cypress 10+ (then to your current major)\nnpm i -D cypress@13\nnpx cypress open   # migration helper may offer to convert cypress.json\n# 2. Move specs\nmkdir -p cypress/e2e\ngit mv cypress/integration/* cypress/e2e/\n# 3. Rename to .cy.\n# 4. Paste plugins/index.js body into setupNodeEvents\n# 5. Delete cypress.json and plugins/index.js\n```\n\nIf `specPattern` still says `integration/**/*.spec.js`, either move files or you will run **zero** tests and think Cypress is broken.",
+      "order": 16
+    },
+    {
+      "id": "cy-1-3-md-17",
+      "type": "overview",
+      "heading": "What reviewers should reject",
+      "content": "- `cypress/videos/*.mp4` in the PR\n- Real passwords in `cypress/fixtures/users.json`\n- `cypress/integration/login.spec.js` on Cypress 13\n- `support/e2e.ts` that `cy.visit('/')` globally\n- Checking in `~/Library/Caches/Cypress` (should never appear)",
+      "order": 17
+    },
+    {
+      "id": "cy-1-3-md-18",
+      "type": "overview",
+      "heading": "Interview drill",
+      "content": "\"Where do tests live and what is the `.cy.` infix?\" — Default `specPattern` is `cypress/e2e/**/*.cy.{js,jsx,ts,tsx}`. `login.ts` is invisible. v10 renamed `integration` → `e2e`. Artifacts and `cypress.env.json` are gitignored; source folders are not.",
+      "order": 18
+    },
+    {
+      "id": "cy-1-3-md-19",
+      "type": "overview",
+      "heading": "Default folder keys (if you ever relocate)",
+      "content": "```ts\ne2e: {\n  specPattern: 'cypress/e2e/**/*.cy.{js,jsx,ts,tsx}',\n  supportFile: 'cypress/support/e2e.ts',\n  fixturesFolder: 'cypress/fixtures',\n},\nscreenshotsFolder: 'cypress/screenshots',\nvideosFolder: 'cypress/videos',\ndownloadsFolder: 'cypress/downloads',\n```\n\nRelocating specs to `tests/e2e/` is allowed if you change `specPattern` **and** keep a unique infix or suffix so helpers are not picked up as specs. Default layout is less surprising for the next HRM hire.\n\n`fixturesFolder: false` disables fixtures if you truly never use them — not recommended; HRM will want JSON seeds.",
+      "order": 19
+    },
+    {
+      "id": "cy-1-3-md-20",
+      "type": "overview",
+      "heading": "Example fixture + spec pairing",
+      "content": "`cypress/fixtures/leave-types.json`:\n\n```json\n[\n  { \"id\": \"annual\", \"label\": \"Annual leave\" },\n  { \"id\": \"sick\", \"label\": \"Sick leave\" }\n]\n```\n\n```ts\ncy.fixture('leave-types.json').then((types) => {\n  cy.get('[data-cy=leave-type]').select(types[0].label);\n});\n```\n\nThe fixture is source-controlled. The downloaded payslip PDF is not.",
+      "order": 20
+    },
+    {
+      "id": "cy-1-3-md-21",
+      "type": "overview",
+      "heading": "`downloads` assertions (preview)",
+      "content": "```ts\ncy.readFile('cypress/downloads/payslip.pdf', { timeout: 15000 }).should('exist');\n```\n\n`readFile` is a Cypress command (Node-side). It does not belong in git. CI workspaces vanish; that is fine.",
+      "order": 21
+    },
+    {
+      "id": "cy-1-3-md-22",
+      "type": "overview",
+      "heading": "Dual support files",
+      "content": "If you enable component testing later, you will have `support/e2e.ts` and `support/component.ts`. Shared `commands.ts` can be imported by both. Do not put `cy.visit(baseUrl)` in a shared file — CT has no `baseUrl` page.",
+      "order": 22
+    },
+    {
+      "id": "cy-1-3-md-23",
+      "type": "overview",
+      "heading": "`supportFile: false`",
+      "content": "You may disable the support file in a throwaway repo. Do not do that for HRM — you will want `cy.login` within a week. If Cypress says it cannot find `cypress/support/e2e.js`, either create the file or set `supportFile` to the `.ts` path you actually use.",
+      "order": 23
+    }
+  ],
   "advantages": [
     "1.3 Folder Structure — Putting specs in the wrong folder, committing videos, or checking in secrets via cypress."
   ],

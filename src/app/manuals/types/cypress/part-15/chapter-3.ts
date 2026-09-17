@@ -20,6 +20,64 @@ export const chapter = {
   "tools": [],
   "customSummary": "- Query: get/contains/find; chain should.\n- Network: intercept before trigger; wait @alias; request for API.\n- Auth: session; SSO: origin + args.\n- CT: mount. Artifacts: screenshot. CI log: task.\n- There is no switchToTab / show-trace.",
   "contentMarkdown": "## Queries and actions\n\n```js\ncy.visit('/leave');\ncy.get('[data-cy=new-request]').click();\ncy.contains('button', 'Submit').click();\ncy.get('tr').find('[data-cy=status]');\ncy.get('[data-cy=note]').clear().type('flu');\ncy.get('[data-cy=type]').select('Sick');\ncy.get('[data-cy=file]').selectFile('cypress/fixtures/note.pdf');\ncy.get('[data-cy=ok]').check();\ncy.viewport('iphone-x');\n```\n\n## Assertions (retry)\n\n```js\ncy.get('[data-cy=rows]').should('have.length', 3).and('be.visible');\ncy.get('[data-cy=submit]').should('be.enabled');\ncy.url().should('include', '/leave');\n```\n\n## Network and API\n\n```js\ncy.intercept('GET', '/api/leave*').as('leave');\ncy.visit('/leave');\ncy.wait('@leave');\ncy.request('POST', '/api/test-login', { role: 'manager' });\n```\n\n## Session, origin, shadow, CT\n\n```js\ncy.session('emp', () => { /* login */ });\ncy.origin('https://idp.example', { args: { user, pass } }, ({ user, pass }) => {\n  cy.get('#user').type(user);\n  cy.get('#pass').type(pass);\n  cy.get('#submit').click();\n});\ncy.get('hrm-select').shadow().find('input'); // or includeShadowDom: true\ncy.mount(<LeaveRequestForm remainingBalance={0} />);\n```\n\n## Debug, log, artifacts\n\n```js\ncy.log('gui only');\ncy.task('log', { ci: true });\ncy.screenshot('step', { blackout: ['[data-cy=iban]'] });\ncy.pause(); // open mode\n```\n\n## Run / CI\n\n```bash\nnpx cypress open\nnpx cypress run --browser chrome --env grepTags=@smoke\nnpx cypress run --record --parallel --key \"$CYPRESS_RECORD_KEY\"\n```\n\n## Do not look for\n\n`cy.switchToTab()`, `await cy.get`, `page.locator`, `driver.switchTo()`, `playwright show-trace`, built-in `toHaveScreenshot`, `--browser webkit` as first-class.\n\n## Tiny Playwright / Selenium translation\n\n| Cypress | Playwright | Selenium |\n|---|---|---|\n| `cy.get(sel)` | `locator(sel)` | `findElement` |\n| `.should('be.visible')` | `expect(loc).toBeVisible()` | waits + asserts |\n| `cy.intercept` | `page.route` | not built-in |\n| `cy.origin` | (none needed) | (none needed) |\n| `cy.mount` | CT (JS) | — |\n| `cy.task` | Node `console.log` | JVM log |\n\nInterview line: \"I can write session, intercept-before-visit, origin-with-args, and task logging without opening the docs.\"",
+  "blocks": [
+    {
+      "id": "cy-15-3-md-0",
+      "type": "overview",
+      "heading": "Queries and actions",
+      "content": "```js\ncy.visit('/leave');\ncy.get('[data-cy=new-request]').click();\ncy.contains('button', 'Submit').click();\ncy.get('tr').find('[data-cy=status]');\ncy.get('[data-cy=note]').clear().type('flu');\ncy.get('[data-cy=type]').select('Sick');\ncy.get('[data-cy=file]').selectFile('cypress/fixtures/note.pdf');\ncy.get('[data-cy=ok]').check();\ncy.viewport('iphone-x');\n```",
+      "order": 0
+    },
+    {
+      "id": "cy-15-3-md-1",
+      "type": "overview",
+      "heading": "Assertions (retry)",
+      "content": "```js\ncy.get('[data-cy=rows]').should('have.length', 3).and('be.visible');\ncy.get('[data-cy=submit]').should('be.enabled');\ncy.url().should('include', '/leave');\n```",
+      "order": 1
+    },
+    {
+      "id": "cy-15-3-md-2",
+      "type": "overview",
+      "heading": "Network and API",
+      "content": "```js\ncy.intercept('GET', '/api/leave*').as('leave');\ncy.visit('/leave');\ncy.wait('@leave');\ncy.request('POST', '/api/test-login', { role: 'manager' });\n```",
+      "order": 2
+    },
+    {
+      "id": "cy-15-3-md-3",
+      "type": "overview",
+      "heading": "Session, origin, shadow, CT",
+      "content": "```js\ncy.session('emp', () => { /* login */ });\ncy.origin('https://idp.example', { args: { user, pass } }, ({ user, pass }) => {\n  cy.get('#user').type(user);\n  cy.get('#pass').type(pass);\n  cy.get('#submit').click();\n});\ncy.get('hrm-select').shadow().find('input'); // or includeShadowDom: true\ncy.mount(<LeaveRequestForm remainingBalance={0} />);\n```",
+      "order": 3
+    },
+    {
+      "id": "cy-15-3-md-4",
+      "type": "overview",
+      "heading": "Debug, log, artifacts",
+      "content": "```js\ncy.log('gui only');\ncy.task('log', { ci: true });\ncy.screenshot('step', { blackout: ['[data-cy=iban]'] });\ncy.pause(); // open mode\n```",
+      "order": 4
+    },
+    {
+      "id": "cy-15-3-md-5",
+      "type": "overview",
+      "heading": "Run / CI",
+      "content": "```bash\nnpx cypress open\nnpx cypress run --browser chrome --env grepTags=@smoke\nnpx cypress run --record --parallel --key \"$CYPRESS_RECORD_KEY\"\n```",
+      "order": 5
+    },
+    {
+      "id": "cy-15-3-md-6",
+      "type": "overview",
+      "heading": "Do not look for",
+      "content": "`cy.switchToTab()`, `await cy.get`, `page.locator`, `driver.switchTo()`, `playwright show-trace`, built-in `toHaveScreenshot`, `--browser webkit` as first-class.",
+      "order": 6
+    },
+    {
+      "id": "cy-15-3-md-7",
+      "type": "overview",
+      "heading": "Tiny Playwright / Selenium translation",
+      "content": "| Cypress | Playwright | Selenium |\n|---|---|---|\n| `cy.get(sel)` | `locator(sel)` | `findElement` |\n| `.should('be.visible')` | `expect(loc).toBeVisible()` | waits + asserts |\n| `cy.intercept` | `page.route` | not built-in |\n| `cy.origin` | (none needed) | (none needed) |\n| `cy.mount` | CT (JS) | — |\n| `cy.task` | Node `console.log` | JVM log |\n\nInterview line: \"I can write session, intercept-before-visit, origin-with-args, and task logging without opening the docs.\"",
+      "order": 7
+    }
+  ],
   "advantages": [
     "C. Cheat sheet of commands — Pairing interviews and code review go faster with a sheet that includes the dangerous ones (origin args, no switchToTab, task vs log)."
   ],

@@ -20,6 +20,43 @@ export const chapter = {
   "tools": [],
   "customSummary": "- No first-class download event; files land in downloadsFolder (default cypress/downloads/).\n- cy.readFile(path, { timeout }) retries until the file exists — that is the wait.\n- Text/CSV: assert with should('contain') / parse in .then().\n- XLSX/PDF: cy.task in setupNodeEvents (SheetJS, pdf-parse) — Node, not the browser.\n- Prefer cy.request the export URL when you only need bytes, not the click-to-download chrome.",
   "contentMarkdown": "## Why Cypress cannot `expect_download`\n\nFile downloads are handled by browser chrome (OS save dialog / automatic save), outside the page JS Cypress lives in. Playwright, as an external driver, intercepts the download as a protocol event. Cypress lets Chromium save into a folder it controls, then you inspect the disk.\n\nDefault folder: `cypress/downloads/` (`downloadsFolder` in config). Override in `cypress.config.js` if CI needs a known path.\n\n```js\nconst path = require('path');\n\nit('exports a payroll CSV', () => {\n  const filePath = path.join(Cypress.config('downloadsFolder'), 'payroll-report.csv');\n\n  cy.get('[data-cy=export-payroll]').click();\n\n  cy.readFile(filePath, { timeout: 15000 })\n    .should('contain', 'Employee ID')\n    .and('contain', 'Simran Tamrakar');\n});\n```\n\n`cy.readFile` is retryable. The `timeout` is how long Cypress polls for the file to appear and become readable — this *is* the download wait. A too-small timeout flakes; a huge timeout hides a broken export.\n\n## Binary and structured formats — `cy.task`\n\n`cy.readFile` on a `.xlsx` yields garbage / encoding issues if you treat it as UTF-8 text. PDF text extraction does not belong in the browser either. Register a Node task (Part 1.9 `setupNodeEvents`):\n\n```js\n// cypress.config.js (sketch)\non('task', {\n  parseCsv(filePath) {\n    const fs = require('fs');\n    const text = fs.readFileSync(filePath, 'utf8');\n    return text.split('\\n').map((line) => line.split(','));\n  },\n});\n```\n\n```js\ncy.get('[data-cy=export-payroll]').click();\ncy.task('parseCsv', filePath).should((rows) => {\n  expect(rows[0]).to.include('Employee ID');\n  expect(rows.some((r) => r.includes('Simran Tamrakar'))).to.eq(true);\n});\n```\n\nSame idea with SheetJS for `.xlsx` or `pdf-parse` for payslips. Keep secrets and production payroll files out of fixtures; generate or use sanitized samples.\n\n## Headers and `cy.request` substitution\n\nIf the test only needs to prove the export payload — not that the *button* wired `href` correctly — `cy.request('/api/payroll/export')` and assert the body (Part 6) is simpler and avoids the downloads folder. Still assert `href` / `download` attributes if the click-to-file path is the risk.\n\nIf the export opens `target=_blank` (Part 0.6), you may never get a file in `downloadsFolder` from that tab. Assert the URL or request the resource directly.\n\n## Cleanup\n\nDownloads persist on disk. Delete in `afterEach` via `cy.task` if names collide across tests (`payroll-report.csv` written twice). Unique filenames from the app make this easier.\n\n## vs Playwright\n\n```python\n# Playwright: with page.expect_download() as dl: page.click(...)\n# path = dl.value.path()\n```\n\nCypress: click → folder → `readFile` / `task`. Same verification goal, different handle.",
+  "blocks": [
+    {
+      "id": "cy-3-8-md-0",
+      "type": "overview",
+      "heading": "Why Cypress cannot `expect_download`",
+      "content": "File downloads are handled by browser chrome (OS save dialog / automatic save), outside the page JS Cypress lives in. Playwright, as an external driver, intercepts the download as a protocol event. Cypress lets Chromium save into a folder it controls, then you inspect the disk.\n\nDefault folder: `cypress/downloads/` (`downloadsFolder` in config). Override in `cypress.config.js` if CI needs a known path.\n\n```js\nconst path = require('path');\n\nit('exports a payroll CSV', () => {\n  const filePath = path.join(Cypress.config('downloadsFolder'), 'payroll-report.csv');\n\n  cy.get('[data-cy=export-payroll]').click();\n\n  cy.readFile(filePath, { timeout: 15000 })\n    .should('contain', 'Employee ID')\n    .and('contain', 'Simran Tamrakar');\n});\n```\n\n`cy.readFile` is retryable. The `timeout` is how long Cypress polls for the file to appear and become readable — this *is* the download wait. A too-small timeout flakes; a huge timeout hides a broken export.",
+      "order": 0
+    },
+    {
+      "id": "cy-3-8-md-1",
+      "type": "overview",
+      "heading": "Binary and structured formats — `cy.task`",
+      "content": "`cy.readFile` on a `.xlsx` yields garbage / encoding issues if you treat it as UTF-8 text. PDF text extraction does not belong in the browser either. Register a Node task (Part 1.9 `setupNodeEvents`):\n\n```js\n// cypress.config.js (sketch)\non('task', {\n  parseCsv(filePath) {\n    const fs = require('fs');\n    const text = fs.readFileSync(filePath, 'utf8');\n    return text.split('\\n').map((line) => line.split(','));\n  },\n});\n```\n\n```js\ncy.get('[data-cy=export-payroll]').click();\ncy.task('parseCsv', filePath).should((rows) => {\n  expect(rows[0]).to.include('Employee ID');\n  expect(rows.some((r) => r.includes('Simran Tamrakar'))).to.eq(true);\n});\n```\n\nSame idea with SheetJS for `.xlsx` or `pdf-parse` for payslips. Keep secrets and production payroll files out of fixtures; generate or use sanitized samples.",
+      "order": 1
+    },
+    {
+      "id": "cy-3-8-md-2",
+      "type": "overview",
+      "heading": "Headers and `cy.request` substitution",
+      "content": "If the test only needs to prove the export payload — not that the *button* wired `href` correctly — `cy.request('/api/payroll/export')` and assert the body (Part 6) is simpler and avoids the downloads folder. Still assert `href` / `download` attributes if the click-to-file path is the risk.\n\nIf the export opens `target=_blank` (Part 0.6), you may never get a file in `downloadsFolder` from that tab. Assert the URL or request the resource directly.",
+      "order": 2
+    },
+    {
+      "id": "cy-3-8-md-3",
+      "type": "overview",
+      "heading": "Cleanup",
+      "content": "Downloads persist on disk. Delete in `afterEach` via `cy.task` if names collide across tests (`payroll-report.csv` written twice). Unique filenames from the app make this easier.",
+      "order": 3
+    },
+    {
+      "id": "cy-3-8-md-4",
+      "type": "overview",
+      "heading": "vs Playwright",
+      "content": "```python\n# Playwright: with page.expect_download() as dl: page.click(...)\n# path = dl.value.path()\n```\n\nCypress: click → folder → `readFile` / `task`. Same verification goal, different handle.",
+      "order": 4
+    }
+  ],
   "advantages": [
     "3.8 File Downloads & Verification — Payslip PDFs and payroll CSVs are core HRM artifacts."
   ],
