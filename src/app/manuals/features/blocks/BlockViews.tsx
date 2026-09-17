@@ -127,9 +127,11 @@ function ColumnGrid({
 export function ChapterBlockView({
   block,
   highlights,
+  renderMarkdown,
 }: {
   block: ChapterBlock;
   highlights: ChapterHighlight[];
+  renderMarkdown?: (text: string) => ReactNode;
 }) {
   const catalog = BLOCK_CATALOG.find((c) => c.type === block.type)?.label;
   const title = blockDisplayName(block, catalog);
@@ -139,11 +141,24 @@ export function ChapterBlockView({
   switch (block.type) {
     case "overview":
       if (!block.content.trim()) return null;
-      return (
-        <p className={`text-xs sm:text-sm text-[#52635E] leading-relaxed ${bodyFont}`}>
-          <MarkedText text={block.content} highlights={highlights} />
-        </p>
-      );
+      {
+        const body = renderMarkdown ? (
+          <div className={`text-xs sm:text-sm text-[#52635E] leading-relaxed ${bodyFont}`}>{renderMarkdown(block.content)}</div>
+        ) : (
+          <p className={`text-xs sm:text-sm text-[#52635E] leading-relaxed ${bodyFont}`}>
+            <MarkedText text={block.content} highlights={highlights} />
+          </p>
+        );
+        if (block.heading?.trim()) {
+          return (
+            <div className="space-y-2">
+              <h3 className="font-serif-display font-bold text-sm sm:text-base text-[#1C2A26]">{block.heading.trim()}</h3>
+              {body}
+            </div>
+          );
+        }
+        return body;
+      }
     case "why":
       return block.content.trim() ? (
         <WhyItMatters content={block.content} highlights={highlights} heading={title} accent={accent} fontClassName={bodyFont} />

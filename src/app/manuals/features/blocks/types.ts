@@ -657,7 +657,33 @@ export function legacyFieldsToBlocks(ch: LegacyChapterFields): ChapterBlock[] {
   if (ch.resourceLinks?.length) {
     out.push({ id: newBlockId("resources"), type: "resources", items: ch.resourceLinks });
   }
+  for (const md of markdownSectionBlocks(ch.contentMarkdown)) out.push(md);
   return withOrder(out);
+}
+
+/** One overview block per `##` heading so lesson text lives in the block list, not a footer. */
+function markdownSectionBlocks(md?: string): ChapterBlock[] {
+  const text = String(md || "").trim();
+  if (!text) return [];
+  const chunks = text.split(/^##\s+/m);
+  const out: ChapterBlock[] = [];
+  const lead = chunks[0].trim();
+  if (lead) {
+    out.push({ id: newBlockId("md"), type: "overview", heading: "Lesson content", content: lead });
+  }
+  for (const chunk of chunks.slice(1)) {
+    const nl = chunk.indexOf("\n");
+    const heading = (nl < 0 ? chunk : chunk.slice(0, nl)).trim();
+    const content = (nl < 0 ? "" : chunk.slice(nl + 1)).trim();
+    if (!heading && !content) continue;
+    out.push({
+      id: newBlockId("md"),
+      type: "overview",
+      heading: heading || "Lesson content",
+      content: content || heading,
+    });
+  }
+  return out;
 }
 
 /** Blocks to render: explicit `blocks` if set (even empty), else legacy synthesis. */

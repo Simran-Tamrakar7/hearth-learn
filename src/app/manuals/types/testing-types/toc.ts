@@ -298,8 +298,20 @@ export function stripPartNumber(subtitle?: string): string {
 }
 
 export function displayPartTitle(index: number, name: string, kind: "part" | "chapter" = "part"): string {
+  const raw = String(name || "").trim();
+  const numbered = raw.match(/^(Part|Chapter)\s+(\d+)\s*[·•\-\u2013\u2014:]\s*(.*)$/i);
+  if (numbered) {
+    const label = numbered[3].trim() || "Untitled";
+    return kind === "chapter" ? `Chapter ${numbered[2]} — ${label}` : `Part ${numbered[2]} · ${label}`;
+  }
   const label = stripPartNumber(name);
   return kind === "chapter" ? `Chapter ${index + 1} — ${label}` : `Part ${index + 1} · ${label}`;
+}
+
+/** Use the Part N in `partKey` when present (Orientation is 0, not 1). */
+export function partDisplayNumber(index: number, partKey?: string): number {
+  const m = String(partKey || "").match(/^(?:Part|Chapter)\s+(\d+)\b/i);
+  return m ? Number(m[1]) : index + 1;
 }
 
 function identity<T extends PartishChapter>(ch: T): string {

@@ -61,6 +61,7 @@ export {
   type TestingTypesTocRow,
   stripPartNumber,
   displayPartTitle,
+  partDisplayNumber,
   groupChaptersIntoParts,
   createPart,
   deleteParts,

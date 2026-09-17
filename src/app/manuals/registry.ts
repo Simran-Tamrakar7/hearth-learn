@@ -190,9 +190,17 @@ export function r(type: string, name: string, url: string, lang = "EN", free = t
 }
 
 const LEADING_NUM = /^(?:§\s*)?\d+(?:\.\d+)*[.)]\s+/u;
+const LEADING_CHAPTER_NO = /^(?:§\s*)?(\d+(?:\.\d+)*|[A-D])[.)]?\s+(.*)$/u;
 
 export function titleHasLeadingNumber(title: string) {
   return LEADING_NUM.test(String(title || ""));
+}
+
+export function parseLeadingChapterNo(title: string): { num: string; rest: string } | null {
+  const t = String(title || "").trim();
+  const m = t.match(LEADING_CHAPTER_NO);
+  if (!m?.[2]?.trim()) return null;
+  return { num: m[1], rest: m[2].trim() };
 }
 
 export function stripLeadingNumber(title: string) {
@@ -228,6 +236,12 @@ export function assertManualNumberingOk() {
   if (chapterNumber(6, "5. Locators") !== 5) throw new Error("parse title number");
   if (stepLabel(5, 0, "History").num !== "5.1") throw new Error("expected 5.1");
   if (stepLabel(1, 1, "2. Nested").title !== "Nested") throw new Error("strip step title");
+  if (parseLeadingChapterNo("0.1 What is Cypress, Really")?.num !== "0.1") {
+    throw new Error("0.1 titles keep a single chapter number");
+  }
+  if (parseLeadingChapterNo("A. Comparison table")?.num !== "A") {
+    throw new Error("appendix letters are the chapter number");
+  }
   return true;
 }
 
