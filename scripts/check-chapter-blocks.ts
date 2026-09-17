@@ -50,6 +50,7 @@ const withLesson = legacyFieldsToBlocks({
 });
 assert.equal(withLesson.filter((b) => b.type === "overview" && b.heading === "Origin architecture").length, 1);
 assert.equal(withLesson.filter((b) => b.type === "overview" && b.heading === "History").length, 1);
+assert.ok(!withLesson.some((b) => b.type === "why"), "authored topics replace default Why/When boxes");
 assert.equal(displayPartTitle(0, "Part 0 · Orientation"), "Part 0 · Orientation");
 
 const required = [
