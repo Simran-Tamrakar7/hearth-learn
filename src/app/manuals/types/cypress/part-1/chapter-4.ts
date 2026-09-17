@@ -20,6 +20,176 @@ export const chapter = {
   "tools": [],
   "customSummary": "- First spec: describe/it, cy.visit, cy.get or cy.contains, .should — Mocha structure, Cypress commands.\n- The it callback runs synchronously and enqueues; Cypress later executes the queue with retries.\n- Never await cy.*; never const x = cy.get(...).text() outside .then/.should.\n- Retry-ability: .should('be.visible') re-runs the query until it passes or defaultCommandTimeout hits.\n- Playwright equivalent uses await page.goto and expect(locator).toBeVisible(); Selenium uses driver.get + explicit waits.\n- Prefer a real assertion over cy.wait(ms). Put the file at cypress/e2e/login.cy.ts.",
   "contentMarkdown": "## The smallest passing HRM spec\n\nCreate `cypress/e2e/login.cy.ts` (note the **`.cy.` infix**):\n\n```ts\ndescribe('HRM login page', () => {\n  it('shows the sign-in heading', () => {\n    cy.visit('/login');\n    cy.contains('h1, h2, legend', 'Sign in').should('be.visible');\n  });\n});\n```\n\nIf `baseUrl` is not set yet, use a full URL:\n\n```ts\ncy.visit('http://localhost:3000/login');\n```\n\nRun it:\n\n```bash\nnpm run cypress:open\n# click login.cy.ts\n```\n\nor headless:\n\n```bash\nnpx cypress run --spec cypress/e2e/login.cy.ts\n```\n\nYou need the HRM app serving that path. Cypress does not start Next.js for you unless you add `setupNodeEvents` + `on('before:run')` or an external `start-server-and-test` (later). For this chapter, assume `npm run dev` is already up.\n\n## What the `it` function actually does\n\nRead this slowly. It is the core of Cypress.\n\n```ts\nit('shows the sign-in heading', () => {\n  cy.visit('/login');\n  cy.contains('Sign in').should('be.visible');\n});\n```\n\n1. Mocha calls your `it` callback.\n2. The callback runs **top to bottom, synchronously**, in a few milliseconds.\n3. `cy.visit` does **not** navigate yet. It **pushes a command** onto Cypress's queue and returns a **Chainable**.\n4. `cy.contains` pushes another command. `.should` pushes an assertion command.\n5. The callback **returns**. Mocha thinks the test function has finished starting.\n6. Cypress then **executes the queue**: visit (wait for `load`), contains (retry until the text exists), should (retry until visible).\n\nThat is why this is wrong:\n\n```ts\nit('broken', async () => {\n  await cy.visit('/login');           // do not do this\n  const el = cy.get('h1');            // Chainable, not a DOM node\n  const text = el.text();             // not a string\n});\n```\n\n`cy.*` commands are **not** Promises (they are thenable in recent Cypress for limited interop, but **this manual's rule is: never `await cy.*`**). Mixing `async/await` with the queue creates tests that pass/fail for timing reasons nobody can explain.\n\nTo read a value, you stay on the queue:\n\n```ts\ncy.get('h1').invoke('text').should('match', /sign in/i);\n\ncy.get('h1').then(($h1) => {\n  const text = $h1.text();\n  expect(text.toLowerCase()).to.include('sign in');\n});\n```\n\n`.then` runs **when that command executes**, not when the `it` function is parsed. Part 2 covers `.then` vs `.should` in depth (`.then` does **not** retry; `.should` does).\n\n## Side-by-side: Playwright and Selenium\n\n**Playwright (real Promises, external process):**\n\n```ts\ntest('shows the sign-in heading', async ({ page }) => {\n  await page.goto('/login');\n  await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible();\n});\n```\n\n`await` is correct here. The test function is `async`. Playwright's expect auto-waits.\n\n**Selenium (Java, no auto-retry on assertions unless you build it):**\n\n```java\ndriver.get(\"http://localhost:3000/login\");\nnew WebDriverWait(driver, Duration.ofSeconds(4))\n  .until(ExpectedConditions.visibilityOfElementLocated(By.xpath(\"//*[contains(., 'Sign in')]\")));\n```\n\nYou will feel the missing runner: no time-travel, no command log, driver version issues.\n\n**Cypress:** no `await`, no WebDriverWait. Retry is inside `cy.contains(...).should('be.visible')`.\n\n## Anatomy of the first commands\n\n### `cy.visit(url)`\n\n- Loads the URL in the AUT iframe.\n- Waits for the `load` event (and `pageLoadTimeout`, default 60s).\n- If `baseUrl` is `http://localhost:3000`, `cy.visit('/login')` goes to `http://localhost:3000/login`.\n- Does not magically wait for your React query to finish — that is what later assertions do.\n\n### `cy.get(selector)` / `cy.contains(text)`\n\n- Query the DOM. **Retry** until the element exists or `defaultCommandTimeout` (4s) fires.\n- Yield a jQuery-wrapped element as the **subject** for the next chained command.\n\n### `.should(assertion)`\n\n- Chai-style assertion that **retries the entire chain** from the last query (Part 2.4).\n- `'be.visible'` is the right first assertion: present in DOM **and** not `display:none` / collapsed.\n\nPrefer user-facing queries when practical:\n\n```ts\ncy.contains('button', 'Sign in').should('be.enabled');\n```\n\nPart 4 will push `data-cy` attributes for HRM components that have unstable CSS.\n\n## What not to put in the first test\n\n```ts\ncy.wait(5000);                    // fixed sleep — flake factory\ncy.get('h1').should('exist');     // weaker than visible, but ok as a start\ncy.visit('/login');\ncy.get('h1');                     // no assertion — Cypress may still \"pass\"\n```\n\nA command without an assertion can pass while the heading is wrong. **Always end the smoke path with `.should`.**\n\n`testIsolation` (default **true since Cypress 12**) means a second `it` in the same file does **not** inherit cookies from the first. Do not write \"login in test 1, assert dashboard in test 2\" without `beforeEach` / `cy.session`. For this chapter, **one smoke `it` is enough**.\n\n## Running from the CLI vs GUI\n\n| | `cypress open` | `cypress run` |\n|---|---|---|\n| First test UX | Watch visit + command log + time-travel | Terminal + optional video |\n| Failure | Click the red command, inspect DOM | Screenshot (and video if enabled) |\n| When | Writing the spec | CI / smoke after commit |\n\nFirst-test workflow: **open**, watch it fail (app not running is a classic), start HRM, re-run. Then `run` once to see CI-shaped output.\n\n## TypeScript note\n\nIf the file is `.cy.ts` and Cypress complains about `cy` / `describe`, you need the `cypress/` `tsconfig` (chapter 1.8). A `.cy.js` file works with zero TS setup. Do not block your first green test on types.\n\n## Debugging the first failure\n\n1. **`cy.visit` timed out** — app not running, wrong port, or `baseUrl` typo.\n2. **`contains` timed out** — heading copy is \"Log in\" not \"Sign in\"; or the page is a SPA that rendered an error boundary.\n3. **Cross-origin** — visit landed on an IdP. Smoke the unauthenticated page first; SSO is `cy.origin` (Part 9).\n\nHover the failed command in the GUI. That is the product. Do not add `cy.wait(3000)` as your first reflex.\n\n## Recap rule card (stick this above your keyboard)\n\n```text\nThe it() body ENQUEUES.\nCypress later EXECUTES.\nNever await cy.*.\nNever treat a Chainable as a DOM node.\nAssert with .should so retries have a target.\n```\n\nNext: `cypress.config.js/ts` — `baseUrl`, layered timeouts, `video`, `testIsolation`, and the v10 config format.\n## Full first-spec session (HRM)\n\nTerminal A:\n\n```bash\nnpm run dev    # http://localhost:3000\n```\n\nTerminal B:\n\n```bash\nnpx cypress open --e2e --browser chrome\n```\n\nCreate `cypress/e2e/login.cy.ts` if the wizard did not. Click the spec. Watch `VISIT /login` then `CONTAINS Sign in` in the Command Log. Hover `VISIT` — the iframe shows the login page snapshot.\n\nIf visit fails with `ERR_CONNECTION_REFUSED`, the app is down. Cypress will not start Next for you in this part.\n\n## Assertions you should learn on day one\n\n```ts\ncy.visit('/login');\ncy.location('pathname').should('eq', '/login');\ncy.contains('button', 'Sign in').should('be.visible').and('be.enabled');\ncy.get('#email').should('have.attr', 'type', 'email');\n```\n\n`location` is a Cypress command (queued). You still do not `await` it.\n\n## Reading a value the wrong way and the right way\n\nWrong (phase 1):\n\n```ts\nconst href = cy.get('a').invoke('attr', 'href');\nconsole.log(href); // Chainable\n```\n\nRight:\n\n```ts\ncy.get('a.forgot-password').should('have.attr', 'href').and('include', 'reset');\n```\n\nOr:\n\n```ts\ncy.get('a.forgot-password').invoke('attr', 'href').then((href) => {\n  expect(href).to.match(/reset/);\n});\n```\n\nDay-one tests should stay on `.should` and avoid `.then` until Part 2.\n\n## `testIsolation` already affects your second `it`\n\n```ts\nit('shows sign in', () => {\n  cy.visit('/login');\n  cy.contains('Sign in').should('be.visible');\n});\n\nit('does not still sit on /login from the previous test', () => {\n  // AUT is about:blank / cleared storage — you must visit again\n  cy.visit('/login');\n  cy.get('#email').should('be.visible');\n});\n```\n\nDo not share \"I already visited\" across tests. That is Cypress 12.\n\n## Playwright rewrite (so you can translate later)\n\nPlaywright:\n\n```ts\ntest('shows sign in', async ({ page }) => {\n  await page.goto('/login');\n  await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible();\n});\n```\n\nCypress: drop `async`/`await`/`page`/`expect(locator)`. Use `cy.visit` + `cy.contains` + `.should('be.visible')`.\n\n## Interview drill\n\n\"Write a Cypress test that opens login and checks the heading. Why is there no await?\" If the candidate writes `await cy.visit`, coach the queue. If they write no assertion, coach `.should`.\n## Expected Command Log for the smoke spec\n\n```text\n(visit)    /login\n(contains) Sign in\n(assert)   expected <h1> to be visible\n```\n\nIf you see `(contains)` retry for 4 seconds, the copy is wrong or the route is an SPA error page. Click `(visit)` and inspect the iframe — often you landed on `/` with a client redirect you did not wait for:\n\n```ts\ncy.visit('/login');\ncy.location('pathname').should('eq', '/login');\ncy.contains('Sign in').should('be.visible');\n```\n\nTwo assertions: URL then heading. Still no `await`.\n\n## Headless first run output\n\n```bash\nnpx cypress run --spec cypress/e2e/login.cy.ts\n```\n\nYou should see Mocha-style passing tests and a screenshot path only on failure. No video unless `video: true`. If the command exits 0 with 0 tests, `specPattern` missed the file (missing `.cy.`).\n\n## Selenium translation (Java-shaped)\n\n```java\ndriver.get(base + \"/login\");\nWebElement h = new WebDriverWait(driver, Duration.ofSeconds(4))\n    .until(ExpectedConditions.visibilityOfElementLocated(By.xpath(\"//*[contains(., 'Sign in')]\")));\nassertTrue(h.isDisplayed());\n```\n\nYou wrote waits by hand. Cypress's `.should('be.visible')` *is* that wait. Do not also add `cy.wait(4000)`.\n\n## What \"queue vs await\" looks like in a debugger\n\nPut `debugger` as the **first line** of `it`. When it hits, the network tab has **not** yet requested `/login`. Continue; Cypress then runs the queue. That experiment convinces Playwright migrants faster than a paragraph.\n## Minimal `data-cy` on login (ask frontend once)\n\n```html\n<h1 data-cy=\"login-heading\">Sign in</h1>\n<button data-cy=\"login-submit\">Sign in</button>\n```\n\n```ts\ncy.visit('/login');\ncy.get('[data-cy=login-heading]').should('be.visible');\ncy.get('[data-cy=login-submit]').should('be.enabled');\n```\n\nText-based `contains` is fine for smoke. `data-cy` is what you want before the copywriters rename \"Sign in\" to \"Log in.\" Part 4 goes deeper; do not block the first green test on a component change.\n## If the heading is in a shadow DOM (rare for HRM)\n\nCypress can pierce open shadow roots with `{ includeShadowDom: true }` on `get` or as a config flag. Do not enable it globally until a component needs it. First tests assume light DOM.\n",
+  "blocks": [
+    {
+      "id": "cy-1-4-md-0",
+      "type": "overview",
+      "heading": "The smallest passing HRM spec",
+      "content": "Create `cypress/e2e/login.cy.ts` (note the **`.cy.` infix**):\n\n```ts\ndescribe('HRM login page', () => {\n  it('shows the sign-in heading', () => {\n    cy.visit('/login');\n    cy.contains('h1, h2, legend', 'Sign in').should('be.visible');\n  });\n});\n```\n\nIf `baseUrl` is not set yet, use a full URL:\n\n```ts\ncy.visit('http://localhost:3000/login');\n```\n\nRun it:\n\n```bash\nnpm run cypress:open\n# click login.cy.ts\n```\n\nor headless:\n\n```bash\nnpx cypress run --spec cypress/e2e/login.cy.ts\n```\n\nYou need the HRM app serving that path. Cypress does not start Next.js for you unless you add `setupNodeEvents` + `on('before:run')` or an external `start-server-and-test` (later). For this chapter, assume `npm run dev` is already up.",
+      "order": 0
+    },
+    {
+      "id": "cy-1-4-md-1",
+      "type": "overview",
+      "heading": "What the `it` function actually does",
+      "content": "Read this slowly. It is the core of Cypress.\n\n```ts\nit('shows the sign-in heading', () => {\n  cy.visit('/login');\n  cy.contains('Sign in').should('be.visible');\n});\n```\n\n1. Mocha calls your `it` callback.\n2. The callback runs **top to bottom, synchronously**, in a few milliseconds.\n3. `cy.visit` does **not** navigate yet. It **pushes a command** onto Cypress's queue and returns a **Chainable**.\n4. `cy.contains` pushes another command. `.should` pushes an assertion command.\n5. The callback **returns**. Mocha thinks the test function has finished starting.\n6. Cypress then **executes the queue**: visit (wait for `load`), contains (retry until the text exists), should (retry until visible).\n\nThat is why this is wrong:\n\n```ts\nit('broken', async () => {\n  await cy.visit('/login');           // do not do this\n  const el = cy.get('h1');            // Chainable, not a DOM node\n  const text = el.text();             // not a string\n});\n```\n\n`cy.*` commands are **not** Promises (they are thenable in recent Cypress for limited interop, but **this manual's rule is: never `await cy.*`**). Mixing `async/await` with the queue creates tests that pass/fail for timing reasons nobody can explain.\n\nTo read a value, you stay on the queue:\n\n```ts\ncy.get('h1').invoke('text').should('match', /sign in/i);\n\ncy.get('h1').then(($h1) => {\n  const text = $h1.text();\n  expect(text.toLowerCase()).to.include('sign in');\n});\n```\n\n`.then` runs **when that command executes**, not when the `it` function is parsed. Part 2 covers `.then` vs `.should` in depth (`.then` does **not** retry; `.should` does).",
+      "order": 1
+    },
+    {
+      "id": "cy-1-4-md-2",
+      "type": "overview",
+      "heading": "Side-by-side: Playwright and Selenium",
+      "content": "**Playwright (real Promises, external process):**\n\n```ts\ntest('shows the sign-in heading', async ({ page }) => {\n  await page.goto('/login');\n  await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible();\n});\n```\n\n`await` is correct here. The test function is `async`. Playwright's expect auto-waits.\n\n**Selenium (Java, no auto-retry on assertions unless you build it):**\n\n```java\ndriver.get(\"http://localhost:3000/login\");\nnew WebDriverWait(driver, Duration.ofSeconds(4))\n  .until(ExpectedConditions.visibilityOfElementLocated(By.xpath(\"//*[contains(., 'Sign in')]\")));\n```\n\nYou will feel the missing runner: no time-travel, no command log, driver version issues.\n\n**Cypress:** no `await`, no WebDriverWait. Retry is inside `cy.contains(...).should('be.visible')`.",
+      "order": 2
+    },
+    {
+      "id": "cy-1-4-md-3",
+      "type": "overview",
+      "heading": "Anatomy of the first commands",
+      "content": "Anatomy of the first commands",
+      "order": 3
+    },
+    {
+      "id": "cy-1-4-md-4",
+      "type": "overview",
+      "heading": "`cy.visit(url)`",
+      "content": "- Loads the URL in the AUT iframe.\n- Waits for the `load` event (and `pageLoadTimeout`, default 60s).\n- If `baseUrl` is `http://localhost:3000`, `cy.visit('/login')` goes to `http://localhost:3000/login`.\n- Does not magically wait for your React query to finish — that is what later assertions do.",
+      "order": 4
+    },
+    {
+      "id": "cy-1-4-md-5",
+      "type": "overview",
+      "heading": "`cy.get(selector)` / `cy.contains(text)`",
+      "content": "- Query the DOM. **Retry** until the element exists or `defaultCommandTimeout` (4s) fires.\n- Yield a jQuery-wrapped element as the **subject** for the next chained command.",
+      "order": 5
+    },
+    {
+      "id": "cy-1-4-md-6",
+      "type": "overview",
+      "heading": "`.should(assertion)`",
+      "content": "- Chai-style assertion that **retries the entire chain** from the last query (Part 2.4).\n- `'be.visible'` is the right first assertion: present in DOM **and** not `display:none` / collapsed.\n\nPrefer user-facing queries when practical:\n\n```ts\ncy.contains('button', 'Sign in').should('be.enabled');\n```\n\nPart 4 will push `data-cy` attributes for HRM components that have unstable CSS.",
+      "order": 6
+    },
+    {
+      "id": "cy-1-4-md-7",
+      "type": "overview",
+      "heading": "What not to put in the first test",
+      "content": "```ts\ncy.wait(5000);                    // fixed sleep — flake factory\ncy.get('h1').should('exist');     // weaker than visible, but ok as a start\ncy.visit('/login');\ncy.get('h1');                     // no assertion — Cypress may still \"pass\"\n```\n\nA command without an assertion can pass while the heading is wrong. **Always end the smoke path with `.should`.**\n\n`testIsolation` (default **true since Cypress 12**) means a second `it` in the same file does **not** inherit cookies from the first. Do not write \"login in test 1, assert dashboard in test 2\" without `beforeEach` / `cy.session`. For this chapter, **one smoke `it` is enough**.",
+      "order": 7
+    },
+    {
+      "id": "cy-1-4-md-8",
+      "type": "overview",
+      "heading": "Running from the CLI vs GUI",
+      "content": "| | `cypress open` | `cypress run` |\n|---|---|---|\n| First test UX | Watch visit + command log + time-travel | Terminal + optional video |\n| Failure | Click the red command, inspect DOM | Screenshot (and video if enabled) |\n| When | Writing the spec | CI / smoke after commit |\n\nFirst-test workflow: **open**, watch it fail (app not running is a classic), start HRM, re-run. Then `run` once to see CI-shaped output.",
+      "order": 8
+    },
+    {
+      "id": "cy-1-4-md-9",
+      "type": "overview",
+      "heading": "TypeScript note",
+      "content": "If the file is `.cy.ts` and Cypress complains about `cy` / `describe`, you need the `cypress/` `tsconfig` (chapter 1.8). A `.cy.js` file works with zero TS setup. Do not block your first green test on types.",
+      "order": 9
+    },
+    {
+      "id": "cy-1-4-md-10",
+      "type": "overview",
+      "heading": "Debugging the first failure",
+      "content": "1. **`cy.visit` timed out** — app not running, wrong port, or `baseUrl` typo.\n2. **`contains` timed out** — heading copy is \"Log in\" not \"Sign in\"; or the page is a SPA that rendered an error boundary.\n3. **Cross-origin** — visit landed on an IdP. Smoke the unauthenticated page first; SSO is `cy.origin` (Part 9).\n\nHover the failed command in the GUI. That is the product. Do not add `cy.wait(3000)` as your first reflex.",
+      "order": 10
+    },
+    {
+      "id": "cy-1-4-md-11",
+      "type": "overview",
+      "heading": "Recap rule card (stick this above your keyboard)",
+      "content": "```text\nThe it() body ENQUEUES.\nCypress later EXECUTES.\nNever await cy.*.\nNever treat a Chainable as a DOM node.\nAssert with .should so retries have a target.\n```\n\nNext: `cypress.config.js/ts` — `baseUrl`, layered timeouts, `video`, `testIsolation`, and the v10 config format.",
+      "order": 11
+    },
+    {
+      "id": "cy-1-4-md-12",
+      "type": "overview",
+      "heading": "Full first-spec session (HRM)",
+      "content": "Terminal A:\n\n```bash\nnpm run dev    # http://localhost:3000\n```\n\nTerminal B:\n\n```bash\nnpx cypress open --e2e --browser chrome\n```\n\nCreate `cypress/e2e/login.cy.ts` if the wizard did not. Click the spec. Watch `VISIT /login` then `CONTAINS Sign in` in the Command Log. Hover `VISIT` — the iframe shows the login page snapshot.\n\nIf visit fails with `ERR_CONNECTION_REFUSED`, the app is down. Cypress will not start Next for you in this part.",
+      "order": 12
+    },
+    {
+      "id": "cy-1-4-md-13",
+      "type": "overview",
+      "heading": "Assertions you should learn on day one",
+      "content": "```ts\ncy.visit('/login');\ncy.location('pathname').should('eq', '/login');\ncy.contains('button', 'Sign in').should('be.visible').and('be.enabled');\ncy.get('#email').should('have.attr', 'type', 'email');\n```\n\n`location` is a Cypress command (queued). You still do not `await` it.",
+      "order": 13
+    },
+    {
+      "id": "cy-1-4-md-14",
+      "type": "overview",
+      "heading": "Reading a value the wrong way and the right way",
+      "content": "Wrong (phase 1):\n\n```ts\nconst href = cy.get('a').invoke('attr', 'href');\nconsole.log(href); // Chainable\n```\n\nRight:\n\n```ts\ncy.get('a.forgot-password').should('have.attr', 'href').and('include', 'reset');\n```\n\nOr:\n\n```ts\ncy.get('a.forgot-password').invoke('attr', 'href').then((href) => {\n  expect(href).to.match(/reset/);\n});\n```\n\nDay-one tests should stay on `.should` and avoid `.then` until Part 2.",
+      "order": 14
+    },
+    {
+      "id": "cy-1-4-md-15",
+      "type": "overview",
+      "heading": "`testIsolation` already affects your second `it`",
+      "content": "```ts\nit('shows sign in', () => {\n  cy.visit('/login');\n  cy.contains('Sign in').should('be.visible');\n});\n\nit('does not still sit on /login from the previous test', () => {\n  // AUT is about:blank / cleared storage — you must visit again\n  cy.visit('/login');\n  cy.get('#email').should('be.visible');\n});\n```\n\nDo not share \"I already visited\" across tests. That is Cypress 12.",
+      "order": 15
+    },
+    {
+      "id": "cy-1-4-md-16",
+      "type": "overview",
+      "heading": "Playwright rewrite (so you can translate later)",
+      "content": "Playwright:\n\n```ts\ntest('shows sign in', async ({ page }) => {\n  await page.goto('/login');\n  await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible();\n});\n```\n\nCypress: drop `async`/`await`/`page`/`expect(locator)`. Use `cy.visit` + `cy.contains` + `.should('be.visible')`.",
+      "order": 16
+    },
+    {
+      "id": "cy-1-4-md-17",
+      "type": "overview",
+      "heading": "Interview drill",
+      "content": "\"Write a Cypress test that opens login and checks the heading. Why is there no await?\" If the candidate writes `await cy.visit`, coach the queue. If they write no assertion, coach `.should`.",
+      "order": 17
+    },
+    {
+      "id": "cy-1-4-md-18",
+      "type": "overview",
+      "heading": "Expected Command Log for the smoke spec",
+      "content": "```text\n(visit)    /login\n(contains) Sign in\n(assert)   expected <h1> to be visible\n```\n\nIf you see `(contains)` retry for 4 seconds, the copy is wrong or the route is an SPA error page. Click `(visit)` and inspect the iframe — often you landed on `/` with a client redirect you did not wait for:\n\n```ts\ncy.visit('/login');\ncy.location('pathname').should('eq', '/login');\ncy.contains('Sign in').should('be.visible');\n```\n\nTwo assertions: URL then heading. Still no `await`.",
+      "order": 18
+    },
+    {
+      "id": "cy-1-4-md-19",
+      "type": "overview",
+      "heading": "Headless first run output",
+      "content": "```bash\nnpx cypress run --spec cypress/e2e/login.cy.ts\n```\n\nYou should see Mocha-style passing tests and a screenshot path only on failure. No video unless `video: true`. If the command exits 0 with 0 tests, `specPattern` missed the file (missing `.cy.`).",
+      "order": 19
+    },
+    {
+      "id": "cy-1-4-md-20",
+      "type": "overview",
+      "heading": "Selenium translation (Java-shaped)",
+      "content": "```java\ndriver.get(base + \"/login\");\nWebElement h = new WebDriverWait(driver, Duration.ofSeconds(4))\n    .until(ExpectedConditions.visibilityOfElementLocated(By.xpath(\"//*[contains(., 'Sign in')]\")));\nassertTrue(h.isDisplayed());\n```\n\nYou wrote waits by hand. Cypress's `.should('be.visible')` *is* that wait. Do not also add `cy.wait(4000)`.",
+      "order": 20
+    },
+    {
+      "id": "cy-1-4-md-21",
+      "type": "overview",
+      "heading": "What \"queue vs await\" looks like in a debugger",
+      "content": "Put `debugger` as the **first line** of `it`. When it hits, the network tab has **not** yet requested `/login`. Continue; Cypress then runs the queue. That experiment convinces Playwright migrants faster than a paragraph.",
+      "order": 21
+    },
+    {
+      "id": "cy-1-4-md-22",
+      "type": "overview",
+      "heading": "Minimal `data-cy` on login (ask frontend once)",
+      "content": "```html\n<h1 data-cy=\"login-heading\">Sign in</h1>\n<button data-cy=\"login-submit\">Sign in</button>\n```\n\n```ts\ncy.visit('/login');\ncy.get('[data-cy=login-heading]').should('be.visible');\ncy.get('[data-cy=login-submit]').should('be.enabled');\n```\n\nText-based `contains` is fine for smoke. `data-cy` is what you want before the copywriters rename \"Sign in\" to \"Log in.\" Part 4 goes deeper; do not block the first green test on a component change.",
+      "order": 22
+    },
+    {
+      "id": "cy-1-4-md-23",
+      "type": "overview",
+      "heading": "If the heading is in a shadow DOM (rare for HRM)",
+      "content": "Cypress can pierce open shadow roots with `{ includeShadowDom: true }` on `get` or as a config flag. Do not enable it globally until a component needs it. First tests assume light DOM.",
+      "order": 23
+    }
+  ],
   "advantages": [
     "1.4 First Test — The queue-versus-await confusion is the most common first-week Cypress bug and the fastest way to fail a live-coding screen."
   ],

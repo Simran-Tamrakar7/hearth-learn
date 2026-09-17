@@ -20,6 +20,29 @@ export const chapter = {
   "tools": [],
   "customSummary": "- Test Guild / MoT-style podcasts for process.\n- Official Cypress interviews for roadmap context (Cloud vs OSS).\n- Verify commands in docs — audio lags majors.\n- Playwright/Appium episodes for contrast.\n- Not a substitute for the capstone (13.1).",
   "contentMarkdown": "## How to listen like an engineer\n\nWhen a guest says \"we parallelize Cypress,\" pause and ask: machines or browsers (9.8)? When they say \"dashboard,\" Cloud or Sorry Cypress (11.5)? When they say \"mobile,\" viewport or Appium (9.17)? When they say \"trace,\" do they mean Playwright `trace.zip` (Cypress does not have one — 9.12)?\n\nIf they cannot answer, the episode is entertainment.\n\n## A short list\n\n- Test Guild (Joe Colantonio) — tool-agnostic practitioner interviews; Cypress, Playwright, Selenium, Appium guests.\n- Ministry of Testing podcast / Talks — quality process, not API trivia.\n- Occasional Cypress.io conference recordings (14.7) — treat as roadmap, separate OSS vs Cloud.\n- JS-focused shows (JS Party, Syntax) when they cover testing — fact-check Cypress claims.\n\nPodcasts will not teach `cy.origin` `{ args }` serialization. Use them for war stories: flake culture, CI politics, tool choice.\n\n## Pairing with other tools\n\nA Playwright episode on Trace Viewer plus this manual's 9.12 makes you bilingual in post-mortem debugging. A Selenium Grid episode makes 9.8's \"machines not browsers\" sentence sharper. An Appium episode keeps 9.17 honest.\n\nInterview line: \"Podcasts for process. Docs for APIs. I fact-check anything that sounds like a feature we don't have — Trace Viewer, WebKit, tabs, native.\"",
+  "blocks": [
+    {
+      "id": "cy-14-4-md-0",
+      "type": "overview",
+      "heading": "How to listen like an engineer",
+      "content": "When a guest says \"we parallelize Cypress,\" pause and ask: machines or browsers (9.8)? When they say \"dashboard,\" Cloud or Sorry Cypress (11.5)? When they say \"mobile,\" viewport or Appium (9.17)? When they say \"trace,\" do they mean Playwright `trace.zip` (Cypress does not have one — 9.12)?\n\nIf they cannot answer, the episode is entertainment.",
+      "order": 0
+    },
+    {
+      "id": "cy-14-4-md-1",
+      "type": "overview",
+      "heading": "A short list",
+      "content": "- Test Guild (Joe Colantonio) — tool-agnostic practitioner interviews; Cypress, Playwright, Selenium, Appium guests.\n- Ministry of Testing podcast / Talks — quality process, not API trivia.\n- Occasional Cypress.io conference recordings (14.7) — treat as roadmap, separate OSS vs Cloud.\n- JS-focused shows (JS Party, Syntax) when they cover testing — fact-check Cypress claims.\n\nPodcasts will not teach `cy.origin` `{ args }` serialization. Use them for war stories: flake culture, CI politics, tool choice.",
+      "order": 1
+    },
+    {
+      "id": "cy-14-4-md-2",
+      "type": "overview",
+      "heading": "Pairing with other tools",
+      "content": "A Playwright episode on Trace Viewer plus this manual's 9.12 makes you bilingual in post-mortem debugging. A Selenium Grid episode makes 9.8's \"machines not browsers\" sentence sharper. An Appium episode keeps 9.17 honest.\n\nInterview line: \"Podcasts for process. Docs for APIs. I fact-check anything that sounds like a feature we don't have — Trace Viewer, WebKit, tabs, native.\"",
+      "order": 2
+    }
+  ],
   "advantages": [
     "14.4 Podcasts — Commutes are for judgment, not API trivia."
   ],

@@ -20,6 +20,29 @@ export const chapter = {
   "tools": [],
   "customSummary": "- cypress/base = OS deps + Node; you npm install cypress.\n- cypress/browsers = + preinstalled browsers — usual CI choice.\n- cypress/included = + Cypress binary — useful for 'just run', watch version drift vs package.json.\n- Pin tags; mount artifacts. Not a substitute for Appium images.\n- Playwright/Selenium have their own official images — do not mix binaries casually.",
   "contentMarkdown": "## Which image\n\n| Image | Contains | Use |\n|---|---|---|\n| `cypress/base` | Node, Xvfb, libraries | You need a custom Node and will `npm ci` Cypress |\n| `cypress/browsers` | base + Chrome/Firefox/Edge | **Default CI recommendation** |\n| `cypress/included` | browsers + Cypress already installed | Quick jobs; keep the image tag aligned with `package.json` Cypress version |\n\n```bash\ndocker run --rm -it -v $PWD:/e2e -w /e2e cypress/browsers:node-22.14.0-chrome-134.0.0\nnpm ci\nnpx cypress run --browser chrome\n```\n\n`cypress/included` can skip `npm ci`'s Cypress download **if** versions match. If `package.json` says Cypress 14 and the image bundled 13, you will get mysterious binary errors — pin both.\n\n## Compose with the app\n\n```yaml\nservices:\n  web:\n    build: .\n    healthcheck: { test: ['CMD', 'curl', '-f', 'http://localhost:3000'], interval: 5s }\n  e2e:\n    image: cypress/browsers:node-22.14.0-chrome-134.0.0\n    depends_on:\n      web: { condition: service_healthy }\n    working_dir: /e2e\n    volumes: [ '.:/e2e' ]\n    command: npx cypress run --browser chrome\n    environment:\n      CYPRESS_BASE_URL: http://web:3000\n```\n\nFrom the e2e container, localhost is not the web service — use the Compose DNS name.\n\n## Versus Playwright and Selenium\n\n`mcr.microsoft.com/playwright` includes browsers **and** WebKit. `selenium/standalone-chrome` is a Grid node. `cypress/browsers` still has **no first-class WebKit** (9.9). Native mobile is a different image/stack (Appium).\n\nInterview line: \"I use official `cypress/browsers` (or `included` with matching versions). Alpine Node images are how you get 'Cypress failed to start'.\"",
+  "blocks": [
+    {
+      "id": "cy-11-2-md-0",
+      "type": "overview",
+      "heading": "Which image",
+      "content": "| Image | Contains | Use |\n|---|---|---|\n| `cypress/base` | Node, Xvfb, libraries | You need a custom Node and will `npm ci` Cypress |\n| `cypress/browsers` | base + Chrome/Firefox/Edge | **Default CI recommendation** |\n| `cypress/included` | browsers + Cypress already installed | Quick jobs; keep the image tag aligned with `package.json` Cypress version |\n\n```bash\ndocker run --rm -it -v $PWD:/e2e -w /e2e cypress/browsers:node-22.14.0-chrome-134.0.0\nnpm ci\nnpx cypress run --browser chrome\n```\n\n`cypress/included` can skip `npm ci`'s Cypress download **if** versions match. If `package.json` says Cypress 14 and the image bundled 13, you will get mysterious binary errors — pin both.",
+      "order": 0
+    },
+    {
+      "id": "cy-11-2-md-1",
+      "type": "overview",
+      "heading": "Compose with the app",
+      "content": "```yaml\nservices:\n  web:\n    build: .\n    healthcheck: { test: ['CMD', 'curl', '-f', 'http://localhost:3000'], interval: 5s }\n  e2e:\n    image: cypress/browsers:node-22.14.0-chrome-134.0.0\n    depends_on:\n      web: { condition: service_healthy }\n    working_dir: /e2e\n    volumes: [ '.:/e2e' ]\n    command: npx cypress run --browser chrome\n    environment:\n      CYPRESS_BASE_URL: http://web:3000\n```\n\nFrom the e2e container, localhost is not the web service — use the Compose DNS name.",
+      "order": 1
+    },
+    {
+      "id": "cy-11-2-md-2",
+      "type": "overview",
+      "heading": "Versus Playwright and Selenium",
+      "content": "`mcr.microsoft.com/playwright` includes browsers **and** WebKit. `selenium/standalone-chrome` is a Grid node. `cypress/browsers` still has **no first-class WebKit** (9.9). Native mobile is a different image/stack (Appium).\n\nInterview line: \"I use official `cypress/browsers` (or `included` with matching versions). Alpine Node images are how you get 'Cypress failed to start'.\"",
+      "order": 2
+    }
+  ],
   "advantages": [
     "11.2 Docker Images for Cypress — CI 'Cypress failed to start' is usually a missing system library or a Chrome version mismatch."
   ],

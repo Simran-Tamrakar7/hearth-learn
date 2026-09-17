@@ -20,6 +20,29 @@ export const chapter = {
   "tools": [],
   "customSummary": "- Prefer practitioner talks on flake, CT, CI, origin.\n- Date-check: pre-origin talks are incomplete.\n- SeleniumConf/Appium talks for the limits Cypress will not cover.\n- Recorded > FOMO travel unless your employer sends you.\n- Steal stories, not deprecated APIs.",
   "contentMarkdown": "## What to extract from a talk\n\nWrite three bullets: problem, Cypress-shaped solution, remaining gap (tabs / WebKit / native / no Trace Viewer). That becomes interview gold (13.3).\n\n## Where to look\n\n- Cypress Conf (when held) and Cypress meetup recordings — CT, origin, Cloud vs OSS.\n- TestJS Summit — JS testing including Cypress and Playwright.\n- SeleniumConf / AppiumConf — Grid, drivers, native; use them to stay honest about 9.8 and 9.17.\n- STAR / Ministry of Testing / QCon quality tracks — flake and CI culture, tool-agnostic.\n\nTalks from 2019 about \"Cypress cannot do cross-origin\" are historical — we have `cy.origin` now. Talks that never mention Playwright or Selenium are usually vendor keynotes.\n\n## Search terms that work\n\n\"Cypress component testing\", \"cy.origin SSO\", \"Cypress GitHub Actions\", \"Sorry Cypress\", \"Cypress flake\". Avoid \"Cypress vs Selenium 2018\". Prefer 2023+ for session/origin/CT.\n\nRecorded > FOMO travel unless your employer sends you. Steal stories, not deprecated APIs.\n\nInterview line: \"I watch dated-recent practitioner talks for CI and flake. I ignore anything that says Cypress can drive native iOS or includes a Trace Viewer. I use SeleniumConf/Appium talks for the gaps.\"",
+  "blocks": [
+    {
+      "id": "cy-14-7-md-0",
+      "type": "overview",
+      "heading": "What to extract from a talk",
+      "content": "Write three bullets: problem, Cypress-shaped solution, remaining gap (tabs / WebKit / native / no Trace Viewer). That becomes interview gold (13.3).",
+      "order": 0
+    },
+    {
+      "id": "cy-14-7-md-1",
+      "type": "overview",
+      "heading": "Where to look",
+      "content": "- Cypress Conf (when held) and Cypress meetup recordings — CT, origin, Cloud vs OSS.\n- TestJS Summit — JS testing including Cypress and Playwright.\n- SeleniumConf / AppiumConf — Grid, drivers, native; use them to stay honest about 9.8 and 9.17.\n- STAR / Ministry of Testing / QCon quality tracks — flake and CI culture, tool-agnostic.\n\nTalks from 2019 about \"Cypress cannot do cross-origin\" are historical — we have `cy.origin` now. Talks that never mention Playwright or Selenium are usually vendor keynotes.",
+      "order": 1
+    },
+    {
+      "id": "cy-14-7-md-2",
+      "type": "overview",
+      "heading": "Search terms that work",
+      "content": "\"Cypress component testing\", \"cy.origin SSO\", \"Cypress GitHub Actions\", \"Sorry Cypress\", \"Cypress flake\". Avoid \"Cypress vs Selenium 2018\". Prefer 2023+ for session/origin/CT.\n\nRecorded > FOMO travel unless your employer sends you. Steal stories, not deprecated APIs.\n\nInterview line: \"I watch dated-recent practitioner talks for CI and flake. I ignore anything that says Cypress can drive native iOS or includes a Trace Viewer. I use SeleniumConf/Appium talks for the gaps.\"",
+      "order": 2
+    }
+  ],
   "advantages": [
     "14.7 Conferences & Talks — A 20-minute talk on why a bank self-hosted Sorry Cypress (11."
   ],

@@ -20,6 +20,36 @@ export const chapter = {
   "tools": [],
   "customSummary": "- README: what the app is, how to run, CI, what is not covered (WebKit, tabs, native).\n- Evidence: GHA badge, HTML report or screenshots in docs/, not a 200MB video in git.\n- Secrets never committed; use env examples.\n- Cross-link Playwright + Appium as breadth (13.4).\n- Quality over count — one domain suite wins.",
   "contentMarkdown": "## README outline (steal this)\n\n1. **Problem** — HRM leave/payroll needs E2E + CT.\n2. **Why Cypress** — JS frontend team, CT, in-page intercepts. Why *not* only Cypress — no WebKit, no tabs, native is Appium.\n3. **How to run** — Node version, `npm ci`, `npm run start`, `npx cypress open`, CI command with grep.\n4. **Architecture** — `cy.session`, fixtures, grep tags, origin helper with `args`.\n5. **CI** — link to the GitHub Action workflow file (`cypress-io/github-action`).\n6. **Limits** — PDF new tab tested via `cy.request`; no Trace Viewer; visual not in OSS core.\n\n## What to show besides code\n\n- A 60-second GIF of the App time-travel on a failed command (not a 40-minute 4K video).\n- Mochawesome HTML hosted as GitHub Pages **if** it contains no PII (two-part merge, 11.6).\n- Issues/PRs on your own repo showing you fixed flake (12.3) — process evidence.\n\n## Hygiene\n\n`cypress.env.json`, `videos/`, real employee exports: gitignore. Provide `cypress.env.json.example`. Never commit `CYPRESS_RECORD_KEY`.\n\n## Versus a Playwright-only or Selenium-only portfolio\n\nIf you already have Playwright+Python, the Cypress repo should **not** clone the same tests line-for-line. Show CT, grep plugin, `cy.origin` args — the Cypress-shaped skills. A Selenium/JUnit repo still helps for enterprises that live on Grid; cross-link it as \"WebDriver family + Appium\" rather than competing with Cypress for the same screenshots.\n\nPlaywright portfolios usually show `trace.zip` and WebKit; Cypress portfolios should show the App GUI and CT. Interviewers who know both will ask why you chose each (Appendix A).\n\nInterview line: \"The README states why Cypress, how CI runs smoke, and what I refused to fake — tabs, WebKit, native. Playwright and Selenium repos are linked as breadth, not duplicates.\"",
+  "blocks": [
+    {
+      "id": "cy-13-2-md-0",
+      "type": "overview",
+      "heading": "README outline (steal this)",
+      "content": "1. **Problem** — HRM leave/payroll needs E2E + CT.\n2. **Why Cypress** — JS frontend team, CT, in-page intercepts. Why *not* only Cypress — no WebKit, no tabs, native is Appium.\n3. **How to run** — Node version, `npm ci`, `npm run start`, `npx cypress open`, CI command with grep.\n4. **Architecture** — `cy.session`, fixtures, grep tags, origin helper with `args`.\n5. **CI** — link to the GitHub Action workflow file (`cypress-io/github-action`).\n6. **Limits** — PDF new tab tested via `cy.request`; no Trace Viewer; visual not in OSS core.",
+      "order": 0
+    },
+    {
+      "id": "cy-13-2-md-1",
+      "type": "overview",
+      "heading": "What to show besides code",
+      "content": "- A 60-second GIF of the App time-travel on a failed command (not a 40-minute 4K video).\n- Mochawesome HTML hosted as GitHub Pages **if** it contains no PII (two-part merge, 11.6).\n- Issues/PRs on your own repo showing you fixed flake (12.3) — process evidence.",
+      "order": 1
+    },
+    {
+      "id": "cy-13-2-md-2",
+      "type": "overview",
+      "heading": "Hygiene",
+      "content": "`cypress.env.json`, `videos/`, real employee exports: gitignore. Provide `cypress.env.json.example`. Never commit `CYPRESS_RECORD_KEY`.",
+      "order": 2
+    },
+    {
+      "id": "cy-13-2-md-3",
+      "type": "overview",
+      "heading": "Versus a Playwright-only or Selenium-only portfolio",
+      "content": "If you already have Playwright+Python, the Cypress repo should **not** clone the same tests line-for-line. Show CT, grep plugin, `cy.origin` args — the Cypress-shaped skills. A Selenium/JUnit repo still helps for enterprises that live on Grid; cross-link it as \"WebDriver family + Appium\" rather than competing with Cypress for the same screenshots.\n\nPlaywright portfolios usually show `trace.zip` and WebKit; Cypress portfolios should show the App GUI and CT. Interviewers who know both will ask why you chose each (Appendix A).\n\nInterview line: \"The README states why Cypress, how CI runs smoke, and what I refused to fake — tabs, WebKit, native. Playwright and Selenium repos are linked as breadth, not duplicates.\"",
+      "order": 3
+    }
+  ],
   "advantages": [
     "13.2 Portfolio Building — Recruiters open the README first."
   ],

@@ -20,6 +20,36 @@ export const chapter = {
   "tools": [],
   "customSummary": "- Cypress UI = cypress open / Cypress App (launchpad, spec list, Command Log, time-travel).\n- Newer App builds add persistent run history and richer spec navigation — that is 'UI Mode' in this manual.\n- Playwright --ui is watch mode + timeline; not available as a Cypress clone.\n- cypress run is headless CI; headed CI is --headed, still not the App.\n- Selenium has no equivalent first-party GUI runner.",
   "contentMarkdown": "## What you actually launch\n\n```bash\nnpx cypress open          # Cypress App / UI\nnpx cypress run           # headless (CI default)\nnpx cypress run --headed  # CI-style run but visible browser, no App sidebar\n```\n\n`cypress open` is the product: pick E2E vs Component, pick browser, pick spec. The window is split — Command Log left, the live HRM iframe right. Hover a log line to time-travel the DOM (Part 0.7). That live loop is why frontend teams tolerate Cypress's architectural limits.\n\n## What \"UI Mode\" means here\n\nNewer Cypress App versions keep:\n\n- a spec sidebar that does not vanish when a run ends\n- run history so you can see \"did `leave-submit.cy.ts` fail last time *on this machine*\"\n- search/filter across a large `cypress/e2e` tree\n\nTreat that as Cypress **UI Mode**: the App behaving more like an IDE for tests. It is still not Playwright's UI Mode.\n\n## Playwright UI Mode (so you can contrast)\n\n`npx playwright test --ui` opens a runner with watch mode, a timeline of actions, pick-locator, and often a path into traces. Post-mortem for CI is still `trace.zip` (9.12). Cypress's interactive story is live snapshots; Playwright's is live inspector **plus** a portable trace file.\n\n## Selenium\n\nNo first-party equivalent. People glue Teswell / vendor IDEs / IDE breakpoints on JUnit. Do not compare Cypress App to \"Selenium IDE\" record-and-playback as if they were the same generation of tool.\n\nInterview line: \"Cypress UI Mode is `cypress open` — live Command Log and time-travel. Playwright's `--ui` is a different runner. Cypress has no Trace Viewer in that window.\"",
+  "blocks": [
+    {
+      "id": "cy-9-11-md-0",
+      "type": "overview",
+      "heading": "What you actually launch",
+      "content": "```bash\nnpx cypress open          # Cypress App / UI\nnpx cypress run           # headless (CI default)\nnpx cypress run --headed  # CI-style run but visible browser, no App sidebar\n```\n\n`cypress open` is the product: pick E2E vs Component, pick browser, pick spec. The window is split — Command Log left, the live HRM iframe right. Hover a log line to time-travel the DOM (Part 0.7). That live loop is why frontend teams tolerate Cypress's architectural limits.",
+      "order": 0
+    },
+    {
+      "id": "cy-9-11-md-1",
+      "type": "overview",
+      "heading": "What \"UI Mode\" means here",
+      "content": "Newer Cypress App versions keep:\n\n- a spec sidebar that does not vanish when a run ends\n- run history so you can see \"did `leave-submit.cy.ts` fail last time *on this machine*\"\n- search/filter across a large `cypress/e2e` tree\n\nTreat that as Cypress **UI Mode**: the App behaving more like an IDE for tests. It is still not Playwright's UI Mode.",
+      "order": 1
+    },
+    {
+      "id": "cy-9-11-md-2",
+      "type": "overview",
+      "heading": "Playwright UI Mode (so you can contrast)",
+      "content": "`npx playwright test --ui` opens a runner with watch mode, a timeline of actions, pick-locator, and often a path into traces. Post-mortem for CI is still `trace.zip` (9.12). Cypress's interactive story is live snapshots; Playwright's is live inspector **plus** a portable trace file.",
+      "order": 2
+    },
+    {
+      "id": "cy-9-11-md-3",
+      "type": "overview",
+      "heading": "Selenium",
+      "content": "No first-party equivalent. People glue Teswell / vendor IDEs / IDE breakpoints on JUnit. Do not compare Cypress App to \"Selenium IDE\" record-and-playback as if they were the same generation of tool.\n\nInterview line: \"Cypress UI Mode is `cypress open` — live Command Log and time-travel. Playwright's `--ui` is a different runner. Cypress has no Trace Viewer in that window.\"",
+      "order": 3
+    }
+  ],
   "advantages": [
     "9.11 UI Mode — Junior engineers search for Playwright's UI Mode flags inside Cypress and conclude Cypress 'has no UI."
   ],

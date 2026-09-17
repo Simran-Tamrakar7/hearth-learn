@@ -20,6 +20,36 @@ export const chapter = {
   "tools": [],
   "customSummary": "- retries.runMode vs openMode — CI vs App; a retry-pass is still flake.\n- Whole test retries; this is not the same as command retry-ability (Part 2).\n- Default is 0. Cypress 13+ keeps that unless you set it.\n- Playwright retries in config; Selenium TestNG retry analyzers — same trap.\n- Pair with grep @flake quarantine (10.1) rather than infinite retries.",
   "contentMarkdown": "## Two different \"retries\"\n\n**Command retry-ability** (Part 2): `cy.get('.row').should('have.length', 3)` re-queries until timeout. That is Cypress's core waiting model. It is good.\n\n**Test retries:** if the `it()` fails, Mocha/Cypress runs the entire test again.\n\n```js\n// cypress.config.ts\nexport default defineConfig({\n  retries: { runMode: 1, openMode: 0 },\n});\n\n// per-test override\nit('payroll csv export', { retries: 2 }, () => { /* ... */ });\n```\n\n`runMode: 1` ⇒ original + one retry (two attempts). `openMode: 0` ⇒ when you watch in the App, a fail stays a fail so you debug it.\n\n## Why retries hide flake\n\nAttempt 1: approve button covered by a toast. Fail. Attempt 2: toast gone. Pass. CI is green. The toast still races. Cloud (11.3) can mark this flaky *if you record*. Without Cloud, look for \"Attempt 2 of 2\" in the log and treat it as a defect.\n\n## Policy for Bizlevate\n\n- Default global retries **0** until the suite is honest.\n- If CI hardware is bursty, `runMode: 1` max as a shock absorber.\n- Never retry `@okta` 5 times to paper over a bad `cy.origin` (9.1).\n- Quarantine with `@flake` + grepInvert on PR (10.1, 9.13).\n\n## Versus Playwright and Selenium\n\nPlaywright: `retries: 2` in `playwright.config`. pytest-rerunfailures: `--reruns 2`. TestNG: `IRetryAnalyzer`. All of them can make a dashboard look healthy. Senior engineers report retry rate as a KPI.\n\nInterview line: \"Command retries are waiting. Test retries hide flake. I keep `openMode` at 0 and I never use retries as the fix.\"",
+  "blocks": [
+    {
+      "id": "cy-10-3-md-0",
+      "type": "overview",
+      "heading": "Two different \"retries\"",
+      "content": "**Command retry-ability** (Part 2): `cy.get('.row').should('have.length', 3)` re-queries until timeout. That is Cypress's core waiting model. It is good.\n\n**Test retries:** if the `it()` fails, Mocha/Cypress runs the entire test again.\n\n```js\n// cypress.config.ts\nexport default defineConfig({\n  retries: { runMode: 1, openMode: 0 },\n});\n\n// per-test override\nit('payroll csv export', { retries: 2 }, () => { /* ... */ });\n```\n\n`runMode: 1` ⇒ original + one retry (two attempts). `openMode: 0` ⇒ when you watch in the App, a fail stays a fail so you debug it.",
+      "order": 0
+    },
+    {
+      "id": "cy-10-3-md-1",
+      "type": "overview",
+      "heading": "Why retries hide flake",
+      "content": "Attempt 1: approve button covered by a toast. Fail. Attempt 2: toast gone. Pass. CI is green. The toast still races. Cloud (11.3) can mark this flaky *if you record*. Without Cloud, look for \"Attempt 2 of 2\" in the log and treat it as a defect.",
+      "order": 1
+    },
+    {
+      "id": "cy-10-3-md-2",
+      "type": "overview",
+      "heading": "Policy for Bizlevate",
+      "content": "- Default global retries **0** until the suite is honest.\n- If CI hardware is bursty, `runMode: 1` max as a shock absorber.\n- Never retry `@okta` 5 times to paper over a bad `cy.origin` (9.1).\n- Quarantine with `@flake` + grepInvert on PR (10.1, 9.13).",
+      "order": 2
+    },
+    {
+      "id": "cy-10-3-md-3",
+      "type": "overview",
+      "heading": "Versus Playwright and Selenium",
+      "content": "Playwright: `retries: 2` in `playwright.config`. pytest-rerunfailures: `--reruns 2`. TestNG: `IRetryAnalyzer`. All of them can make a dashboard look healthy. Senior engineers report retry rate as a KPI.\n\nInterview line: \"Command retries are waiting. Test retries hide flake. I keep `openMode` at 0 and I never use retries as the fix.\"",
+      "order": 3
+    }
+  ],
   "advantages": [
     "10.3 Retries — Teams set runMode: 4 to make GitHub green."
   ],

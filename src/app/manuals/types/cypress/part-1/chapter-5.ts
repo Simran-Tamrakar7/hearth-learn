@@ -20,6 +20,141 @@ export const chapter = {
   "tools": [],
   "customSummary": "- Cypress 10 breaking change: cypress.json → cypress.config.js/ts; integration → e2e; plugins → setupNodeEvents.\n- Export defineConfig({ e2e: { baseUrl, setupNodeEvents, specPattern } }).\n- Timeouts are layered (command / request / response / pageLoad / task). Never raise defaultCommandTimeout globally to mask flakes.\n- testIsolation true since Cypress 12 — tests do not share cookies/storage; use beforeEach / cy.session.\n- video default false since Cypress 13 — set video: true to record on cypress run.\n- baseUrl lets cy.visit('/path') stay environment-portable.",
   "contentMarkdown": "## Cypress 10: the config file is JavaScript\n\nBefore Cypress 10, configuration was a static JSON file named `cypress.json` at the project root. Cypress 10 (June 2022) replaced that with a **Node-evaluated module**:\n\n```js\nconst { defineConfig } = require('cypress');\n\nmodule.exports = defineConfig({\n  e2e: {\n    baseUrl: 'http://localhost:3000',\n    setupNodeEvents(on, config) {\n      return config;\n    },\n  },\n});\n```\n\nTypeScript equivalent (`cypress.config.ts`):\n\n```ts\nimport { defineConfig } from 'cypress';\n\nexport default defineConfig({\n  e2e: {\n    baseUrl: 'http://localhost:3000',\n    setupNodeEvents(on, config) {\n      return config;\n    },\n  },\n});\n```\n\n`defineConfig` is optional sugar for editor autocomplete. The exported object is what matters.\n\n**Breaking change triad (memorize):**\n\n| Cypress 9 | Cypress 10+ |\n|---|---|\n| `cypress.json` | `cypress.config.js` / `.ts` / `.mjs` / `.cjs` |\n| `cypress/integration` | `cypress/e2e` |\n| `cypress/plugins/index.js` | `e2e.setupNodeEvents(on, config)` |\n\nIf both `cypress.json` and `cypress.config.js` exist on Cypress 10+, the JSON file is **not** your config. Delete it after migrating.\n\nThe config file runs in **Node**, not in the browser. You can `fs.readFileSync`, load `.env`, or branch on `process.env.CI`. You cannot call `cy.get` here.\n\n## `e2e` vs top-level keys\n\nSome options are **top-level** (shared with component testing): `viewportWidth`, `viewportHeight`, `video`, `screenshotOnRunFailure`, `retries`, `env`, `defaultCommandTimeout`, folders.\n\nSome belong under **`e2e`**: `baseUrl`, `specPattern`, `supportFile`, `setupNodeEvents`, `testIsolation`.\n\n```ts\nexport default defineConfig({\n  viewportWidth: 1280,\n  viewportHeight: 800,\n  video: false,\n  screenshotOnRunFailure: true,\n  defaultCommandTimeout: 4000,\n  env: {\n    apiUrl: 'http://localhost:3000/api',\n  },\n  e2e: {\n    baseUrl: 'http://localhost:3000',\n    specPattern: 'cypress/e2e/**/*.cy.{js,jsx,ts,tsx}',\n    supportFile: 'cypress/support/e2e.ts',\n    testIsolation: true,\n    setupNodeEvents(on, config) {\n      return config;\n    },\n  },\n});\n```\n\nPutting `baseUrl` at the top level in modern Cypress is a common mistake — it belongs in `e2e` (or `component` for CT). Check the docs for your exact major if an option \"does nothing.\"\n\n## `baseUrl` — the first option you should set\n\n```ts\ne2e: {\n  baseUrl: 'http://localhost:3000',\n}\n```\n\nThen specs say:\n\n```ts\ncy.visit('/login');\ncy.visit('/leave/new');\ncy.request('/api/health');\n```\n\n`cy.request` and `cy.visit` **prefix relative URLs** with `baseUrl`. Absolute URLs still work (`cy.visit('https://preview.example.com/login')`) and ignore `baseUrl` for that call.\n\nHRM environments:\n\n| Environment | How `baseUrl` gets there |\n|---|---|\n| Local | Hardcode `http://localhost:3000` or read `process.env.BASE_URL` in the config file |\n| Preview / staging | `npx cypress run --config baseUrl=https://hrm-pr-42.vercel.app` |\n| CI | `CYPRESS_BASE_URL` is **not** automatically `baseUrl` — `BASE_URL` env vars need to be mapped in `setupNodeEvents` or `--config` |\n\n`Cypress.config('baseUrl')` is the runtime read.\n\nWithout `baseUrl`, every spec hardcodes a host and CI against a preview URL becomes a search-replace exercise.\n\n## Timeouts are layered — never raise the global default as a blanket\n\nCypress does not have one timeout. It has several, each covering a **different kind of wait**:\n\n| Option | Default | What it bounds |\n|---|---|---|\n| `defaultCommandTimeout` | **4000 ms** | DOM queries and most command retries (`cy.get`, `.should`, `.click` actionability) |\n| `requestTimeout` | 5000 ms | `cy.request` / `cy.intercept` wait-to-*send* side |\n| `responseTimeout` | 30000 ms | Waiting for a response body (`cy.request`, some intercept waits) |\n| `pageLoadTimeout` | 60000 ms | `cy.visit`, `cy.go`, `cy.reload` load event |\n| `taskTimeout` | 60000 ms | `cy.task` Node handlers |\n| `execTimeout` | 60000 ms | `cy.exec` |\n| `slowTestThreshold` | 10000 ms (run mode) | When a test is highlighted as slow (not a fail) |\n\n**Rule:** If `cy.visit` is slow because HRM's first compile is slow, raise **`pageLoadTimeout`** for that environment — not `defaultCommandTimeout`. If an API seed is slow, raise **`responseTimeout`** or fix the seed. If a spinner lasts 6 seconds, that is a product problem **or** a single-test `Cypress.config('defaultCommandTimeout', 8000)` / `{ timeout: 8000 }` on that command — not a reason to set `defaultCommandTimeout: 30000` for 400 tests.\n\n```ts\n// Command-level — preferred for one slow spinner\ncy.get('[data-cy=leave-table]', { timeout: 10000 }).should('be.visible');\n\n// Wrong — hides locator bugs everywhere\n// defaultCommandTimeout: 30000\n```\n\nPlaywright's analog is `timeout` in `playwright.config.ts` plus per-expect timeouts. Selenium's is `implicit wait` (also a footgun if set huge) vs explicit waits. Same lesson: **global implicit waits of 30s make every miss a 30s miss.**\n\n## `testIsolation` — true since Cypress 12\n\n```ts\ne2e: {\n  testIsolation: true, // default since Cypress 12\n}\n```\n\nWhen `true`, Cypress **between tests**:\n\n- Clears cookies, `localStorage`, and `sessionStorage` in the AUT\n- Visits `about:blank` so the next `it` does not start on the previous page\n\nThis is why `beforeEach` (and later `cy.session`) is **required** for login, not optional style. Cypress 11 and earlier leaked state between tests by default; old suites that \"login once in `before`\" broke on upgrade until they adopted sessions.\n\nYou *can* set `testIsolation: false`. Treat that as a smell: tests order-dependent, flakes that vanish when run in isolation. HRM should keep `true`.\n\n## `video` — false since Cypress 13\n\n```ts\nvideo: false, // default since Cypress 13\n```\n\nHistorically `cypress run` recorded a video per spec into `cypress/videos/`. Cypress 13 flipped the default to **`false`** because videos are large and most CI never watched them.\n\nIf you want videos:\n\n```ts\nvideo: true,\nvideoCompression: 32, // optional\n```\n\nOr retain on failure via a plugin / `after:spec` hook that deletes passing videos (common CI pattern). Do not assume \"Cypress always records video.\" **Check the version.**\n\nScreenshots on failure (`screenshotOnRunFailure: true`) are still the default and usually enough.\n\n## Other options you will actually touch\n\n```ts\nexport default defineConfig({\n  retries: {\n    runMode: 1,   // CI only — one retry\n    openMode: 0,  // GUI — fail fast while writing\n  },\n  watchForFileChanges: true, // open mode re-run on save\n  chromeWebSecurity: true,   // keep true; cy.origin is the cross-origin tool\n  userAgent: undefined,      // override only for a documented HRM quirk\n  e2e: {\n    excludeSpecPattern: ['**/examples/*'],\n  },\n});\n```\n\n`chromeWebSecurity: false` is a popular Stack Overflow \"fix\" for SSO. It weakens the browser security model and is the wrong long-term answer — use `cy.origin()` (Part 9).\n\n`retries` in **run** mode can hide flakes from a dashboard. One retry in CI is a pragmatic compromise; five retries is a lie. Prefer fixing isolation and selectors.\n\n## `setupNodeEvents` belongs in this file\n\n```ts\ne2e: {\n  setupNodeEvents(on, config) {\n    on('task', {\n      log(message) {\n        console.log(message);\n        return null; // serializable return required\n      },\n    });\n    return config; // always return config if you touch it; returning is best practice\n  },\n},\n```\n\nChapter 1.9 is dedicated to this. The v10 rule is: **there is no `plugins/index.js` anymore.**\n\n## CLI and env overrides (preview of 1.6)\n\n```bash\nnpx cypress run --config baseUrl=https://staging.bizlevate.test,video=true\nnpx cypress run --config-file cypress.config.staging.ts\n```\n\n`--config` overrides file values for that invocation. `--env` is **not** the same as `--config` (env is `Cypress.env`, config is `Cypress.config`). Chapter 1.6 orders precedence for **env**. For config, CLI `--config` wins over the file for those keys.\n\n## Playwright comparison\n\n`playwright.config.ts` uses `use: { baseURL, screenshot, video, trace }`. Playwright's `video: 'retain-on-failure'` is more granular than Cypress's boolean default. Cypress needs an `after:spec` dance for the same \"keep failures only\" behavior. Neither tool wants a 30-second global timeout as your first \"fix.\"\n\n## HRM recommended starter config\n\n```ts\nimport { defineConfig } from 'cypress';\n\nexport default defineConfig({\n  viewportWidth: 1280,\n  viewportHeight: 800,\n  video: false,\n  screenshotOnRunFailure: true,\n  defaultCommandTimeout: 4000,\n  pageLoadTimeout: 60000,\n  retries: { runMode: 1, openMode: 0 },\n  e2e: {\n    baseUrl: process.env.CYPRESS_BASEURL || 'http://localhost:3000',\n    specPattern: 'cypress/e2e/**/*.cy.{js,jsx,ts,tsx}',\n    testIsolation: true,\n    setupNodeEvents(on, config) {\n      return config;\n    },\n  },\n});\n```\n\n(If you map `baseUrl` from env, do it explicitly in config — do not invent unofficial env names. `config.baseUrl` can also be assigned inside `setupNodeEvents` from `config.env`.)\n\nNext: `cypress.env.json` and the **env** precedence chain, which is separate from `--config`.\n## `defineConfig` and JSDoc without TS\n\nIf you stay on `cypress.config.js`:\n\n```js\nconst { defineConfig } = require('cypress');\n\nmodule.exports = defineConfig({\n  e2e: { baseUrl: 'http://localhost:3000' },\n});\n```\n\n`defineConfig` is how JS files get autocomplete. `.mjs` / `\"type\": \"module\"` uses `export default defineConfig(...)`.\n\n## Environment-specific config files vs one file\n\nTwo patterns:\n\n```bash\nnpx cypress run --config-file cypress.config.staging.ts\n```\n\nor one file:\n\n```ts\nsetupNodeEvents(on, config) {\n  const envName = config.env.ENV || 'local';\n  if (envName === 'staging') {\n    config.baseUrl = 'https://hrm-staging.bizlevate.test';\n  }\n  return config;\n}\n```\n\nPrefer **one file + env** for HRM until you have irreconcilable plugin lists. `--config baseUrl=...` is enough for many CI jobs.\n\n## Retries, screenshots, and honesty\n\n```ts\nretries: { runMode: 1, openMode: 0 },\nscreenshotOnRunFailure: true,\nvideo: false,\n```\n\nOne CI retry catches infrastructure blips. It also hides a 10% flake rate if you never look at the dashboard. Pair retries with a flake budget, not with `defaultCommandTimeout: 30000`.\n\n## `chromeWebSecurity` and `modifyObstructiveCode`\n\nLeave both at defaults until you have a documented need. Turning off web security to pass Okta is a smell — `cy.origin` is the supported path (Part 9).\n\n## Interview drill\n\nDraw the v10 mapping table from memory. Name four timeout knobs. Say what v12 and v13 changed. Explain why `baseUrl` lives under `e2e` and why `--env` does not set it.\n## `specPattern` and `excludeSpecPattern`\n\n```ts\ne2e: {\n  specPattern: 'cypress/e2e/**/*.cy.ts',\n  excludeSpecPattern: ['**/_*.cy.ts', '**/*.skip.cy.ts'],\n}\n```\n\nFiles named `_helpers.cy.ts` would otherwise run as tests. Prefer helpers **without** `.cy.` (`leave-form.ts`) so the default glob ignores them.\n\n## Viewport as config vs per-test\n\n```ts\nviewportWidth: 1280,\nviewportHeight: 800,\n```\n\n```ts\ncy.viewport('iphone-6');\n```\n\nConfig is the HRM desktop default. Per-test viewport belongs in responsive specs (Part 9), not in every smoke test.\n\n## `experimental*` flags\n\nDo not enable experimental flags because a blog post did. Each Cypress major graduates or drops them. HRM config should stay boring: `baseUrl`, timeouts, `setupNodeEvents`, `testIsolation`, `video`.\n",
+  "blocks": [
+    {
+      "id": "cy-1-5-md-0",
+      "type": "overview",
+      "heading": "Cypress 10: the config file is JavaScript",
+      "content": "Before Cypress 10, configuration was a static JSON file named `cypress.json` at the project root. Cypress 10 (June 2022) replaced that with a **Node-evaluated module**:\n\n```js\nconst { defineConfig } = require('cypress');\n\nmodule.exports = defineConfig({\n  e2e: {\n    baseUrl: 'http://localhost:3000',\n    setupNodeEvents(on, config) {\n      return config;\n    },\n  },\n});\n```\n\nTypeScript equivalent (`cypress.config.ts`):\n\n```ts\nimport { defineConfig } from 'cypress';\n\nexport default defineConfig({\n  e2e: {\n    baseUrl: 'http://localhost:3000',\n    setupNodeEvents(on, config) {\n      return config;\n    },\n  },\n});\n```\n\n`defineConfig` is optional sugar for editor autocomplete. The exported object is what matters.\n\n**Breaking change triad (memorize):**\n\n| Cypress 9 | Cypress 10+ |\n|---|---|\n| `cypress.json` | `cypress.config.js` / `.ts` / `.mjs` / `.cjs` |\n| `cypress/integration` | `cypress/e2e` |\n| `cypress/plugins/index.js` | `e2e.setupNodeEvents(on, config)` |\n\nIf both `cypress.json` and `cypress.config.js` exist on Cypress 10+, the JSON file is **not** your config. Delete it after migrating.\n\nThe config file runs in **Node**, not in the browser. You can `fs.readFileSync`, load `.env`, or branch on `process.env.CI`. You cannot call `cy.get` here.",
+      "order": 0
+    },
+    {
+      "id": "cy-1-5-md-1",
+      "type": "overview",
+      "heading": "`e2e` vs top-level keys",
+      "content": "Some options are **top-level** (shared with component testing): `viewportWidth`, `viewportHeight`, `video`, `screenshotOnRunFailure`, `retries`, `env`, `defaultCommandTimeout`, folders.\n\nSome belong under **`e2e`**: `baseUrl`, `specPattern`, `supportFile`, `setupNodeEvents`, `testIsolation`.\n\n```ts\nexport default defineConfig({\n  viewportWidth: 1280,\n  viewportHeight: 800,\n  video: false,\n  screenshotOnRunFailure: true,\n  defaultCommandTimeout: 4000,\n  env: {\n    apiUrl: 'http://localhost:3000/api',\n  },\n  e2e: {\n    baseUrl: 'http://localhost:3000',\n    specPattern: 'cypress/e2e/**/*.cy.{js,jsx,ts,tsx}',\n    supportFile: 'cypress/support/e2e.ts',\n    testIsolation: true,\n    setupNodeEvents(on, config) {\n      return config;\n    },\n  },\n});\n```\n\nPutting `baseUrl` at the top level in modern Cypress is a common mistake — it belongs in `e2e` (or `component` for CT). Check the docs for your exact major if an option \"does nothing.\"",
+      "order": 1
+    },
+    {
+      "id": "cy-1-5-md-2",
+      "type": "overview",
+      "heading": "`baseUrl` — the first option you should set",
+      "content": "```ts\ne2e: {\n  baseUrl: 'http://localhost:3000',\n}\n```\n\nThen specs say:\n\n```ts\ncy.visit('/login');\ncy.visit('/leave/new');\ncy.request('/api/health');\n```\n\n`cy.request` and `cy.visit` **prefix relative URLs** with `baseUrl`. Absolute URLs still work (`cy.visit('https://preview.example.com/login')`) and ignore `baseUrl` for that call.\n\nHRM environments:\n\n| Environment | How `baseUrl` gets there |\n|---|---|\n| Local | Hardcode `http://localhost:3000` or read `process.env.BASE_URL` in the config file |\n| Preview / staging | `npx cypress run --config baseUrl=https://hrm-pr-42.vercel.app` |\n| CI | `CYPRESS_BASE_URL` is **not** automatically `baseUrl` — `BASE_URL` env vars need to be mapped in `setupNodeEvents` or `--config` |\n\n`Cypress.config('baseUrl')` is the runtime read.\n\nWithout `baseUrl`, every spec hardcodes a host and CI against a preview URL becomes a search-replace exercise.",
+      "order": 2
+    },
+    {
+      "id": "cy-1-5-md-3",
+      "type": "overview",
+      "heading": "Timeouts are layered — never raise the global default as a blanket",
+      "content": "Cypress does not have one timeout. It has several, each covering a **different kind of wait**:\n\n| Option | Default | What it bounds |\n|---|---|---|\n| `defaultCommandTimeout` | **4000 ms** | DOM queries and most command retries (`cy.get`, `.should`, `.click` actionability) |\n| `requestTimeout` | 5000 ms | `cy.request` / `cy.intercept` wait-to-*send* side |\n| `responseTimeout` | 30000 ms | Waiting for a response body (`cy.request`, some intercept waits) |\n| `pageLoadTimeout` | 60000 ms | `cy.visit`, `cy.go`, `cy.reload` load event |\n| `taskTimeout` | 60000 ms | `cy.task` Node handlers |\n| `execTimeout` | 60000 ms | `cy.exec` |\n| `slowTestThreshold` | 10000 ms (run mode) | When a test is highlighted as slow (not a fail) |\n\n**Rule:** If `cy.visit` is slow because HRM's first compile is slow, raise **`pageLoadTimeout`** for that environment — not `defaultCommandTimeout`. If an API seed is slow, raise **`responseTimeout`** or fix the seed. If a spinner lasts 6 seconds, that is a product problem **or** a single-test `Cypress.config('defaultCommandTimeout', 8000)` / `{ timeout: 8000 }` on that command — not a reason to set `defaultCommandTimeout: 30000` for 400 tests.\n\n```ts\n// Command-level — preferred for one slow spinner\ncy.get('[data-cy=leave-table]', { timeout: 10000 }).should('be.visible');\n\n// Wrong — hides locator bugs everywhere\n// defaultCommandTimeout: 30000\n```\n\nPlaywright's analog is `timeout` in `playwright.config.ts` plus per-expect timeouts. Selenium's is `implicit wait` (also a footgun if set huge) vs explicit waits. Same lesson: **global implicit waits of 30s make every miss a 30s miss.**",
+      "order": 3
+    },
+    {
+      "id": "cy-1-5-md-4",
+      "type": "overview",
+      "heading": "`testIsolation` — true since Cypress 12",
+      "content": "```ts\ne2e: {\n  testIsolation: true, // default since Cypress 12\n}\n```\n\nWhen `true`, Cypress **between tests**:\n\n- Clears cookies, `localStorage`, and `sessionStorage` in the AUT\n- Visits `about:blank` so the next `it` does not start on the previous page\n\nThis is why `beforeEach` (and later `cy.session`) is **required** for login, not optional style. Cypress 11 and earlier leaked state between tests by default; old suites that \"login once in `before`\" broke on upgrade until they adopted sessions.\n\nYou *can* set `testIsolation: false`. Treat that as a smell: tests order-dependent, flakes that vanish when run in isolation. HRM should keep `true`.",
+      "order": 4
+    },
+    {
+      "id": "cy-1-5-md-5",
+      "type": "overview",
+      "heading": "`video` — false since Cypress 13",
+      "content": "```ts\nvideo: false, // default since Cypress 13\n```\n\nHistorically `cypress run` recorded a video per spec into `cypress/videos/`. Cypress 13 flipped the default to **`false`** because videos are large and most CI never watched them.\n\nIf you want videos:\n\n```ts\nvideo: true,\nvideoCompression: 32, // optional\n```\n\nOr retain on failure via a plugin / `after:spec` hook that deletes passing videos (common CI pattern). Do not assume \"Cypress always records video.\" **Check the version.**\n\nScreenshots on failure (`screenshotOnRunFailure: true`) are still the default and usually enough.",
+      "order": 5
+    },
+    {
+      "id": "cy-1-5-md-6",
+      "type": "overview",
+      "heading": "Other options you will actually touch",
+      "content": "```ts\nexport default defineConfig({\n  retries: {\n    runMode: 1,   // CI only — one retry\n    openMode: 0,  // GUI — fail fast while writing\n  },\n  watchForFileChanges: true, // open mode re-run on save\n  chromeWebSecurity: true,   // keep true; cy.origin is the cross-origin tool\n  userAgent: undefined,      // override only for a documented HRM quirk\n  e2e: {\n    excludeSpecPattern: ['**/examples/*'],\n  },\n});\n```\n\n`chromeWebSecurity: false` is a popular Stack Overflow \"fix\" for SSO. It weakens the browser security model and is the wrong long-term answer — use `cy.origin()` (Part 9).\n\n`retries` in **run** mode can hide flakes from a dashboard. One retry in CI is a pragmatic compromise; five retries is a lie. Prefer fixing isolation and selectors.",
+      "order": 6
+    },
+    {
+      "id": "cy-1-5-md-7",
+      "type": "overview",
+      "heading": "`setupNodeEvents` belongs in this file",
+      "content": "```ts\ne2e: {\n  setupNodeEvents(on, config) {\n    on('task', {\n      log(message) {\n        console.log(message);\n        return null; // serializable return required\n      },\n    });\n    return config; // always return config if you touch it; returning is best practice\n  },\n},\n```\n\nChapter 1.9 is dedicated to this. The v10 rule is: **there is no `plugins/index.js` anymore.**",
+      "order": 7
+    },
+    {
+      "id": "cy-1-5-md-8",
+      "type": "overview",
+      "heading": "CLI and env overrides (preview of 1.6)",
+      "content": "```bash\nnpx cypress run --config baseUrl=https://staging.bizlevate.test,video=true\nnpx cypress run --config-file cypress.config.staging.ts\n```\n\n`--config` overrides file values for that invocation. `--env` is **not** the same as `--config` (env is `Cypress.env`, config is `Cypress.config`). Chapter 1.6 orders precedence for **env**. For config, CLI `--config` wins over the file for those keys.",
+      "order": 8
+    },
+    {
+      "id": "cy-1-5-md-9",
+      "type": "overview",
+      "heading": "Playwright comparison",
+      "content": "`playwright.config.ts` uses `use: { baseURL, screenshot, video, trace }`. Playwright's `video: 'retain-on-failure'` is more granular than Cypress's boolean default. Cypress needs an `after:spec` dance for the same \"keep failures only\" behavior. Neither tool wants a 30-second global timeout as your first \"fix.\"",
+      "order": 9
+    },
+    {
+      "id": "cy-1-5-md-10",
+      "type": "overview",
+      "heading": "HRM recommended starter config",
+      "content": "```ts\nimport { defineConfig } from 'cypress';\n\nexport default defineConfig({\n  viewportWidth: 1280,\n  viewportHeight: 800,\n  video: false,\n  screenshotOnRunFailure: true,\n  defaultCommandTimeout: 4000,\n  pageLoadTimeout: 60000,\n  retries: { runMode: 1, openMode: 0 },\n  e2e: {\n    baseUrl: process.env.CYPRESS_BASEURL || 'http://localhost:3000',\n    specPattern: 'cypress/e2e/**/*.cy.{js,jsx,ts,tsx}',\n    testIsolation: true,\n    setupNodeEvents(on, config) {\n      return config;\n    },\n  },\n});\n```\n\n(If you map `baseUrl` from env, do it explicitly in config — do not invent unofficial env names. `config.baseUrl` can also be assigned inside `setupNodeEvents` from `config.env`.)\n\nNext: `cypress.env.json` and the **env** precedence chain, which is separate from `--config`.",
+      "order": 10
+    },
+    {
+      "id": "cy-1-5-md-11",
+      "type": "overview",
+      "heading": "`defineConfig` and JSDoc without TS",
+      "content": "If you stay on `cypress.config.js`:\n\n```js\nconst { defineConfig } = require('cypress');\n\nmodule.exports = defineConfig({\n  e2e: { baseUrl: 'http://localhost:3000' },\n});\n```\n\n`defineConfig` is how JS files get autocomplete. `.mjs` / `\"type\": \"module\"` uses `export default defineConfig(...)`.",
+      "order": 11
+    },
+    {
+      "id": "cy-1-5-md-12",
+      "type": "overview",
+      "heading": "Environment-specific config files vs one file",
+      "content": "Two patterns:\n\n```bash\nnpx cypress run --config-file cypress.config.staging.ts\n```\n\nor one file:\n\n```ts\nsetupNodeEvents(on, config) {\n  const envName = config.env.ENV || 'local';\n  if (envName === 'staging') {\n    config.baseUrl = 'https://hrm-staging.bizlevate.test';\n  }\n  return config;\n}\n```\n\nPrefer **one file + env** for HRM until you have irreconcilable plugin lists. `--config baseUrl=...` is enough for many CI jobs.",
+      "order": 12
+    },
+    {
+      "id": "cy-1-5-md-13",
+      "type": "overview",
+      "heading": "Retries, screenshots, and honesty",
+      "content": "```ts\nretries: { runMode: 1, openMode: 0 },\nscreenshotOnRunFailure: true,\nvideo: false,\n```\n\nOne CI retry catches infrastructure blips. It also hides a 10% flake rate if you never look at the dashboard. Pair retries with a flake budget, not with `defaultCommandTimeout: 30000`.",
+      "order": 13
+    },
+    {
+      "id": "cy-1-5-md-14",
+      "type": "overview",
+      "heading": "`chromeWebSecurity` and `modifyObstructiveCode`",
+      "content": "Leave both at defaults until you have a documented need. Turning off web security to pass Okta is a smell — `cy.origin` is the supported path (Part 9).",
+      "order": 14
+    },
+    {
+      "id": "cy-1-5-md-15",
+      "type": "overview",
+      "heading": "Interview drill",
+      "content": "Draw the v10 mapping table from memory. Name four timeout knobs. Say what v12 and v13 changed. Explain why `baseUrl` lives under `e2e` and why `--env` does not set it.",
+      "order": 15
+    },
+    {
+      "id": "cy-1-5-md-16",
+      "type": "overview",
+      "heading": "`specPattern` and `excludeSpecPattern`",
+      "content": "```ts\ne2e: {\n  specPattern: 'cypress/e2e/**/*.cy.ts',\n  excludeSpecPattern: ['**/_*.cy.ts', '**/*.skip.cy.ts'],\n}\n```\n\nFiles named `_helpers.cy.ts` would otherwise run as tests. Prefer helpers **without** `.cy.` (`leave-form.ts`) so the default glob ignores them.",
+      "order": 16
+    },
+    {
+      "id": "cy-1-5-md-17",
+      "type": "overview",
+      "heading": "Viewport as config vs per-test",
+      "content": "```ts\nviewportWidth: 1280,\nviewportHeight: 800,\n```\n\n```ts\ncy.viewport('iphone-6');\n```\n\nConfig is the HRM desktop default. Per-test viewport belongs in responsive specs (Part 9), not in every smoke test.",
+      "order": 17
+    },
+    {
+      "id": "cy-1-5-md-18",
+      "type": "overview",
+      "heading": "`experimental*` flags",
+      "content": "Do not enable experimental flags because a blog post did. Each Cypress major graduates or drops them. HRM config should stay boring: `baseUrl`, timeouts, `setupNodeEvents`, `testIsolation`, `video`.",
+      "order": 18
+    }
+  ],
   "advantages": [
     "1.5 cypress.config.js/ts — Config is how a suite stays honest: baseUrl keeps specs portable, layered timeouts keep failures meaningful, and knowing the v10/v12/v13 defaults prevents cargo-cult copy-paste from old blog posts."
   ],

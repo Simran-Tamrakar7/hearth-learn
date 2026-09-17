@@ -21,10 +21,40 @@ function slugify(title) {
     .slice(0, 48);
 }
 
+/** One overview block per ## / ### topic. */
+function topicBlocks(md, partNo, chNo) {
+  const text = String(md || "").trim();
+  if (!text || !/^#{2,3}\s+/m.test(text)) return undefined;
+  const chunks = text.split(/^#{2,3}\s+/m);
+  const out = [];
+  let n = 0;
+  const lead = chunks[0].trim();
+  if (lead) {
+    out.push({ id: `cy-${partNo}-${chNo}-md-${n}`, type: "overview", content: lead, order: n });
+    n += 1;
+  }
+  for (const chunk of chunks.slice(1)) {
+    const nl = chunk.indexOf("\n");
+    const heading = (nl < 0 ? chunk : chunk.slice(0, nl)).trim();
+    const content = (nl < 0 ? "" : chunk.slice(nl + 1)).trim();
+    if (!heading && !content) continue;
+    out.push({
+      id: `cy-${partNo}-${chNo}-md-${n}`,
+      type: "overview",
+      heading: heading || undefined,
+      content: content || heading,
+      order: n,
+    });
+    n += 1;
+  }
+  return out.length ? out : undefined;
+}
+
 function writeChapter(partNo, chNo, rec, partName) {
   const partDir = path.join(cypressDir, `part-${partNo}`);
   fs.mkdirSync(partDir, { recursive: true });
   const id = rec.id || `cy-${partNo}-${chNo}-${slugify(rec.title)}`;
+  const blocks = rec.blocks ?? topicBlocks(rec.contentMarkdown, partNo, chNo);
   const chapter = {
     id,
     title: rec.title,
@@ -39,6 +69,7 @@ function writeChapter(partNo, chNo, rec, partName) {
     tools: rec.tools ?? [],
     customSummary: rec.customSummary,
     contentMarkdown: rec.contentMarkdown,
+    blocks,
     // ponytail: unique Adv/Lim so check-chapter-independence passes; upgrade: author genuine lists in JSON
     advantages: rec.advantages ?? [
       `${rec.title} — ${String(rec.why || "").split(".")[0].trim()}.`,

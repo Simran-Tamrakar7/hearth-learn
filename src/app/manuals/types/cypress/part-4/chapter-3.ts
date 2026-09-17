@@ -20,6 +20,43 @@ export const chapter = {
   "tools": [],
   "customSummary": "- .find / .children / .parent / .parents / .closest / .siblings / .next / .prev / .eq / .first / .last / .filter / .not — jQuery traversal, Cypress-retrying on the chain.\n- .within() scopes cy.get/contains to the subject — excellent for forms; blind to portals.\n- Portal gotcha: menus/modals on document.body are outside .within() roots.\n- Prefer data-cy + contains(row, text).find() over walking the tree.",
   "contentMarkdown": "## Traversal is jQuery, with retries\n\n```js\ncy.get('[data-cy=leave-table]').find('tbody tr');\ncy.get('[data-cy=approve]').closest('tr');\ncy.get('[data-cy=wizard]').children('[data-cy=step]');\ncy.get('[data-cy=tabs]').eq(1).click();\ncy.get('[data-cy=errors]').filter('.critical');\ncy.contains('tr', 'Simran Tamrakar').next(); // next row — usually too brittle\n```\n\n`.find()` is descendant (the one you want constantly). `.children()` is one level. `.closest()` walks up to the first matching ancestor (row from a button). `.eq(n)` is 0-based index — couple it to a stable sort or do not use it.\n\nThese commands retry with the query behind them when followed by `.should`, same as Part 2 retry-ability. A chain that ends in `.then(($el) => $el.parent())` does **not** retry. Stay on Cypress commands.\n\n## `.within()` — scoped queries\n\n```js\ncy.get('[data-cy=onboarding-card]').within(() => {\n  cy.get('[data-cy=first-name]').type('Simran');\n  cy.get('[data-cy=last-name]').type('Tamrakar');\n  cy.get('[data-cy=submit]').click();\n});\n```\n\nInside the callback, `cy.get` and `cy.contains` are rooted at the card. That prevents matching a *different* first-name on the page (employee search in the header). Nested `.within()` is legal and easy to overuse.\n\n## Portal gotcha\n\n`.within()` cannot see nodes that are not descendants of its subject. React `createPortal`, MUI `Modal`, Ant Design `Select` dropdowns, and many date pickers mount under `document.body`.\n\n```js\ncy.get('[data-cy=onboarding-card]').within(() => {\n  cy.get('[data-cy=department]').click();\n  cy.contains('Quality Assurance').click(); // 0 matches — list is on body\n});\n```\n\nFix: close `.within()` before interacting with the overlay, or never wrap the open-dropdown step:\n\n```js\ncy.get('[data-cy=onboarding-card]').within(() => {\n  cy.get('[data-cy=first-name]').type('Simran');\n});\ncy.get('[data-cy=department]').click();\ncy.get('.ant-select-dropdown:visible').contains('Quality Assurance').click();\n```\n\nSame bug with `.find()` off the card. If DevTools shows the node under `body > div.ant-select-dropdown`, your within-root is wrong, not Cypress \"failing to retry.\"\n\n## Anti-patterns\n\n```js\ncy.get('button').parent().parent().parent().find('span').eq(2);\n```\n\nOne extra wrapper from a design-system upgrade breaks this. Replace with `data-cy` or `cy.contains('tr', name).find('[data-cy=approve]')`.\n\n`.shadow()` exists for shadow DOM (Part 9.4) — another boundary `.within()` does not cross unless configured.\n\n## vs Playwright\n\nPlaywright locators are lazy and chain `locator.get_by_role` inside a parent locator — similar to within, and they have the **same** portal issue if you scope to a locator that does not include the portal. Playwright's default `page.get_by_role('option')` searches the page, which often *helps* with portals. Cypress `.within` is opt-in narrowing; remember to opt out for overlays.",
+  "blocks": [
+    {
+      "id": "cy-4-3-md-0",
+      "type": "overview",
+      "heading": "Traversal is jQuery, with retries",
+      "content": "```js\ncy.get('[data-cy=leave-table]').find('tbody tr');\ncy.get('[data-cy=approve]').closest('tr');\ncy.get('[data-cy=wizard]').children('[data-cy=step]');\ncy.get('[data-cy=tabs]').eq(1).click();\ncy.get('[data-cy=errors]').filter('.critical');\ncy.contains('tr', 'Simran Tamrakar').next(); // next row — usually too brittle\n```\n\n`.find()` is descendant (the one you want constantly). `.children()` is one level. `.closest()` walks up to the first matching ancestor (row from a button). `.eq(n)` is 0-based index — couple it to a stable sort or do not use it.\n\nThese commands retry with the query behind them when followed by `.should`, same as Part 2 retry-ability. A chain that ends in `.then(($el) => $el.parent())` does **not** retry. Stay on Cypress commands.",
+      "order": 0
+    },
+    {
+      "id": "cy-4-3-md-1",
+      "type": "overview",
+      "heading": "`.within()` — scoped queries",
+      "content": "```js\ncy.get('[data-cy=onboarding-card]').within(() => {\n  cy.get('[data-cy=first-name]').type('Simran');\n  cy.get('[data-cy=last-name]').type('Tamrakar');\n  cy.get('[data-cy=submit]').click();\n});\n```\n\nInside the callback, `cy.get` and `cy.contains` are rooted at the card. That prevents matching a *different* first-name on the page (employee search in the header). Nested `.within()` is legal and easy to overuse.",
+      "order": 1
+    },
+    {
+      "id": "cy-4-3-md-2",
+      "type": "overview",
+      "heading": "Portal gotcha",
+      "content": "`.within()` cannot see nodes that are not descendants of its subject. React `createPortal`, MUI `Modal`, Ant Design `Select` dropdowns, and many date pickers mount under `document.body`.\n\n```js\ncy.get('[data-cy=onboarding-card]').within(() => {\n  cy.get('[data-cy=department]').click();\n  cy.contains('Quality Assurance').click(); // 0 matches — list is on body\n});\n```\n\nFix: close `.within()` before interacting with the overlay, or never wrap the open-dropdown step:\n\n```js\ncy.get('[data-cy=onboarding-card]').within(() => {\n  cy.get('[data-cy=first-name]').type('Simran');\n});\ncy.get('[data-cy=department]').click();\ncy.get('.ant-select-dropdown:visible').contains('Quality Assurance').click();\n```\n\nSame bug with `.find()` off the card. If DevTools shows the node under `body > div.ant-select-dropdown`, your within-root is wrong, not Cypress \"failing to retry.\"",
+      "order": 2
+    },
+    {
+      "id": "cy-4-3-md-3",
+      "type": "overview",
+      "heading": "Anti-patterns",
+      "content": "```js\ncy.get('button').parent().parent().parent().find('span').eq(2);\n```\n\nOne extra wrapper from a design-system upgrade breaks this. Replace with `data-cy` or `cy.contains('tr', name).find('[data-cy=approve]')`.\n\n`.shadow()` exists for shadow DOM (Part 9.4) — another boundary `.within()` does not cross unless configured.",
+      "order": 3
+    },
+    {
+      "id": "cy-4-3-md-4",
+      "type": "overview",
+      "heading": "vs Playwright",
+      "content": "Playwright locators are lazy and chain `locator.get_by_role` inside a parent locator — similar to within, and they have the **same** portal issue if you scope to a locator that does not include the portal. Playwright's default `page.get_by_role('option')` searches the page, which often *helps* with portals. Cypress `.within` is opt-in narrowing; remember to opt out for overlays.",
+      "order": 4
+    }
+  ],
   "advantages": [
     "4.3 DOM Traversal — Traversal chains rot when markup gains a wrapper div."
   ],

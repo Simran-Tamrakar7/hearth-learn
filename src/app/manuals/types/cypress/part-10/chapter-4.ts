@@ -20,6 +20,36 @@ export const chapter = {
   "tools": [],
   "customSummary": "- cypress open = App GUI. cypress run = CI runner; default headless; --headed is still not the App.\n- Pin viewportWidth/Height in config so local run matches CI.\n- cy.viewport() per spec for responsive cases; presets ≠ real devices (9.17).\n- Headless Chrome ≠ headed Chrome for a few CSS/video bugs — reproduce with --headed before blaming Cypress.\n- Playwright: --headed / devices project. Selenium: ChromeOptions headless.",
   "contentMarkdown": "## The three ways you see a browser\n\n```bash\nnpx cypress open                 # Cypress App + visible browser (UI Mode, 9.11)\nnpx cypress run                  # headless, CI default\nnpx cypress run --headed         # visible browser, no App sidebar, still \"run\" semantics (videos, retries runMode)\n```\n\nCI should call `cypress run` (or `cypress-io/github-action`, which does). `cypress open` on a runner is wrong (no display, or a stuck GUI).\n\nElectron vs Chrome: `cypress run` without `--browser` uses Electron. If you develop in Chrome and CI uses Electron, you will \"see\" differences. Pin `--browser chrome` in CI to match.\n\n## Viewport is config, then command\n\n```js\nexport default defineConfig({\n  viewportWidth: 1280,\n  viewportHeight: 720,\n});\n\ncy.viewport(390, 844);\ncy.viewport('iphone-x');\n```\n\nIf your laptop App is stretched to 1800px, you are not running the same test as CI. Reproduce CI with `npx cypress run --headed --browser chrome` at the config viewport.\n\nDevice presets change **size** (and sometimes user-agent in some tools — in Cypress, treat it as size). They do not load WebKit (9.9).\n\n## Headless quirks worth knowing\n\n- Headless Chrome is close to headed Chromium; remaining gaps are usually video codecs, focus, or `window.screen`.\n- Firefox headed vs headless can differ more than Chrome.\n- `video: true` (11.8) costs CPU in headless CI — a flake source if the runner is tiny (12.4).\n\n## Versus Playwright and Selenium\n\nPlaywright: `headless: true` default in CI; `devices['iPhone 13']` sets viewport **and** user-agent; WebKit still available. Selenium 4: `--headless=new`. Cypress: be explicit about browser name + viewport numbers.\n\nInterview line: \"`cypress run` is headless CI; `--headed` is not UI Mode. I pin viewport in config. `iphone-x` is a size, not a phone.\"",
+  "blocks": [
+    {
+      "id": "cy-10-4-md-0",
+      "type": "overview",
+      "heading": "The three ways you see a browser",
+      "content": "```bash\nnpx cypress open                 # Cypress App + visible browser (UI Mode, 9.11)\nnpx cypress run                  # headless, CI default\nnpx cypress run --headed         # visible browser, no App sidebar, still \"run\" semantics (videos, retries runMode)\n```\n\nCI should call `cypress run` (or `cypress-io/github-action`, which does). `cypress open` on a runner is wrong (no display, or a stuck GUI).\n\nElectron vs Chrome: `cypress run` without `--browser` uses Electron. If you develop in Chrome and CI uses Electron, you will \"see\" differences. Pin `--browser chrome` in CI to match.",
+      "order": 0
+    },
+    {
+      "id": "cy-10-4-md-1",
+      "type": "overview",
+      "heading": "Viewport is config, then command",
+      "content": "```js\nexport default defineConfig({\n  viewportWidth: 1280,\n  viewportHeight: 720,\n});\n\ncy.viewport(390, 844);\ncy.viewport('iphone-x');\n```\n\nIf your laptop App is stretched to 1800px, you are not running the same test as CI. Reproduce CI with `npx cypress run --headed --browser chrome` at the config viewport.\n\nDevice presets change **size** (and sometimes user-agent in some tools — in Cypress, treat it as size). They do not load WebKit (9.9).",
+      "order": 1
+    },
+    {
+      "id": "cy-10-4-md-2",
+      "type": "overview",
+      "heading": "Headless quirks worth knowing",
+      "content": "- Headless Chrome is close to headed Chromium; remaining gaps are usually video codecs, focus, or `window.screen`.\n- Firefox headed vs headless can differ more than Chrome.\n- `video: true` (11.8) costs CPU in headless CI — a flake source if the runner is tiny (12.4).",
+      "order": 2
+    },
+    {
+      "id": "cy-10-4-md-3",
+      "type": "overview",
+      "heading": "Versus Playwright and Selenium",
+      "content": "Playwright: `headless: true` default in CI; `devices['iPhone 13']` sets viewport **and** user-agent; WebKit still available. Selenium 4: `--headless=new`. Cypress: be explicit about browser name + viewport numbers.\n\nInterview line: \"`cypress run` is headless CI; `--headed` is not UI Mode. I pin viewport in config. `iphone-x` is a size, not a phone.\"",
+      "order": 3
+    }
+  ],
   "advantages": [
     "10.4 Headless vs Headed Runs, Viewport/Device Testing — People debug in open mode at 1500px then CI fails at the default 1280×720, or they think --headed on Actions gives them the Cypress App."
   ],

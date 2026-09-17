@@ -20,6 +20,22 @@ export const chapter = {
   "tools": [],
   "customSummary": "- Hard cy.wait(n) vs retry-ability / cy.wait('@alias').\n- Commands are not Promises — no await cy.get, no const el = cy.get.\n- No if (element exists) happy paths; no switchToTab.\n- Login via cy.session; locators via data-cy; don't globally kill web security or exceptions.\n- Playwright anti-patterns differ (missing await); do not 'fix' Cypress with Playwright syntax.",
   "contentMarkdown": "## Gallery with replacements\n\n**Sleep**\n```js\ncy.wait(5000);\n// instead:\ncy.get('[data-cy=approve]').should('be.enabled');\ncy.wait('@getBalance');\n```\n\n**Treating commands as values**\n```js\nconst el = cy.get('[data-cy=total]'); // chainable, not a DOM node\nel.text(); // not a string\n// instead:\ncy.get('[data-cy=total]').invoke('text').then((t) => { /* t is a string */ });\ncy.get('[data-cy=total]').as('total');\n```\n\n**`await cy.get`**\nCypress commands are not Promises. `async/await` around them is a first-week bug (Part 0.3). Playwright *does* await locators — do not mix the models.\n\n**Conditional testing**\n```js\ncy.get('body').then(($b) => {\n  if ($b.find('[data-cy=cookie-banner]').length) {\n    cy.get('[data-cy=cookie-accept]').click();\n  }\n});\n```\nCookie banners are a rare legitimate branch. Do **not** `if` the approve button — then you are not testing the product. Prefer `cy.get(...).should('not.exist')` when absence is the requirement.\n\n**Login UI every test** — `cy.session` (Part 7).\n\n**`.btn-primary > span:nth-child(2)`** — `data-cy`.\n\n**Second tab** — 9.3, there is no `switchToTab`.\n\n**`chromeWebSecurity: false`** as a default — 9.1, use `cy.origin`.\n\n**`uncaught:exception => false`** — 11.7.\n\n**`retries: 5`** — 10.3 / 9.13.\n\n## Versus Playwright and Selenium\n\nPlaywright anti-pattern: missing `await`, overly strict screenshots, sharing one page across tests. Selenium: implicit+explicit waits, Thread.sleep, stale element retries-by-hand. Cypress anti-patterns are **queue and architecture** flavored.\n\nInterview line: \"The big ones: hard waits, using commands as values, DOM if-else, UI login every test, and pretending tabs exist.\"",
+  "blocks": [
+    {
+      "id": "cy-12-2-md-0",
+      "type": "overview",
+      "heading": "Gallery with replacements",
+      "content": "**Sleep**\n```js\ncy.wait(5000);\n// instead:\ncy.get('[data-cy=approve]').should('be.enabled');\ncy.wait('@getBalance');\n```\n\n**Treating commands as values**\n```js\nconst el = cy.get('[data-cy=total]'); // chainable, not a DOM node\nel.text(); // not a string\n// instead:\ncy.get('[data-cy=total]').invoke('text').then((t) => { /* t is a string */ });\ncy.get('[data-cy=total]').as('total');\n```\n\n**`await cy.get`**\nCypress commands are not Promises. `async/await` around them is a first-week bug (Part 0.3). Playwright *does* await locators — do not mix the models.\n\n**Conditional testing**\n```js\ncy.get('body').then(($b) => {\n  if ($b.find('[data-cy=cookie-banner]').length) {\n    cy.get('[data-cy=cookie-accept]').click();\n  }\n});\n```\nCookie banners are a rare legitimate branch. Do **not** `if` the approve button — then you are not testing the product. Prefer `cy.get(...).should('not.exist')` when absence is the requirement.\n\n**Login UI every test** — `cy.session` (Part 7).\n\n**`.btn-primary > span:nth-child(2)`** — `data-cy`.\n\n**Second tab** — 9.3, there is no `switchToTab`.\n\n**`chromeWebSecurity: false`** as a default — 9.1, use `cy.origin`.\n\n**`uncaught:exception => false`** — 11.7.\n\n**`retries: 5`** — 10.3 / 9.13.",
+      "order": 0
+    },
+    {
+      "id": "cy-12-2-md-1",
+      "type": "overview",
+      "heading": "Versus Playwright and Selenium",
+      "content": "Playwright anti-pattern: missing `await`, overly strict screenshots, sharing one page across tests. Selenium: implicit+explicit waits, Thread.sleep, stale element retries-by-hand. Cypress anti-patterns are **queue and architecture** flavored.\n\nInterview line: \"The big ones: hard waits, using commands as values, DOM if-else, UI login every test, and pretending tabs exist.\"",
+      "order": 1
+    }
+  ],
   "advantages": [
     "12.2 Common Anti-Patterns — Interview whiteboards are often 'what's wrong with this spec?' Recognizing anti-patterns is how you read a junior's PR in five minutes."
   ],

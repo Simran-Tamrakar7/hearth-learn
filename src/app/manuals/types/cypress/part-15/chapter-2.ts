@@ -20,6 +20,43 @@ export const chapter = {
   "tools": [],
   "customSummary": "- grep plugin, cypress-axe, mochawesome pipeline, optional image-snapshot.\n- @testing-library/cypress if you prefer role queries.\n- cypress-real-events for hover closer to OS; still not iOS.\n- Sorry Cypress/Currents are services, not npm-only.\n- Prefer built-in: selectFile, intercept, session, origin, includeShadowDom.",
   "contentMarkdown": "## Taught in this manual (install these when you need the chapter)\n\n| Plugin / package | Chapter | Role |\n|---|---|---|\n| `@cypress/grep` | 10.1 | Tags / smoke |\n| `cypress-axe` + `axe-core` | 9.7 | a11y |\n| `cypress-mochawesome-reporter` or mochawesome + **merge** + marge | 11.6 | HTML reports |\n| `cypress-image-snapshot` (or Percy SDK) | 9.6 | Visual — not built-in |\n| `cypress-parallel` | 9.8 | Multi-process on one machine |\n| `@testing-library/cypress` | 4.x | `findByRole` etc. |\n| `cypress-real-events` | 9.17 | closer pointer events |\n\n## Services, not just plugins\n\nSorry Cypress, Currents, Cypress Cloud, Applitools/Percy — Part 11 / 9.6.\n\n## Usually unnecessary now\n\n- `cypress-file-upload` — use `cy.selectFile`.\n- `cypress-iframe` — often wrap/origin; check current recipes.\n- `cypress-wait-until` — usually a smell; prefer `.should` / `@alias`.\n- Old `cypress-plugin-snapshots` without maintenance — check dates.\n\n## Plugin hygiene\n\nRegister in `support/e2e.ts` **and** `setupNodeEvents` when the plugin says so (grep). Pin versions. Read Cypress peerDependency on major bump.\n\n## Versus Playwright and Selenium\n\nPlaywright: grep, HTML report, screenshot matcher, trace — **core**. Selenium: a zoo of language bindings and Allure adapters. Cypress's plugin culture is closer to \"jQuery of test tools\" — powerful, easy to over-install.\n\nInterview line: \"Minimum set: grep, axe, report merge. Visual is a plugin because Cypress has no built-in matcher.\"",
+  "blocks": [
+    {
+      "id": "cy-15-2-md-0",
+      "type": "overview",
+      "heading": "Taught in this manual (install these when you need the chapter)",
+      "content": "| Plugin / package | Chapter | Role |\n|---|---|---|\n| `@cypress/grep` | 10.1 | Tags / smoke |\n| `cypress-axe` + `axe-core` | 9.7 | a11y |\n| `cypress-mochawesome-reporter` or mochawesome + **merge** + marge | 11.6 | HTML reports |\n| `cypress-image-snapshot` (or Percy SDK) | 9.6 | Visual — not built-in |\n| `cypress-parallel` | 9.8 | Multi-process on one machine |\n| `@testing-library/cypress` | 4.x | `findByRole` etc. |\n| `cypress-real-events` | 9.17 | closer pointer events |",
+      "order": 0
+    },
+    {
+      "id": "cy-15-2-md-1",
+      "type": "overview",
+      "heading": "Services, not just plugins",
+      "content": "Sorry Cypress, Currents, Cypress Cloud, Applitools/Percy — Part 11 / 9.6.",
+      "order": 1
+    },
+    {
+      "id": "cy-15-2-md-2",
+      "type": "overview",
+      "heading": "Usually unnecessary now",
+      "content": "- `cypress-file-upload` — use `cy.selectFile`.\n- `cypress-iframe` — often wrap/origin; check current recipes.\n- `cypress-wait-until` — usually a smell; prefer `.should` / `@alias`.\n- Old `cypress-plugin-snapshots` without maintenance — check dates.",
+      "order": 2
+    },
+    {
+      "id": "cy-15-2-md-3",
+      "type": "overview",
+      "heading": "Plugin hygiene",
+      "content": "Register in `support/e2e.ts` **and** `setupNodeEvents` when the plugin says so (grep). Pin versions. Read Cypress peerDependency on major bump.",
+      "order": 3
+    },
+    {
+      "id": "cy-15-2-md-4",
+      "type": "overview",
+      "heading": "Versus Playwright and Selenium",
+      "content": "Playwright: grep, HTML report, screenshot matcher, trace — **core**. Selenium: a zoo of language bindings and Allure adapters. Cypress's plugin culture is closer to \"jQuery of test tools\" — powerful, easy to over-install.\n\nInterview line: \"Minimum set: grep, axe, report merge. Visual is a plugin because Cypress has no built-in matcher.\"",
+      "order": 4
+    }
+  ],
   "advantages": [
     "B. Useful plugins — A plugin is a dependency you will debug on upgrade day."
   ],
