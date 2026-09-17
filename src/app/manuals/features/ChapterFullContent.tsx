@@ -43,9 +43,10 @@ export function ChapterFullContent({
     : (chapter.contentMarkdown || "").trim();
 
   const explicitBlocks = chapterBlocksForRender(chapter);
-  const blocks = explicitBlocks ?? legacyFieldsToBlocks(chapter);
+  const blocks = explicitBlocks ?? legacyFieldsToBlocks({ ...chapter, contentMarkdown: mdBody || chapter.contentMarkdown });
   const usingBlocks = Array.isArray(chapter.blocks);
   const hasBlocks = blocks.length > 0;
+  const mdAlreadyInBlocks = blocks.some((b) => b.type === "overview" && Boolean(b.heading?.trim()));
 
   // Legacy-only path (no blocks array): keep overview outside the insight list for parity
   // when synthesizing — overview is included in legacyFieldsToBlocks as an overview block.
@@ -61,7 +62,12 @@ export function ChapterFullContent({
       ) : null}
 
       {hasBlocks ? (
-        <ChapterBlocksLayout blocks={blocks} layout={chapter.blockLayout} highlights={highlights} />
+        <ChapterBlocksLayout
+          blocks={blocks}
+          layout={chapter.blockLayout}
+          highlights={highlights}
+          renderMarkdown={renderMarkdown}
+        />
       ) : !usingBlocks ? (
         <LegacyInsightFields chapter={chapter} highlights={highlights} />
       ) : null}
@@ -72,7 +78,7 @@ export function ChapterFullContent({
         </div>
       ) : null}
 
-      {mdBody ? (
+      {mdBody && usingBlocks && !mdAlreadyInBlocks ? (
         <div className={hasBlocks || showLegacyOverview ? "pt-3 border-t border-[#E7E0D3] space-y-3" : "space-y-3"}>
           {hasBlocks || showLegacyOverview ? (
             <p className="text-[10px] font-bold uppercase tracking-wider text-[#8A9B95]">Lesson content</p>
@@ -103,10 +109,12 @@ function ChapterBlocksLayout({
   blocks,
   layout,
   highlights,
+  renderMarkdown,
 }: {
   blocks: ChapterBlock[];
   layout?: BlockLayout;
   highlights: ChapterHighlight[];
+  renderMarkdown?: (text: string) => ReactNode;
 }) {
   const rows = sanitizeLayout(layout, blocks.map((b) => b.id)).rows;
   const byId = new Map(blocks.map((b) => [b.id, b]));
@@ -118,7 +126,14 @@ function ChapterBlocksLayout({
           <div key={row.id} className={rowGridClass(row.columns)}>
             {row.blockIds.map((id) => {
               const block = byId.get(id);
-              return block ? <ChapterBlockView key={block.id} block={block} highlights={highlights} /> : null;
+              return block ? (
+                <ChapterBlockView
+                  key={block.id}
+                  block={block}
+                  highlights={highlights}
+                  renderMarkdown={renderMarkdown}
+                />
+              ) : null;
             })}
           </div>
         );

@@ -17,7 +17,7 @@ import { isBlockType } from "@/app/manuals/features/blocks/types";
 import { getUserManual, saveUserManual, removeCatalogManual } from "@/app/manuals/features/local-storage";
 import { isTestingTypesSlug } from "@/app/manuals/types/testing-types/TestingTypesManual";
 import { PLAYWRIGHT_ROADMAP_PHASES, downloadRoadmapSVG } from "@/app/manuals/types/playwright/roadmapData";
-import { stripLeadingNumber } from "@/app/manuals/registry";
+import { parseLeadingChapterNo, stripLeadingNumber } from "@/app/manuals/registry";
 import { PinButton, getPinnedItems, PinnedItemMetadata, manualPinId } from "@/components/ui/PinButton";
 import { ManualExportMenu } from "@/app/manuals/features/export";
 import { ChapterContentEditor } from "@/app/manuals/features/edit/ChapterContentEditor";
@@ -45,6 +45,7 @@ import {
   deleteParts,
   displayPartTitle,
   groupChaptersIntoParts,
+  partDisplayNumber,
   isSubchapter,
   mergeChapters,
   mergeParts,
@@ -163,8 +164,12 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     slug === "testing-types-manual" ||
     isTestingTypesSlug(slug);
 
-  const groupTitle = (index: number, name: string) =>
-    displayPartTitle(index, name, isTestingTypesManual ? "chapter" : "part");
+  const groupTitle = (index: number, name: string, partKey?: string) =>
+    displayPartTitle(
+      index,
+      partKey && /^(?:Part|Chapter)\s+\d+/i.test(partKey) ? partKey : name,
+      isTestingTypesManual ? "chapter" : "part"
+    );
 
   // Testing Types TOC must follow TESTING_TYPES_CHAPTERS, not a stale localStorage snapshot (was freezing at 64).
   const catalogChapters = isTestingTypesManual
@@ -629,15 +634,20 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
   const activePartGroup = partGroups.find((g) => g.chapterIndices.includes(activeChapterIndex));
   const activeChapterNumber = React.useMemo(() => {
     if (!activePartGroup) return null;
-    const nums = tocNumbersForPart(chapters, activePartGroup.chapterIndices, activePartGroup.index + 1);
-    return nums.get(activeChapterIndex) ?? null;
+    const nums = tocNumbersForPart(
+      chapters,
+      activePartGroup.chapterIndices,
+      partDisplayNumber(activePartGroup.index, activePartGroup.partKey)
+    );
+    const parsed = parseLeadingChapterNo(chapters[activeChapterIndex]?.title || "");
+    return parsed?.num ?? nums.get(activeChapterIndex) ?? null;
   }, [chapters, activeChapterIndex, activePartGroup]);
   const activeChapterTitle = stripLeadingNumber(activeChapter.title.replace(/^Chapter\s+\d+:\s*/i, ""));
   const roadmapParts = React.useMemo(() => {
     return partGroups.map((g) => ({
       id: g.partKey,
       phaseNum: `P${g.index + 1}`,
-      title: groupTitle(g.index, g.name),
+      title: groupTitle(g.index, g.name, g.partKey),
       nodes: g.chapterIndices.map((idx) => {
         const ch = chapters[idx];
         return {
@@ -658,7 +668,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     if (!tocQueryNorm) return partGroups;
     return partGroups
       .map((g) => {
-        const label = groupTitle(g.index, g.name).toLowerCase();
+        const label = groupTitle(g.index, g.name, g.partKey).toLowerCase();
         const partHit = label.includes(tocQueryNorm) || g.name.toLowerCase().includes(tocQueryNorm);
         const chapterIndices = partHit
           ? g.chapterIndices
@@ -1019,8 +1029,9 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
     const chap = chapters[idx];
     if (!chap) return null;
     const isActive = idx === activeChapterIndex;
-    const displayTitle = stripLeadingNumber(chap.title.replace(/^Chapter\s+\d+:\s*/i, ""));
-    const label = nums.get(idx) || String(idx + 1);
+    const parsed = parseLeadingChapterNo(chap.title.replace(/^Chapter\s+\d+:\s*/i, ""));
+    const displayTitle = parsed?.rest ?? stripLeadingNumber(chap.title.replace(/^Chapter\s+\d+:\s*/i, ""));
+    const label = parsed?.num || nums.get(idx) || String(idx + 1);
     const sibs = chap.parentId
       ? chapters.map((_, i) => i).filter((i) => chapters[i].parentId === chap.parentId)
       : [];
@@ -1847,7 +1858,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                         checked={selectedPartIndices.includes(part.index)}
                         onChange={() => togglePartSelected(part.index)}
                         className="rounded border-[#D4CBBB] text-[#D97706] focus:ring-[#D97706] w-3.5 h-3.5 shrink-0"
-                        aria-label={`Select ${groupTitle(part.index, part.name)}`}
+                        aria-label={`Select ${groupTitle(part.index, part.name, part.partKey)}`}
                       />
                       )}
                       {editingPartIndex === part.index ? (
@@ -1871,8 +1882,8 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                         </div>
                       ) : (
                         <>
-                          <p className="flex-1 min-w-0 px-1 text-[11px] font-bold tracking-wide text-[#D97706] truncate" title={groupTitle(part.index, part.name)}>
-                            {groupTitle(part.index, part.name)}
+                          <p className="flex-1 min-w-0 px-1 text-[11px] font-bold tracking-wide text-[#D97706] truncate" title={groupTitle(part.index, part.name, part.partKey)}>
+                            {groupTitle(part.index, part.name, part.partKey)}
                           </p>
                           {isEditingParts && (
                           <KebabMenu
@@ -1929,7 +1940,11 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                       )}
                     </div>
                     {(() => {
-                      const nums = tocNumbersForPart(chapters, part.chapterIndices, part.index + 1);
+                      const nums = tocNumbersForPart(
+                        chapters,
+                        part.chapterIndices,
+                        partDisplayNumber(part.index, part.partKey)
+                      );
                       return part.chapterIndices.map((idx) => {
                         const chap = chapters[idx];
                         if (!chap || chap.parentId) return null;
@@ -2082,8 +2097,11 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                   />
                 ) : (
                   <h1 className="font-serif-display text-xl sm:text-2xl lg:text-3xl font-bold text-[#1C2A26] leading-tight">
-                    {activeChapterNumber ? `${activeChapterNumber}. ` : ""}
-                    {activeChapterTitle}
+                    {(() => {
+                      const parsed = parseLeadingChapterNo(activeChapter.title);
+                      if (parsed) return activeChapter.title.replace(/^Chapter\s+\d+:\s*/i, "").trim();
+                      return `${activeChapterNumber ? `${activeChapterNumber}. ` : ""}${activeChapterTitle}`;
+                    })()}
                   </h1>
                 )}
                 {chapterEdit ? (
@@ -2099,7 +2117,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                       >
                         {partGroups.map((g) => (
                           <option key={g.partKey} value={g.index}>
-                            {groupTitle(g.index, g.name)}
+                            {groupTitle(g.index, g.name, g.partKey)}
                           </option>
                         ))}
                       </select>
@@ -2123,7 +2141,7 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
                   </div>
                 ) : activePartGroup ? (
                   <p className="font-serif-display text-xs sm:text-sm font-semibold text-[#D97706]">
-                    {groupTitle(activePartGroup.index, activePartGroup.name)}
+                    {groupTitle(activePartGroup.index, activePartGroup.name, activePartGroup.partKey)}
                   </p>
                 ) : activeChapter.subtitle ? (
                   <p className="font-serif-display text-xs sm:text-sm font-semibold text-[#D97706]">

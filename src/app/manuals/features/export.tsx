@@ -6,10 +6,12 @@ import type { ManualChapter, ManualItem } from "@/app/manuals/types";
 import { blockDisplayName, editorColumns, isColumnBlockType } from "@/app/manuals/features/blocks/types";
 import { blocksInLayoutOrder } from "@/app/manuals/features/blocks/blockLayout";
 import type { ChapterBlock } from "@/app/manuals/features/blocks/types";
-import { groupChaptersIntoParts } from "@/app/manuals/features/reader";
+import { groupChaptersIntoParts, displayPartTitle } from "@/app/manuals/features/reader";
 import { useToast } from "@/components/ui/Toast";
 
-function groupTitle(index: number, name: string) {
+function groupTitle(index: number, name: string, partKey?: string) {
+  const source = partKey && /^(?:Part|Chapter)\s+\d+/i.test(partKey) ? partKey : name;
+  if (/^(?:Part|Chapter)\s+\d+/i.test(source)) return displayPartTitle(index, source, "part");
   return `Part ${index + 1} · ${name}`;
 }
 
@@ -163,7 +165,7 @@ export function chapterBodyForExport(ch: ManualChapter): string {
 export function buildManualExportSections(manual: Pick<ManualItem, "title" | "chapters">): ExportSection[] {
   const groups = groupChaptersIntoParts(manual.chapters);
   return groups.map((g) => ({
-    partTitle: groupTitle(g.index, g.name),
+    partTitle: groupTitle(g.index, g.name, g.partKey),
     chapters: g.chapterIndices
       .map((i) => manual.chapters[i])
       .filter((ch): ch is ManualChapter => Boolean(ch))

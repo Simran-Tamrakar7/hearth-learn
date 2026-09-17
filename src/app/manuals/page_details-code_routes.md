@@ -58,7 +58,8 @@ manuals/
 | Tool tabs inside a chapter (JUnit/PyTest/Jest) | `features/reader.tsx` (`ToolSwitcher`) — data in chapter `tools[]` |
 | Inline chapter editor (write/preview toolbar) | `features/edit/LessonContentEditor.tsx` |
 | Chapter field editor shell + undo | `features/edit/ChapterContentEditor.tsx` |
-| Content blocks (shell, registry, columns, per-row layout, dnd) | `features/blocks/` |
+| Content blocks (shell, registry, columns, per-row layout, dnd) | `features/blocks/` — unset `blocks` hydrates insights + `##` lesson sections |
+| Part / chapter numbers | `registry.ts` `parseLeadingChapterNo`; `testing-types/toc.ts` `displayPartTitle` / `partDisplayNumber` (Part 0 stays 0) |
 | Testing Types chapter **content** | `types/testing-types/part-N/chapter-M.ts` |
 | Testing Types TOC order / nesting | `types/testing-types/toc.ts` |
 | Playwright chapter **content** | `types/playwright/part-N/chapter-M.ts` |

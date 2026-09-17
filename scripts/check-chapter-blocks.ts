@@ -23,6 +23,7 @@ import {
   setRowColumns,
   stackedLayout,
 } from "../src/app/manuals/features/blocks/blockLayout";
+import { displayPartTitle } from "../src/app/manuals/types/testing-types/toc.ts";
 
 assert.equal(BLOCK_TYPES.length, BLOCK_CATALOG.length, "catalog must list every type");
 
@@ -42,6 +43,14 @@ const synthesized = legacyFieldsToBlocks({
 });
 assert.ok(synthesized.some((b) => b.type === "why"));
 assert.ok(synthesized.some((b) => b.type === "keyDifference"));
+
+const withLesson = legacyFieldsToBlocks({
+  why: "Because",
+  contentMarkdown: "## Origin architecture\n\nCypress runs in the browser.\n\n## History\n\nFounded by Brian Mann.",
+});
+assert.equal(withLesson.filter((b) => b.type === "overview" && b.heading === "Origin architecture").length, 1);
+assert.equal(withLesson.filter((b) => b.type === "overview" && b.heading === "History").length, 1);
+assert.equal(displayPartTitle(0, "Part 0 · Orientation"), "Part 0 · Orientation");
 
 const required = [
   "bullets",
