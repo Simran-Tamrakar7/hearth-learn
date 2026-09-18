@@ -6,6 +6,7 @@ Last verified against `main` — September 2026.
 
 - **Catalog:** add manual with title, category, tags, cover URL; Add button uses active theme color.
 - **Cypress builtin:** 108 chapters under Parts 0–14 plus Appendices (`types/cypress/`). Catalog JSON lives in `scripts/cypress-manual-data/`; bump `CYPRESS_TOC_VERSION` when catalog/layout of chapters changes so stale localStorage is dropped. Catalog card title is **Cypress E2E Testing** (`/manuals/cypress`). Kept builtins cannot be hidden from this browser’s catalog.
+- **JMeter builtin:** 43 chapters under Parts 0–11 plus Appendices (`types/jmeter/`). Catalog JSON lives in `scripts/jmeter-manual-data/`; bump `JMETER_TOC_VERSION` when catalog changes. Catalog card title is **Apache JMeter** (`/manuals/jmeter`).
 - **Reader (all slugs):** Full Content / Summary / Quiz & Activities tabs; no AI Summary tab.
 - **Full Content insights:** `blocks[]` via a `<BlockShell>` + registry (new types = Body + catalog entry). Per-row 1/2/3-column `blockLayout` with drag between rows/columns (`@dnd-kit`). Manual settings `allowedBlockTypes` filters the Add menu only. Incomplete blocks save as drafts. When `blocks` is unset, `##` / `###` topics in `contentMarkdown` replace the default Why/When/Practical template — one block per topic. Chapter titles that already include a number (`0.1`, `A.`) show that number once. Parts keep their stored index (Orientation is Part 0).
 - **Edit:** pencil icon on chapter header and catalog cards; markdown toolbar (H1–H3, bold, lists, code) on Summary and Full Content.
