@@ -3,14 +3,16 @@ import testingMeta from "./types/testing-types/meta.json";
 import playwrightMeta from "./types/playwright/meta.json";
 import cypressMeta from "./types/cypress/meta.json";
 import hearthManualMeta from "./types/hearth-manual/meta.json";
+import jmeterMeta from "./types/jmeter/meta.json";
 import { chapters as testingTypeChapters, chapterPaths as testingTypePaths } from "./types/testing-types/chapters-manifest";
 import { chapters as playwrightChapters, chapterPaths as playwrightPaths } from "./types/playwright/chapters-manifest";
 import { chapters as cypressChapters, chapterPaths as cypressPaths } from "./types/cypress/chapters-manifest";
 import { chapters as hearthManualChapters, chapterPaths as hearthManualPaths } from "./types/hearth-manual/chapters-manifest";
+import { chapters as jmeterChapters, chapterPaths as jmeterPaths } from "./types/jmeter/chapters-manifest";
 import type { ChapterRecord } from "./types";
 
 /** Builtin manuals kept in the catalog (all others removed). */
-export const KEPT_BUILTIN_SLUGS = ["playwright", "testing-types", "cypress", "hearth-manual"] as const;
+export const KEPT_BUILTIN_SLUGS = ["playwright", "testing-types", "cypress", "hearth-manual", "jmeter"] as const;
 export const KEPT_MANUAL_SLUGS = KEPT_BUILTIN_SLUGS;
 
 export function isKeptBuiltinSlug(slug: string) {
@@ -260,6 +262,7 @@ const testingTypesBody = manualBody(testingMeta as Record<string, unknown>, test
 const playwrightBody = manualBody(playwrightMeta as Record<string, unknown>, playwrightChapters, playwrightPaths);
 const cypressBody = manualBody(cypressMeta as Record<string, unknown>, cypressChapters, cypressPaths);
 const hearthManualBody = manualBody(hearthManualMeta as Record<string, unknown>, hearthManualChapters, hearthManualPaths);
+const jmeterBody = manualBody(jmeterMeta as Record<string, unknown>, jmeterChapters, jmeterPaths);
 
 /** Builtin manuals. Listing + bodies. A folder is invisible until this file imports its chapters. */
 export type ManualRegistryEntry = {
@@ -323,6 +326,18 @@ export const MANUALS: ManualRegistryEntry[] = [
     pinnable: true,
     pinIcon: "🏠",
     body: hearthManualBody,
+  },
+  {
+    id: "jmeter",
+    title: "Apache JMeter",
+    tool: "jmeter",
+    status: "active",
+    order: 5,
+    tags: ["automation"],
+    featured: false,
+    pinnable: true,
+    pinIcon: "📈",
+    body: jmeterBody,
   },
 ];
 

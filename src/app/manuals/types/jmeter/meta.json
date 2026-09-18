@@ -1,0 +1,14 @@
+{
+  "id": "jmeter",
+  "title": "Apache JMeter",
+  "tagline": "Load, stress, and API performance testing — protocol-level, from first HTTP sampler to CI gates.",
+  "category": "automation",
+  "who": "QA engineers who already write Playwright/API tests and need to prove the system holds up under concurrent load.",
+  "outcomes": [
+    "Build a JMeter test plan (Thread Groups, samplers, assertions, correlation) without treating the GUI as a load generator",
+    "Design load vs stress vs spike vs soak profiles with think time and pacing",
+    "Run CLI tests, read percentiles, generate HTML dashboards, and fail a pipeline on performance thresholds"
+  ],
+  "duration": "4–8 weeks",
+  "levelSpan": "Beginner → Advanced"
+}

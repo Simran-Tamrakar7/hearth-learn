@@ -43,10 +43,14 @@ manuals/
 │   │   ├── roadmapData.ts
 │   │   ├── chapters-manifest.ts
 │   │   └── part-N/chapter-M.ts
-│   └── cypress/                      ← same pattern (108 chapters, Parts 0–14 + Appendices)
-│       ├── toc.ts                    ← CYPRESS_TOC_VERSION — bump when catalog changes
+│   ├── cypress/                      ← same pattern (108 chapters, Parts 0–14 + Appendices)
+│   │   ├── toc.ts                    ← CYPRESS_TOC_VERSION — bump when catalog changes
+│   │   ├── chapters-manifest.ts
+│   │   └── part-N/chapter-M.ts       ← rebuild from scripts/cypress-manual-data via rebuild-cypress-manual.mjs
+│   └── jmeter/                       ← same pattern (43 chapters, Parts 0–11 + Appendices)
+│       ├── toc.ts                    ← JMETER_TOC_VERSION — bump when catalog changes
 │       ├── chapters-manifest.ts
-│       └── part-N/chapter-M.ts       ← rebuild from scripts/cypress-manual-data via rebuild-cypress-manual.mjs
+│       └── part-N/chapter-M.ts       ← rebuild from scripts/jmeter-manual-data via rebuild-jmeter-manual.mjs
 ```
 
 ## What to edit for X
@@ -67,9 +71,12 @@ manuals/
 | Cypress chapter **content** | `types/cypress/part-N/chapter-M.ts` |
 | Cypress TOC | `types/cypress/toc.ts` (bump `CYPRESS_TOC_VERSION`) |
 | Rebuild Cypress catalog from JSON | `scripts/cypress-manual-data/pNN.json` then `node scripts/rebuild-cypress-manual.mjs` |
+| JMeter chapter **content** | `types/jmeter/part-N/chapter-M.ts` |
+| JMeter TOC | `types/jmeter/toc.ts` (bump `JMETER_TOC_VERSION`) |
+| Rebuild JMeter catalog from JSON | `scripts/jmeter-manual-data/pNN.json` then `node scripts/rebuild-jmeter-manual.mjs` |
 | Regenerate chapter index after adding files | `node scripts/generate-chapter-index.mjs` |
 | Registry (hide/feature/pin/order) | `registry.ts` |
-| User / AI manuals (`localStorage`) | `features/local-storage.ts` — `hearth_hidden_manual_slugs` never hides `KEPT_BUILTIN_SLUGS` (playwright, testing-types, cypress, hearth-manual) |
+| User / AI manuals (`localStorage`) | `features/local-storage.ts` — `hearth_hidden_manual_slugs` never hides `KEPT_BUILTIN_SLUGS` (playwright, testing-types, cypress, hearth-manual, jmeter) |
 | Add blank manual (`+` on `/manuals` and `/library`) | `features/catalog.tsx` |
 | AI notes → manual formatting | `/api/manuals/generate` |
 | Playwright roadmap download | `playwright/roadmapData.ts` |

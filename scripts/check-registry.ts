@@ -10,7 +10,7 @@ function uniqueIds(rows: { id: string }[], label: string) {
 }
 
 uniqueIds(MANUALS, "MANUALS");
-assert.equal(MANUALS.length, 4);
+assert.equal(MANUALS.length, 5);
 
 for (const row of MANUALS) {
   assert.ok(row.body && typeof row.body === "object", `registry id ${row.id} missing body`);
