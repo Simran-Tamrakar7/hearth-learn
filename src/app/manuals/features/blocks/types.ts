@@ -597,6 +597,7 @@ export function emptyBlock(type: BlockType): ChapterBlock {
 /** Minimal chapter shape for legacy → blocks hydration (avoids circular import with manuals/types). */
 export type LegacyChapterFields = {
   overviewText?: string;
+  contentMarkdown?: string;
   why?: string;
   when?: string;
   practical?: PracticalExample;
