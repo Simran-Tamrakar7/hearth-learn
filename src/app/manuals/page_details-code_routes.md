@@ -23,8 +23,9 @@ manuals/
 │   ├── categorization.tsx        ← categories, tags, CategoryManager, TagInput
 │   ├── export.tsx                ← PDF/DOCX export + ManualExportMenu
 │   ├── highlights.tsx            ← highlight store + Highlightable UI
-    │   ├── blocks/                   ← BlockShell + registry + ColumnsEditor + per-row layout + dnd
-    │   ├── local-storage.ts          ← user manuals in localStorage
+│   ├── mdTables.ts               ← GFM pipe-table parse (reader + export)
+│   ├── blocks/                   ← BlockShell + registry + ColumnsEditor + per-row layout + dnd
+│   ├── local-storage.ts          ← user manuals in localStorage
 │   └── edit/
 │       ├── ChapterContentEditor.tsx  ← field editor + in-session undo
 │       ├── LessonContentEditor.tsx   ← markdown toolbar (Add) vs typing (Edit)
@@ -62,7 +63,7 @@ manuals/
 | Tool tabs inside a chapter (JUnit/PyTest/Jest) | `features/reader.tsx` (`ToolSwitcher`) — data in chapter `tools[]` |
 | Inline chapter editor (write/preview toolbar) | `features/edit/LessonContentEditor.tsx` |
 | Chapter field editor shell + undo | `features/edit/ChapterContentEditor.tsx` |
-| Content blocks (shell, registry, columns, per-row layout, dnd) | `features/blocks/` — unset `blocks` uses `##`/`###` topics as the blocks when present |
+| Content blocks (shell, registry, columns, per-row layout, dnd) | `features/blocks/` — unset `blocks` uses `##` topics as cards; `###` stays nested; pipe tables render as HTML tables |
 | Part / chapter numbers | `registry.ts` `parseLeadingChapterNo`; `testing-types/toc.ts` `displayPartTitle` / `partDisplayNumber` (Part 0 stays 0) |
 | Testing Types chapter **content** | `types/testing-types/part-N/chapter-M.ts` |
 | Testing Types TOC order / nesting | `types/testing-types/toc.ts` |

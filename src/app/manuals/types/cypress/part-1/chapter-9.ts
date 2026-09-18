@@ -39,155 +39,148 @@ export const chapter = {
       "id": "cy-1-9-md-2",
       "type": "overview",
       "heading": "`cy.task` — the important plugin",
-      "content": "Browser code cannot safely talk to Postgres or `fs`. A **task** is a named Node function Cypress invokes from the queue:\n\n```ts\n// setupNodeEvents\non('task', {\n  seedEmployee({ email }: { email: string }) {\n    // Node: insert into DB, or call an internal admin API with a server secret\n    return { id: 'emp_123', email }; // PLAIN object\n  },\n  resetLeaveTable() {\n    // ...\n    return null; // Cypress forbids undefined — use null\n  },\n});\n```\n\nSpec:\n\n```ts\ncy.task('seedEmployee', { email: 'ada@bizlevate.test' }).then((emp) => {\n  expect(emp.email).to.eq('ada@bizlevate.test');\n});\ncy.visit('/login');\n```\n\n`cy.task` **retries** until the function returns (subject to `taskTimeout`, default 60s). The handler may return a Promise:\n\n```ts\nasync seedEmployee({ email }) {\n  const row = await db.employees.create({ email });\n  return { id: row.id, email: row.email }; // serialize!\n}\n```",
+      "content": "Browser code cannot safely talk to Postgres or `fs`. A **task** is a named Node function Cypress invokes from the queue:\n\n```ts\n// setupNodeEvents\non('task', {\n  seedEmployee({ email }: { email: string }) {\n    // Node: insert into DB, or call an internal admin API with a server secret\n    return { id: 'emp_123', email }; // PLAIN object\n  },\n  resetLeaveTable() {\n    // ...\n    return null; // Cypress forbids undefined — use null\n  },\n});\n```\n\nSpec:\n\n```ts\ncy.task('seedEmployee', { email: 'ada@bizlevate.test' }).then((emp) => {\n  expect(emp.email).to.eq('ada@bizlevate.test');\n});\ncy.visit('/login');\n```\n\n`cy.task` **retries** until the function returns (subject to `taskTimeout`, default 60s). The handler may return a Promise:\n\n```ts\nasync seedEmployee({ email }) {\n  const row = await db.employees.create({ email });\n  return { id: row.id, email: row.email }; // serialize!\n}\n```\n\n### Serialization rules (memorize)\n\nThe return value crosses the **Node ↔ browser** boundary. It must be **JSON-serializable**:\n\n| Return | OK? |\n|---|---|\n| `null` | Yes — use instead of `undefined` |\n| `{ id: 1, name: 'Ada' }` | Yes |\n| `['a', 'b']` | Yes |\n| `'pong'` / `42` / `true` | Yes |\n| `undefined` (implicit empty return) | **No** — Cypress errors |\n| `() => {}` / class instance with methods | **No** |\n| `Buffer`, `Map`, `Set`, `Date` (Dates often become strings if JSON'd — prefer ISO strings) | Avoid raw `Buffer`/`Map` |\n| Mongoose document / Prisma object with circular refs | **No** — map to a plain object first |\n\n```ts\n// wrong\nreturn employeeDocument;\n\n// right\nreturn {\n  id: employeeDocument.id,\n  email: employeeDocument.email,\n};\n```\n\n**Interview line:** \"`cy.task` must return serializable data. If there is no payload, return `null`. `setupNodeEvents` must return `config`.\"",
       "order": 2
     },
     {
       "id": "cy-1-9-md-3",
       "type": "overview",
-      "heading": "Serialization rules (memorize)",
-      "content": "The return value crosses the **Node ↔ browser** boundary. It must be **JSON-serializable**:\n\n| Return | OK? |\n|---|---|\n| `null` | Yes — use instead of `undefined` |\n| `{ id: 1, name: 'Ada' }` | Yes |\n| `['a', 'b']` | Yes |\n| `'pong'` / `42` / `true` | Yes |\n| `undefined` (implicit empty return) | **No** — Cypress errors |\n| `() => {}` / class instance with methods | **No** |\n| `Buffer`, `Map`, `Set`, `Date` (Dates often become strings if JSON'd — prefer ISO strings) | Avoid raw `Buffer`/`Map` |\n| Mongoose document / Prisma object with circular refs | **No** — map to a plain object first |\n\n```ts\n// wrong\nreturn employeeDocument;\n\n// right\nreturn {\n  id: employeeDocument.id,\n  email: employeeDocument.email,\n};\n```\n\n**Interview line:** \"`cy.task` must return serializable data. If there is no payload, return `null`. `setupNodeEvents` must return `config`.\"",
+      "heading": "Tasks vs custom commands vs `cy.request`",
+      "content": "| | Runs in | Use for |\n|---|---|---|\n| `Cypress.Commands.add` | Browser | UI sequences: `cy.login`, `cy.fillLeaveForm` |\n| `cy.task` | Node | DB seed, filesystem, crypto, OS |\n| `cy.request` | Node HTTP from Cypress backend | Hit HRM HTTP APIs with cookies/session |\n| `cy.exec` | Node shell | Last resort scripts |\n\nPrefer `cy.request` for \"POST /api/test/seed\" if HRM exposes a **test-only** HTTP route. Prefer `cy.task` when you must use a DB URL that should never be in the browser.\n\nNever put database passwords in spec files. Task code can read `process.env.DATABASE_URL` in Node.",
       "order": 3
     },
     {
       "id": "cy-1-9-md-4",
       "type": "overview",
-      "heading": "Tasks vs custom commands vs `cy.request`",
-      "content": "| | Runs in | Use for |\n|---|---|---|\n| `Cypress.Commands.add` | Browser | UI sequences: `cy.login`, `cy.fillLeaveForm` |\n| `cy.task` | Node | DB seed, filesystem, crypto, OS |\n| `cy.request` | Node HTTP from Cypress backend | Hit HRM HTTP APIs with cookies/session |\n| `cy.exec` | Node shell | Last resort scripts |\n\nPrefer `cy.request` for \"POST /api/test/seed\" if HRM exposes a **test-only** HTTP route. Prefer `cy.task` when you must use a DB URL that should never be in the browser.\n\nNever put database passwords in spec files. Task code can read `process.env.DATABASE_URL` in Node.",
+      "heading": "Other `on(...)` events you will see",
+      "content": "```ts\nsetupNodeEvents(on, config) {\n  on('before:browser:launch', (browser, launchOptions) => {\n    // launchOptions.args.push('--foo')\n    return launchOptions;\n  });\n\n  on('after:spec', (spec, results) => {\n    // delete passing videos, send metrics\n  });\n\n  on('task', { /* ... */ });\n\n  return config;\n}\n```\n\nPreprocessors (`file:preprocessor`) are how webpack/vite plugins used to work; modern Cypress has a default bundler. Do not add one until you need path aliases or Babel extras.",
       "order": 4
     },
     {
       "id": "cy-1-9-md-5",
       "type": "overview",
-      "heading": "Other `on(...)` events you will see",
-      "content": "```ts\nsetupNodeEvents(on, config) {\n  on('before:browser:launch', (browser, launchOptions) => {\n    // launchOptions.args.push('--foo')\n    return launchOptions;\n  });\n\n  on('after:spec', (spec, results) => {\n    // delete passing videos, send metrics\n  });\n\n  on('task', { /* ... */ });\n\n  return config;\n}\n```\n\nPreprocessors (`file:preprocessor`) are how webpack/vite plugins used to work; modern Cypress has a default bundler. Do not add one until you need path aliases or Babel extras.",
+      "heading": "Plugin *packages*",
+      "content": "`setupNodeEvents` is also where you **call** npm plugins:\n\n```ts\nsetupNodeEvents(on, config) {\n  // example shape — grep the plugin's docs\n  // require('cypress-grep/src/plugin')(config);\n  return config;\n}\n```\n\nInstalling `cypress-image-snapshot` or similar still ends up registering here. You are not authoring a public plugin in this manual; you are **hooking Node events**.",
       "order": 5
     },
     {
       "id": "cy-1-9-md-6",
       "type": "overview",
-      "heading": "Plugin *packages*",
-      "content": "`setupNodeEvents` is also where you **call** npm plugins:\n\n```ts\nsetupNodeEvents(on, config) {\n  // example shape — grep the plugin's docs\n  // require('cypress-grep/src/plugin')(config);\n  return config;\n}\n```\n\nInstalling `cypress-image-snapshot` or similar still ends up registering here. You are not authoring a public plugin in this manual; you are **hooking Node events**.",
+      "heading": "Playwright comparison",
+      "content": "Playwright fixtures (`globalSetup`, `request`, custom fixtures) run in Node beside the test runner. Cypress splits **browser commands** vs **Node tasks** more sharply because the test body lives in the browser. That split is why `cy.task` exists at all.\n\nSelenium: DB setup lives in `@Before` in Java — same process as the test language, no IPC serialization. Cypress tasks are IPC; serialization is the tax.",
       "order": 6
     },
     {
       "id": "cy-1-9-md-7",
       "type": "overview",
-      "heading": "Playwright comparison",
-      "content": "Playwright fixtures (`globalSetup`, `request`, custom fixtures) run in Node beside the test runner. Cypress splits **browser commands** vs **Node tasks** more sharply because the test body lives in the browser. That split is why `cy.task` exists at all.\n\nSelenium: DB setup lives in `@Before` in Java — same process as the test language, no IPC serialization. Cypress tasks are IPC; serialization is the tax.",
+      "heading": "Minimal HRM seed example",
+      "content": "```ts\n// cypress.config.ts (sketch)\nsetupNodeEvents(on, config) {\n  on('task', {\n    log(message: string) {\n      console.log(message);\n      return null;\n    },\n  });\n  return config;\n}\n```\n\n```ts\ncy.task('log', 'seeding skipped in this chapter');\n```\n\nWhen you add a real DB task, unit-test the mapper that turns DB rows into `{ id, email }` so the serializable boundary stays boring.",
       "order": 7
     },
     {
       "id": "cy-1-9-md-8",
       "type": "overview",
-      "heading": "Minimal HRM seed example",
-      "content": "```ts\n// cypress.config.ts (sketch)\nsetupNodeEvents(on, config) {\n  on('task', {\n    log(message: string) {\n      console.log(message);\n      return null;\n    },\n  });\n  return config;\n}\n```\n\n```ts\ncy.task('log', 'seeding skipped in this chapter');\n```\n\nWhen you add a real DB task, unit-test the mapper that turns DB rows into `{ id, email }` so the serializable boundary stays boring.",
+      "heading": "Failure modes",
+      "content": "1. **`task` returned `undefined`** — add `return null`.\n2. **Config change ignored** — you forgot `return config`.\n3. **`cy.task('seedEmployee')` fails with \"still pending\"** — handler threw, or hung without resolving a Promise. Check terminal **Node** logs, not only the Command Log.\n4. **Works in open, not in run** — task used a relative path that depends on cwd. Use `path.join(__dirname, ...)`.\n\nNext chapter is a **quick steps** checklist: zero to first green HRM spec, including gitignore, env, and the rules from 1.1–1.9.",
       "order": 8
     },
     {
       "id": "cy-1-9-md-9",
       "type": "overview",
-      "heading": "Failure modes",
-      "content": "1. **`task` returned `undefined`** — add `return null`.\n2. **Config change ignored** — you forgot `return config`.\n3. **`cy.task('seedEmployee')` fails with \"still pending\"** — handler threw, or hung without resolving a Promise. Check terminal **Node** logs, not only the Command Log.\n4. **Works in open, not in run** — task used a relative path that depends on cwd. Use `path.join(__dirname, ...)`.\n\nNext chapter is a **quick steps** checklist: zero to first green HRM spec, including gitignore, env, and the rules from 1.1–1.9.",
+      "heading": "`on('task')` object merge",
+      "content": "You can pass one object with many names:\n\n```ts\non('task', {\n  ping: () => 'pong',\n  resetDb: async () => {\n    await db.reset();\n    return null;\n  },\n  seedLeave: async ({ email }) => {\n    const row = await db.leave.create({ email, status: 'PENDING' });\n    return { id: String(row.id), email: row.email, status: row.status };\n  },\n});\n```\n\nRegistering `on('task', ...)` twice **replaces** rather than merges in some versions — put all tasks in one object.",
       "order": 9
     },
     {
       "id": "cy-1-9-md-10",
       "type": "overview",
-      "heading": "`on('task')` object merge",
-      "content": "You can pass one object with many names:\n\n```ts\non('task', {\n  ping: () => 'pong',\n  resetDb: async () => {\n    await db.reset();\n    return null;\n  },\n  seedLeave: async ({ email }) => {\n    const row = await db.leave.create({ email, status: 'PENDING' });\n    return { id: String(row.id), email: row.email, status: row.status };\n  },\n});\n```\n\nRegistering `on('task', ...)` twice **replaces** rather than merges in some versions — put all tasks in one object.",
+      "heading": "Debugging tasks",
+      "content": "`console.log` in a task prints in the **terminal that launched Cypress**, not the browser console. The Command Log shows `task seedLeave` with the argument. If it hangs, you likely forgot to resolve a Promise or to `return null`.\n\n```ts\ncy.task('seedLeave', { email: 'ada@bizlevate.test' }, { timeout: 120000 });\n```\n\n`taskTimeout` default is 60s. DB migrations in a task are a smell — run migrations in CI setup, not per test.",
       "order": 10
     },
     {
       "id": "cy-1-9-md-11",
       "type": "overview",
-      "heading": "Debugging tasks",
-      "content": "`console.log` in a task prints in the **terminal that launched Cypress**, not the browser console. The Command Log shows `task seedLeave` with the argument. If it hangs, you likely forgot to resolve a Promise or to `return null`.\n\n```ts\ncy.task('seedLeave', { email: 'ada@bizlevate.test' }, { timeout: 120000 });\n```\n\n`taskTimeout` default is 60s. DB migrations in a task are a smell — run migrations in CI setup, not per test.",
+      "heading": "`before:run` / `after:run`",
+      "content": "```ts\non('before:run', async (details) => {\n  console.log('browser', details.browser);\n});\n```\n\nUseful for printing env in CI logs. Do not seed the DB here if specs run in parallel on different machines with different DBs.",
       "order": 11
     },
     {
       "id": "cy-1-9-md-12",
       "type": "overview",
-      "heading": "`before:run` / `after:run`",
-      "content": "```ts\non('before:run', async (details) => {\n  console.log('browser', details.browser);\n});\n```\n\nUseful for printing env in CI logs. Do not seed the DB here if specs run in parallel on different machines with different DBs.",
+      "heading": "Security",
+      "content": "Tasks run with **full Node filesystem and env access**. A spec calling `cy.task('exec', 'rm -rf /')` is only as safe as the handlers you register. Do not expose a generic `cy.task('exec', cmd)`. Allowlist named tasks (`resetDb`, `seedLeave`).",
       "order": 12
     },
     {
       "id": "cy-1-9-md-13",
       "type": "overview",
-      "heading": "Security",
-      "content": "Tasks run with **full Node filesystem and env access**. A spec calling `cy.task('exec', 'rm -rf /')` is only as safe as the handlers you register. Do not expose a generic `cy.task('exec', cmd)`. Allowlist named tasks (`resetDb`, `seedLeave`).",
+      "heading": "Interview drill",
+      "content": "Where did `plugins/index.js` go? What happens if a task returns `undefined`? Why return `config`? Why not return a Mongoose document? Task vs `Commands.add` vs `cy.request`?",
       "order": 13
     },
     {
       "id": "cy-1-9-md-14",
       "type": "overview",
-      "heading": "Interview drill",
-      "content": "Where did `plugins/index.js` go? What happens if a task returns `undefined`? Why return `config`? Why not return a Mongoose document? Task vs `Commands.add` vs `cy.request`?",
+      "heading": "Passing `config.env` into tasks",
+      "content": "```ts\nsetupNodeEvents(on, config) {\n  const dbUrl = process.env.DATABASE_URL || config.env.DATABASE_URL;\n  on('task', {\n    pingDb() {\n      if (!dbUrl) throw new Error('DATABASE_URL missing');\n      return { ok: true };\n    },\n  });\n  return config;\n}\n```\n\nThe browser never sees `DATABASE_URL` unless you copy it into `config.env` (usually you should **not** — keep it Node-only).",
       "order": 14
     },
     {
       "id": "cy-1-9-md-15",
       "type": "overview",
-      "heading": "Passing `config.env` into tasks",
-      "content": "```ts\nsetupNodeEvents(on, config) {\n  const dbUrl = process.env.DATABASE_URL || config.env.DATABASE_URL;\n  on('task', {\n    pingDb() {\n      if (!dbUrl) throw new Error('DATABASE_URL missing');\n      return { ok: true };\n    },\n  });\n  return config;\n}\n```\n\nThe browser never sees `DATABASE_URL` unless you copy it into `config.env` (usually you should **not** — keep it Node-only).",
+      "heading": "`cy.task` argument must also serialize",
+      "content": "```ts\ncy.task('seed', { createdAt: new Date() }); // Date → string over IPC, maybe\ncy.task('seed', { createdAt: '2026-09-16' }); // explicit\n```\n\nFunctions in the argument throw. Keep payloads JSON.",
       "order": 15
     },
     {
       "id": "cy-1-9-md-16",
       "type": "overview",
-      "heading": "`cy.task` argument must also serialize",
-      "content": "```ts\ncy.task('seed', { createdAt: new Date() }); // Date → string over IPC, maybe\ncy.task('seed', { createdAt: '2026-09-16' }); // explicit\n```\n\nFunctions in the argument throw. Keep payloads JSON.",
+      "heading": "`after:spec` video cleanup (Cypress 13 still useful)",
+      "content": "```ts\non('after:spec', (spec, results) => {\n  if (results && results.stats.failures === 0 && results.video) {\n    fs.unlinkSync(results.video);\n  }\n});\n```\n\nOnly relevant when `video: true`. Pattern: keep failure videos, delete passes. Playwright's `retain-on-failure` is this in one config key.",
       "order": 16
     },
     {
       "id": "cy-1-9-md-17",
       "type": "overview",
-      "heading": "`after:spec` video cleanup (Cypress 13 still useful)",
-      "content": "```ts\non('after:spec', (spec, results) => {\n  if (results && results.stats.failures === 0 && results.video) {\n    fs.unlinkSync(results.video);\n  }\n});\n```\n\nOnly relevant when `video: true`. Pattern: keep failure videos, delete passes. Playwright's `retain-on-failure` is this in one config key.",
+      "heading": "Plugin packages and `return config`",
+      "content": "Many plugins want:\n\n```ts\nsetupNodeEvents(on, config) {\n  grepPlugin(on, config);\n  return config;\n}\n```\n\nIf you forget to return after the plugin mutates `specPattern`, grep silently does nothing.",
       "order": 17
     },
     {
       "id": "cy-1-9-md-18",
       "type": "overview",
-      "heading": "Plugin packages and `return config`",
-      "content": "Many plugins want:\n\n```ts\nsetupNodeEvents(on, config) {\n  grepPlugin(on, config);\n  return config;\n}\n```\n\nIf you forget to return after the plugin mutates `specPattern`, grep silently does nothing.",
+      "heading": "Interview one-liner",
+      "content": "\"`setupNodeEvents` is Node, replaces `plugins/index.js`, registers `cy.task` with serializable returns, and must return `config`.\"",
       "order": 18
     },
     {
       "id": "cy-1-9-md-19",
       "type": "overview",
-      "heading": "Interview one-liner",
-      "content": "\"`setupNodeEvents` is Node, replaces `plugins/index.js`, registers `cy.task` with serializable returns, and must return `config`.\"",
+      "heading": "`on('file:preprocessor')` — usually skip",
+      "content": "Older plugins replaced the preprocessor to teach Cypress webpack aliases. Current Cypress bundles specs with its own pipeline (webpack or vite depending on version). Adding a preprocessor **replaces** that pipeline; get it wrong and every spec fails to compile. For HRM E2E, you do not need it.",
       "order": 19
     },
     {
       "id": "cy-1-9-md-20",
       "type": "overview",
-      "heading": "`on('file:preprocessor')` — usually skip",
-      "content": "Older plugins replaced the preprocessor to teach Cypress webpack aliases. Current Cypress bundles specs with its own pipeline (webpack or vite depending on version). Adding a preprocessor **replaces** that pipeline; get it wrong and every spec fails to compile. For HRM E2E, you do not need it.",
+      "heading": "Task timeout vs Mocha timeout",
+      "content": "A task that runs 90 seconds needs `{ timeout: 100000 }` on `cy.task` **and** a Mocha `this.timeout` higher than that. Otherwise Mocha kills the test while Node is still working. Prefer faster seeds.",
       "order": 20
     },
     {
       "id": "cy-1-9-md-21",
       "type": "overview",
-      "heading": "Task timeout vs Mocha timeout",
-      "content": "A task that runs 90 seconds needs `{ timeout: 100000 }` on `cy.task` **and** a Mocha `this.timeout` higher than that. Otherwise Mocha kills the test while Node is still working. Prefer faster seeds.",
+      "heading": "Returning arrays",
+      "content": "```ts\non('task', {\n  listTempFiles() {\n    return fs.readdirSync('/tmp').filter((f) => f.startsWith('hrm-'));\n  },\n});\n```\n\nArrays of strings are serializable. Arrays of `fs.Dirent` objects may not be. Map to names.",
       "order": 21
     },
     {
       "id": "cy-1-9-md-22",
       "type": "overview",
-      "heading": "Returning arrays",
-      "content": "```ts\non('task', {\n  listTempFiles() {\n    return fs.readdirSync('/tmp').filter((f) => f.startsWith('hrm-'));\n  },\n});\n```\n\nArrays of strings are serializable. Arrays of `fs.Dirent` objects may not be. Map to names.",
-      "order": 22
-    },
-    {
-      "id": "cy-1-9-md-23",
-      "type": "overview",
       "heading": "`setupNodeEvents` async",
       "content": "```ts\nasync setupNodeEvents(on, config) {\n  const secrets = await loadFromVault();\n  config.env.adminPassword = secrets.adminPassword;\n  on('task', { /* ... */ });\n  return config;\n}\n```\n\nSupported. Still return `config`. Do not put Vault tokens into `config.env` if specs could `cy.log` them — prefer Node-only closures inside tasks.",
-      "order": 23
+      "order": 22
     }
   ],
   "advantages": [

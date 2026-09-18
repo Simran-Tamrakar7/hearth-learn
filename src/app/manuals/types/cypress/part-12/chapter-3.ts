@@ -30,9 +30,42 @@ export const chapter = {
     },
     {
       "id": "cy-12-3-md-1",
-      "type": "overview",
-      "heading": "Fixes that match causes",
-      "content": "| Cause | Fix |\n|---|---|\n| Spinner | `.should('not.exist')` on spinner, then click |\n| Stale list length | `.should('have.length', n)` then `.last().click()` (retry wraps the should) |\n| Shared session dirt | default `testIsolation: true`; `cy.session` for login only |\n| Animation | `prefers-reduced-motion`, wait for class, avoid `force: true` |\n| Clock-dependent balance | `cy.clock` / freeze 'today' |\n| Parallel collisions | include spec+timestamp in email |\n| Video CPU | `video: false` locally in CI experiment (11.8, 12.4) |",
+      "type": "table",
+      "headers": [
+        "Cause",
+        "Fix"
+      ],
+      "rows": [
+        [
+          "Spinner",
+          "`.should('not.exist')` on spinner, then click"
+        ],
+        [
+          "Stale list length",
+          "`.should('have.length', n)` then `.last().click()` (retry wraps the should)"
+        ],
+        [
+          "Shared session dirt",
+          "default `testIsolation: true`; `cy.session` for login only"
+        ],
+        [
+          "Animation",
+          "`prefers-reduced-motion`, wait for class, avoid `force: true`"
+        ],
+        [
+          "Clock-dependent balance",
+          "`cy.clock` / freeze 'today'"
+        ],
+        [
+          "Parallel collisions",
+          "include spec+timestamp in email"
+        ],
+        [
+          "Video CPU",
+          "`video: false` locally in CI experiment (11.8, 12.4)"
+        ]
+      ],
+      "caption": "Fixes that match causes",
       "order": 1
     },
     {

@@ -30,9 +30,30 @@ export const chapter = {
     },
     {
       "id": "cy-9-15-md-1",
-      "type": "overview",
-      "heading": "Useful options",
-      "content": "| Option | Why |\n|---|---|\n| `capture: 'fullPage' \\| 'viewport' \\| 'runner'` | `runner` includes the Command Log — rarely what you want in a product bug ticket |\n| `blackout` | CSS selectors covered before capture — payroll PII |\n| `overwrite` | stable filename for docs |\n| `onAfterScreenshot` | copy/resize in Node via task if you must |",
+      "type": "table",
+      "headers": [
+        "Option",
+        "Why"
+      ],
+      "rows": [
+        [
+          "`capture: 'fullPage' \\",
+          "'viewport' \\"
+        ],
+        [
+          "`blackout`",
+          "CSS selectors covered before capture — payroll PII"
+        ],
+        [
+          "`overwrite`",
+          "stable filename for docs"
+        ],
+        [
+          "`onAfterScreenshot`",
+          "copy/resize in Node via task if you must"
+        ]
+      ],
+      "caption": "Useful options",
       "order": 1
     },
     {

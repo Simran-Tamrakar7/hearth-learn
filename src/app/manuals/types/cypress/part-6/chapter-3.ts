@@ -36,9 +36,34 @@ export const chapter = {
     },
     {
       "id": "cy-6-3-md-2",
-      "type": "overview",
-      "heading": "The decision framework",
-      "content": "| If the test is about... | Drive it via... |\n|---|---|\n| The form/UI component itself (validation, field interactions, layout) | UI |\n| Whether data appears correctly once loaded | API to seed, UI to verify display |\n| A multi-step business flow where earlier steps aren't the focus | API for setup steps, UI for the step under test |\n| Whether an API contract is correct | Pure API (6.1, 6.2) — no UI at all |\n| An end-to-end smoke test proving the whole stack works together | Full UI, deliberately, as one of a small number of such tests |",
+      "type": "table",
+      "headers": [
+        "If the test is about...",
+        "Drive it via..."
+      ],
+      "rows": [
+        [
+          "The form/UI component itself (validation, field interactions, layout)",
+          "UI"
+        ],
+        [
+          "Whether data appears correctly once loaded",
+          "API to seed, UI to verify display"
+        ],
+        [
+          "A multi-step business flow where earlier steps aren't the focus",
+          "API for setup steps, UI for the step under test"
+        ],
+        [
+          "Whether an API contract is correct",
+          "Pure API (6.1, 6.2) — no UI at all"
+        ],
+        [
+          "An end-to-end smoke test proving the whole stack works together",
+          "Full UI, deliberately, as one of a small number of such tests"
+        ]
+      ],
+      "caption": "The decision framework",
       "order": 2
     },
     {

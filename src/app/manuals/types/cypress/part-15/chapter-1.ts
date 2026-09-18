@@ -23,9 +23,154 @@ export const chapter = {
   "blocks": [
     {
       "id": "cy-15-1-md-0",
-      "type": "overview",
-      "heading": "Master table",
-      "content": "| Topic | Cypress | Playwright | Selenium |\n|---|---|---|---|\n| Execution | In-browser, command queue | External, CDP/WebSocket | External, WebDriver HTTP |\n| Languages | JS/TS only | JS/TS, Python, Java, .NET | Many |\n| Browsers | Electron, Chrome, Edge, Firefox; **no first-class WebKit** | Chromium, Firefox, **WebKit** | Most, via drivers (incl. SafariDriver) |\n| Auto-wait | Command + assertion retry-ability | Actionability + expect retries | Historically manual; improving |\n| Cross-origin | `cy.origin({ args })` | Transparent | Transparent |\n| Multi-tab | **No switchToTab**; href/request/stubs | Pages/popups | Window handles |\n| Shadow DOM | Opt-in `includeShadowDom` / `.shadow()` | Open shadow pierced by default | `getShadowRoot()` |\n| Debugging live | App time-travel / UI Mode | Inspector / UI Mode | IDE debugger |\n| Post-mortem | Screenshots/videos; **no Trace Viewer**; Cloud Replay paid | **trace.zip** | Vendor video/logs |\n| Component testing | **First-class `cy.mount`** | Exists, less central (esp. Python) | None |\n| Visual regression | **No built-in** (plugin/SaaS) | Built-in screenshot matcher | Plugin/SaaS |\n| a11y | **cypress-axe** (axe-core) | axe-core wrappers | axe-core wrappers |\n| API | `cy.request` same session | Isolated APIRequestContext | REST libs |\n| Session | `cy.session` | storageState / context | cookies by hand |\n| Parallel | **Machines × spec shards** (Cloud smart split paid) | Workers + shard | Grid nodes |\n| CI helper | **cypress-io/github-action**; **cypress/browsers** images | playwright install / Microsoft images | driver/Grid images |\n| Dashboard | Cloud; **Sorry Cypress / Currents** | OSS HTML+trace; vendor clouds | Vendor clouds |\n| Reports | **Mochawesome two-part** (JSON then merge) | First-party HTML + blob merge | Allure/Extent/JUnit |\n| Logging | **cy.task** (Node) vs **cy.log** (GUI) | console in Node test | framework logs |\n| Native mobile | **No — Appium** | **No — Appium** | Appium (WebDriver family) |\n| Device emulation | `cy.viewport` (size) | viewport + UA + WebKit | Chrome options |\n| Origin company | Cypress.io, Cloud revenue | Microsoft | Open community + vendors |\n| First public | 2017 | 2020 | 2004 |",
+      "type": "table",
+      "headers": [
+        "Topic",
+        "Cypress",
+        "Playwright",
+        "Selenium"
+      ],
+      "rows": [
+        [
+          "Execution",
+          "In-browser, command queue",
+          "External, CDP/WebSocket",
+          "External, WebDriver HTTP"
+        ],
+        [
+          "Languages",
+          "JS/TS only",
+          "JS/TS, Python, Java, .NET",
+          "Many"
+        ],
+        [
+          "Browsers",
+          "Electron, Chrome, Edge, Firefox; **no first-class WebKit**",
+          "Chromium, Firefox, **WebKit**",
+          "Most, via drivers (incl. SafariDriver)"
+        ],
+        [
+          "Auto-wait",
+          "Command + assertion retry-ability",
+          "Actionability + expect retries",
+          "Historically manual; improving"
+        ],
+        [
+          "Cross-origin",
+          "`cy.origin({ args })`",
+          "Transparent",
+          "Transparent"
+        ],
+        [
+          "Multi-tab",
+          "**No switchToTab**; href/request/stubs",
+          "Pages/popups",
+          "Window handles"
+        ],
+        [
+          "Shadow DOM",
+          "Opt-in `includeShadowDom` / `.shadow()`",
+          "Open shadow pierced by default",
+          "`getShadowRoot()`"
+        ],
+        [
+          "Debugging live",
+          "App time-travel / UI Mode",
+          "Inspector / UI Mode",
+          "IDE debugger"
+        ],
+        [
+          "Post-mortem",
+          "Screenshots/videos; **no Trace Viewer**; Cloud Replay paid",
+          "**trace.zip**",
+          "Vendor video/logs"
+        ],
+        [
+          "Component testing",
+          "**First-class `cy.mount`**",
+          "Exists, less central (esp. Python)",
+          "None"
+        ],
+        [
+          "Visual regression",
+          "**No built-in** (plugin/SaaS)",
+          "Built-in screenshot matcher",
+          "Plugin/SaaS"
+        ],
+        [
+          "a11y",
+          "**cypress-axe** (axe-core)",
+          "axe-core wrappers",
+          "axe-core wrappers"
+        ],
+        [
+          "API",
+          "`cy.request` same session",
+          "Isolated APIRequestContext",
+          "REST libs"
+        ],
+        [
+          "Session",
+          "`cy.session`",
+          "storageState / context",
+          "cookies by hand"
+        ],
+        [
+          "Parallel",
+          "**Machines × spec shards** (Cloud smart split paid)",
+          "Workers + shard",
+          "Grid nodes"
+        ],
+        [
+          "CI helper",
+          "**cypress-io/github-action**; **cypress/browsers** images",
+          "playwright install / Microsoft images",
+          "driver/Grid images"
+        ],
+        [
+          "Dashboard",
+          "Cloud; **Sorry Cypress / Currents**",
+          "OSS HTML+trace; vendor clouds",
+          "Vendor clouds"
+        ],
+        [
+          "Reports",
+          "**Mochawesome two-part** (JSON then merge)",
+          "First-party HTML + blob merge",
+          "Allure/Extent/JUnit"
+        ],
+        [
+          "Logging",
+          "**cy.task** (Node) vs **cy.log** (GUI)",
+          "console in Node test",
+          "framework logs"
+        ],
+        [
+          "Native mobile",
+          "**No — Appium**",
+          "**No — Appium**",
+          "Appium (WebDriver family)"
+        ],
+        [
+          "Device emulation",
+          "`cy.viewport` (size)",
+          "viewport + UA + WebKit",
+          "Chrome options"
+        ],
+        [
+          "Origin company",
+          "Cypress.io, Cloud revenue",
+          "Microsoft",
+          "Open community + vendors"
+        ],
+        [
+          "First public",
+          "2017",
+          "2020",
+          "2004"
+        ]
+      ],
+      "caption": "Master table",
       "order": 0
     },
     {

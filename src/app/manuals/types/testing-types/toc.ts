@@ -8,7 +8,7 @@
 /** 15-chapter Testing Types TOC. Chapter `no` maps to overlayNo in part-N/chapter-M.md frontmatter. */
 
 /** Bump when the catalog TOC changes so an old localStorage TOC is not restored. */
-export const TESTING_TYPES_TOC_VERSION = 19;
+export const TESTING_TYPES_TOC_VERSION = 20;
 
 export function restoreTestingTypesToc(saved: unknown): boolean {
   if (!saved || typeof saved !== "object") return false;

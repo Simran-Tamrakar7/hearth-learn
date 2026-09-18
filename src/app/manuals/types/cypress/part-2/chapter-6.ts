@@ -135,9 +135,38 @@ export const chapter = {
     },
     {
       "id": "cy-2-6-md-16",
-      "type": "overview",
-      "heading": "Table: pick the assertion",
-      "content": "| You want to know | Write |\n|---|---|\n| Button can be pressed | `.should('be.enabled').and('be.visible')` |\n| Table finished loading | `.should('have.length', n)` or intercept wait + length |\n| Copy contract | `.should('contain.text', 'Pending')` |\n| Attribute | `.should('have.attr', 'href', '/leave/new')` |\n| HTTP status | `.its('status').should('eq', 200)` or `expect(res.status).to.eq(200)` in then |\n| Parsed number | `.should(($el) => { expect(parseInt($el.text(), 10)).to.be.gt(0); })` |",
+      "type": "table",
+      "headers": [
+        "You want to know",
+        "Write"
+      ],
+      "rows": [
+        [
+          "Button can be pressed",
+          "`.should('be.enabled').and('be.visible')`"
+        ],
+        [
+          "Table finished loading",
+          "`.should('have.length', n)` or intercept wait + length"
+        ],
+        [
+          "Copy contract",
+          "`.should('contain.text', 'Pending')`"
+        ],
+        [
+          "Attribute",
+          "`.should('have.attr', 'href', '/leave/new')`"
+        ],
+        [
+          "HTTP status",
+          "`.its('status').should('eq', 200)` or `expect(res.status).to.eq(200)` in then"
+        ],
+        [
+          "Parsed number",
+          "`.should(($el) => { expect(parseInt($el.text(), 10)).to.be.gt(0); })`"
+        ]
+      ],
+      "caption": "Table: pick the assertion",
       "order": 16
     },
     {

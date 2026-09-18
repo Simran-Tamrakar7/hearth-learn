@@ -1,6 +1,6 @@
 /* Hearth repository manual TOC — ordering only. Content in part-N/chapter-M.ts */
 
-export const HEARTH_MANUAL_TOC_VERSION = 1;
+export const HEARTH_MANUAL_TOC_VERSION = 2;
 
 export type HearthManualTocPart = {
   partNo: number;

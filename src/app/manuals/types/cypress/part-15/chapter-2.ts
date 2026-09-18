@@ -23,9 +23,50 @@ export const chapter = {
   "blocks": [
     {
       "id": "cy-15-2-md-0",
-      "type": "overview",
-      "heading": "Taught in this manual (install these when you need the chapter)",
-      "content": "| Plugin / package | Chapter | Role |\n|---|---|---|\n| `@cypress/grep` | 10.1 | Tags / smoke |\n| `cypress-axe` + `axe-core` | 9.7 | a11y |\n| `cypress-mochawesome-reporter` or mochawesome + **merge** + marge | 11.6 | HTML reports |\n| `cypress-image-snapshot` (or Percy SDK) | 9.6 | Visual — not built-in |\n| `cypress-parallel` | 9.8 | Multi-process on one machine |\n| `@testing-library/cypress` | 4.x | `findByRole` etc. |\n| `cypress-real-events` | 9.17 | closer pointer events |",
+      "type": "table",
+      "headers": [
+        "Plugin / package",
+        "Chapter",
+        "Role"
+      ],
+      "rows": [
+        [
+          "`@cypress/grep`",
+          "10.1",
+          "Tags / smoke"
+        ],
+        [
+          "`cypress-axe` + `axe-core`",
+          "9.7",
+          "a11y"
+        ],
+        [
+          "`cypress-mochawesome-reporter` or mochawesome + **merge** + marge",
+          "11.6",
+          "HTML reports"
+        ],
+        [
+          "`cypress-image-snapshot` (or Percy SDK)",
+          "9.6",
+          "Visual — not built-in"
+        ],
+        [
+          "`cypress-parallel`",
+          "9.8",
+          "Multi-process on one machine"
+        ],
+        [
+          "`@testing-library/cypress`",
+          "4.x",
+          "`findByRole` etc."
+        ],
+        [
+          "`cypress-real-events`",
+          "9.17",
+          "closer pointer events"
+        ]
+      ],
+      "caption": "Taught in this manual (install these when you need the chapter)",
       "order": 0
     },
     {

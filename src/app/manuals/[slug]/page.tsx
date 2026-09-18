@@ -22,6 +22,7 @@ import { PinButton, getPinnedItems, PinnedItemMetadata, manualPinId } from "@/co
 import { ManualExportMenu } from "@/app/manuals/features/export";
 import { ChapterContentEditor } from "@/app/manuals/features/edit/ChapterContentEditor";
 import { ChapterFullContent } from "@/app/manuals/features/ChapterFullContent";
+import { consumeMdTable } from "@/app/manuals/features/mdTables";
 import { ChapterActivitiesPanel, ChapterSummaryPanel } from "@/app/manuals/features/ChapterReaderPanels";
 import { kebabItems, KebabMenu } from "@/app/manuals/features/catalog";
 import { Highlightable, addHighlight, deleteManualHighlight, fetchManualHighlights, highlightsForField, lastAdded, mergeHighlightStores, parseHighlightStore, postManualHighlight, removeHighlight, wrapHighlightHtml, type HighlightStore } from "@/app/manuals/features/highlights";
@@ -1308,8 +1309,44 @@ function GenericManualDetailPage({ seeded }: { seeded: ManualItem }) {
         }
       };
 
-      for (const line of lines) {
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i] ?? "";
         const trimmed = line.trim();
+        const table = consumeMdTable(lines, i);
+
+        if (table) {
+          flushParagraph();
+          flushList();
+          const colCount = Math.max(table.table.headers.length, 1);
+          elements.push(
+            <div key={`tbl-${elements.length}`} className="my-3 overflow-x-auto rounded-xl border border-[#E7E0D3] bg-[#FAF7F2]">
+              <table className="w-full min-w-[16rem] text-left text-xs sm:text-[13px] border-collapse">
+                <thead>
+                  <tr className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#8A9B95]">
+                    {table.table.headers.map((h, hi) => (
+                      <th key={hi} className="px-3 py-2 font-bold">
+                        {parseInlineFormatting(h)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {table.table.rows.map((row, ri) => (
+                    <tr key={ri} className="border-t border-[#E7E0D3] align-top">
+                      {Array.from({ length: colCount }, (_, ci) => (
+                        <td key={ci} className="px-3 py-2 text-[#1C2A26] leading-relaxed">
+                          {parseInlineFormatting(row[ci] || "")}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+          i = table.next - 1;
+          continue;
+        }
 
         if (!trimmed) {
           flushParagraph();
