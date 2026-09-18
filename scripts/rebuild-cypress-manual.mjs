@@ -6,6 +6,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { topicBlocks as buildTopicBlocks } from "./topic-blocks.mjs";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const cypressDir = path.join(root, "src/app/manuals/types/cypress");
@@ -21,33 +22,8 @@ function slugify(title) {
     .slice(0, 48);
 }
 
-/** One overview block per ## / ### topic. */
 function topicBlocks(md, partNo, chNo) {
-  const text = String(md || "").trim();
-  if (!text || !/^#{2,3}\s+/m.test(text)) return undefined;
-  const chunks = text.split(/^#{2,3}\s+/m);
-  const out = [];
-  let n = 0;
-  const lead = chunks[0].trim();
-  if (lead) {
-    out.push({ id: `cy-${partNo}-${chNo}-md-${n}`, type: "overview", content: lead, order: n });
-    n += 1;
-  }
-  for (const chunk of chunks.slice(1)) {
-    const nl = chunk.indexOf("\n");
-    const heading = (nl < 0 ? chunk : chunk.slice(0, nl)).trim();
-    const content = (nl < 0 ? "" : chunk.slice(nl + 1)).trim();
-    if (!heading && !content) continue;
-    out.push({
-      id: `cy-${partNo}-${chNo}-md-${n}`,
-      type: "overview",
-      heading: heading || undefined,
-      content: content || heading,
-      order: n,
-    });
-    n += 1;
-  }
-  return out.length ? out : undefined;
+  return buildTopicBlocks(md, (n) => `cy-${partNo}-${chNo}-md-${n}`);
 }
 
 function writeChapter(partNo, chNo, rec, partName) {

@@ -8,7 +8,7 @@ import type { ChapterHighlight } from "@/app/manuals/features/highlights";
 import { MarkedText } from "@/app/manuals/features/highlights";
 import { ToolSwitcher, testingTypesMdSections } from "@/app/manuals/features/reader";
 import { ChapterBlockView } from "@/app/manuals/features/blocks/BlockViews";
-import { chapterBlocksForRender, legacyFieldsToBlocks } from "@/app/manuals/features/blocks/types";
+import { chapterBlocksForRender, expandOverviewTables, legacyFieldsToBlocks, withOrder } from "@/app/manuals/features/blocks/types";
 import type { BlockLayout, ChapterBlock } from "@/app/manuals/features/blocks/types";
 import { rowGridClass, sanitizeLayout } from "@/app/manuals/features/blocks/blockLayout";
 import {
@@ -43,10 +43,13 @@ export function ChapterFullContent({
     : (chapter.contentMarkdown || "").trim();
 
   const explicitBlocks = chapterBlocksForRender(chapter);
-  const blocks = explicitBlocks ?? legacyFieldsToBlocks({ ...chapter, contentMarkdown: mdBody || chapter.contentMarkdown });
+  const synthesized = explicitBlocks ?? legacyFieldsToBlocks({ ...chapter, contentMarkdown: mdBody || chapter.contentMarkdown });
+  const blocks = withOrder(expandOverviewTables(synthesized));
   const usingBlocks = Array.isArray(chapter.blocks);
   const hasBlocks = blocks.length > 0;
-  const mdAlreadyInBlocks = blocks.some((b) => b.type === "overview" && Boolean(b.heading?.trim()));
+  const mdAlreadyInBlocks = blocks.some(
+    (b) => (b.type === "overview" && Boolean(b.heading?.trim())) || b.type === "table"
+  );
 
   // Legacy-only path (no blocks array): keep overview outside the insight list for parity
   // when synthesizing — overview is included in legacyFieldsToBlocks as an overview block.

@@ -1,7 +1,7 @@
 /* JMeter manual TOC — ordering only. Content lives in part-N/chapter-M.ts */
 
 /** Bump when chapter catalog changes so stale browser localStorage is not restored. */
-export const JMETER_TOC_VERSION = 1;
+export const JMETER_TOC_VERSION = 2;
 
 export type JmeterTocPart = {
   partNo: number;

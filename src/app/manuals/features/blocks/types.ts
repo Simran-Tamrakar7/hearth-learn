@@ -3,6 +3,8 @@
  * A chapter renders only blocks present in `blocks[]` (or legacy fields when blocks unset).
  */
 
+import { parseTableOnlyMarkdown } from "../mdTables";
+
 export const BLOCK_TYPES = [
   "overview",
   "why",
@@ -616,7 +618,7 @@ export type LegacyChapterFields = {
 /** Synthesize blocks from legacy chapter fields when `blocks` is unset. */
 export function legacyFieldsToBlocks(ch: LegacyChapterFields): ChapterBlock[] {
   const topics = markdownSectionBlocks(ch.contentMarkdown);
-  // ponytail: authored ## / ### topics replace the default Why/When/Practical template
+  // ponytail: authored ## topics replace the default Why/When/Practical template
   if (topics.length) return withOrder(topics);
 
   const out: ChapterBlock[] = [];
@@ -665,29 +667,62 @@ export function legacyFieldsToBlocks(ch: LegacyChapterFields): ChapterBlock[] {
   return withOrder(out);
 }
 
-/** One block per ## / ### heading. Lead text with no heading is a single untitled overview. */
+function sectionFromMarkdown(heading: string | undefined, content: string): ChapterBlock[] {
+  const only = parseTableOnlyMarkdown(content);
+  if (only) {
+    return [
+      {
+        id: newBlockId("md"),
+        type: "table",
+        headers: only.headers,
+        rows: only.rows,
+        caption: heading,
+      },
+    ];
+  }
+  if (!heading && !content) return [];
+  return [{ id: newBlockId("md"), type: "overview", heading, content: content || heading || "" }];
+}
+
+/** One block per ## section (### stays inside). A table-only heading becomes one table. */
 function markdownSectionBlocks(md?: string): ChapterBlock[] {
   const text = String(md || "").trim();
-  if (!text || !/^#{2,3}\s+/m.test(text)) return [];
-  const chunks = text.split(/^#{2,3}\s+/m);
+  if (!text) return [];
+  if (!/^##\s+/m.test(text)) {
+    const only = parseTableOnlyMarkdown(text);
+    if (!only) return [];
+    return sectionFromMarkdown(undefined, text);
+  }
+  const chunks = text.split(/^##\s+/m);
   const out: ChapterBlock[] = [];
   const lead = chunks[0].trim();
-  if (lead) {
-    out.push({ id: newBlockId("md"), type: "overview", content: lead });
-  }
+  if (lead) out.push(...sectionFromMarkdown(undefined, lead));
   for (const chunk of chunks.slice(1)) {
     const nl = chunk.indexOf("\n");
     const heading = (nl < 0 ? chunk : chunk.slice(0, nl)).trim();
     const content = (nl < 0 ? "" : chunk.slice(nl + 1)).trim();
     if (!heading && !content) continue;
-    out.push({
-      id: newBlockId("md"),
-      type: "overview",
-      heading: heading || undefined,
-      content: content || heading,
-    });
+    out.push(...sectionFromMarkdown(heading || undefined, content));
   }
   return out;
+}
+
+/** Table-only overview cards become table blocks; mixed prose keeps one card. */
+export function expandOverviewTables(blocks: ChapterBlock[]): ChapterBlock[] {
+  return blocks.map((b) => {
+    if (b.type !== "overview") return b;
+    const only = parseTableOnlyMarkdown(b.content);
+    if (!only) return b;
+    return {
+      id: b.id,
+      type: "table" as const,
+      headers: only.headers,
+      rows: only.rows,
+      caption: b.heading,
+      accent: b.accent,
+      font: b.font,
+    };
+  });
 }
 
 /** Blocks to render: explicit `blocks` if set (even empty), else legacy synthesis. */

@@ -30,9 +30,30 @@ export const chapter = {
     },
     {
       "id": "cy-13-4-md-1",
-      "type": "overview",
-      "heading": "How the paths use this manual",
-      "content": "| Path | Lean on |\n|---|---|\n| Frontend engineer | CT, App time-travel, intercepts, data-cy advocacy |\n| QA Automation | Journeys, grep smoke, reports, flake process |\n| SDET | origin/session architecture, GHA, Docker, sharding |\n| Platform/DevOps | `cypress/browsers`, artifacts, Cloud vs Sorry Cypress |",
+      "type": "table",
+      "headers": [
+        "Path",
+        "Lean on"
+      ],
+      "rows": [
+        [
+          "Frontend engineer",
+          "CT, App time-travel, intercepts, data-cy advocacy"
+        ],
+        [
+          "QA Automation",
+          "Journeys, grep smoke, reports, flake process"
+        ],
+        [
+          "SDET",
+          "origin/session architecture, GHA, Docker, sharding"
+        ],
+        [
+          "Platform/DevOps",
+          "`cypress/browsers`, artifacts, Cloud vs Sorry Cypress"
+        ]
+      ],
+      "caption": "How the paths use this manual",
       "order": 1
     },
     {

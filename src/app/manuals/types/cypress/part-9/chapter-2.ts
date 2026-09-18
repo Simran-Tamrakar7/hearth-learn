@@ -30,9 +30,45 @@ export const chapter = {
     },
     {
       "id": "cy-9-2-md-1",
-      "type": "overview",
-      "heading": "A substitution table you can actually use",
-      "content": "| Product behavior | Cypress substitute | When the substitute is not enough |\n|---|---|---|\n| Redirect through Okta | `cy.origin` (9.1) | IdP uses a popup + opener messaging you cannot observe |\n| `target=\"_blank\"` payslip | Assert `href` + `target`, or `cy.request(href)` | You must *read rendered PDF pixels in the new tab* |\n| `window.open` compare-employees | Stub `window.open`, then `cy.visit` the URL | Two live DOMs must stay open and interact |\n| Third-party chat widget iframe | `cy.origin` or isolate it out of E2E | Closed shadow + cross-origin + popup together |\n| Safari/iOS web-view bug | Do not pretend: no first-class WebKit | That bug is the test's reason to exist |\n| Native iOS/Android HRM app | Out of scope — Appium | Always |",
+      "type": "table",
+      "headers": [
+        "Product behavior",
+        "Cypress substitute",
+        "When the substitute is not enough"
+      ],
+      "rows": [
+        [
+          "Redirect through Okta",
+          "`cy.origin` (9.1)",
+          "IdP uses a popup + opener messaging you cannot observe"
+        ],
+        [
+          "`target=\"_blank\"` payslip",
+          "Assert `href` + `target`, or `cy.request(href)`",
+          "You must *read rendered PDF pixels in the new tab*"
+        ],
+        [
+          "`window.open` compare-employees",
+          "Stub `window.open`, then `cy.visit` the URL",
+          "Two live DOMs must stay open and interact"
+        ],
+        [
+          "Third-party chat widget iframe",
+          "`cy.origin` or isolate it out of E2E",
+          "Closed shadow + cross-origin + popup together"
+        ],
+        [
+          "Safari/iOS web-view bug",
+          "Do not pretend: no first-class WebKit",
+          "That bug is the test's reason to exist"
+        ],
+        [
+          "Native iOS/Android HRM app",
+          "Out of scope — Appium",
+          "Always"
+        ]
+      ],
+      "caption": "A substitution table you can actually use",
       "order": 1
     },
     {

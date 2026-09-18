@@ -30,9 +30,46 @@ export const chapter = {
     },
     {
       "id": "cy-9-16-md-1",
-      "type": "overview",
-      "heading": "Mechanical maps that *do* help",
-      "content": "| Legacy | Cypress |\n|---|---|\n| `element(by.css('[data-cy=x]'))` | `cy.get('[data-cy=x]')` |\n| `browser.get(url)` | `cy.visit(url)` |\n| `ExpectedConditions.visibilityOf` | `.should('be.visible')` (retry-ability) |\n| `browser.sleep(2000)` | delete; wait on UI or `@alias` |\n| TestNG DataProvider | generated `it()` (9.14) |\n| `browser.switchTo().frame` | `cy.get(iframe).its('0.contentDocument.body')` then `cy.wrap` — or `cy.origin` if the iframe is another origin |\n| `switchTo().window` | **no equivalent** — 9.3 |\n| `driver.get('https://okta...')` after app | `cy.origin` — 9.1 |",
+      "type": "table",
+      "headers": [
+        "Legacy",
+        "Cypress"
+      ],
+      "rows": [
+        [
+          "`element(by.css('[data-cy=x]'))`",
+          "`cy.get('[data-cy=x]')`"
+        ],
+        [
+          "`browser.get(url)`",
+          "`cy.visit(url)`"
+        ],
+        [
+          "`ExpectedConditions.visibilityOf`",
+          "`.should('be.visible')` (retry-ability)"
+        ],
+        [
+          "`browser.sleep(2000)`",
+          "delete; wait on UI or `@alias`"
+        ],
+        [
+          "TestNG DataProvider",
+          "generated `it()` (9.14)"
+        ],
+        [
+          "`browser.switchTo().frame`",
+          "`cy.get(iframe).its('0.contentDocument.body')` then `cy.wrap` — or `cy.origin` if the iframe is another origin"
+        ],
+        [
+          "`switchTo().window`",
+          "**no equivalent** — 9.3"
+        ],
+        [
+          "`driver.get('https://okta...')` after app",
+          "`cy.origin` — 9.1"
+        ]
+      ],
+      "caption": "Mechanical maps that *do* help",
       "order": 1
     },
     {

@@ -58,9 +58,38 @@ export const chapter = {
     },
     {
       "id": "cy-2-2-md-5",
-      "type": "overview",
-      "heading": "Decision table (HRM)",
-      "content": "| Intent | Command |\n|---|---|\n| Load the leave page | `cy.visit('/leave')` |\n| Unique `data-cy` | `cy.get('[data-cy=leave-table]')` |\n| Click labeled button | `cy.contains('button', 'Approve')` |\n| CSS inside a known parent | `cy.get('[data-cy=row-12]').find('.status')` |\n| Several fields in one card | `cy.get('[data-cy=leave-form]').within(() => { ... })` |\n| Row that shows a name | `cy.contains('tr', 'Ada Lovelace')` |",
+      "type": "table",
+      "headers": [
+        "Intent",
+        "Command"
+      ],
+      "rows": [
+        [
+          "Load the leave page",
+          "`cy.visit('/leave')`"
+        ],
+        [
+          "Unique `data-cy`",
+          "`cy.get('[data-cy=leave-table]')`"
+        ],
+        [
+          "Click labeled button",
+          "`cy.contains('button', 'Approve')`"
+        ],
+        [
+          "CSS inside a known parent",
+          "`cy.get('[data-cy=row-12]').find('.status')`"
+        ],
+        [
+          "Several fields in one card",
+          "`cy.get('[data-cy=leave-form]').within(() => { ... })`"
+        ],
+        [
+          "Row that shows a name",
+          "`cy.contains('tr', 'Ada Lovelace')`"
+        ]
+      ],
+      "caption": "Decision table (HRM)",
       "order": 5
     },
     {

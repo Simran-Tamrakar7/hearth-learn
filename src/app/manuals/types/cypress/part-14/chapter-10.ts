@@ -23,9 +23,46 @@ export const chapter = {
   "blocks": [
     {
       "id": "cy-14-10-md-0",
-      "type": "overview",
-      "heading": "A practice map",
-      "content": "| Goal | Site / data |\n|---|---|\n| Commands, retry-ability | [example.cypress.io](https://example.cypress.io) Kitchen Sink |\n| Realistic Cypress app + CI patterns | Cypress Real World App (RWA) on GitHub |\n| `target=_blank`, frames, basic auth | [the-internet.herokuapp.com](https://the-internet.herokuapp.com) |\n| Forms / commerce happy paths | Sauce Demo, automationexercise.com (treat as toys) |\n| API-only | jsonplaceholder.typicode.com, reqres.in |\n| Domain | Bizlevate HRM local / staging with test users (10.2) |\n| a11y | your CT modal + axe |\n| Native | ApiDemos / TheApp — **Appium**, not Cypress |",
+      "type": "table",
+      "headers": [
+        "Goal",
+        "Site / data"
+      ],
+      "rows": [
+        [
+          "Commands, retry-ability",
+          "[example.cypress.io](https://example.cypress.io) Kitchen Sink"
+        ],
+        [
+          "Realistic Cypress app + CI patterns",
+          "Cypress Real World App (RWA) on GitHub"
+        ],
+        [
+          "`target=_blank`, frames, basic auth",
+          "[the-internet.herokuapp.com](https://the-internet.herokuapp.com)"
+        ],
+        [
+          "Forms / commerce happy paths",
+          "Sauce Demo, automationexercise.com (treat as toys)"
+        ],
+        [
+          "API-only",
+          "jsonplaceholder.typicode.com, reqres.in"
+        ],
+        [
+          "Domain",
+          "Bizlevate HRM local / staging with test users (10.2)"
+        ],
+        [
+          "a11y",
+          "your CT modal + axe"
+        ],
+        [
+          "Native",
+          "ApiDemos / TheApp — **Appium**, not Cypress"
+        ]
+      ],
+      "caption": "A practice map",
       "order": 0
     },
     {

@@ -51,6 +51,30 @@ const withLesson = legacyFieldsToBlocks({
 assert.equal(withLesson.filter((b) => b.type === "overview" && b.heading === "Origin architecture").length, 1);
 assert.equal(withLesson.filter((b) => b.type === "overview" && b.heading === "History").length, 1);
 assert.ok(!withLesson.some((b) => b.type === "why"), "authored topics replace default Why/When boxes");
+
+const withTable = legacyFieldsToBlocks({
+  why: "Because",
+  contentMarkdown:
+    "## Compare tools\n\nIntro line.\n\n| A | B |\n|---|---|\n| 1 | 2 |\n\n### Nested heading stays here\n\nMore prose.",
+});
+assert.equal(withTable.length, 1);
+assert.equal(withTable[0]?.type, "overview");
+assert.equal(withTable[0]?.type === "overview" ? withTable[0].heading : "", "Compare tools");
+assert.ok(!withTable.some((b) => b.type === "overview" && b.heading === "Nested heading stays here"));
+assert.ok(withTable[0]?.type === "overview" && (withTable[0].content || "").includes("| A |"));
+assert.ok(withTable[0]?.type === "overview" && (withTable[0].content || "").includes("### Nested heading stays here"));
+
+const tableOnly = legacyFieldsToBlocks({
+  why: "Because",
+  contentMarkdown: "## Compare tools\n\n| A | B |\n|---|---|\n| 1 | 2 |\n",
+});
+assert.equal(tableOnly.filter((b) => b.type === "table").length, 1);
+const tableBlock = tableOnly.find((b) => b.type === "table");
+if (tableBlock?.type === "table") {
+  assert.equal(tableBlock.caption, "Compare tools");
+  assert.deepEqual(tableBlock.headers, ["A", "B"]);
+  assert.deepEqual(tableBlock.rows, [["1", "2"]]);
+}
 assert.equal(displayPartTitle(0, "Part 0 · Orientation"), "Part 0 · Orientation");
 
 const required = [

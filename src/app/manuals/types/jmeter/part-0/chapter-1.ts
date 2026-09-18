@@ -37,9 +37,45 @@ export const chapter = {
     },
     {
       "id": "jm-0-1-md-2",
-      "type": "overview",
-      "heading": "Comparison — browser tools vs JMeter",
-      "content": "| Aspect | Selenium/Playwright | JMeter |\n|---|---|---|\n| Primary purpose | Functional/UI testing | Load/performance testing (also usable for API functional testing) |\n| Operates at | Browser/DOM level | Protocol level (HTTP, TCP, JDBC, etc.) |\n| Renders JavaScript | Yes | No (by default) |\n| Resource cost per \"user\" | High (full browser instance) | Low (a thread) |\n| Typical scale | Tens of parallel browsers | Thousands of virtual users |\n| Output | Pass/fail, screenshots, DOM assertions | Response times, throughput, error rate, percentiles |",
+      "type": "table",
+      "headers": [
+        "Aspect",
+        "Selenium/Playwright",
+        "JMeter"
+      ],
+      "rows": [
+        [
+          "Primary purpose",
+          "Functional/UI testing",
+          "Load/performance testing (also usable for API functional testing)"
+        ],
+        [
+          "Operates at",
+          "Browser/DOM level",
+          "Protocol level (HTTP, TCP, JDBC, etc.)"
+        ],
+        [
+          "Renders JavaScript",
+          "Yes",
+          "No (by default)"
+        ],
+        [
+          "Resource cost per \"user\"",
+          "High (full browser instance)",
+          "Low (a thread)"
+        ],
+        [
+          "Typical scale",
+          "Tens of parallel browsers",
+          "Thousands of virtual users"
+        ],
+        [
+          "Output",
+          "Pass/fail, screenshots, DOM assertions",
+          "Response times, throughput, error rate, percentiles"
+        ]
+      ],
+      "caption": "Comparison — browser tools vs JMeter",
       "order": 2
     },
     {

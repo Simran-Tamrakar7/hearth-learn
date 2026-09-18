@@ -39,7 +39,7 @@ Each `part-N/chapter-M.ts` must:
 
 ### Insight boxes / content blocks (content-driven)
 
-Full Content prefers an ordered `blocks[]` on the chapter when present. Each entry is a typed block (`why`, `comparison`, `bullets`, `tree`, …) with its own input shape. Unused types simply are not in the array — nothing is auto-added. When `blocks` is unset and `contentMarkdown` has `##` / `###` headings, **those topics become the blocks** (default Why/When/Practical boxes are not shown). Otherwise legacy insight fields hydrate.
+Full Content prefers an ordered `blocks[]` on the chapter when present. Each entry is a typed block (`why`, `comparison`, `bullets`, `tree`, …) with its own input shape. Unused types simply are not in the array — nothing is auto-added. When `blocks` is unset and `contentMarkdown` has `##` headings, **those topics become the blocks** (`###` stays inside the parent section; default Why/When/Practical boxes are not shown). Pipe tables in markdown render as HTML tables. A heading whose body is only a table becomes one table block. Otherwise legacy insight fields hydrate.
 
 Optional `blockLayout` stores first-class rows (`columns: 1|2|3` + `blockIds`). Omitted layout hydrates as one block per row. Different rows can have different column counts. Changing 3→2 overflows extras into new 1-col rows; dropping a fourth block into a full row does the same. Existing chapter files are not rewritten until the author actually uses a non-stacked layout.
 

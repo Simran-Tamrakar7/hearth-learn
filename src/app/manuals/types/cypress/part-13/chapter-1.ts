@@ -30,9 +30,45 @@ export const chapter = {
     },
     {
       "id": "cy-13-1-md-1",
-      "type": "overview",
-      "heading": "Suggested spec map",
-      "content": "| Spec | Tags | Notes |\n|---|---|---|\n| `login.cy.ts` | `@smoke` | session only after first |\n| `leave-submit.cy.ts` | `@smoke @leave` | intercept balance |\n| `leave-approve.cy.ts` | `@leave` | two sessions (employee, manager) |\n| `sso.cy.ts` | `@okta @nightly` | `cy.origin` + args |\n| `payslip-link.cy.ts` | `@payroll` | href + `cy.request` PDF |\n| `LeaveRequestForm.cy.tsx` | CT | props matrix |",
+      "type": "table",
+      "headers": [
+        "Spec",
+        "Tags",
+        "Notes"
+      ],
+      "rows": [
+        [
+          "`login.cy.ts`",
+          "`@smoke`",
+          "session only after first"
+        ],
+        [
+          "`leave-submit.cy.ts`",
+          "`@smoke @leave`",
+          "intercept balance"
+        ],
+        [
+          "`leave-approve.cy.ts`",
+          "`@leave`",
+          "two sessions (employee, manager)"
+        ],
+        [
+          "`sso.cy.ts`",
+          "`@okta @nightly`",
+          "`cy.origin` + args"
+        ],
+        [
+          "`payslip-link.cy.ts`",
+          "`@payroll`",
+          "href + `cy.request` PDF"
+        ],
+        [
+          "`LeaveRequestForm.cy.tsx`",
+          "CT",
+          "props matrix"
+        ]
+      ],
+      "caption": "Suggested spec map",
       "order": 1
     },
     {

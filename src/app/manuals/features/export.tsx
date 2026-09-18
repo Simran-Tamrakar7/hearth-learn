@@ -7,6 +7,7 @@ import { blockDisplayName, editorColumns, isColumnBlockType } from "@/app/manual
 import { blocksInLayoutOrder } from "@/app/manuals/features/blocks/blockLayout";
 import type { ChapterBlock } from "@/app/manuals/features/blocks/types";
 import { groupChaptersIntoParts, displayPartTitle } from "@/app/manuals/features/reader";
+import { consumeMdTable } from "@/app/manuals/features/mdTables";
 import { useToast } from "@/components/ui/Toast";
 
 function groupTitle(index: number, name: string, partKey?: string) {
@@ -113,8 +114,14 @@ function blockToExport(block: ChapterBlock): string {
       return block.src.trim() ? `**${title}**\n\n${block.src}` : "";
     case "video":
       return block.url.trim() ? `**${title}**\n\n${block.url}` : "";
-    case "table":
-      return block.headers.length ? `**${title}**\n\n${block.headers.join(" | ")}` : "";
+    case "table": {
+      if (!block.headers.length) return "";
+      const head = `| ${block.headers.join(" | ")} |`;
+      const sep = `| ${block.headers.map(() => "---").join(" | ")} |`;
+      const rows = block.rows.map((r) => `| ${r.join(" | ")} |`).join("\n");
+      const cap = block.caption?.trim() || title;
+      return `**${cap}**\n\n${head}\n${sep}\n${rows}`;
+    }
     case "tree":
       return `**${title}**`;
     case "curatedResources":
@@ -189,7 +196,8 @@ function mdToSimpleHtml(md: string) {
   const lines = md.split("\n");
   const out: string[] = [];
   let inPre = false;
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i] ?? "";
     if (line.startsWith("```")) {
       inPre = !inPre;
       if (inPre) out.push("<pre><code>");
@@ -198,6 +206,16 @@ function mdToSimpleHtml(md: string) {
     }
     if (inPre) {
       out.push(escapeHtml(line));
+      continue;
+    }
+    const table = consumeMdTable(lines, i);
+    if (table) {
+      const head = table.table.headers.map((h) => `<th>${escapeHtml(h)}</th>`).join("");
+      const body = table.table.rows
+        .map((row) => `<tr>${row.map((c) => `<td>${escapeHtml(c)}</td>`).join("")}</tr>`)
+        .join("");
+      out.push(`<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`);
+      i = table.next - 1;
       continue;
     }
     if (/^#{1,3}\s+/.test(line)) {
@@ -244,6 +262,9 @@ const EXPORT_CSS = `
   .export-sub h2 { font-size: 1rem; margin-left: 1rem; color: #444; }
   p { margin: 0.4rem 0; }
   pre { background: #f4f4f4; padding: 0.75rem; overflow-x: auto; font-size: 0.8rem; border-radius: 4px; white-space: pre-wrap; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 0.75rem 0; }
+  th, td { border: 1px solid #ddd; padding: 0.35rem 0.5rem; text-align: left; vertical-align: top; }
+  th { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: #555; }
   .export-chapter { margin-bottom: 1.5rem; page-break-inside: avoid; }
 `;
 

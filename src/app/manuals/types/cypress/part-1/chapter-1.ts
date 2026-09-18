@@ -100,9 +100,34 @@ export const chapter = {
     },
     {
       "id": "cy-1-1-md-11",
-      "type": "overview",
-      "heading": "Glossary for the rest of Part 1",
-      "content": "| Term | Meaning |\n|---|---|\n| AUT | Application under test (HRM in the iframe) |\n| Chainable | Object returned by `cy.get` — a queued command, not a DOM node |\n| Cypress App | The Electron GUI from `cypress open` |\n| Binary cache | ~250MB per version outside `node_modules` |\n| `specPattern` | Glob that must see the `.cy.` infix by default |",
+      "type": "table",
+      "headers": [
+        "Term",
+        "Meaning"
+      ],
+      "rows": [
+        [
+          "AUT",
+          "Application under test (HRM in the iframe)"
+        ],
+        [
+          "Chainable",
+          "Object returned by `cy.get` — a queued command, not a DOM node"
+        ],
+        [
+          "Cypress App",
+          "The Electron GUI from `cypress open`"
+        ],
+        [
+          "Binary cache",
+          "~250MB per version outside `node_modules`"
+        ],
+        [
+          "`specPattern`",
+          "Glob that must see the `.cy.` infix by default"
+        ]
+      ],
+      "caption": "Glossary for the rest of Part 1",
       "order": 11
     }
   ],
