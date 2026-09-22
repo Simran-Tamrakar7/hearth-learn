@@ -1,0 +1,14 @@
+{
+  "id": "sql-qa",
+  "title": "SQL for QA",
+  "tagline": "Read, verify, and prepare data — the SQL a tester needs against the sample HRMS schema.",
+  "category": "automation",
+  "who": "QA engineers who already click through UIs and hit APIs and need to prove what the database actually stored.",
+  "outcomes": [
+    "Write SELECT/JOIN/GROUP BY queries that independently recompute what the HRMS UI and API claim",
+    "Find duplicates, orphans, and migration defects with reusable sanity-check queries",
+    "Seed and clean tagged test data safely, and wire SQL assertions into Playwright, pytest, Cypress, and CI"
+  ],
+  "duration": "6–10 weeks",
+  "levelSpan": "Beginner → Advanced"
+}

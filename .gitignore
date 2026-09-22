@@ -37,6 +37,9 @@ yarn-error.log*
 *.db
 *.db-journal
 
+# transcript extract used to ingest SQL-for-QA; do not commit
+/scripts/sql-qa-source.md
+
 # vercel
 .vercel
 
