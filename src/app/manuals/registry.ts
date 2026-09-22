@@ -4,15 +4,17 @@ import playwrightMeta from "./types/playwright/meta.json";
 import cypressMeta from "./types/cypress/meta.json";
 import hearthManualMeta from "./types/hearth-manual/meta.json";
 import jmeterMeta from "./types/jmeter/meta.json";
+import sqlQaMeta from "./types/sql-qa/meta.json";
 import { chapters as testingTypeChapters, chapterPaths as testingTypePaths } from "./types/testing-types/chapters-manifest";
 import { chapters as playwrightChapters, chapterPaths as playwrightPaths } from "./types/playwright/chapters-manifest";
 import { chapters as cypressChapters, chapterPaths as cypressPaths } from "./types/cypress/chapters-manifest";
 import { chapters as hearthManualChapters, chapterPaths as hearthManualPaths } from "./types/hearth-manual/chapters-manifest";
 import { chapters as jmeterChapters, chapterPaths as jmeterPaths } from "./types/jmeter/chapters-manifest";
+import { chapters as sqlQaChapters, chapterPaths as sqlQaPaths } from "./types/sql-qa/chapters-manifest";
 import type { ChapterRecord } from "./types";
 
 /** Builtin manuals kept in the catalog (all others removed). */
-export const KEPT_BUILTIN_SLUGS = ["playwright", "testing-types", "cypress", "hearth-manual", "jmeter"] as const;
+export const KEPT_BUILTIN_SLUGS = ["playwright", "testing-types", "cypress", "hearth-manual", "jmeter", "sql-qa"] as const;
 export const KEPT_MANUAL_SLUGS = KEPT_BUILTIN_SLUGS;
 
 export function isKeptBuiltinSlug(slug: string) {
@@ -263,6 +265,7 @@ const playwrightBody = manualBody(playwrightMeta as Record<string, unknown>, pla
 const cypressBody = manualBody(cypressMeta as Record<string, unknown>, cypressChapters, cypressPaths);
 const hearthManualBody = manualBody(hearthManualMeta as Record<string, unknown>, hearthManualChapters, hearthManualPaths);
 const jmeterBody = manualBody(jmeterMeta as Record<string, unknown>, jmeterChapters, jmeterPaths);
+const sqlQaBody = manualBody(sqlQaMeta as Record<string, unknown>, sqlQaChapters, sqlQaPaths);
 
 /** Builtin manuals. Listing + bodies. A folder is invisible until this file imports its chapters. */
 export type ManualRegistryEntry = {
@@ -338,6 +341,18 @@ export const MANUALS: ManualRegistryEntry[] = [
     pinnable: true,
     pinIcon: "📈",
     body: jmeterBody,
+  },
+  {
+    id: "sql-qa",
+    title: "SQL for QA",
+    tool: "sql-qa",
+    status: "active",
+    order: 6,
+    tags: ["automation"],
+    featured: false,
+    pinnable: true,
+    pinIcon: "🗃️",
+    body: sqlQaBody,
   },
 ];
 

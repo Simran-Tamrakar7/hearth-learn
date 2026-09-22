@@ -22,6 +22,7 @@ import { PLAYWRIGHT_TOC_VERSION } from "@/app/manuals/types/playwright/toc";
 import { CYPRESS_TOC_VERSION } from "@/app/manuals/types/cypress/toc";
 import { HEARTH_MANUAL_TOC_VERSION } from "@/app/manuals/types/hearth-manual/toc";
 import { JMETER_TOC_VERSION } from "@/app/manuals/types/jmeter/toc";
+import { SQL_QA_TOC_VERSION } from "@/app/manuals/types/sql-qa/toc";
 import { isTestingTypesSlug } from "@/app/manuals/types/testing-types/TestingTypesManual";
 import { parseBlockLayout } from "@/app/manuals/features/blocks/blockLayout";
 
@@ -43,6 +44,7 @@ export function getBuiltinTocVersion(slug: string): number | null {
   if (slug === "cypress") return CYPRESS_TOC_VERSION;
   if (slug === "hearth-manual") return HEARTH_MANUAL_TOC_VERSION;
   if (slug === "jmeter") return JMETER_TOC_VERSION;
+  if (slug === "sql-qa") return SQL_QA_TOC_VERSION;
   return null;
 }
 
